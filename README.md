@@ -58,6 +58,8 @@ The extension uses the new [`browser.tabs.group()`](https://developer.mozilla.or
 - Consistently add colors to each group (once the API supports it).
 - Add a "Collapse/Expand All" button to collapse all groups (once the API supports it).
 
+Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30/webextensions-support-for-tab-groups/)
+
 ## 🧩 Ideas for Future Features
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)

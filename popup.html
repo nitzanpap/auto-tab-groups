@@ -1,15 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
     <title>Auto Tab Groups</title>
     <link rel="stylesheet" href="popup.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <h1>Auto Tab Groups</h1>
+    <div class="container">
+      <h1>Auto Tab Groups</h1>
 
-    <button id="group">Group Tabs</button>
-    <button id="ungroup">Ungroup All Tabs</button>
-    <footer>Made for Firefox</footer>
+      <div class="button-group">
+        <button id="group">
+          📁 Group Tabs
+        </button>
+        <button id="ungroup">
+          ❌ Ungroup All
+        </button>
+      </div>
+
+      <footer>🦊 Made for Firefox</footer>
+    </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

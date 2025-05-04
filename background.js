@@ -17,9 +17,25 @@ async function groupTabsByDomainV2() {
   // For each tab, get the domain and add it to the appropriate group. If the group doesn't exist, create it.
   for (const tab of tabs) {
     const url = new URL(tab.url)
-    const domain = url.hostname
+    const hostname = url.hostname
 
-    console.log(domain)
+    // Extract base domain by getting the last two parts of the hostname
+    // This handles domains like example.com, ignoring subdomains like sub.example.com
+    const parts = hostname.split(".")
+    let domain = hostname
+
+    if (parts.length >= 2) {
+      // Get the base domain (last two parts)
+      domain = parts.slice(-2).join(".")
+
+      // Special case for country-specific TLDs like .co.uk, .com.au
+      const secondLevelDomains = ["co", "com", "org", "net", "ac", "gov", "edu"]
+      if (parts.length >= 3 && secondLevelDomains.includes(parts[parts.length - 2])) {
+        domain = parts.slice(-3).join(".")
+      }
+    }
+
+    console.log(`Original: ${hostname}, Base domain: ${domain}`)
 
     const group = groups.find((group) => group.name === domain)
 
