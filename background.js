@@ -27,6 +27,7 @@ async function groupTabsByDomainV2() {
     if (!group) {
       const newGroup = await browser.tabs.group({
         tabIds: [tab.id],
+        // TODO: Add a name to the group once the API supports it.
         // createProperties: {
         //   name: domain,
         // },
@@ -54,22 +55,6 @@ async function ungroupAllTabs() {
   for (const tab of tabs) {
     await browser.tabs.ungroup(tab.id)
   }
-}
-
-async function createTwoTabsInNewGroup() {
-  // Create two tabs and put them in a new group.
-  const tab1 = await browser.tabs.create({})
-  const tab2 = await browser.tabs.create({})
-  const groupId = await browser.tabs.group({
-    tabIds: [tab1.id, tab2.id],
-  })
-
-  // Create another tab and add it to the group.
-  const tab3 = await browser.tabs.create({})
-  await browser.tabs.group({
-    tabIds: tab3.id,
-    groupId: groupId,
-  })
 }
 
 browser.runtime.onMessage.addListener((msg) => {
