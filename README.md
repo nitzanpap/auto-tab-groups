@@ -69,6 +69,28 @@ Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30
 
 ---
 
+## 📦 How to build
+
+1. Install the `web-ext` CLI
+
+```bash
+npm install -g web-ext
+```
+
+2. Make sure to update the `manifest.json` file with the correct version (once you are ready to publish)
+
+3. Build the extension
+
+```bash
+web-ext build
+```
+
+4. Install the extension in Firefox
+
+```bash
+web-ext run
+```
+
 ## 👨‍💻 Author
 
 Built by [Nitzan Papini](https://github.com/nitzanpap)
