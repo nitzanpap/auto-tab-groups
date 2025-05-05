@@ -29,6 +29,28 @@ const tabDomains = new Map()
 // Track tab groups by domain
 const domainGroups = new Map()
 
+// Track if auto-grouping is enabled
+let autoGroupingEnabled = true
+
+// Save auto-grouping state to storage
+async function saveAutoGroupingState() {
+  await browser.storage.local.set({ autoGroupingEnabled })
+  console.log(`Auto-grouping state saved: ${autoGroupingEnabled}`)
+}
+
+// Load auto-grouping state from storage
+async function loadAutoGroupingState() {
+  const result = await browser.storage.local.get("autoGroupingEnabled")
+  if (result.hasOwnProperty("autoGroupingEnabled")) {
+    autoGroupingEnabled = result.autoGroupingEnabled
+  }
+  console.log(`Auto-grouping state loaded: ${autoGroupingEnabled}`)
+  return autoGroupingEnabled
+}
+
+// Initialize state when the extension loads
+loadAutoGroupingState()
+
 /**
  * Get all tabs in the current window and group them by domain
  */
@@ -110,6 +132,9 @@ async function ungroupAllTabs() {
  * @param {number} tabId - The ID of the tab to move
  */
 async function moveTabToGroup(tabId) {
+  // Only proceed if auto-grouping is enabled
+  if (!autoGroupingEnabled) return
+
   try {
     const tab = await browser.tabs.get(tabId)
     if (!tab.url) return
@@ -166,11 +191,23 @@ async function removeEmptyGroup(groupId) {
 }
 
 // Listen for messages from popup
-browser.runtime.onMessage.addListener((msg) => {
+browser.runtime.onMessage.addListener(async (msg) => {
   if (msg.action === "group") {
     groupTabsByDomain()
   } else if (msg.action === "ungroup") {
     ungroupAllTabs()
+  } else if (msg.action === "getAutoGroupState") {
+    return Promise.resolve({ enabled: autoGroupingEnabled })
+  } else if (msg.action === "toggleAutoGroup") {
+    autoGroupingEnabled = msg.enabled
+    saveAutoGroupingState()
+
+    // If auto-grouping is being enabled, immediately group all tabs
+    if (autoGroupingEnabled) {
+      groupTabsByDomain()
+    }
+
+    return Promise.resolve({ enabled: autoGroupingEnabled })
   }
 })
 
