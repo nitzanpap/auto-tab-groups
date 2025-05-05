@@ -1,4 +1,4 @@
-async function groupTabsByDomainV2() {
+async function groupTabsByDomain() {
   /*
   1. Get all tabs in the current window.
   2. For each tab, get the domain and add it to the appropriate group. If the group doesn't exist, create it.
@@ -17,25 +17,10 @@ async function groupTabsByDomainV2() {
   // For each tab, get the domain and add it to the appropriate group. If the group doesn't exist, create it.
   for (const tab of tabs) {
     const url = new URL(tab.url)
-    const hostname = url.hostname
 
-    // Extract base domain by getting the last two parts of the hostname
-    // This handles domains like example.com, ignoring subdomains like sub.example.com
-    const parts = hostname.split(".")
-    let domain = hostname
+    const domain = extractDomain(url)
 
-    if (parts.length >= 2) {
-      // Get the base domain (last two parts)
-      domain = parts.slice(-2).join(".")
-
-      // Special case for country-specific TLDs like .co.uk, .com.au
-      const secondLevelDomains = ["co", "com", "org", "net", "ac", "gov", "edu"]
-      if (parts.length >= 3 && secondLevelDomains.includes(parts[parts.length - 2])) {
-        domain = parts.slice(-3).join(".")
-      }
-    }
-
-    console.log(`Original: ${hostname}, Base domain: ${domain}`)
+    console.log(`Original: ${url}, Base domain: ${domain}`)
 
     const group = groups.find((group) => group.name === domain)
 
@@ -76,17 +61,86 @@ async function ungroupAllTabs() {
 browser.runtime.onMessage.addListener((msg) => {
   // If the action is "group", group the tabs by domain
   if (msg.action === "group") {
-    // groupTabsByDomainV1()
-    groupTabsByDomainV2()
+    groupTabsByDomain()
   }
 
   // If the action is "ungroup", ungroup all tabs
   if (msg.action === "ungroup") {
     ungroupAllTabs()
   }
+})
 
-  // If the action is "createTwoTabsInNewGroup", create two tabs in a new group
-  if (msg.action === "createTwoTabsInNewGroup") {
-    createTwoTabsInNewGroup()
+// Store the last known domains for each tab
+const tabDomains = new Map()
+
+// Helper function to extract domain from URL
+function extractDomain(url) {
+  try {
+    const hostname = new URL(url).hostname
+    const parts = hostname.split(".")
+    let domain = hostname
+
+    if (parts.length >= 2) {
+      // Get the base domain (last two parts)
+      domain = parts.slice(-2).join(".")
+
+      // Special case for country-specific TLDs like .co.uk, .com.au
+      const secondLevelDomains = ["co", "com", "org", "net", "ac", "gov", "edu"]
+      if (parts.length >= 3 && secondLevelDomains.includes(parts[parts.length - 2])) {
+        domain = parts.slice(-3).join(".")
+      }
+    }
+
+    return domain
+  } catch (e) {
+    console.error("Error extracting domain:", e)
+    return ""
+  }
+}
+
+// If a tab's URL domain changes, move it to the appropriate group
+browser.tabs.onUpdated.addListener(
+  (tabId, changeInfo, tab) => {
+    if (changeInfo.url) {
+      const newDomain = extractDomain(changeInfo.url)
+      const oldDomain = tabDomains.get(tabId) || ""
+
+      // Only regroup if the domain has actually changed
+      if (newDomain !== oldDomain) {
+        console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
+        tabDomains.set(tabId, newDomain)
+        groupTabsByDomain(tab)
+      }
+    }
+  },
+  {
+    properties: ["url"],
+  }
+)
+
+// Track domains when tabs are created
+browser.tabs.onCreated.addListener((tab) => {
+  if (tab.url) {
+    tabDomains.set(tab.id, extractDomain(tab.url))
+  }
+})
+
+// Clean up when tabs are removed
+browser.tabs.onRemoved.addListener((tabId) => {
+  tabDomains.delete(tabId)
+})
+
+// If a tab is moved to a different window, move it to the appropriate group
+browser.tabs.onMoved.addListener((tabId, moveInfo) => {
+  if (moveInfo.windowId !== browser.windows.WINDOW_ID_CURRENT) {
+    groupTabsByDomain(tabId)
+  }
+})
+
+// If a tab is removed and the group has no more tabs, remove the group
+browser.tabs.onRemoved.addListener((tabId) => {
+  const group = browser.tabs.getGroup(tabId)
+  if (group && group.tabs.length === 0) {
+    browser.tabs.ungroup(group.id)
   }
 })
