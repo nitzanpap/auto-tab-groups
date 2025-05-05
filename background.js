@@ -1,78 +1,3 @@
-async function groupTabsByDomain() {
-  /*
-  1. Get all tabs in the current window.
-  2. For each tab, get the domain and add it to the appropriate group. If the group doesn't exist, create it.
-  3. For each group, create a new tab group and add the tabs to it.
-  4. Name the group with the domain name.
-  */
-
-  // Get all tabs in the current window
-  const tabs = await browser.tabs.query({ currentWindow: true })
-
-  console.log(tabs)
-
-  // Create an empty list of groups
-  const groups = []
-
-  // For each tab, get the domain and add it to the appropriate group. If the group doesn't exist, create it.
-  for (const tab of tabs) {
-    const url = new URL(tab.url)
-
-    const domain = extractDomain(url)
-
-    console.log(`Original: ${url}, Base domain: ${domain}`)
-
-    const group = groups.find((group) => group.name === domain)
-
-    // If the group doesn't exist, create it.
-    if (!group) {
-      const newGroup = await browser.tabs.group({
-        tabIds: [tab.id],
-        // TODO: Add a name to the group once the API supports it.
-        // createProperties: {
-        //   name: domain,
-        // },
-      })
-      groups.push({ id: newGroup.id, name: domain, tabs: [tab] })
-    } else {
-      group.tabs.push(tab)
-    }
-  }
-
-  console.log(groups)
-
-  // For each group, create a new tab group and add the tabs to it.
-  for (const group of groups) {
-    await browser.tabs.group({
-      groupId: group.id,
-
-      tabIds: group.tabs.map((tab) => tab.id),
-    })
-  }
-}
-
-async function ungroupAllTabs() {
-  const tabs = await browser.tabs.query({ currentWindow: true })
-  for (const tab of tabs) {
-    await browser.tabs.ungroup(tab.id)
-  }
-}
-
-browser.runtime.onMessage.addListener((msg) => {
-  // If the action is "group", group the tabs by domain
-  if (msg.action === "group") {
-    groupTabsByDomain()
-  }
-
-  // If the action is "ungroup", ungroup all tabs
-  if (msg.action === "ungroup") {
-    ungroupAllTabs()
-  }
-})
-
-// Store the last known domains for each tab
-const tabDomains = new Map()
-
 // Helper function to extract domain from URL
 function extractDomain(url) {
   try {
@@ -98,7 +23,158 @@ function extractDomain(url) {
   }
 }
 
-// If a tab's URL domain changes, move it to the appropriate group
+// Store the last known domains for each tab
+const tabDomains = new Map()
+
+// Track tab groups by domain
+const domainGroups = new Map()
+
+/**
+ * Get all tabs in the current window and group them by domain
+ */
+async function groupTabsByDomain() {
+  try {
+    // Get all tabs in the current window
+    const tabs = await browser.tabs.query({ currentWindow: true })
+
+    console.log("Grouping tabs:", tabs.length)
+
+    // Map of domain -> tab ids
+    const domainTabsMap = new Map()
+
+    // Group tabs by domain
+    for (const tab of tabs) {
+      if (!tab.url) continue
+
+      const domain = extractDomain(tab.url)
+      if (!domain) continue
+
+      // Update the domain tracking
+      tabDomains.set(tab.id, domain)
+
+      // Add tab to domain group
+      if (!domainTabsMap.has(domain)) {
+        domainTabsMap.set(domain, [])
+      }
+      domainTabsMap.get(domain).push(tab.id)
+    }
+
+    // Create tab groups for each domain
+    for (const [domain, tabIds] of domainTabsMap.entries()) {
+      if (tabIds.length === 0) continue
+
+      // Create a new group for these tabs
+      const groupId = await browser.tabs.group({ tabIds })
+
+      // Store the group ID for this domain
+      domainGroups.set(domain, groupId)
+
+      // TODO: Set the group title once the API supports it
+      // try {
+      //   await browser.tabGroups.update(groupId, { title: domain })
+      // } catch (e) {
+      //   console.log("Could not set group title, API may not support it yet:", e)
+      // }
+    }
+
+    console.log("Tab grouping complete. Domain groups:", [...domainGroups.entries()])
+  } catch (error) {
+    console.error("Error grouping tabs:", error)
+  }
+}
+
+/**
+ * Ungroup all tabs in the current window
+ */
+async function ungroupAllTabs() {
+  try {
+    const tabs = await browser.tabs.query({ currentWindow: true })
+    for (const tab of tabs) {
+      try {
+        await browser.tabs.ungroup(tab.id)
+      } catch (e) {
+        console.error(`Error ungrouping tab ${tab.id}:`, e)
+      }
+    }
+
+    // Clear domain groups tracking
+    domainGroups.clear()
+    console.log("All tabs ungrouped")
+  } catch (error) {
+    console.error("Error ungrouping tabs:", error)
+  }
+}
+
+/**
+ * Move a tab to the appropriate group based on its domain
+ * @param {number} tabId - The ID of the tab to move
+ */
+async function moveTabToGroup(tabId) {
+  try {
+    const tab = await browser.tabs.get(tabId)
+    if (!tab.url) return
+
+    const domain = extractDomain(tab.url)
+    if (!domain) return
+
+    // Update domain tracking
+    tabDomains.set(tabId, domain)
+
+    // Check if we have a group for this domain
+    if (domainGroups.has(domain)) {
+      // Move tab to existing group
+      await browser.tabs.group({
+        tabIds: [tabId],
+        groupId: domainGroups.get(domain),
+      })
+    } else {
+      // Create a new group
+      const groupId = await browser.tabs.group({ tabIds: [tabId] })
+      domainGroups.set(domain, groupId)
+
+      // TODO: Set the group title once the API supports it
+      // try {
+      //   await browser.tabGroups.update(groupId, { title: domain })
+      // } catch (e) {
+      //   console.log("Could not set group title, API may not support it yet:", e)
+      // }
+    }
+  } catch (error) {
+    console.error(`Error moving tab ${tabId} to group:`, error)
+  }
+}
+
+/**
+ * Check if a group is empty and remove it if so
+ * @param {number} groupId - The ID of the group to check
+ */
+async function removeEmptyGroup(groupId) {
+  try {
+    const tabs = await browser.tabs.query({ groupId })
+    if (tabs.length === 0) {
+      // Find and remove the domain association
+      for (const [domain, id] of domainGroups.entries()) {
+        if (id === groupId) {
+          domainGroups.delete(domain)
+          break
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error checking empty group ${groupId}:`, error)
+  }
+}
+
+// Listen for messages from popup
+browser.runtime.onMessage.addListener((msg) => {
+  if (msg.action === "group") {
+    groupTabsByDomain()
+  } else if (msg.action === "ungroup") {
+    ungroupAllTabs()
+  }
+})
+
+// Track domain changes when tabs are updated
 browser.tabs.onUpdated.addListener(
   (tabId, changeInfo, tab) => {
     if (changeInfo.url) {
@@ -108,39 +184,34 @@ browser.tabs.onUpdated.addListener(
       // Only regroup if the domain has actually changed
       if (newDomain !== oldDomain) {
         console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
-        tabDomains.set(tabId, newDomain)
-        groupTabsByDomain(tab)
+        moveTabToGroup(tabId)
       }
     }
   },
-  {
-    properties: ["url"],
-  }
+  { properties: ["url"] }
 )
 
 // Track domains when tabs are created
 browser.tabs.onCreated.addListener((tab) => {
   if (tab.url) {
-    tabDomains.set(tab.id, extractDomain(tab.url))
+    const domain = extractDomain(tab.url)
+    tabDomains.set(tab.id, domain)
+    moveTabToGroup(tab.id)
   }
 })
 
 // Clean up when tabs are removed
-browser.tabs.onRemoved.addListener((tabId) => {
+browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  // Remove from domain tracking
   tabDomains.delete(tabId)
+
+  // Check if the tab's group is now empty
+  if (removeInfo.groupId) {
+    removeEmptyGroup(removeInfo.groupId)
+  }
 })
 
 // If a tab is moved to a different window, move it to the appropriate group
 browser.tabs.onMoved.addListener((tabId, moveInfo) => {
-  if (moveInfo.windowId !== browser.windows.WINDOW_ID_CURRENT) {
-    groupTabsByDomain(tabId)
-  }
-})
-
-// If a tab is removed and the group has no more tabs, remove the group
-browser.tabs.onRemoved.addListener((tabId) => {
-  const group = browser.tabs.getGroup(tabId)
-  if (group && group.tabs.length === 0) {
-    browser.tabs.ungroup(group.id)
-  }
+  moveTabToGroup(tabId)
 })
