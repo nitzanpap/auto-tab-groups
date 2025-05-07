@@ -66,6 +66,9 @@ Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30
 - Support multiple named snapshots
 - Automatically group new tabs on creation
 - Export/import snapshots
+- Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model
+- Allow users to view & manage their tabs, groups, and tree via the extension popup (and maybe also add shortcuts)
+- Allow users to define their own rules for grouping tabs by.
 
 ---
 
