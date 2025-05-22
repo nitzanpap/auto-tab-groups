@@ -11,7 +11,8 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 <!-- Allows grouping tabs by domain, auto-grouping -->
 
 - 🪄 Group tabs automatically by domain name.
-- 🔄 Toggle auto-grouping on/off.
+- 🔄 Toggle auto-grouping (on/off).
+- 🔄 Toggle only applying to new tabs (on/off).
 
 ## Planned Features
 
