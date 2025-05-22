@@ -1,6 +1,6 @@
 # 🔖 Auto Tab Groups (Firefox Extension)
 
-This is a lightweight Firefox extension that automatically groups open tabs by domain and lets you save or restore snapshots of your tabs.
+This is a lightweight Firefox extension that automatically groups open tabs by domain.
 
 > ⚠️ Requires **Firefox 138+** for `tabs.group()` support.
 
