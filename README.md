@@ -90,11 +90,20 @@ npm install -g web-ext
 web-ext build
 ```
 
-4. Install the extension in Firefox
+## How to run
+
+1. Install the extension in Firefox
 
 ```bash
 web-ext run
 ```
+
+## How to upload to Firefox
+
+1. Make sure to update the `manifest.json` file with the correct new version.
+2. Build the extension (see [How to build](#how-to-build))
+3. Rename the built suffix of the built file from `.zip` to `.xpi`.
+4. Upload the extension to the Firefox addons site `https://addons.mozilla.org/en-US/developers/addon/<your-extension-name>`
 
 ## 👨‍💻 Author
 
