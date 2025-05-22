@@ -1,4 +1,13 @@
-// Helper function to extract domain from URL
+// Store the last known domains for each tab
+const tabDomains = new Map()
+
+// Track tab groups by domain
+const domainGroups = new Map()
+
+// Track if auto-grouping is enabled
+let autoGroupingEnabled = true
+let onlyApplyToNewTabsEnabled = false
+
 function extractDomain(url) {
   try {
     const hostname = new URL(url).hostname
@@ -23,29 +32,31 @@ function extractDomain(url) {
   }
 }
 
-// Store the last known domains for each tab
-const tabDomains = new Map()
-
-// Track tab groups by domain
-const domainGroups = new Map()
-
-// Track if auto-grouping is enabled
-let autoGroupingEnabled = true
-
 // Save auto-grouping state to storage
 async function saveAutoGroupingState() {
-  await browser.storage.local.set({ autoGroupingEnabled })
-  console.log(`Auto-grouping state saved: ${autoGroupingEnabled}`)
+  await browser.storage.local.set({
+    autoGroupingEnabled,
+    onlyApplyToNewTabsEnabled,
+  })
+  console.log(
+    `Auto-grouping state saved: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+  )
 }
 
 // Load auto-grouping state from storage
 async function loadAutoGroupingState() {
-  const result = await browser.storage.local.get("autoGroupingEnabled")
-  if (result.hasOwnProperty("autoGroupingEnabled")) {
-    autoGroupingEnabled = result.autoGroupingEnabled
-  }
-  console.log(`Auto-grouping state loaded: ${autoGroupingEnabled}`)
-  return autoGroupingEnabled
+  const result = await browser.storage.local.get({
+    autoGroupingEnabled: true,
+    onlyApplyToNewTabsEnabled: false,
+  })
+
+  autoGroupingEnabled = result.autoGroupingEnabled
+  onlyApplyToNewTabsEnabled = result.onlyApplyToNewTabsEnabled
+
+  console.log(
+    `Auto-grouping state loaded: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+  )
+  return { autoGroupingEnabled, onlyApplyToNewTabsEnabled }
 }
 
 // Initialize state when the extension loads
@@ -130,10 +141,14 @@ async function ungroupAllTabs() {
 /**
  * Move a tab to the appropriate group based on its domain
  * @param {number} tabId - The ID of the tab to move
+ * @param {boolean} isNewTab - Whether this is a newly created tab
  */
-async function moveTabToGroup(tabId) {
+async function moveTabToGroup(tabId, isNewTab = false) {
   // Only proceed if auto-grouping is enabled
   if (!autoGroupingEnabled) return
+
+  // If only applying to new tabs is enabled, skip unless this is a new tab
+  if (onlyApplyToNewTabsEnabled && !isNewTab) return
 
   try {
     const tab = await browser.tabs.get(tabId)
@@ -156,13 +171,6 @@ async function moveTabToGroup(tabId) {
       // Create a new group
       const groupId = await browser.tabs.group({ tabIds: [tabId] })
       domainGroups.set(domain, groupId)
-
-      // TODO: Set the group title once the API supports it
-      // try {
-      //   await browser.tabGroups.update(groupId, { title: domain })
-      // } catch (e) {
-      //   console.log("Could not set group title, API may not support it yet:", e)
-      // }
     }
   } catch (error) {
     console.error(`Error moving tab ${tabId} to group:`, error)
@@ -207,16 +215,26 @@ function main() {
       return Promise.resolve({ enabled: autoGroupingEnabled })
     }
 
+    if (msg.action === "getOnlyApplyToNewTabs") {
+      return Promise.resolve({ enabled: onlyApplyToNewTabsEnabled })
+    }
+
     if (msg.action === "toggleAutoGroup") {
       autoGroupingEnabled = msg.enabled
       saveAutoGroupingState()
 
       // If auto-grouping is being enabled, immediately group all tabs
-      if (autoGroupingEnabled) {
+      if (autoGroupingEnabled && !onlyApplyToNewTabsEnabled) {
         groupTabsByDomain()
       }
 
       return Promise.resolve({ enabled: autoGroupingEnabled })
+    }
+
+    if (msg.action === "toggleOnlyNewTabs") {
+      onlyApplyToNewTabsEnabled = msg.enabled
+      saveAutoGroupingState()
+      return Promise.resolve({ enabled: onlyApplyToNewTabsEnabled })
     }
   })
 
@@ -230,7 +248,9 @@ function main() {
         // Only regroup if the domain has actually changed
         if (newDomain !== oldDomain) {
           console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
-          moveTabToGroup(tabId)
+          // Check if this is the first URL for this tab (meaning it's a new tab getting its first URL)
+          const isFirstUrl = !oldDomain
+          moveTabToGroup(tabId, isFirstUrl)
         }
       }
     },
@@ -238,10 +258,16 @@ function main() {
   )
 
   browser.tabs.onCreated.addListener((tab) => {
+    // When a tab is created, mark it as new by setting an empty domain
+    tabDomains.set(tab.id, "")
+
+    // If it already has a URL (rare but possible), handle it immediately
     if (tab.url) {
       const domain = extractDomain(tab.url)
-      tabDomains.set(tab.id, domain)
-      moveTabToGroup(tab.id)
+      if (domain) {
+        tabDomains.set(tab.id, domain)
+        moveTabToGroup(tab.id, true)
+      }
     }
   })
 

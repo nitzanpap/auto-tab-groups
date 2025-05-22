@@ -7,8 +7,9 @@ document.getElementById("ungroup").addEventListener("click", () => {
 })
 
 const autoGroupToggle = document.getElementById("autoGroupToggle")
-const onlyApplyToNewTabs = document.getElementById("onlyApplyToNewTabs")
-// Initialize the toggle state when popup opens
+const onlyApplyToNewTabsToggle = document.getElementById("onlyApplyToNewTabs")
+
+// Initialize the toggle states when popup opens
 chrome.runtime.sendMessage({ action: "getAutoGroupState" }, (response) => {
   if (response && response.enabled !== undefined) {
     autoGroupToggle.checked = response.enabled
@@ -17,7 +18,7 @@ chrome.runtime.sendMessage({ action: "getAutoGroupState" }, (response) => {
 
 chrome.runtime.sendMessage({ action: "getOnlyApplyToNewTabs" }, (response) => {
   if (response && response.enabled !== undefined) {
-    onlyApplyToNewTabsEnabled.checked = response.enabled
+    onlyApplyToNewTabsToggle.checked = response.enabled
   }
 })
 
@@ -26,6 +27,14 @@ autoGroupToggle.addEventListener("change", () => {
   const enabled = autoGroupToggle.checked
   chrome.runtime.sendMessage({
     action: "toggleAutoGroup",
+    enabled: enabled,
+  })
+})
+
+onlyApplyToNewTabsToggle.addEventListener("change", () => {
+  const enabled = onlyApplyToNewTabsToggle.checked
+  chrome.runtime.sendMessage({
+    action: "toggleOnlyNewTabs",
     enabled: enabled,
   })
 })
