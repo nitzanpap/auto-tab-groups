@@ -190,65 +190,76 @@ async function removeEmptyGroup(groupId) {
   }
 }
 
-// Listen for messages from popup
-browser.runtime.onMessage.addListener(async (msg) => {
-  if (msg.action === "group") {
-    groupTabsByDomain()
-  } else if (msg.action === "ungroup") {
-    ungroupAllTabs()
-  } else if (msg.action === "getAutoGroupState") {
-    return Promise.resolve({ enabled: autoGroupingEnabled })
-  } else if (msg.action === "toggleAutoGroup") {
-    autoGroupingEnabled = msg.enabled
-    saveAutoGroupingState()
-
-    // If auto-grouping is being enabled, immediately group all tabs
-    if (autoGroupingEnabled) {
+function main() {
+  // Listen for messages from popup
+  browser.runtime.onMessage.addListener(async (msg) => {
+    if (msg.action === "group") {
       groupTabsByDomain()
+      return Promise.resolve({ success: true })
     }
 
-    return Promise.resolve({ enabled: autoGroupingEnabled })
-  }
-})
+    if (msg.action === "ungroup") {
+      ungroupAllTabs()
+      return Promise.resolve({ success: true })
+    }
 
-// Track domain changes when tabs are updated
-browser.tabs.onUpdated.addListener(
-  (tabId, changeInfo, tab) => {
-    if (changeInfo.url) {
-      const newDomain = extractDomain(changeInfo.url)
-      const oldDomain = tabDomains.get(tabId) || ""
+    if (msg.action === "getAutoGroupState") {
+      return Promise.resolve({ enabled: autoGroupingEnabled })
+    }
 
-      // Only regroup if the domain has actually changed
-      if (newDomain !== oldDomain) {
-        console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
-        moveTabToGroup(tabId)
+    if (msg.action === "toggleAutoGroup") {
+      autoGroupingEnabled = msg.enabled
+      saveAutoGroupingState()
+
+      // If auto-grouping is being enabled, immediately group all tabs
+      if (autoGroupingEnabled) {
+        groupTabsByDomain()
       }
+
+      return Promise.resolve({ enabled: autoGroupingEnabled })
     }
-  },
-  { properties: ["url"] }
-)
+  })
 
-// Track domains when tabs are created
-browser.tabs.onCreated.addListener((tab) => {
-  if (tab.url) {
-    const domain = extractDomain(tab.url)
-    tabDomains.set(tab.id, domain)
-    moveTabToGroup(tab.id)
-  }
-})
+  // Track domain changes when tabs are updated
+  browser.tabs.onUpdated.addListener(
+    (tabId, changeInfo, tab) => {
+      if (changeInfo.url) {
+        const newDomain = extractDomain(changeInfo.url)
+        const oldDomain = tabDomains.get(tabId) || ""
 
-// Clean up when tabs are removed
-browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  // Remove from domain tracking
-  tabDomains.delete(tabId)
+        // Only regroup if the domain has actually changed
+        if (newDomain !== oldDomain) {
+          console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
+          moveTabToGroup(tabId)
+        }
+      }
+    },
+    { properties: ["url"] }
+  )
 
-  // Check if the tab's group is now empty
-  if (removeInfo.groupId) {
-    removeEmptyGroup(removeInfo.groupId)
-  }
-})
+  browser.tabs.onCreated.addListener((tab) => {
+    if (tab.url) {
+      const domain = extractDomain(tab.url)
+      tabDomains.set(tab.id, domain)
+      moveTabToGroup(tab.id)
+    }
+  })
 
-// If a tab is moved to a different window, move it to the appropriate group
-browser.tabs.onMoved.addListener((tabId, moveInfo) => {
-  moveTabToGroup(tabId)
-})
+  // Clean up when tabs are removed
+  browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+    // Remove from domain tracking
+    tabDomains.delete(tabId)
+
+    // Check if the tab's group is now empty
+    if (removeInfo.groupId) {
+      removeEmptyGroup(removeInfo.groupId)
+    }
+  })
+
+  // If a tab is moved to a different window, move it to the appropriate group
+  browser.tabs.onMoved.addListener((tabId, moveInfo) => {
+    moveTabToGroup(tabId)
+  })
+}
+
+main()

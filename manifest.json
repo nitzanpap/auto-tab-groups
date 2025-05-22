@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Auto Tab Groups",
   "version": "1.0.2",
-  "description": "Automatically groups tabs by domain and saves/restores snapshots.",
+  "description": "Automatically groups tabs by domain.",
   "permissions": ["tabs", "storage"],
   "browser_action": {
     "default_popup": "popup.html"

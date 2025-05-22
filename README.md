@@ -1,4 +1,4 @@
-# 🔖 Auto Tab Grouper (Firefox Extension)
+# 🔖 Auto Tab Groups (Firefox Extension)
 
 This is a lightweight Firefox extension that automatically groups open tabs by domain and lets you save or restore snapshots of your tabs.
 
@@ -8,9 +8,18 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 ## 🚀 Features
 
-- ✅ Group tabs automatically by domain name.
-- 💾 Save the current set of tabs (snapshot).
-- ♻️ Restore tabs from a saved snapshot.
+<!-- Allows grouping tabs by domain, auto-grouping -->
+
+- 🪄 Group tabs automatically by domain name.
+- 🔄 Toggle auto-grouping on/off.
+
+## Planned Features
+
+- Add a name to the group (once the API supports it).
+- Consistently add colors to each group (once the API supports it).
+- Add a "Collapse/Expand All" button to collapse all groups (once the API supports it).
+
+Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30/webextensions-support-for-tab-groups/)
 
 ---
 
@@ -52,21 +61,13 @@ The extension uses the new [`browser.tabs.group()`](https://developer.mozilla.or
 
 ---
 
-## Planned Features
-
-- Add a name to the group (once the API supports it).
-- Consistently add colors to each group (once the API supports it).
-- Add a "Collapse/Expand All" button to collapse all groups (once the API supports it).
-
-Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30/webextensions-support-for-tab-groups/)
-
 ## 🧩 Ideas for Future Features
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)
 - Support multiple named snapshots
 - Automatically group new tabs on creation
 - Export/import snapshots
-- Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model
+- Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model)
 - Allow users to view & manage their tabs, groups, and tree via the extension popup (and maybe also add shortcuts)
 - Allow users to define their own rules for grouping tabs by.
 
