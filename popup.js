@@ -8,6 +8,9 @@ document.getElementById("ungroup").addEventListener("click", () => {
 
 const autoGroupToggle = document.getElementById("autoGroupToggle")
 const onlyApplyToNewTabsToggle = document.getElementById("onlyApplyToNewTabs")
+const groupBySubDomainToggle = document.getElementById("groupBySubDomain")
+const advancedToggle = document.querySelector(".advanced-toggle")
+const advancedContent = document.querySelector(".advanced-content")
 
 // Initialize the toggle states when popup opens
 chrome.runtime.sendMessage({ action: "getAutoGroupState" }, (response) => {
@@ -20,6 +23,18 @@ chrome.runtime.sendMessage({ action: "getOnlyApplyToNewTabs" }, (response) => {
   if (response && response.enabled !== undefined) {
     onlyApplyToNewTabsToggle.checked = response.enabled
   }
+})
+
+chrome.runtime.sendMessage({ action: "getGroupBySubDomain" }, (response) => {
+  if (response && response.enabled !== undefined) {
+    groupBySubDomainToggle.checked = response.enabled
+  }
+})
+
+// Advanced section toggle
+advancedToggle.addEventListener("click", () => {
+  advancedToggle.classList.toggle("open")
+  advancedContent.classList.toggle("open")
 })
 
 // Listen for toggle changes
@@ -35,6 +50,14 @@ onlyApplyToNewTabsToggle.addEventListener("change", () => {
   const enabled = onlyApplyToNewTabsToggle.checked
   chrome.runtime.sendMessage({
     action: "toggleOnlyNewTabs",
+    enabled: enabled,
+  })
+})
+
+groupBySubDomainToggle.addEventListener("change", () => {
+  const enabled = groupBySubDomainToggle.checked
+  chrome.runtime.sendMessage({
+    action: "toggleGroupBySubDomain",
     enabled: enabled,
   })
 })

@@ -1,17 +1,81 @@
-// Store the last known domains for each tab
-const tabDomains = new Map()
-
 // Track tab groups by domain
 const domainGroups = new Map()
+
+// Store domain to color mapping
+const domainColors = new Map()
 
 // Track if auto-grouping is enabled
 let autoGroupingEnabled = true
 let onlyApplyToNewTabsEnabled = false
+let groupBySubDomainEnabled = true
+
+// Save color mappings to storage
+async function saveColorMappings() {
+  await browser.storage.local.set({
+    domainColors: Object.fromEntries(domainColors),
+  })
+}
+
+// Load color mappings from storage
+async function loadColorMappings() {
+  const result = await browser.storage.local.get({
+    domainColors: {},
+  })
+
+  domainColors.clear()
+  Object.entries(result.domainColors).forEach(([domain, color]) => {
+    domainColors.set(domain, color)
+  })
+}
+
+async function createGroup(domain, tabIds) {
+  if (tabIds.length === 0) return
+
+  // Create a new group for these tabs
+  const groupId = await browser.tabs.group({ tabIds })
+
+  // Store the group ID for this domain
+  domainGroups.set(domain, groupId)
+
+  // Set the group title and color if the API is available
+  if (browser.tabGroups) {
+    try {
+      // Set the group title and color
+      await setGroupTitleAndColor({ groupId, domain })
+
+      // Get the group info to see what color the browser assigned
+      const groupInfo = await browser.tabGroups.get(groupId)
+      // If we don't have a color saved for this domain, save the browser-assigned color
+      if (!domainColors.get(domain)) {
+        // Save the browser-assigned color for future use
+        domainColors.set(domain, groupInfo.color)
+        saveColorMappings()
+      }
+
+      // If the current group title or color is different from the saved color, update them
+      if (
+        domainColors.get(domain) !== groupInfo.color ||
+        (await browser.tabGroups.get(groupId)).title !== domain
+      ) {
+        await setGroupTitleAndColor({ groupId })
+      }
+    } catch (e) {
+      console.log("Error handling group title/color:", e)
+    }
+  } else {
+    console.log("tabGroups API not available in this browser version")
+  }
+}
 
 function extractDomain(url) {
   try {
     const hostname = new URL(url).hostname
     const parts = hostname.split(".")
+
+    if (groupBySubDomainEnabled) {
+      return hostname
+    }
+
     let domain = hostname
 
     if (parts.length >= 2) {
@@ -37,9 +101,10 @@ async function saveAutoGroupingState() {
   await browser.storage.local.set({
     autoGroupingEnabled,
     onlyApplyToNewTabsEnabled,
+    groupBySubDomainEnabled,
   })
   console.log(
-    `Auto-grouping state saved: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+    `Auto-grouping state saved: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}, group by subdomain: ${groupBySubDomainEnabled}`
   )
 }
 
@@ -48,15 +113,20 @@ async function loadAutoGroupingState() {
   const result = await browser.storage.local.get({
     autoGroupingEnabled: true,
     onlyApplyToNewTabsEnabled: false,
+    groupBySubDomainEnabled: true,
   })
 
   autoGroupingEnabled = result.autoGroupingEnabled
   onlyApplyToNewTabsEnabled = result.onlyApplyToNewTabsEnabled
+  groupBySubDomainEnabled = result.groupBySubDomainEnabled
+
+  // Load color mappings
+  await loadColorMappings()
 
   console.log(
-    `Auto-grouping state loaded: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+    `Auto-grouping state loaded: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}, group by subdomain: ${groupBySubDomainEnabled}`
   )
-  return { autoGroupingEnabled, onlyApplyToNewTabsEnabled }
+  return { autoGroupingEnabled, onlyApplyToNewTabsEnabled, groupBySubDomainEnabled }
 }
 
 // Initialize state when the extension loads
@@ -82,9 +152,6 @@ async function groupTabsByDomain() {
       const domain = extractDomain(tab.url)
       if (!domain) continue
 
-      // Update the domain tracking
-      tabDomains.set(tab.id, domain)
-
       // Add tab to domain group
       if (!domainTabsMap.has(domain)) {
         domainTabsMap.set(domain, [])
@@ -94,26 +161,36 @@ async function groupTabsByDomain() {
 
     // Create tab groups for each domain
     for (const [domain, tabIds] of domainTabsMap.entries()) {
-      if (tabIds.length === 0) continue
-
-      // Create a new group for these tabs
-      const groupId = await browser.tabs.group({ tabIds })
-
-      // Store the group ID for this domain
-      domainGroups.set(domain, groupId)
-
-      // TODO: Set the group title once the API supports it
-      // try {
-      //   await browser.tabGroups.update(groupId, { title: domain })
-      // } catch (e) {
-      //   console.log("Could not set group title, API may not support it yet:", e)
-      // }
+      await createGroup(domain, tabIds)
     }
 
-    console.log("Tab grouping complete. Domain groups:", [...domainGroups.entries()])
+    console.log("--------------------------------")
+    console.log("Tab grouping complete:")
+    console.log("Domain groups:", [...domainGroups.entries()])
+    console.log("Domain colors:", [...domainColors.entries()])
+    console.log("--------------------------------")
   } catch (error) {
     console.error("Error grouping tabs:", error)
   }
+}
+
+async function setGroupTitleAndColor({ groupId, domain }) {
+  if (!groupId) {
+    console.log("No groupId provided")
+    return
+  }
+
+  const groupInfo = await browser.tabGroups.get(groupId)
+  const updateProperties = {
+    title: domain ?? groupInfo.title,
+  }
+
+  // Only set color if we have a saved one for this domain
+  if (domain && domainColors.has(domain)) {
+    updateProperties.color = domainColors.get(domain)
+  }
+
+  await browser.tabGroups.update(groupId, updateProperties)
 }
 
 /**
@@ -141,37 +218,28 @@ async function ungroupAllTabs() {
 /**
  * Move a tab to the appropriate group based on its domain
  * @param {number} tabId - The ID of the tab to move
- * @param {boolean} isNewTab - Whether this is a newly created tab
  */
-async function moveTabToGroup(tabId, isNewTab = false) {
-  // Only proceed if auto-grouping is enabled
-  if (!autoGroupingEnabled) return
-
-  // If only applying to new tabs is enabled, skip unless this is a new tab
-  if (onlyApplyToNewTabsEnabled && !isNewTab) return
-
+async function moveTabToGroup(tabId) {
   try {
+    // Only proceed if auto-grouping is enabled
+    if (!autoGroupingEnabled) return
+
     const tab = await browser.tabs.get(tabId)
     if (!tab.url) return
 
     const domain = extractDomain(tab.url)
     if (!domain) return
 
-    // Update domain tracking
-    tabDomains.set(tabId, domain)
-
-    // Check if we have a group for this domain
+    // Check if we have an existing group for this domain
     if (domainGroups.has(domain)) {
       // Move tab to existing group
       await browser.tabs.group({
         tabIds: [tabId],
         groupId: domainGroups.get(domain),
       })
-    } else {
-      // Create a new group
-      const groupId = await browser.tabs.group({ tabIds: [tabId] })
-      domainGroups.set(domain, groupId)
+      return
     }
+    await createGroup(domain, [tabId])
   } catch (error) {
     console.error(`Error moving tab ${tabId} to group:`, error)
   }
@@ -202,7 +270,7 @@ function main() {
   // Listen for messages from popup
   browser.runtime.onMessage.addListener(async (msg) => {
     if (msg.action === "group") {
-      groupTabsByDomain()
+      await groupTabsByDomain()
       return Promise.resolve({ success: true })
     }
 
@@ -236,46 +304,49 @@ function main() {
       saveAutoGroupingState()
       return Promise.resolve({ enabled: onlyApplyToNewTabsEnabled })
     }
+
+    if (msg.action === "getGroupBySubDomain") {
+      return Promise.resolve({ enabled: groupBySubDomainEnabled })
+    }
+
+    if (msg.action === "toggleGroupBySubDomain") {
+      groupBySubDomainEnabled = msg.enabled
+      saveAutoGroupingState()
+
+      // Regroup all tabs when the setting changes
+      if (autoGroupingEnabled && !onlyApplyToNewTabsEnabled) {
+        // Clear existing groups first
+        await ungroupAllTabs()
+        // Then regroup with new settings
+        await groupTabsByDomain()
+      }
+
+      return Promise.resolve({ enabled: groupBySubDomainEnabled })
+    }
   })
 
   // Track domain changes when tabs are updated
   browser.tabs.onUpdated.addListener(
     (tabId, changeInfo, tab) => {
       if (changeInfo.url) {
-        const newDomain = extractDomain(changeInfo.url)
-        const oldDomain = tabDomains.get(tabId) || ""
-
-        // Only regroup if the domain has actually changed
-        if (newDomain !== oldDomain) {
-          console.log(`Tab ${tabId} domain changed: ${oldDomain} -> ${newDomain}`)
-          // Check if this is the first URL for this tab (meaning it's a new tab getting its first URL)
-          const isFirstUrl = !oldDomain
-          moveTabToGroup(tabId, isFirstUrl)
-        }
+        moveTabToGroup(tabId)
       }
     },
     { properties: ["url"] }
   )
 
   browser.tabs.onCreated.addListener((tab) => {
-    // When a tab is created, mark it as new by setting an empty domain
-    tabDomains.set(tab.id, "")
-
     // If it already has a URL (rare but possible), handle it immediately
     if (tab.url) {
       const domain = extractDomain(tab.url)
       if (domain) {
-        tabDomains.set(tab.id, domain)
-        moveTabToGroup(tab.id, true)
+        moveTabToGroup(tab.id)
       }
     }
   })
 
   // Clean up when tabs are removed
   browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
-    // Remove from domain tracking
-    tabDomains.delete(tabId)
-
     // Check if the tab's group is now empty
     if (removeInfo.groupId) {
       removeEmptyGroup(removeInfo.groupId)

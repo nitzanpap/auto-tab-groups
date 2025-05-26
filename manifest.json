@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
   "name": "Auto Tab Groups",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Automatically groups tabs by domain.",
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "tabGroups"],
   "browser_action": {
     "default_popup": "popup.html"
   },
