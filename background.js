@@ -7,11 +7,17 @@ const domainGroups = new Map()
 // Track if auto-grouping is enabled
 let autoGroupingEnabled = true
 let onlyApplyToNewTabsEnabled = false
+let groupBySubDomainEnabled = true
 
 function extractDomain(url) {
   try {
     const hostname = new URL(url).hostname
     const parts = hostname.split(".")
+
+    if (groupBySubDomainEnabled) {
+      return hostname
+    }
+
     let domain = hostname
 
     if (parts.length >= 2) {
@@ -37,9 +43,10 @@ async function saveAutoGroupingState() {
   await browser.storage.local.set({
     autoGroupingEnabled,
     onlyApplyToNewTabsEnabled,
+    groupBySubDomainEnabled,
   })
   console.log(
-    `Auto-grouping state saved: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+    `Auto-grouping state saved: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}, group by subdomain: ${groupBySubDomainEnabled}`
   )
 }
 
@@ -48,15 +55,17 @@ async function loadAutoGroupingState() {
   const result = await browser.storage.local.get({
     autoGroupingEnabled: true,
     onlyApplyToNewTabsEnabled: false,
+    groupBySubDomainEnabled: true,
   })
 
   autoGroupingEnabled = result.autoGroupingEnabled
   onlyApplyToNewTabsEnabled = result.onlyApplyToNewTabsEnabled
+  groupBySubDomainEnabled = result.groupBySubDomainEnabled
 
   console.log(
-    `Auto-grouping state loaded: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}`
+    `Auto-grouping state loaded: ${autoGroupingEnabled}, only new tabs: ${onlyApplyToNewTabsEnabled}, group by subdomain: ${groupBySubDomainEnabled}`
   )
-  return { autoGroupingEnabled, onlyApplyToNewTabsEnabled }
+  return { autoGroupingEnabled, onlyApplyToNewTabsEnabled, groupBySubDomainEnabled }
 }
 
 // Initialize state when the extension loads
@@ -235,6 +244,25 @@ function main() {
       onlyApplyToNewTabsEnabled = msg.enabled
       saveAutoGroupingState()
       return Promise.resolve({ enabled: onlyApplyToNewTabsEnabled })
+    }
+
+    if (msg.action === "getGroupBySubDomain") {
+      return Promise.resolve({ enabled: groupBySubDomainEnabled })
+    }
+
+    if (msg.action === "toggleGroupBySubDomain") {
+      groupBySubDomainEnabled = msg.enabled
+      saveAutoGroupingState()
+
+      // Regroup all tabs when the setting changes
+      if (autoGroupingEnabled && !onlyApplyToNewTabsEnabled) {
+        // Clear existing groups first
+        await ungroupAllTabs()
+        // Then regroup with new settings
+        await groupTabsByDomain()
+      }
+
+      return Promise.resolve({ enabled: groupBySubDomainEnabled })
     }
   })
 

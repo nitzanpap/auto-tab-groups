@@ -163,4 +163,44 @@ body {
     gap: 2px;
     width: 100%;
   }
+
+  .advanced-section {
+    width: 100%;
+  }
+
+  .advanced-toggle {
+    all: unset;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    cursor: pointer;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .advanced-toggle:hover {
+    color: #111827;
+  }
+
+  .advanced-toggle .arrow {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  .advanced-toggle.open .arrow {
+    transform: rotate(180deg);
+  }
+
+  .advanced-content {
+    display: none;
+    padding-top: 8px;
+  }
+
+  .advanced-content.open {
+    display: block;
+  }
   
