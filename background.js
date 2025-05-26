@@ -53,10 +53,7 @@ async function createGroup(domain, tabIds) {
       }
 
       // If the current group title or color is different from the saved color, update them
-      if (
-        domainColors.get(domain) !== groupInfo.color ||
-        (await browser.tabGroups.get(groupId)).title !== domain
-      ) {
+      if (domainColors.get(domain) !== groupInfo.color || groupInfo.title !== domain) {
         await setGroupTitleAndColor({ groupId })
       }
     } catch (e) {
