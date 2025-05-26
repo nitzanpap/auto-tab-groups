@@ -111,12 +111,16 @@ async function groupTabsByDomain() {
       // Store the group ID for this domain
       domainGroups.set(domain, groupId)
 
-      // TODO: Set the group title once the API supports it
-      // try {
-      //   await browser.tabGroups.update(groupId, { title: domain })
-      // } catch (e) {
-      //   console.log("Could not set group title, API may not support it yet:", e)
-      // }
+      // Set the group title if the API is available
+      if (browser.tabGroups) {
+        try {
+          await browser.tabGroups.update(groupId, { title: domain })
+        } catch (e) {
+          console.log("Error setting group title:", e)
+        }
+      } else {
+        console.log("tabGroups API not available in this browser version")
+      }
     }
 
     console.log("Tab grouping complete. Domain groups:", [...domainGroups.entries()])
