@@ -7,6 +7,12 @@
     user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
 }
 
+/* A class to make text selectable */
+.selectable {
+    -moz-user-select: text; /* Firefox */
+    user-select: text; /* Non-prefixed version, currently supported by Chrome and Opera */
+}
+
 body {
     font-family: "Inter", sans-serif;
     background: #ffffff;
@@ -228,5 +234,10 @@ body {
 
   .advanced-content.open {
     display: block;
+  }
+
+  .author {
+    color: #3b82f6;
+    text-decoration: dotted;
   }
   
