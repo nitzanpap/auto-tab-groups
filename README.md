@@ -3,6 +3,7 @@
 This is a lightweight Firefox extension that automatically groups open tabs by domain.
 
 > ⚠️ Requires **Firefox 138+** for `tabs.group()` support.
+> ⚠️ Requires **Firefox 139+** for title and color support.
 
 ---
 
@@ -11,13 +12,13 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 <!-- Allows grouping tabs by domain, auto-grouping -->
 
 - 🪄 Group tabs automatically by domain name.
+- 🎨 Consistent colors for each domain.
 - 🔄 Toggle auto-grouping (on/off).
 - 🔄 Toggle only applying to new tabs (on/off).
+- 🔄 Toggle grouping by subdomain (on/off).
 
 ## Planned Features
 
-- Add a name to the group (once the API supports it).
-- Consistently add colors to each group (once the API supports it).
 - Add a "Collapse/Expand All" button to collapse all groups (once the API supports it).
 
 Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30/webextensions-support-for-tab-groups/)
@@ -65,12 +66,8 @@ The extension uses the new [`browser.tabs.group()`](https://developer.mozilla.or
 ## 🧩 Ideas for Future Features
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)
-- Support multiple named snapshots
-- Automatically group new tabs on creation
-- Export/import snapshots
+- Save/Load window state, including tab groups, pinned tabs, and window position.
 - Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model)
-- Allow users to view & manage their tabs, groups, and tree via the extension popup (and maybe also add shortcuts)
-- Allow users to define their own rules for grouping tabs by.
 
 ---
 
