@@ -2,6 +2,9 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    /* This prevents text selection on ALL elements */
+    -moz-user-select: none; /* Firefox */
+    user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
 }
 
 body {
@@ -166,38 +169,61 @@ body {
 
   .advanced-section {
     width: 100%;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    margin-top: 4px;
   }
 
   .advanced-toggle {
-    all: unset;
+    /* all: unset; */
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 8px 4px;
     cursor: pointer;
     color: #4b5563;
     font-size: 14px;
     font-weight: 600;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
   }
 
   .advanced-toggle:hover {
     color: #111827;
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
   }
 
   .advanced-toggle .arrow {
-    font-size: 12px;
+    font-size: 10px;
     transition: transform 0.2s ease;
+    color: #6b7280;
+  }
+
+  .advanced-toggle.open {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #ffffff;
   }
 
   .advanced-toggle.open .arrow {
     transform: rotate(180deg);
+    color: #3b82f6;
   }
 
   .advanced-content {
     display: none;
-    padding-top: 8px;
+    width: 100%;
+    padding: 8px 4px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
   }
 
   .advanced-content.open {
