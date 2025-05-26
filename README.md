@@ -21,8 +21,6 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 - Add a "Collapse/Expand All" button to collapse all groups (once the API supports it).
 
-Pending on [the upcoming version 139](https://blog.mozilla.org/addons/2025/04/30/webextensions-support-for-tab-groups/)
-
 ---
 
 ## 📦 Project Structure
