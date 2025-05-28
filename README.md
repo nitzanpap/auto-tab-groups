@@ -13,7 +13,11 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
   - Automatically groups tabs by their domain
   - Smart domain name display (e.g., "github" instead of "www.github.com")
   - Special handling for IP addresses, localhost, and .local domains
-- 🎨 Consistent colors for each domain group
+- 🎨 Advanced color management:
+  - Consistent colors for each domain group
+  - Random color generation with one click
+  - Optional preservation of manually customized colors
+  - Remembers color preferences across browser sessions
 - 🔄 Real-time grouping:
   - Automatically handles new tabs and refreshed tabs
   - Maintains existing groups without duplicates
@@ -21,6 +25,7 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
   - Toggle auto-grouping (on/off)
   - Toggle only applying to new tabs (on/off)
   - Toggle grouping by subdomain (on/off)
+  - Toggle preservation of manual color choices (on/off)
 
 ## Planned Features
 
@@ -35,8 +40,10 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 - `background.js`: Main background script for managing tab groups
 - `services/`:
-  - `TabGroupService.js`: Core tab grouping logic
+  - `TabGroupService.js`: Core tab grouping logic and color management
   - `DomainUtils.js`: Domain name processing and formatting utilities
+- `state/`:
+  - `TabGroupState.js`: State management for settings and color preferences
 - `manifest.json`: Extension manifest file
 - `popup/`: UI components for extension controls
 
@@ -72,6 +79,22 @@ The extension works automatically in the background, grouping tabs by domain wit
 - Toggle automatic grouping
 - Configure grouping options
 - Manually trigger grouping for all tabs
+- Generate new random colors for groups
+- Access advanced settings:
+  - Group by subdomain
+  - Preserve manual color choices
+
+### Color Management
+
+The extension provides several ways to manage tab group colors:
+
+1. **Automatic Colors**: Each domain gets a consistent color by default
+2. **Manual Customization**:
+   - Right-click any tab group to change its color
+   - The extension can remember your custom color choices
+3. **Random Generation**:
+   - Click "Generate New Colors" to randomly assign new colors
+   - Use the "Preserve manual colors" setting to keep your custom choices when generating new colors
 
 ---
 
@@ -86,6 +109,13 @@ The extension works automatically in the background, grouping tabs by domain wit
   - Removes TLD (e.g., ".com", ".org")
   - Removes "www" subdomain when present
   - Special handling for IP addresses and local domains
+
+### Color Management
+
+- Uses Firefox's built-in tab group colors: blue, cyan, grey, green, orange, pink, purple, red, yellow
+- Tracks user-customized colors separately from automatically assigned ones
+- Provides options to preserve or regenerate colors as needed
+- Persists color preferences across browser sessions
 
 ## 📚 Resources
 
