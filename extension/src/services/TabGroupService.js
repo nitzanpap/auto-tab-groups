@@ -5,6 +5,7 @@
 import {tabGroupState} from '../state/TabGroupState.js';
 import {extractDomain, getDomainDisplayName} from '../utils/DomainUtils.js';
 import {storageManager} from '../config/StorageManager.js';
+import {groupTabsWithAI, checkAIQuota, isAIServiceAvailable} from './AITabGroupingService.js';
 
 class TabGroupService {
   /**
@@ -418,6 +419,86 @@ class TabGroupService {
         '[getGroupsCollapseState] Error getting groups state:',
         error,
       );
+      return false;
+    }
+  }
+
+  /**
+   * Groups tabs using AI instead of domain-based grouping
+   * @returns {Promise<boolean>} Success status
+   */
+  async groupTabsUsingAI() {
+    try {
+      // First check if the AI service is available
+      const isAvailable = await isAIServiceAvailable();
+      if (!isAvailable) {
+        console.warn('[groupTabsUsingAI] AI service is not available. Check if the server is running.');
+        return false;
+      }
+      
+      // Get user ID from storage (if available)
+      const userId = await storageManager.get('userId') || '';
+      
+      // Check if user has remaining quota
+      const hasQuota = await checkAIQuota(userId);
+      if (!hasQuota) {
+        console.warn('[groupTabsUsingAI] User has no remaining AI quota');
+        // You might want to show a notification to the user here
+        return false;
+      }
+      
+      // Get all ungrouped tabs in the current window
+      const currentWindow = await browser.windows.getCurrent();
+      const ungroupedTabs = await browser.tabs.query({
+        windowId: currentWindow.id,
+        groupId: browser.tabs.TAB_GROUP_ID_NONE,
+      });
+      
+      if (ungroupedTabs.length === 0) {
+        console.log('[groupTabsUsingAI] No ungrouped tabs to process');
+        return true;
+      }
+      
+      console.log('[groupTabsUsingAI] Sending tabs to AI for grouping:', ungroupedTabs);
+      
+      // Call the AI service to get grouping suggestions
+      const result = await groupTabsWithAI(ungroupedTabs, userId);
+      
+      console.log('[groupTabsUsingAI] AI grouping result:', result);
+      
+      // Process each suggested group
+      for (const group of result.groups) {
+        // Filter out any invalid tab IDs
+        const validTabIds = group.tab_ids.filter(id => 
+          ungroupedTabs.some(tab => tab.id === id)
+        );
+        
+        if (validTabIds.length === 0) continue;
+        
+        // Create a new group with the suggested name
+        const groupId = await browser.tabs.group({ tabIds: validTabIds });
+        
+        // Set the group title to the AI-suggested name
+        if (browser.tabGroups) {
+          await browser.tabGroups.update(groupId, { title: group.group_name });
+          
+          // Assign a color based on the group name
+          // This reuses our existing color assignment logic
+          await this.handleGroupColorAssignment(groupId, group.group_name);
+        }
+      }
+      
+      // Update usage info in storage
+      const currentAiUsage = await storageManager.get('aiUsage', {});
+      await storageManager.set('aiUsage', {
+        tokensUsed: (currentAiUsage?.tokensUsed || 0) + result.usage.tokens_used,
+        tokensRemaining: result.usage.tokens_remaining,
+        lastUsed: new Date().toISOString()
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('[groupTabsUsingAI] Error grouping tabs with AI:', error);
       return false;
     }
   }

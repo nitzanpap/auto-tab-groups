@@ -23,6 +23,25 @@ browser.runtime.onMessage.addListener(async msg => {
     case 'generateNewColors':
       await tabGroupService.generateNewColors();
       return {success: true};
+      
+    case 'groupWithAI':
+      try {
+        const success = await tabGroupService.groupTabsUsingAI();
+        if (success) {
+          return {success: true};
+        } else {
+          return {
+            success: false, 
+            error: 'AI grouping failed. Check console for details.'
+          };
+        }
+      } catch (error) {
+        console.error('[background] AI grouping error:', error);
+        return {
+          success: false,
+          error: error.message || 'AI grouping failed'
+        };
+      }
 
     case 'toggleCollapse':
       await tabGroupService.toggleAllGroupsCollapse(msg.collapse);

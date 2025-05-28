@@ -37,6 +37,38 @@ class StorageManager {
       return null;
     }
   }
+
+  /**
+   * Gets a value from browser storage
+   * @param {string} key - The key to get
+   * @param {any} defaultValue - Default value if key doesn't exist
+   * @returns {Promise<any>} The value from storage or default
+   */
+  async get(key, defaultValue = null) {
+    try {
+      const result = await browser.storage.local.get(key);
+      return result[key] !== undefined ? result[key] : defaultValue;
+    } catch (error) {
+      console.error(`Error getting ${key} from storage:`, error);
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Sets a value in browser storage
+   * @param {string} key - The key to set
+   * @param {any} value - The value to store
+   * @returns {Promise<boolean>} Success status
+   */
+  async set(key, value) {
+    try {
+      await browser.storage.local.set({ [key]: value });
+      return true;
+    } catch (error) {
+      console.error(`Error setting ${key} in storage:`, error);
+      return false;
+    }
+  }
 }
 
 export const storageManager = new StorageManager();

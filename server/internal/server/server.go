@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"server/internal/ai"
 	"server/internal/database"
 )
 
@@ -16,6 +17,7 @@ type Server struct {
 	port int
 
 	db database.Service
+	ai ai.Service
 }
 
 func NewServer() *http.Server {
@@ -24,6 +26,7 @@ func NewServer() *http.Server {
 		port: port,
 
 		db: database.New(),
+		ai: ai.New(),
 	}
 
 	// Declare Server config

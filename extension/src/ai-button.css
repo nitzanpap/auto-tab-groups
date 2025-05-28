@@ -1,0 +1,24 @@
+/* Special style for the AI grouping button */
+#groupWithAI {
+  /* Create a subtle AI-themed gradient with blues and purples */
+  background: linear-gradient(135deg, #4c35ff, #0072ff);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+#groupWithAI:hover {
+  background: linear-gradient(135deg, #5d46ff, #1e84ff);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+#groupWithAI:disabled {
+  background: #cccccc;
+  color: #888888;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

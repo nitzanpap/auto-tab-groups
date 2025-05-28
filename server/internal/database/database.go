@@ -39,10 +39,23 @@ var (
 )
 
 func New() Service {
+	// Check if we're in development mode with no DB
+	devMode := os.Getenv("DEV_MODE") == "true"
+
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
+
+	// In dev mode with no DB, return a mock implementation
+	if devMode {
+		log.Println("Running in development mode with mock database")
+		dbInstance = &service{
+			db: nil,
+		}
+		return dbInstance
+	}
+
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, port, database, schema)
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
@@ -57,17 +70,24 @@ func New() Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health() map[string]string {
+	stats := make(map[string]string)
+
+	// If running in dev mode without a DB
+	if s.db == nil {
+		stats["status"] = "mock"
+		stats["message"] = "Running with mock database in development mode"
+		return stats
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-
-	stats := make(map[string]string)
 
 	// Ping the database
 	err := s.db.PingContext(ctx)
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf("db down: %v", err) // Log the error and terminate the program
+		log.Printf("db down: %v", err) // Changed from Fatal to Printf to avoid termination
 		return stats
 	}
 
@@ -110,6 +130,9 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
+	if s.db == nil {
+		return nil
+	}
 	log.Printf("Disconnected from database: %s", database)
 	return s.db.Close()
 }

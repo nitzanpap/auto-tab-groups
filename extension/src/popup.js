@@ -1,5 +1,6 @@
 const groupButton = document.getElementById('group');
 const ungroupButton = document.getElementById('ungroup');
+const groupWithAIButton = document.getElementById('groupWithAI');
 const generateNewColorsButton = document.getElementById('generateNewColors');
 const collapseOrExpandAllText = document.getElementById(
   'collapseOrExpandAllText',
@@ -36,6 +37,39 @@ ungroupButton.addEventListener('click', () => {
 
 generateNewColorsButton.addEventListener('click', () => {
   browser.runtime.sendMessage({action: 'generateNewColors'});
+});
+
+groupWithAIButton.addEventListener('click', async () => {
+  try {
+    // Show loading state
+    groupWithAIButton.textContent = '🔄 Processing...';
+    groupWithAIButton.disabled = true;
+    
+    // Call the background script to group tabs using AI
+    const response = await browser.runtime.sendMessage({action: 'groupWithAI'});
+    
+    // Handle the response
+    if (response.success) {
+      groupWithAIButton.textContent = '✅ Success!';
+      setTimeout(() => {
+        groupWithAIButton.textContent = '🤖 Group with AI';
+        groupWithAIButton.disabled = false;
+      }, 2000);
+    } else {
+      groupWithAIButton.textContent = response.error || '❌ Failed';
+      setTimeout(() => {
+        groupWithAIButton.textContent = '🤖 Group with AI';
+        groupWithAIButton.disabled = false;
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error calling AI grouping:', error);
+    groupWithAIButton.textContent = '❌ Error';
+    setTimeout(() => {
+      groupWithAIButton.textContent = '🤖 Group with AI';
+      groupWithAIButton.disabled = false;
+    }, 2000);
+  }
 });
 
 toggleCollapse.addEventListener('click', async () => {

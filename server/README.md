@@ -4,7 +4,7 @@ This is the server for the auto-tab-groups project.
 
 ## Features
 
-- AI-powered tab grouping functionality (using OpenAI API). See [this feature's PRD](../docs/AI-powered-tabs/PRD.md).
+- AI-powered tab grouping functionality (using OpenAI API). See [this feature's documentation](../docs/AI-Grouping-API.md).
 
 ## Tech Stack
 
@@ -12,6 +12,7 @@ This is the server for the auto-tab-groups project.
 - [Gin](https://github.com/gin-gonic/gin)
 - [PostgreSQL](https://www.postgresql.org/download/)
 - [Docker](https://docs.docker.com/get-docker/)
+- [OpenAI API](https://platform.openai.com/) - for AI-driven tab grouping
 
 ## Getting Started
 
@@ -25,6 +26,17 @@ These instructions will get you a copy of the project up and running on your loc
 ### Installation
 
 1. Clone the repository
+2. Copy `.env.example` to `.env` and update the values
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Set your OpenAI API key in the `.env` file:
+
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
 
 ## MakeFile
 
