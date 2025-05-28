@@ -2,168 +2,124 @@ package ai
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"errors"
+	"log"
 	"os"
 	"sync"
-
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 )
 
-// Service represents the AI service interface
+// Service defines the interface for the AI service
 type Service interface {
-	// GroupTabs groups tabs using AI and returns suggested groupings
+	// GroupTabs groups tabs based on their content using AI
 	GroupTabs(ctx context.Context, req GroupTabsRequest) (GroupTabsResponse, error)
 
-	// CheckQuota checks if a user has enough tokens
+	// CheckQuota checks if a user has sufficient quota for AI operations
 	CheckQuota(userID string) (int, bool)
 
-	// UpdateQuota updates a user's token quota
+	// UpdateQuota updates a user's quota after an AI operation
 	UpdateQuota(userID string, tokensUsed int) (int, error)
 }
 
-// service implements the Service interface
+// service is the implementation of the AI Service
 type service struct {
-	client     openai.Client
-	quotaLock  sync.RWMutex
-	userQuotas map[string]int
+	// OpenAI client for making API calls
+	openAI OpenAIClient
+
+	// In-memory quota store (for development/testing)
+	// In production, this would be stored in a database
+	quotaMu sync.RWMutex
+	quotas  map[string]int
+
+	// Default tokens for new users
+	defaultTokens int
 }
 
-// Default token quotas
-const (
-	DefaultFreeQuota = 10
-)
-
-// New creates a new AI service
+// New creates a new instance of the AI service
 func New() Service {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		panic("OPENAI_API_KEY environment variable is required")
+	// Initialize the OpenAI client
+	openAIKey := os.Getenv("OPENAI_API_KEY")
+	if openAIKey == "" {
+		log.Println("WARNING: OPENAI_API_KEY not set, AI grouping will not work")
 	}
 
-	client := openai.NewClient(
-		option.WithAPIKey(apiKey),
-	)
+	// Default tokens for free users
+	defaultTokens := 10
 
 	return &service{
-		client:     client,
-		userQuotas: make(map[string]int),
+		openAI:        NewOpenAIClient(openAIKey),
+		quotas:        make(map[string]int),
+		defaultTokens: defaultTokens,
 	}
 }
 
-// GroupTabs groups tabs using AI and returns suggested groupings
+// GroupTabs groups tabs based on their content using AI
 func (s *service) GroupTabs(ctx context.Context, req GroupTabsRequest) (GroupTabsResponse, error) {
-	// Prepare the tabs data for the AI prompt
-	tabsData, err := json.Marshal(req.Tabs)
+	// Check if user has quota
+	_, hasQuota := s.CheckQuota(req.UserID)
+	if !hasQuota {
+		return GroupTabsResponse{}, errors.New("insufficient quota")
+	}
+
+	// Use OpenAI to group the tabs
+	groups, tokensUsed, err := s.openAI.GroupTabs(ctx, req.Tabs)
 	if err != nil {
-		return GroupTabsResponse{}, fmt.Errorf("error marshaling tabs data: %w", err)
+		return GroupTabsResponse{}, err
 	}
 
-	// Construct the prompt for OpenAI
-	prompt := fmt.Sprintf(`You are a browser tab organizer. Your task is to group the following browser tabs into logical categories.
-
-Tab data: %s
-
-Output ONLY valid JSON that follows this exact format:
-{
-  "groups": [
-    {
-      "group_name": "Category Name",
-      "tab_ids": [tab_id_1, tab_id_2, ...]
-    },
-    ...
-  ]
-}
-
-Rules:
-1. Each tab should be assigned to exactly one group
-2. Create meaningful group names based on tab content/URLs
-3. Use 2-5 groups depending on tab similarity
-4. Do not include any explanation or text outside of the JSON`,
-		string(tabsData))
-
-	// Make the API call to OpenAI
-	chatCompletion, err := s.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(prompt),
-		},
-		Model: openai.ChatModelGPT4o,
-	})
+	// Update user's quota
+	remainingTokens, err := s.UpdateQuota(req.UserID, tokensUsed)
 	if err != nil {
-		return GroupTabsResponse{}, fmt.Errorf("error calling OpenAI API: %w", err)
-	}
-
-	// Extract the response content
-	content := chatCompletion.Choices[0].Message.Content
-
-	// Parse the JSON response from OpenAI
-	var result struct {
-		Groups []TabGroup `json:"groups"`
-	}
-	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return GroupTabsResponse{}, fmt.Errorf("error parsing OpenAI response: %w", err)
-	}
-
-	// Update the user's quota
-	tokensUsed := 1 // For simplicity, we count each request as 1 token
-	tokensRemaining, err := s.UpdateQuota(req.UserID, tokensUsed)
-	if err != nil {
-		return GroupTabsResponse{}, fmt.Errorf("error updating quota: %w", err)
+		log.Printf("Error updating quota for user %s: %v", req.UserID, err)
+		// Continue anyway, don't fail the request
 	}
 
 	// Return the response
 	return GroupTabsResponse{
-		Groups: result.Groups,
+		Groups: groups,
 		Usage: UsageInfo{
 			TokensUsed:      tokensUsed,
-			TokensRemaining: tokensRemaining,
+			TokensRemaining: remainingTokens,
 		},
 	}, nil
 }
 
-// CheckQuota checks if a user has enough tokens
+// CheckQuota checks if a user has sufficient quota for AI operations
 func (s *service) CheckQuota(userID string) (int, bool) {
-	// If no user ID is provided, use a default quota for anonymous users
-	if userID == "" {
-		return DefaultFreeQuota, true
-	}
+	s.quotaMu.RLock()
+	defer s.quotaMu.RUnlock()
 
-	s.quotaLock.RLock()
-	defer s.quotaLock.RUnlock()
-
-	// Get the user's remaining tokens, default to DefaultFreeQuota if not found
-	remainingTokens, exists := s.userQuotas[userID]
+	// If user doesn't exist in the quota map, initialize with default tokens
+	tokens, exists := s.quotas[userID]
 	if !exists {
-		remainingTokens = DefaultFreeQuota
+		s.quotaMu.RUnlock()
+		s.quotaMu.Lock()
+		// Double-check after acquiring write lock
+		if _, exists = s.quotas[userID]; !exists {
+			s.quotas[userID] = s.defaultTokens
+			tokens = s.defaultTokens
+		}
+		s.quotaMu.Unlock()
+		s.quotaMu.RLock()
 	}
 
-	// Check if the user has enough tokens
-	return remainingTokens, remainingTokens > 0
+	return tokens, tokens > 0
 }
 
-// UpdateQuota updates a user's token quota
+// UpdateQuota updates a user's quota after an AI operation
 func (s *service) UpdateQuota(userID string, tokensUsed int) (int, error) {
-	// If no user ID is provided, don't update any quota
-	if userID == "" {
-		return DefaultFreeQuota - tokensUsed, nil
+	s.quotaMu.Lock()
+	defer s.quotaMu.Unlock()
+
+	// If user doesn't exist, initialize with default tokens
+	if _, exists := s.quotas[userID]; !exists {
+		s.quotas[userID] = s.defaultTokens
 	}
 
-	s.quotaLock.Lock()
-	defer s.quotaLock.Unlock()
-
-	// Get the current quota, default to DefaultFreeQuota if not found
-	currentQuota, exists := s.userQuotas[userID]
-	if !exists {
-		currentQuota = DefaultFreeQuota
+	// Decrement tokens
+	if s.quotas[userID] < tokensUsed {
+		return 0, errors.New("insufficient tokens")
 	}
 
-	// Update the quota
-	remainingTokens := currentQuota - tokensUsed
-	if remainingTokens < 0 {
-		remainingTokens = 0
-	}
-	s.userQuotas[userID] = remainingTokens
-
-	return remainingTokens, nil
+	s.quotas[userID] -= tokensUsed
+	return s.quotas[userID], nil
 }

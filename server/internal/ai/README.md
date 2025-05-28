@@ -24,7 +24,7 @@ The AI tab grouping feature consists of:
 - OpenAI API key (set in `.env` file)
 - Environment variables:
 
-  ```
+  ```sh
   OPENAI_API_KEY=your_openai_api_key_here
   ```
 

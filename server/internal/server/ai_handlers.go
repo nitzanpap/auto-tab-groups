@@ -21,11 +21,15 @@ func (s *Server) GroupTabsAIHandler(c *gin.Context) {
 		return
 	}
 
+	// Log the request for debugging
+	tabCount := len(req.Tabs)
+	log.Printf("Received request to group %d tabs", tabCount)
+
 	// Check if the user has sufficient quota
 	remainingTokens, hasQuota := s.ai.CheckQuota(req.UserID)
 
 	// Print remaining tokens for debugging
-	log.Println("User %s has %d tokens remaining", req.UserID, remainingTokens)
+	log.Printf("User '%s' has %d tokens remaining", req.UserID, remainingTokens)
 	if !hasQuota {
 		c.JSON(http.StatusPaymentRequired, ai.ErrorResponse{
 			Error:       "Quota exceeded",
@@ -37,12 +41,16 @@ func (s *Server) GroupTabsAIHandler(c *gin.Context) {
 	// Process the grouping request
 	resp, err := s.ai.GroupTabs(c.Request.Context(), req)
 	if err != nil {
+		log.Printf("Error processing tab grouping request: %v", err)
 		c.JSON(http.StatusInternalServerError, ai.ErrorResponse{
 			Error:       "Processing error",
 			Description: err.Error(),
 		})
 		return
 	}
+
+	// Log successful grouping
+	log.Printf("Successfully grouped tabs into %d groups", len(resp.Groups))
 
 	c.JSON(http.StatusOK, resp)
 }

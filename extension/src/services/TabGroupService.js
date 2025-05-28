@@ -97,22 +97,62 @@ class TabGroupService {
   /**
    * Handles color assignment for a new group
    * @param {number} groupId
-   * @param {string} domain
+   * @param {string} name - The domain or group name
    */
-  async handleGroupColorAssignment(groupId, domain) {
+  async handleGroupColorAssignment(groupId, name) {
     try {
       const groupInfo = await browser.tabGroups.get(groupId);
-      if (!tabGroupState.getColor(domain)) {
-        tabGroupState.setColor(domain, groupInfo.color);
+      
+      // For AI-generated group names that aren't domains
+      const isDomainName = name.includes('.') && !name.includes(' ');
+      
+      if (!tabGroupState.getColor(name)) {
+        // For AI groups, generate a more consistent color based on the name
+        if (!isDomainName) {
+          // We'll pick a color based on the first character of the name
+          const colors = [
+            'blue',
+            'cyan',
+            'green',
+            'grey',
+            'orange',
+            'pink',
+            'purple',
+            'red',
+            'yellow',
+          ];
+          
+          // Simple hash function to get a consistent color for the same name
+          const nameHash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const colorIndex = nameHash % colors.length;
+          const color = colors[colorIndex];
+          
+          // Set the color in state
+          tabGroupState.setColor(name, color);
+          await browser.tabGroups.update(groupId, { color });
+        } else {
+          // For domains, use the existing color logic
+          tabGroupState.setColor(name, groupInfo.color);
+        }
         await storageManager.saveState();
       }
 
-      const displayName = getDomainDisplayName(domain);
-      if (
-        tabGroupState.getColor(domain) !== groupInfo.color ||
-        groupInfo.title !== displayName
-      ) {
-        await this.setGroupTitleAndColor(groupId, domain);
+      // For domains, also set the display name
+      if (isDomainName) {
+        const displayName = getDomainDisplayName(name);
+        if (
+          tabGroupState.getColor(name) !== groupInfo.color ||
+          groupInfo.title !== displayName
+        ) {
+          await this.setGroupTitleAndColor(groupId, name);
+        }
+      } else {
+        // For AI groups, just set the color if it's different
+        if (tabGroupState.getColor(name) !== groupInfo.color) {
+          await browser.tabGroups.update(groupId, {
+            color: tabGroupState.getColor(name),
+          });
+        }
       }
     } catch (error) {
       console.error('Error handling group color assignment:', error);
