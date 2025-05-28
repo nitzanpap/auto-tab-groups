@@ -3,7 +3,7 @@
  */
 
 import {tabGroupState} from '../state/TabGroupState.js';
-import {extractDomain} from '../utils/DomainUtils.js';
+import {extractDomain, getDomainDisplayName} from '../utils/DomainUtils.js';
 import {storageManager} from '../config/StorageManager.js';
 
 class TabGroupService {
@@ -68,12 +68,13 @@ class TabGroupService {
     if (!groupId) return;
 
     try {
+      const displayName = getDomainDisplayName(domain);
       console.log(
-        `[setGroupTitleAndColor] Setting title "${domain}" for group ${groupId}`,
+        `[setGroupTitleAndColor] Setting title "${displayName}" for group ${groupId}`,
       );
       const groupInfo = await browser.tabGroups.get(groupId);
       const updateProperties = {
-        title: domain ?? groupInfo.title,
+        title: displayName ?? groupInfo.title,
       };
 
       if (domain && tabGroupState.getColor(domain)) {
@@ -105,9 +106,10 @@ class TabGroupService {
         await storageManager.saveState();
       }
 
+      const displayName = getDomainDisplayName(domain);
       if (
         tabGroupState.getColor(domain) !== groupInfo.color ||
-        groupInfo.title !== domain
+        groupInfo.title !== displayName
       ) {
         await this.setGroupTitleAndColor(groupId, domain);
       }

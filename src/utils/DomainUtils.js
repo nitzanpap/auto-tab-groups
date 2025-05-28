@@ -3,47 +3,65 @@
  */
 
 /**
- * Extracts the domain from a URL based on configuration
- * @param {string} url - The URL to extract domain from
- * @param {boolean} includeSubDomains - Whether to include subdomains
- * @returns {string} The extracted domain
+ * Extracts the domain from a URL
+ * @param {string} url The URL to extract domain from
+ * @param {boolean} includeSubDomain Whether to include the subdomain
+ * @returns {string|null} The extracted domain or null if invalid
  */
-export function extractDomain(url, includeSubDomains = false) {
+export function extractDomain(url, includeSubDomain = false) {
   try {
-    const hostname = new URL(url).hostname;
-    const parts = hostname.split('.');
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
 
-    if (includeSubDomains) {
+    // Skip IP addresses and localhost
+    if (
+      /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) ||
+      hostname === 'localhost' ||
+      hostname.endsWith('.local')
+    ) {
+      return null;
+    }
+
+    if (includeSubDomain) {
       return hostname;
     }
 
-    let domain = hostname;
-
-    if (parts.length >= 2) {
-      // Get the base domain (last two parts)
-      domain = parts.slice(-2).join('.');
-
-      // Special case for country-specific TLDs like .co.uk, .com.au
-      const secondLevelDomains = [
-        'co',
-        'com',
-        'org',
-        'net',
-        'ac',
-        'gov',
-        'edu',
-      ];
-      if (
-        parts.length >= 3 &&
-        secondLevelDomains.includes(parts[parts.length - 2])
-      ) {
-        domain = parts.slice(-3).join('.');
-      }
+    const parts = hostname.split('.');
+    if (parts.length <= 2) {
+      return hostname;
     }
 
-    return domain;
+    return parts.slice(-2).join('.');
   } catch (e) {
-    console.error('Error extracting domain:', e);
-    return '';
+    return null;
   }
+}
+
+/**
+ * Gets a display name for a domain by removing the TLD
+ * @param {string} domain The domain to get display name for
+ * @returns {string} The display name
+ */
+export function getDomainDisplayName(domain) {
+  if (!domain) return '';
+
+  // Handle IP addresses, localhost, and .local domains
+  if (
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(domain) ||
+    domain === 'localhost' ||
+    domain.endsWith('.local')
+  ) {
+    return domain;
+  }
+
+  const parts = domain.split('.');
+  // Remove the last part (TLD)
+  const displayParts = parts.slice(0, -1);
+
+  // Remove 'www' if it's the first part
+  if (displayParts[0] === 'www') {
+    displayParts.shift();
+  }
+
+  return displayParts.join('.');
 }
