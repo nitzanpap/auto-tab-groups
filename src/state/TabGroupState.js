@@ -7,7 +7,7 @@ class TabGroupState {
     this.domainColors = new Map();
     this.autoGroupingEnabled = true;
     this.onlyApplyToNewTabsEnabled = false;
-    this.groupBySubDomainEnabled = false;
+    this.groupBySubDomainEnabled = true;
   }
 
   /**
