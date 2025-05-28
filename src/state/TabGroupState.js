@@ -4,37 +4,10 @@
 
 class TabGroupState {
   constructor() {
-    this.domainGroups = new Map();
     this.domainColors = new Map();
     this.autoGroupingEnabled = true;
     this.onlyApplyToNewTabsEnabled = false;
     this.groupBySubDomainEnabled = false;
-  }
-
-  /**
-   * Gets the group ID for a domain
-   * @param {string} domain
-   * @returns {number|undefined}
-   */
-  getGroupId(domain) {
-    return this.domainGroups.get(domain);
-  }
-
-  /**
-   * Sets the group ID for a domain
-   * @param {string} domain
-   * @param {number} groupId
-   */
-  setGroupId(domain, groupId) {
-    this.domainGroups.set(domain, groupId);
-  }
-
-  /**
-   * Removes a domain's group mapping
-   * @param {string} domain
-   */
-  removeDomain(domain) {
-    this.domainGroups.delete(domain);
   }
 
   /**
@@ -53,21 +26,6 @@ class TabGroupState {
    */
   setColor(domain, color) {
     this.domainColors.set(domain, color);
-  }
-
-  /**
-   * Clears all group mappings
-   */
-  clearGroups() {
-    this.domainGroups.clear();
-  }
-
-  /**
-   * Gets all domain to group mappings
-   * @returns {Array} Array of [domain, groupId] pairs
-   */
-  getDomainGroups() {
-    return [...this.domainGroups.entries()];
   }
 
   /**

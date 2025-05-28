@@ -24,7 +24,6 @@ class TabGroupService {
       console.log(
         `[createGroup] Created group with ID ${groupId} for domain "${domain}"`,
       );
-      tabGroupState.setGroupId(domain, groupId);
 
       if (browser.tabGroups) {
         await this.setGroupTitleAndColor(groupId, domain);
@@ -126,19 +125,36 @@ class TabGroupService {
         Object.fromEntries(domainTabsMap),
       );
 
-      // Create tab groups for each domain
+      // Get existing groups
+      const existingGroups = await browser.tabGroups.query({
+        windowId: tabs[0].windowId,
+      });
+      console.log('[groupTabsByDomain] Existing groups:', existingGroups);
+
+      // Process each domain
       for (const [domain, tabIds] of domainTabsMap.entries()) {
-        console.log(
-          `[groupTabsByDomain] Creating/updating group for domain "${domain}" with tabs:`,
-          tabIds,
+        const existingGroup = existingGroups.find(
+          group => group.title === domain,
         );
-        await this.createGroup(domain, tabIds);
+        if (existingGroup) {
+          console.log(
+            `[groupTabsByDomain] Adding tabs to existing group for "${domain}":`,
+            tabIds,
+          );
+          await browser.tabs.group({
+            tabIds,
+            groupId: existingGroup.id,
+          });
+        } else {
+          console.log(
+            `[groupTabsByDomain] Creating new group for "${domain}":`,
+            tabIds,
+          );
+          await this.createGroup(domain, tabIds);
+        }
       }
 
-      console.log('[groupTabsByDomain] Tab grouping complete:', {
-        domainGroups: tabGroupState.getDomainGroups(),
-        domainColors: tabGroupState.getDomainColors(),
-      });
+      console.log('[groupTabsByDomain] Tab grouping complete');
     } catch (error) {
       console.error('[groupTabsByDomain] Error grouping tabs:', error);
     }
@@ -157,8 +173,6 @@ class TabGroupService {
           console.error(`Error ungrouping tab ${tab.id}:`, error);
         }
       }
-
-      tabGroupState.clearGroups();
       console.log('All tabs ungrouped');
     } catch (error) {
       console.error('Error ungrouping tabs:', error);
@@ -186,60 +200,23 @@ class TabGroupService {
         `[moveTabToGroup] Processing tab ${tabId} with URL "${tab.url}" and domain "${domain}"`,
       );
 
-      // First check our stored mapping
-      const existingGroupId = tabGroupState.getGroupId(domain);
-      console.log(
-        `[moveTabToGroup] Stored group ID for domain "${domain}":`,
-        existingGroupId,
-      );
-      let targetGroupId = null;
+      // Simply look for an existing group with this domain as its title
+      const groups = await browser.tabGroups.query({windowId: tab.windowId});
+      console.log(`[moveTabToGroup] Existing groups in window:`, groups);
+      const matchingGroup = groups.find(group => group.title === domain);
 
-      // If we have a stored group ID, verify it still exists
-      if (existingGroupId) {
-        const group = await browser.tabGroups.get(existingGroupId);
-        if (group) {
-          console.log(`[moveTabToGroup] Found existing group:`, group);
-          targetGroupId = existingGroupId;
-        } else {
-          console.log(
-            `[moveTabToGroup] Stored group ${existingGroupId} no longer exists, removing from state`,
-          );
-          tabGroupState.removeDomain(domain);
-          await storageManager.saveState();
-        }
-      }
-
-      // If we don't have a valid stored group, look for an existing group with matching title
-      if (!targetGroupId) {
-        const groups = await browser.tabGroups.query({windowId: tab.windowId});
+      if (matchingGroup) {
         console.log(
-          `[moveTabToGroup] Searching among existing groups:`,
-          groups,
-        );
-        const matchingGroup = groups.find(group => group.title === domain);
-        if (matchingGroup) {
-          targetGroupId = matchingGroup.id;
-          console.log(
-            `[moveTabToGroup] Found matching group by title:`,
-            matchingGroup,
-          );
-          // Update our state with the found group
-          tabGroupState.setGroupId(domain, targetGroupId);
-          await storageManager.saveState();
-        }
-      }
-
-      if (targetGroupId) {
-        console.log(
-          `[moveTabToGroup] Moving tab ${tabId} to existing group ${targetGroupId}`,
+          `[moveTabToGroup] Found existing group for "${domain}":`,
+          matchingGroup,
         );
         await browser.tabs.group({
           tabIds: [tabId],
-          groupId: targetGroupId,
+          groupId: matchingGroup.id,
         });
       } else {
         console.log(
-          `[moveTabToGroup] No existing group found, creating new group for tab ${tabId}`,
+          `[moveTabToGroup] Creating new group for "${domain}" with tab ${tabId}`,
         );
         await this.createGroup(domain, [tabId]);
       }
@@ -256,16 +233,13 @@ class TabGroupService {
     try {
       const tabs = await browser.tabs.query({groupId});
       if (tabs.length === 0) {
-        const domainGroups = tabGroupState.getDomainGroups();
-        for (const [domain, id] of domainGroups) {
-          if (id === groupId) {
-            tabGroupState.removeDomain(domain);
-            break;
-          }
-        }
+        console.log(`[removeEmptyGroup] Removing empty group ${groupId}`);
       }
     } catch (error) {
-      console.error(`Error checking empty group ${groupId}:`, error);
+      console.error(
+        `[removeEmptyGroup] Error checking empty group ${groupId}:`,
+        error,
+      );
     }
   }
 }
