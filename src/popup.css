@@ -5,6 +5,15 @@
     /* This prevents text selection on ALL elements */
     -moz-user-select: none; /* Firefox */
     user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
+    /* CSS Variables */
+    --gradient-color-1: #5d00ff;
+    --gradient-color-2: #ff0090;
+    --gradient-color-3: #ff0054;
+    --gradient-color-4: #ff5400;
+    --gradient-color-5: #ff9900;
+
+    --primary-color: #2a6cfb;
+    --primary-color-darker: #1d4ed8;
 }
 
 /* A class to make text selectable */
@@ -51,26 +60,30 @@ body {
     width: 100%;
     box-sizing: border-box;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-position 0.25s ease-in-out, transform 0.1s ease-in-out, background-color 0.2s ease;
     white-space: nowrap;
+    background-position: 0 0;
   }
 
   .button:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background-position: 100% 0;
+  }
+
+  .button:active {
+    background-position: 200% 0;
+    transform: scale(0.95);
   }
   
   .primaryButton {
-    background-color: #3b82f6;
+    background: var(--primary-color);
+    background-size: 200% 100%;
     color: white;
   }
-  
+
   .primaryButton:hover {
-    background-color: #2563eb;
-  }
-  
-  .primaryButton:active {
-    background-color: #1d4ed8;
-    transform: scale(0.98);
+    background-position: 100% 0;
+    background-color: var(--primary-color-darker);
   }
   
   .secondaryButton {
@@ -87,20 +100,14 @@ body {
   }
 
   .gradientButton {
+    
     /* Colorful gradient of blue to purple to red to orange to yellow */
-    background: linear-gradient(to right, #3b82f6, #9c25eb, #eb254c, #eb7725, #ebfb25);
+    background: repeating-linear-gradient(to right, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4), var(--gradient-color-5), var(--gradient-color-4), var(--gradient-color-3), var(--gradient-color-2), var(--gradient-color-1));
     background-size: 200% 100%;
-    background-position: 100% 0;
-    transition: background-position 0.3s ease-in-out;
+    background-position: 0 0;
     color: white;
-  }
-
-  .gradientButton:hover {
-    background-position: 0 0;
-  }
-
-  .gradientButton:active {
-    background-position: 0 0;
+    /* Shdow underneath the text */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
   
   footer {

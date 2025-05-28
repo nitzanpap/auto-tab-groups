@@ -44,7 +44,16 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)
 - Save/Load window state, including tab groups, pinned tabs, and window position
-- Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model)
+- Add a "Group by AI" option, which will use an AI model to group tabs based on the content of the tabs.
+  - Add integration with an AI provider.
+  - Add the "Group by AI" button to the extension popup.
+  - Add corresponding event listener to the "Group by AI" button.
+  - Create a function that takes the tab titles and metadata, and uses the AI provider to group the tabs.
+  - Add the appropriate permissions to the `manifest.json` file.
+  - Add the relevant code for user payments for the "Group by AI" feature.
+  - Add a relevant Privacy Policy & Terms of Service.
+
+**Since this is open source, to run this locally, the user will need to provide their own API key.**
 
 ---
 
