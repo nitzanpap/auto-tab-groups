@@ -32,7 +32,11 @@ export function extractDomain(url, includeSubDomain = false) {
     }
 
     return parts.slice(-2).join('.');
-  } catch (e) {
+  } catch (error) {
+    console.error(
+      `[extractDomain] Error extracting domain from ${url}:`,
+      error,
+    );
     return null;
   }
 }
