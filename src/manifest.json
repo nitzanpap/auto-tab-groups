@@ -14,12 +14,13 @@
     }
   },
   "icons": {
-    "16": "icon.svg",
-    "48": "icon.svg",
-    "128": "icon.svg"
+    "16": "assets/icon.svg",
+    "48": "assets/icon.svg",
+    "128": "assets/icon.svg"
   },
   "background": {
     "scripts": ["background.js"],
-    "persistent": false
+    "persistent": false,
+    "type": "module"
   }
 }

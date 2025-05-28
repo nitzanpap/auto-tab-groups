@@ -1,0 +1,34 @@
+{
+  "name": "auto-tab-groups",
+  "version": "1.0.0",
+  "description": "This is a lightweight Firefox extension that automatically groups open tabs by domain.",
+  "main": "src/background.js",
+  "scripts": {
+    "rename-generated-extension-from-zip-to-xpi": "find . -name '*.zip' -exec sh -c 'mv \"$0\" \"${0%.zip}.xpi\"' {} \\;",
+    "build": "cd src && web-ext build && npm run rename-generated-extension-from-zip-to-xpi",
+    "start": "cd src && web-ext run",
+    "format": "prettier --write \"src/**/*.{js,html}\"",
+    "lint": "eslint \"src/**/*.{js,html}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nitzanpap/auto-tab-groups.git"
+  },
+  "author": "Nitzan Papini",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nitzanpap/auto-tab-groups/issues"
+  },
+  "homepage": "https://github.com/nitzanpap/auto-tab-groups#readme",
+  "dependencies": {
+    "prettier": "^3.5.3"
+  },
+  "devDependencies": {
+    "@eslint/css": "^0.8.1",
+    "@eslint/js": "^9.27.0",
+    "@eslint/json": "^0.12.0",
+    "@eslint/markdown": "^6.4.0",
+    "eslint": "^9.27.0",
+    "globals": "^16.2.0"
+  }
+}
