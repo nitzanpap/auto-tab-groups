@@ -37,7 +37,6 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 - `services/`:
   - `TabGroupService.js`: Core tab grouping logic
   - `DomainUtils.js`: Domain name processing and formatting utilities
-- `content.js`: Content script for detecting tab changes
 - `manifest.json`: Extension manifest file
 - `popup/`: UI components for extension controls
 
