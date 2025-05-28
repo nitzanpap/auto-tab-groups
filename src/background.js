@@ -24,6 +24,13 @@ browser.runtime.onMessage.addListener(async msg => {
       await tabGroupService.generateNewColors();
       return {success: true};
 
+    case 'toggleCollapse':
+      await tabGroupService.toggleAllGroupsCollapse(msg.collapse);
+      return {success: true};
+
+    case 'getGroupsCollapseState':
+      return {isCollapsed: await tabGroupService.getGroupsCollapseState()};
+
     case 'getAutoGroupState':
       return {enabled: tabGroupState.autoGroupingEnabled};
 

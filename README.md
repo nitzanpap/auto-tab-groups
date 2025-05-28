@@ -18,8 +18,9 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
   - Random color generation with one click
   - Optional preservation of manually customized colors
   - Remembers color preferences across browser sessions
-- 🔄 Real-time grouping:
-  - Automatically handles new tabs and refreshed tabs
+- 📎 Group management:
+  - One-click collapse/expand all groups
+  - Real-time group updates
   - Maintains existing groups without duplicates
 - ⚙️ Configuration options:
   - Toggle auto-grouping (on/off)
@@ -29,7 +30,6 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 ## Planned Features
 
-- Add a "Collapse/Expand All" button to collapse all groups (once the API supports it)
 - Group tabs by custom rules (e.g., keyword, container, time opened)
 - Save/Load window state, including tab groups, pinned tabs, and window position
 - Allow users to auto group tabs via AI (either by providing an API key, or some sort of access to a locally running self hosted AI model)
@@ -80,6 +80,7 @@ The extension works automatically in the background, grouping tabs by domain wit
 - Configure grouping options
 - Manually trigger grouping for all tabs
 - Generate new random colors for groups
+- Collapse or expand all groups at once
 - Access advanced settings:
   - Group by subdomain
   - Preserve manual color choices
@@ -95,6 +96,18 @@ The extension provides several ways to manage tab group colors:
 3. **Random Generation**:
    - Click "Generate New Colors" to randomly assign new colors
    - Use the "Preserve manual colors" setting to keep your custom choices when generating new colors
+
+### Group Management
+
+The extension provides convenient ways to manage your tab groups:
+
+1. **Automatic Grouping**:
+   - Tabs are automatically grouped by domain
+   - New tabs are added to existing groups
+2. **Manual Controls**:
+   - Group/Ungroup all tabs with one click
+   - Collapse or expand all groups simultaneously
+   - Right-click groups for individual controls
 
 ---
 
@@ -116,6 +129,13 @@ The extension provides several ways to manage tab group colors:
 - Tracks user-customized colors separately from automatically assigned ones
 - Provides options to preserve or regenerate colors as needed
 - Persists color preferences across browser sessions
+
+### Group State Management
+
+- Tracks collapse state of all groups
+- Provides unified controls for group visibility
+- Maintains group state during tab operations
+- Ensures smooth transitions when collapsing/expanding
 
 ## 📚 Resources
 

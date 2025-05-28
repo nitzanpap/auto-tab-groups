@@ -1,6 +1,10 @@
 const groupButton = document.getElementById('group');
 const ungroupButton = document.getElementById('ungroup');
 const generateNewColorsButton = document.getElementById('generateNewColors');
+const collapseOrExpandAllText = document.getElementById(
+  'collapseOrExpandAllText',
+);
+const toggleCollapse = document.getElementById('toggleCollapse');
 const autoGroupToggle = document.getElementById('autoGroupToggle');
 const onlyApplyToNewTabsToggle = document.getElementById('onlyApplyToNewTabs');
 const groupBySubDomainToggle = document.getElementById('groupBySubDomain');
@@ -9,6 +13,17 @@ const advancedContent = document.querySelector('.advanced-content');
 const preserveManualColorsToggle = document.getElementById(
   'preserveManualColors',
 );
+
+// Function to update collapse button text based on state
+async function updateCollapseButtonText() {
+  const response = await browser.runtime.sendMessage({
+    action: 'getGroupsCollapseState',
+  });
+  const isCollapsed = response.isCollapsed;
+  collapseOrExpandAllText.textContent = isCollapsed
+    ? '➕ Click to expand all'
+    : '➖ Click to collapse all';
+}
 
 // Event listeners
 groupButton.addEventListener('click', () => {
@@ -22,6 +37,21 @@ ungroupButton.addEventListener('click', () => {
 generateNewColorsButton.addEventListener('click', () => {
   browser.runtime.sendMessage({action: 'generateNewColors'});
 });
+
+toggleCollapse.addEventListener('click', async () => {
+  const response = await browser.runtime.sendMessage({
+    action: 'getGroupsCollapseState',
+  });
+  const shouldCollapse = !response.isCollapsed;
+  await browser.runtime.sendMessage({
+    action: 'toggleCollapse',
+    collapse: shouldCollapse,
+  });
+  updateCollapseButtonText();
+});
+
+// Initialize button states
+updateCollapseButtonText();
 
 // Initialize the toggle states when popup opens.
 browser.runtime.sendMessage({action: 'getAutoGroupState'}).then(response => {

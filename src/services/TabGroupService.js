@@ -370,6 +370,57 @@ class TabGroupService {
       console.error('[generateNewColors] Error generating new colors:', error);
     }
   }
+
+  /**
+   * Toggles collapse state for all groups in the current window
+   * @param {boolean} collapse - Whether to collapse (true) or expand (false)
+   */
+  async toggleAllGroupsCollapse(collapse) {
+    try {
+      console.log(
+        `[toggleAllGroupsCollapse] Setting all groups to ${collapse ? 'collapsed' : 'expanded'}`,
+      );
+
+      // Get all groups in the current window
+      const currentWindow = await browser.windows.getCurrent();
+      const groups = await browser.tabGroups.query({
+        windowId: currentWindow.id,
+      });
+
+      // Update each group's collapsed state
+      for (const group of groups) {
+        await browser.tabGroups.update(group.id, {collapsed: collapse});
+      }
+
+      console.log(
+        `[toggleAllGroupsCollapse] Successfully ${collapse ? 'collapsed' : 'expanded'} all groups`,
+      );
+    } catch (error) {
+      console.error('[toggleAllGroupsCollapse] Error toggling groups:', error);
+    }
+  }
+
+  /**
+   * Gets the collapse state of groups in the current window
+   * @returns {Promise<boolean>} True if any group is collapsed, false if all are expanded
+   */
+  async getGroupsCollapseState() {
+    try {
+      const currentWindow = await browser.windows.getCurrent();
+      const groups = await browser.tabGroups.query({
+        windowId: currentWindow.id,
+      });
+
+      // Check if any group is collapsed
+      return groups.some(group => group.collapsed);
+    } catch (error) {
+      console.error(
+        '[getGroupsCollapseState] Error getting groups state:',
+        error,
+      );
+      return false;
+    }
+  }
 }
 
 export const tabGroupService = new TabGroupService();

@@ -21,52 +21,63 @@
             ❌ Ungroup All
           </button>
         </div>
-        <button id="generateNewColors" class="button gradientButton">
-          🎨 Generate New Colors
-        </button>
-      </div>
-
-      <div class="separator"></div>
-
-      <div class="settings-container">
-        <h2>Settings</h2>
-
-        <div class="toggle-container">
-          <span>🔄 Auto-Group Mode</span>
-          <label class="switch">
-            <input type="checkbox" id="autoGroupToggle" />
-            <span class="slider round"></span>
-          </label>
+        <div class="button-group-row">
+          <button id="generateNewColors" class="button gradientButton">
+            🎨 Generate New Colors
+          </button>
         </div>
-
-        <div class="toggle-container">
-          <span>➕ Only apply to new tabs</span>
-          <label class="switch">
-            <input type="checkbox" id="onlyApplyToNewTabs" />
-            <span class="slider round"></span>
-          </label>
-        </div>
-      </div>
-      <div class="advanced-section">
-        <button class="advanced-toggle">
-          <span class="noselect">Advanced</span>
-          <span class="arrow">▼</span>
-        </button>
-        <div class="advanced-content">
+        <div class="button-group-row">
           <div class="toggle-container">
-            <span>🔍 Group by sub-domain</span>
+            <span class="toggle-label" id="collapseOrExpandAllText"></span>
             <label class="switch">
-              <input type="checkbox" id="groupBySubDomain" checked />
+              <input type="checkbox" id="toggleCollapse" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="settings-container">
+          <h2>Settings</h2>
+
+          <div class="toggle-container">
+            <span>🔄 Auto-Group Mode</span>
+            <label class="switch">
+              <input type="checkbox" id="autoGroupToggle" />
               <span class="slider round"></span>
             </label>
           </div>
 
           <div class="toggle-container">
-            <span>🎨 Preserve manual colors</span>
+            <span>➕ Only apply to new tabs</span>
             <label class="switch">
-              <input type="checkbox" id="preserveManualColors" />
+              <input type="checkbox" id="onlyApplyToNewTabs" />
               <span class="slider round"></span>
             </label>
+          </div>
+        </div>
+        <div class="advanced-section">
+          <button class="advanced-toggle">
+            <span class="noselect">Advanced</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="advanced-content">
+            <div class="toggle-container">
+              <span>🔍 Group by sub-domain</span>
+              <label class="switch">
+                <input type="checkbox" id="groupBySubDomain" checked />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="toggle-container">
+              <span>🎨 Preserve manual colors</span>
+              <label class="switch">
+                <input type="checkbox" id="preserveManualColors" />
+                <span class="slider round"></span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
