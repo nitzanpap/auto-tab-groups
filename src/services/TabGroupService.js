@@ -8,6 +8,27 @@ import {storageManager} from '../config/StorageManager.js';
 
 class TabGroupService {
   /**
+   * Gets the domain of a group by looking at its first tab
+   * @param {number} groupId
+   * @returns {Promise<string|null>} The domain of the group or null if no tabs found
+   */
+  async getGroupDomain(groupId) {
+    try {
+      const tabs = await browser.tabs.query({groupId});
+      if (tabs.length === 0) return null;
+
+      const firstTab = tabs[0];
+      return extractDomain(firstTab.url, tabGroupState.groupBySubDomainEnabled);
+    } catch (error) {
+      console.error(
+        `[getGroupDomain] Error getting domain for group ${groupId}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Creates a new tab group for a domain
    * @param {string} domain
    * @param {number[]} tabIds
@@ -133,17 +154,24 @@ class TabGroupService {
 
       // Process each domain
       for (const [domain, tabIds] of domainTabsMap.entries()) {
-        const existingGroup = existingGroups.find(
-          group => group.title === domain,
-        );
-        if (existingGroup) {
+        // Find a matching group by checking the domain of its first tab
+        let matchingGroup = null;
+        for (const group of existingGroups) {
+          const groupDomain = await this.getGroupDomain(group.id);
+          if (groupDomain === domain) {
+            matchingGroup = group;
+            break;
+          }
+        }
+
+        if (matchingGroup) {
           console.log(
             `[groupTabsByDomain] Adding tabs to existing group for "${domain}":`,
             tabIds,
           );
           await browser.tabs.group({
             tabIds,
-            groupId: existingGroup.id,
+            groupId: matchingGroup.id,
           });
         } else {
           console.log(
@@ -200,10 +228,18 @@ class TabGroupService {
         `[moveTabToGroup] Processing tab ${tabId} with URL "${tab.url}" and domain "${domain}"`,
       );
 
-      // Simply look for an existing group with this domain as its title
+      // Look for an existing group with matching domain
       const groups = await browser.tabGroups.query({windowId: tab.windowId});
       console.log(`[moveTabToGroup] Existing groups in window:`, groups);
-      const matchingGroup = groups.find(group => group.title === domain);
+
+      let matchingGroup = null;
+      for (const group of groups) {
+        const groupDomain = await this.getGroupDomain(group.id);
+        if (groupDomain === domain) {
+          matchingGroup = group;
+          break;
+        }
+      }
 
       if (matchingGroup) {
         console.log(
