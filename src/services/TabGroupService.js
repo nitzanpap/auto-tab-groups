@@ -309,8 +309,18 @@ class TabGroupService {
         windowId: currentWindow.id,
       });
 
-      // Clear existing color mappings
-      tabGroupState.domainColors.clear();
+      // Clear existing color mappings, except manually set ones if preserveManualColors is true
+      if (tabGroupState.preserveManualColors) {
+        // Only clear colors for domains that weren't manually set
+        for (const [domain] of tabGroupState.getDomainColors()) {
+          if (!tabGroupState.manuallySetColors.has(domain)) {
+            tabGroupState.domainColors.delete(domain);
+          }
+        }
+      } else {
+        tabGroupState.domainColors.clear();
+        tabGroupState.manuallySetColors.clear();
+      }
 
       // Create a copy of the colors array to track available colors
       let availableColors = [...colors];
@@ -319,6 +329,17 @@ class TabGroupService {
       for (const group of groups) {
         const domain = await this.getGroupDomain(group.id);
         if (!domain) continue;
+
+        // Skip if the domain has a manually set color and we're preserving manual colors
+        if (
+          tabGroupState.preserveManualColors &&
+          tabGroupState.manuallySetColors.has(domain)
+        ) {
+          console.log(
+            `[generateNewColors] Preserving manual color for domain "${domain}"`,
+          );
+          continue;
+        }
 
         // If we've used all colors, refill the available colors
         if (availableColors.length === 0) {

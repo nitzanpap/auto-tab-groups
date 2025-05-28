@@ -6,6 +6,9 @@ const onlyApplyToNewTabsToggle = document.getElementById('onlyApplyToNewTabs');
 const groupBySubDomainToggle = document.getElementById('groupBySubDomain');
 const advancedToggle = document.querySelector('.advanced-toggle');
 const advancedContent = document.querySelector('.advanced-content');
+const preserveManualColorsToggle = document.getElementById(
+  'preserveManualColors',
+);
 
 // Event listeners
 groupButton.addEventListener('click', () => {
@@ -21,23 +24,27 @@ generateNewColorsButton.addEventListener('click', () => {
 });
 
 // Initialize the toggle states when popup opens.
-browser.runtime.sendMessage({action: 'getAutoGroupState'}, response => {
-  if (response && response.enabled !== undefined) {
-    autoGroupToggle.checked = response.enabled;
-  }
+browser.runtime.sendMessage({action: 'getAutoGroupState'}).then(response => {
+  autoGroupToggle.checked = response.enabled;
 });
 
-browser.runtime.sendMessage({action: 'getOnlyApplyToNewTabs'}, response => {
-  if (response && response.enabled !== undefined) {
+browser.runtime
+  .sendMessage({action: 'getOnlyApplyToNewTabs'})
+  .then(response => {
     onlyApplyToNewTabsToggle.checked = response.enabled;
-  }
-});
+  });
 
 browser.runtime.sendMessage({action: 'getGroupBySubDomain'}, response => {
   if (response && response.enabled !== undefined) {
     groupBySubDomainToggle.checked = response.enabled;
   }
 });
+
+browser.runtime
+  .sendMessage({action: 'getPreserveManualColors'})
+  .then(response => {
+    preserveManualColorsToggle.checked = response.enabled;
+  });
 
 // Advanced section toggle.
 advancedToggle.addEventListener('click', () => {
@@ -46,19 +53,17 @@ advancedToggle.addEventListener('click', () => {
 });
 
 // Listen for toggle changes.
-autoGroupToggle.addEventListener('change', () => {
-  const enabled = autoGroupToggle.checked;
+autoGroupToggle.addEventListener('change', event => {
   browser.runtime.sendMessage({
     action: 'toggleAutoGroup',
-    enabled: enabled,
+    enabled: event.target.checked,
   });
 });
 
-onlyApplyToNewTabsToggle.addEventListener('change', () => {
-  const enabled = onlyApplyToNewTabsToggle.checked;
+onlyApplyToNewTabsToggle.addEventListener('change', event => {
   browser.runtime.sendMessage({
     action: 'toggleOnlyNewTabs',
-    enabled: enabled,
+    enabled: event.target.checked,
   });
 });
 
@@ -67,5 +72,12 @@ groupBySubDomainToggle.addEventListener('change', () => {
   browser.runtime.sendMessage({
     action: 'toggleGroupBySubDomain',
     enabled: enabled,
+  });
+});
+
+preserveManualColorsToggle.addEventListener('change', event => {
+  browser.runtime.sendMessage({
+    action: 'togglePreserveManualColors',
+    enabled: event.target.checked,
   });
 });

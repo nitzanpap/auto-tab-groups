@@ -8,6 +8,8 @@ class TabGroupState {
     this.autoGroupingEnabled = true;
     this.onlyApplyToNewTabsEnabled = false;
     this.groupBySubDomainEnabled = true;
+    this.preserveManualColors = false;
+    this.manuallySetColors = new Set();
   }
 
   /**
@@ -23,9 +25,13 @@ class TabGroupState {
    * Sets the color for a domain
    * @param {string} domain
    * @param {string} color
+   * @param {boolean} isManualSet - Whether this color was set manually by the user
    */
-  setColor(domain, color) {
+  setColor(domain, color, isManualSet = false) {
     this.domainColors.set(domain, color);
+    if (isManualSet) {
+      this.manuallySetColors.add(domain);
+    }
   }
 
   /**
@@ -41,14 +47,21 @@ class TabGroupState {
    * @param {Object} data
    */
   updateFromStorage(data) {
-    this.autoGroupingEnabled = data.autoGroupingEnabled ?? true;
-    this.onlyApplyToNewTabsEnabled = data.onlyApplyToNewTabsEnabled ?? false;
-    this.groupBySubDomainEnabled = data.groupBySubDomainEnabled ?? true;
+    this.autoGroupingEnabled = data.autoGroupingEnabled;
+    this.onlyApplyToNewTabsEnabled = data.onlyApplyToNewTabsEnabled;
+    this.groupBySubDomainEnabled = data.groupBySubDomainEnabled;
+    this.preserveManualColors = data.preserveManualColors;
 
     this.domainColors.clear();
+    this.manuallySetColors.clear();
     if (data.domainColors) {
       Object.entries(data.domainColors).forEach(([domain, color]) => {
         this.domainColors.set(domain, color);
+      });
+    }
+    if (data.manuallySetColors) {
+      data.manuallySetColors.forEach(domain => {
+        this.manuallySetColors.add(domain);
       });
     }
   }
@@ -62,7 +75,9 @@ class TabGroupState {
       autoGroupingEnabled: this.autoGroupingEnabled,
       onlyApplyToNewTabsEnabled: this.onlyApplyToNewTabsEnabled,
       groupBySubDomainEnabled: this.groupBySubDomainEnabled,
+      preserveManualColors: this.preserveManualColors,
       domainColors: Object.fromEntries(this.domainColors),
+      manuallySetColors: Array.from(this.manuallySetColors),
     };
   }
 }

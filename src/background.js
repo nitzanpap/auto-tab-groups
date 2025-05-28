@@ -30,6 +30,9 @@ browser.runtime.onMessage.addListener(async msg => {
     case 'getOnlyApplyToNewTabs':
       return {enabled: tabGroupState.onlyApplyToNewTabsEnabled};
 
+    case 'getPreserveManualColors':
+      return {enabled: tabGroupState.preserveManualColors};
+
     case 'toggleAutoGroup':
       tabGroupState.autoGroupingEnabled = msg.enabled;
       await storageManager.saveState();
@@ -46,6 +49,11 @@ browser.runtime.onMessage.addListener(async msg => {
       tabGroupState.onlyApplyToNewTabsEnabled = msg.enabled;
       await storageManager.saveState();
       return {enabled: tabGroupState.onlyApplyToNewTabsEnabled};
+
+    case 'togglePreserveManualColors':
+      tabGroupState.preserveManualColors = msg.enabled;
+      await storageManager.saveState();
+      return {enabled: tabGroupState.preserveManualColors};
 
     case 'getGroupBySubDomain':
       return {enabled: tabGroupState.groupBySubDomainEnabled};
@@ -102,7 +110,7 @@ browser.tabGroups.onUpdated.addListener(async group => {
       console.log(
         `[tabGroups.onUpdated] User changed color for domain "${domain}" to "${group.color}"`,
       );
-      tabGroupState.setColor(domain, group.color);
+      tabGroupState.setColor(domain, group.color, true);
       await storageManager.saveState();
     }
   } catch (error) {
