@@ -20,6 +20,10 @@ browser.runtime.onMessage.addListener(async msg => {
       await tabGroupService.ungroupAllTabs();
       return {success: true};
 
+    case 'generateNewColors':
+      await tabGroupService.generateNewColors();
+      return {success: true};
+
     case 'getAutoGroupState':
       return {enabled: tabGroupState.autoGroupingEnabled};
 
@@ -85,4 +89,23 @@ browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
 
 browser.tabs.onMoved.addListener(tabId => {
   tabGroupService.moveTabToGroup(tabId);
+});
+
+// Listen for tab group updates (including color changes)
+browser.tabGroups.onUpdated.addListener(async group => {
+  try {
+    const domain = await tabGroupService.getGroupDomain(group.id);
+    if (!domain) return;
+
+    // If the color has changed and it's different from our stored color
+    if (group.color && group.color !== tabGroupState.getColor(domain)) {
+      console.log(
+        `[tabGroups.onUpdated] User changed color for domain "${domain}" to "${group.color}"`,
+      );
+      tabGroupState.setColor(domain, group.color);
+      await storageManager.saveState();
+    }
+  } catch (error) {
+    console.error('[tabGroups.onUpdated] Error handling group update:', error);
+  }
 });

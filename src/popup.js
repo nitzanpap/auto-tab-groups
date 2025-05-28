@@ -1,5 +1,6 @@
 const groupButton = document.getElementById('group');
 const ungroupButton = document.getElementById('ungroup');
+const generateNewColorsButton = document.getElementById('generateNewColors');
 const autoGroupToggle = document.getElementById('autoGroupToggle');
 const onlyApplyToNewTabsToggle = document.getElementById('onlyApplyToNewTabs');
 const groupBySubDomainToggle = document.getElementById('groupBySubDomain');
@@ -13,6 +14,10 @@ groupButton.addEventListener('click', () => {
 
 ungroupButton.addEventListener('click', () => {
   browser.runtime.sendMessage({action: 'ungroup'});
+});
+
+generateNewColorsButton.addEventListener('click', () => {
+  browser.runtime.sendMessage({action: 'generateNewColors'});
 });
 
 // Initialize the toggle states when popup opens.

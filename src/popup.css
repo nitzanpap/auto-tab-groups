@@ -39,11 +39,9 @@ body {
     text-align: start;
     width: 100%;
   }
-  
-  button {
+
+  .button {
     all: unset;
-    background-color: #3b82f6;
-    color: white;
     padding: 12px;
     border-radius: 10px;
     font-size: 14px;
@@ -52,18 +50,57 @@ body {
     text-align: center;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     transition: background-color 0.2s ease, transform 0.1s ease;
     white-space: nowrap;
   }
+
+  .button:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
   
-  button:hover {
+  .primaryButton {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .primaryButton:hover {
     background-color: #2563eb;
   }
   
-  button:active {
+  .primaryButton:active {
     background-color: #1d4ed8;
     transform: scale(0.98);
+  }
+  
+  .secondaryButton {
+    background-color: #e5e5e5;
+    color: #111827;
+  }
+
+  .secondaryButton:hover {
+    background-color: #d1d5db;
+  }
+  
+  .secondaryButton:active {
+    background-color: #9ca3af;
+  }
+
+  .gradientButton {
+    /* Colorful gradient of blue to purple to red to orange to yellow */
+    background: linear-gradient(to right, #3b82f6, #9c25eb, #eb254c, #eb7725, #ebfb25);
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    transition: background-position 0.3s ease-in-out;
+    color: white;
+  }
+
+  .gradientButton:hover {
+    background-position: 0 0;
+  }
+
+  .gradientButton:active {
+    background-position: 0 0;
   }
   
   footer {
@@ -92,6 +129,13 @@ body {
   .button-group {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .button-group-row {
+    display: flex;
+    flex-direction: row;
     gap: 10px;
     width: 100%;
   }

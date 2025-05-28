@@ -280,6 +280,75 @@ class TabGroupService {
       );
     }
   }
+
+  /**
+   * Generates new colors for all domains in the current window
+   */
+  async generateNewColors() {
+    try {
+      console.log(
+        '[generateNewColors] Starting to generate new colors for all groups',
+      );
+
+      // Available Firefox tab group colors
+      const colors = [
+        'blue',
+        'cyan',
+        'grey',
+        'green',
+        'orange',
+        'pink',
+        'purple',
+        'red',
+        'yellow',
+      ];
+
+      // Get all groups in the current window
+      const currentWindow = await browser.windows.getCurrent();
+      const groups = await browser.tabGroups.query({
+        windowId: currentWindow.id,
+      });
+
+      // Clear existing color mappings
+      tabGroupState.domainColors.clear();
+
+      // Create a copy of the colors array to track available colors
+      let availableColors = [...colors];
+
+      // Assign random colors to each group
+      for (const group of groups) {
+        const domain = await this.getGroupDomain(group.id);
+        if (!domain) continue;
+
+        // If we've used all colors, refill the available colors
+        if (availableColors.length === 0) {
+          availableColors = [...colors];
+        }
+
+        // Pick a random color from the available ones
+        const randomIndex = Math.floor(Math.random() * availableColors.length);
+        const newColor = availableColors[randomIndex];
+        // Remove the used color from available colors
+        availableColors.splice(randomIndex, 1);
+
+        tabGroupState.setColor(domain, newColor);
+
+        // Update the group's color
+        await browser.tabGroups.update(group.id, {color: newColor});
+        console.log(
+          `[generateNewColors] Assigned random color "${newColor}" to domain "${domain}"`,
+        );
+      }
+
+      // Save the new color mappings
+      await storageManager.saveState();
+      console.log(
+        '[generateNewColors] New colors generated and saved successfully',
+      );
+    } catch (error) {
+      console.error('[generateNewColors] Error generating new colors:', error);
+    }
+  }
 }
 
 export const tabGroupService = new TabGroupService();
