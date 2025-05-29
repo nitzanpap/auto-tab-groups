@@ -184,6 +184,7 @@ class TabGroupService {
         }
       }
 
+      await logTabsAndGroups(tabs);
       console.log('[groupTabsByDomain] Tab grouping complete');
     } catch (error) {
       console.error('[groupTabsByDomain] Error grouping tabs:', error);
@@ -424,3 +425,35 @@ class TabGroupService {
 }
 
 export const tabGroupService = new TabGroupService();
+async function logTabsAndGroups(tabs) {
+  console.log(
+    '[groupTabsByDomain] All current tabs before cleanup:',
+    tabs.map(tab => (tab.url ? tab.url : 'No URL')),
+  );
+  console.log('[groupTabsByDomain] Tab grouping complete');
+  const allGroups = await browser.tabGroups.query({
+    windowId: tabs[0].windowId,
+  });
+  const groupedDomains = await Promise.all(
+    allGroups.map(async group => {
+      const groupDomain = await tabGroupService.getGroupDomain(group.id);
+      if (!groupDomain) {
+        console.warn(
+          `[groupTabsByDomain] Group ${group.id} has no domain, skipping`,
+        );
+        return null;
+      }
+      const tabsInGroup = await browser.tabs.query({groupId: group.id});
+      const domainsInGroup = tabsInGroup
+        .map(tab =>
+          extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled),
+        )
+        .filter(Boolean);
+      return {
+        groupTitle: group.title || groupDomain,
+        tabsDomainsInside: Array.from(new Set(domainsInGroup)),
+      };
+    }),
+  );
+  console.log('[groupTabsByDomain] All groups with domains:', groupedDomains);
+}
