@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Auto Tab Groups",
   "author": "Nitzan Papini",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Automatically groups tabs by domain.",
   "permissions": ["tabs", "storage", "tabGroups"],
   "browser_action": {
