@@ -41,7 +41,6 @@ body {
     background: #ffffff;
     padding: 20px;
     width: 100%;
-    min-width: 320px; /* Minimum width to ensure content fits */
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -87,7 +86,7 @@ body {
     align-items: center;
     gap: 16px;
     width: 100%;
-    max-width: 280px; /* Maximum width for the popup */
+    min-width: 300px;
   }
 
   .sidebar-container {

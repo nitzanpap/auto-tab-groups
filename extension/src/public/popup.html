@@ -13,7 +13,6 @@
   <body>
     <div class="popup-container">
       <h1>✨ Auto Tab Groups ✨</h1>
-
       <main>
         <div class="button-group-row">
           <button id="group" class="button primaryButton">📁 Group Tabs</button>
@@ -31,12 +30,9 @@
             <span class="slider round"></span>
           </label>
         </div>
-
         <div class="separator"></div>
-
         <div class="settings-container">
           <h2>Settings</h2>
-
           <div class="toggle-container">
             <span>🔄 Auto-Group Mode</span>
             <label class="switch">
@@ -44,7 +40,13 @@
               <span class="slider round"></span>
             </label>
           </div>
-
+          <div class="toggle-container">
+            <span>🔍 Group by domain/sub-domain</span>
+            <label class="switch">
+              <input type="checkbox" id="groupBySubDomain" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
           <div class="toggle-container">
             <span>➕ Only apply to new tabs</span>
             <label class="switch">
@@ -70,14 +72,6 @@
             </span>
           </button>
           <div class="advanced-content">
-            <div class="toggle-container">
-              <span>🔍 Group by sub-domain</span>
-              <label class="switch">
-                <input type="checkbox" id="groupBySubDomain" checked />
-                <span class="slider round"></span>
-              </label>
-            </div>
-
             <div class="toggle-container">
               <span>🎨 Preserve manual colors</span>
               <label class="switch">
@@ -106,7 +100,6 @@
         </div>
       </footer>
     </div>
-
     <script src="popup.js"></script>
   </body>
 </html>
