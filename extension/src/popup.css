@@ -127,7 +127,6 @@ body {
     background-position: 0 0;
     color: white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: background-position 0.25s ease-in-out;
     animation: gradient 10s linear infinite;
   }
 
