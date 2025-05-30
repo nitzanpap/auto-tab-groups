@@ -44,16 +44,20 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)
 - Save/Load window state, including tab groups, pinned tabs, and window position
-- Add a "Group by AI" option, which will use an AI model to group tabs based on the content of the tabs.
-  - Add integration with an AI provider.
-  - Add the "Group by AI" button to the extension popup.
-  - Add corresponding event listener to the "Group by AI" button.
-  - Create a function that takes the tab titles and metadata, and uses the AI provider to group the tabs.
-  - Add the appropriate permissions to the `manifest.json` file.
-  - Add the relevant code for user payments for the "Group by AI" feature.
-  - Add a relevant Privacy Policy & Terms of Service.
+- AI-powered tab grouping (In Progress):
+  - Server-side AI grouping API with token-based usage tracking
+  - Free tier with limited trial tokens and premium tier with unlimited usage
+  - Smart grouping based on tab content, not just domain names
+  - Secure data handling with proper authentication and encryption
 
-**Since this is open source, to run this locally, the user will need to provide their own API key.**
+The AI grouping feature is currently under active development with:
+
+- API contract defined for client-server communication
+- Server infrastructure being built with Go
+- Planned integration with AI providers for intelligent grouping
+- Premium model designed with free trial tokens and unlimited premium usage
+
+**Since this is open source, to run the AI grouping feature locally, users will need to provide their own API key.**
 
 ---
 
@@ -67,10 +71,18 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
   - `TabGroupState.js`: State management for settings and color preferences
 - `manifest.json`: Extension manifest file
 - `popup/`: UI components for extension controls
+- `server/`: Backend for AI-powered tab grouping (in development)
+  - `cmd/api/`: Server entry point and configuration
+  - `internal/`: Core server components
+    - `database/`: Database access layer
+    - `server/`: HTTP server and route handlers
+- `docs/`: Documentation for AI features and implementation plans
 
 ---
 
 ## 🛠 Development Setup
+
+### Extension
 
 1. Install dependencies:
 
@@ -85,7 +97,28 @@ npm install
 - `npm run format`: Format code using Prettier
 - `npm run lint`: Run ESLint checks
 
-### Loading for Development
+### Server (TBD, for AI features)
+
+1. Set up Go development environment
+2. Navigate to the server directory:
+
+    ```bash
+    cd server
+    ```
+
+3. Build and run the server:
+
+    ```bash
+    make run
+    ```
+
+4. For development with hot reload:
+
+    ```bash
+    make dev
+    ```
+
+### Loading Extension for Development
 
 1. Open Firefox and go to: `about:debugging`
 2. Click **"This Firefox"** → **"Load Temporary Add-on..."**
@@ -144,13 +177,6 @@ The extension provides convenient ways to manage your tab groups:
   - Removes "www" subdomain when present
   - Special handling for IP addresses and local domains
 
-### Color Management
-
-- Uses Firefox's built-in tab group colors: blue, cyan, grey, green, orange, pink, purple, red, yellow
-- Tracks user-customized colors separately from automatically assigned ones
-- Provides options to preserve or regenerate colors as needed
-- Persists color preferences across browser sessions
-
 ### Group State Management
 
 - Tracks collapse state of all groups
@@ -172,9 +198,9 @@ The extension provides convenient ways to manage your tab groups:
 1. Update version in `manifest.json`
 2. Build the extension:
 
-```bash
-npm run build
-```
+    ```bash
+    npm run build
+    ```
 
 3. The built extension will be available as an .xpi file
 
@@ -190,4 +216,4 @@ Built by [Nitzan Papini](https://github.com/nitzanpap)
 
 ## 📄 License
 
-MIT License - see package.json for details
+See [LICENSE.md](LICENSE.md) for details.

@@ -40,7 +40,8 @@ body {
     font-family: "Inter", sans-serif;
     background: #ffffff;
     padding: 20px;
-    width: 300px;
+    width: 100%;
+    min-width: 320px; /* Minimum width to ensure content fits */
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -63,6 +64,13 @@ body {
     width: 100%;
   }
   
+  main {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  
   footer {
     font-size: 12px;
     color: #6b7280;
@@ -71,6 +79,28 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+  
+  .popup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 280px; /* Maximum width for the popup */
+  }
+
+  .sidebar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-width: 320px;
+    padding: 20px;
+    background-color: #f9fafb;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
   .button {
@@ -84,7 +114,7 @@ body {
     width: 100%;
     box-sizing: border-box;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: background-position 0.25s ease-in-out, transform 0.1s ease-in-out, background-color 0.2s ease;
+    transition: background-position 0.25s ease-in-out, transform 0.1s ease-in-out, background-color 0.2s ease, box-shadow 0.2s ease;
     white-space: nowrap;
     color: white;
   }
@@ -131,10 +161,7 @@ body {
   }
 
   .gradientButton:hover {
-    background-position: 100% 0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    /* Change gradient direction on hover */
-    background-position: 100% 0;
   }
 
 @keyframes gradient {
@@ -168,32 +195,18 @@ body {
     text-decoration: underline;
     text-underline-offset: 4px;
   }
-  
-  .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    max-width: 280px; /* 280px body width - 20px padding on each side */
-  }
 
   .separator {
     width: 100%;
     height: 1.5px;
     background-color: #e5e5e5;
   }
-  
-  .button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-  }
 
   .button-group-row {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     gap: 10px;
     width: 100%;
   }
@@ -352,6 +365,15 @@ body {
 
   .advanced-content.open {
     display: block;
+  }
+
+  .footer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
   }
 
   .author {

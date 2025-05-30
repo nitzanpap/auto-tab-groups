@@ -11,29 +11,25 @@
       rel="stylesheet" />
   </head>
   <body>
-    <div class="container">
+    <div class="sidebar-container">
       <h1>✨ Auto Tab Groups ✨</h1>
 
-      <div class="button-group">
+      <main>
         <div class="button-group-row">
           <button id="group" class="button primaryButton">📁 Group Tabs</button>
           <button id="ungroup" class="button primaryButton">
             ❌ Ungroup All
           </button>
         </div>
-        <div class="button-group-row">
-          <button id="generateNewColors" class="button gradientButton">
-            🎨 Generate New Colors
-          </button>
-        </div>
-        <div class="button-group-row">
-          <div class="toggle-container">
-            <span class="toggle-label" id="collapseOrExpandAllText"></span>
-            <label class="switch">
-              <input type="checkbox" id="toggleCollapse" />
-              <span class="slider round"></span>
-            </label>
-          </div>
+        <button id="generateNewColors" class="button gradientButton">
+          🎨 Generate New Colors
+        </button>
+        <div class="toggle-container">
+          <span class="toggle-label" id="collapseOrExpandAllText"></span>
+          <label class="switch">
+            <input type="checkbox" id="toggleCollapse" />
+            <span class="slider round"></span>
+          </label>
         </div>
 
         <div class="separator"></div>
@@ -91,18 +87,18 @@
             </div>
           </div>
         </div>
-      </div>
-      <footer>
+      </main>
+      <footer class="footer-container">
         <div class="separator"></div>
         <div>
-          🦊 Made by <span class="author selectable">Nitzan Papini</span>, for
-          Firefox
+          Made by <span class="author selectable">Nitzan Papini</span>, for
+          Firefox 🦊
         </div>
         <div class="feedback-link">
           <a
             href="https://docs.google.com/forms/d/1ViwZsXRSlJqij4nGp84F4gT2f4vBhZkGDQU25F9ESPI"
             target="_blank"
-            >📝 Feedback & Support</a
+            >📝 Feedback & Requests & Support</a
           >
         </div>
         <div class="version">
