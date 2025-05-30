@@ -218,6 +218,7 @@ class TabGroupService {
     if (!tabGroupState.autoGroupingEnabled) return;
 
     try {
+      // 1. Get tab info and extract domain
       const tab = await browser.tabs.get(tabId);
       if (!tab.url) return;
 
@@ -227,31 +228,34 @@ class TabGroupService {
       );
       if (!domain) return;
 
+      const displayName = getDomainDisplayName(domain);
+
       console.log(
         `[moveTabToGroup] Processing tab ${tabId} with URL "${tab.url}" and domain "${domain}"`,
       );
 
-      // Look for an existing group with matching domain
+      // 2. Get all groups in the current window
       const groups = await browser.tabGroups.query({windowId: tab.windowId});
       console.log(`[moveTabToGroup] Existing groups in window:`, groups);
 
-      let matchingGroup = null;
-      for (const group of groups) {
-        const groupDomain = await this.getGroupDomain(group.id);
-        if (groupDomain === domain) {
-          matchingGroup = group;
-          break;
-        }
-      }
+      // 3. Find group with matching title
+      const targetGroup = groups.find(group => group.title === displayName);
 
-      if (matchingGroup) {
+      if (targetGroup) {
+        // Skip if tab is already in the correct group
+        if (tab.groupId === targetGroup.id) {
+          console.log(
+            `[moveTabToGroup] Tab ${tabId} is already in the correct group for "${domain}"`,
+          );
+          return;
+        }
+
         console.log(
-          `[moveTabToGroup] Found existing group for "${domain}":`,
-          matchingGroup,
+          `[moveTabToGroup] Moving tab ${tabId} to existing group ${targetGroup.id}`,
         );
         await browser.tabs.group({
           tabIds: [tabId],
-          groupId: matchingGroup.id,
+          groupId: targetGroup.id,
         });
       } else {
         console.log(
