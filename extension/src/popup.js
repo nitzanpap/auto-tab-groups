@@ -14,6 +14,14 @@ const preserveManualColorsToggle = document.getElementById(
   'preserveManualColors',
 );
 
+const updateVersionDisplay = () => {
+  // Get the version number from the manifest and display it.
+  const versionNumberElement = document.getElementById('versionNumber');
+  const manifest = browser.runtime.getManifest();
+  console.log(manifest);
+  versionNumberElement.textContent = manifest.version;
+};
+
 // Function to update collapse button text based on state
 async function updateCollapseButtonText() {
   const response = await browser.runtime.sendMessage({
@@ -21,9 +29,11 @@ async function updateCollapseButtonText() {
   });
   const isCollapsed = response.isCollapsed;
   collapseOrExpandAllText.textContent = isCollapsed
-    ? '➕ Click to expand all'
-    : '➖ Click to collapse all';
+    ? '➕ Expand all'
+    : '➖ Collapse all groups';
 }
+
+updateVersionDisplay();
 
 // Event listeners
 groupButton.addEventListener('click', () => {

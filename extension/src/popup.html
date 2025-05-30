@@ -60,7 +60,18 @@
         <div class="advanced-section">
           <button class="advanced-toggle">
             <span class="noselect">Advanced</span>
-            <span class="arrow">▼</span>
+            <span class="up-arrow">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="24"
+                height="24">
+                <path
+                  d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
+                  style="fill: #ff8e31"
+                  data-name="Up" />
+              </svg>
+            </span>
           </button>
           <div class="advanced-content">
             <div class="toggle-container">
@@ -82,8 +93,21 @@
         </div>
       </div>
       <footer>
-        🦊 Made by <span class="author selectable">Nitzan Papini</span>, for
-        Firefox
+        <div class="separator"></div>
+        <div>
+          🦊 Made by <span class="author selectable">Nitzan Papini</span>, for
+          Firefox
+        </div>
+        <div class="feedback-link">
+          <a
+            href="https://docs.google.com/forms/d/1ViwZsXRSlJqij4nGp84F4gT2f4vBhZkGDQU25F9ESPI"
+            target="_blank"
+            >📝 Feedback & Support</a
+          >
+        </div>
+        <div class="version">
+          <span>Version: <span id="versionNumber"></span></span>
+        </div>
       </footer>
     </div>
 
