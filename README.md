@@ -216,4 +216,4 @@ Built by [Nitzan Papini](https://github.com/nitzanpap)
 
 ## 📄 License
 
-MIT License - see package.json for details
+See [LICENSE.md](LICENSE.md) for details.
