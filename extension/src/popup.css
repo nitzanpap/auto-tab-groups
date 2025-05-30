@@ -11,9 +11,15 @@
     --gradient-color-3: #ff0054;
     --gradient-color-4: #ff5400;
     --gradient-color-5: #ff9900;
-
     --primary-color: #2a6cfb;
-    --primary-color-darker: #1d4ed8;
+
+    /* Dark variants */
+    --gradient-color-1-dark: #4b00d9;
+    --gradient-color-2-dark: #d9007a;
+    --gradient-color-3-dark: #d9003c;
+    --gradient-color-4-dark: #d94f00;
+    --gradient-color-5-dark: #d98f00;
+    --primary-color-dark: #1d4ed8;
 }
 
 /* A class to make text selectable */
@@ -47,6 +53,16 @@ body {
     margin-bottom: 8px;
     text-align: start;
     width: 100%;
+  }
+  
+  footer {
+    font-size: 12px;
+    color: #6b7280;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .button {
@@ -83,7 +99,7 @@ body {
 
   .primaryButton:hover {
     background-position: 100% 0;
-    background-color: var(--primary-color-darker);
+    background-color: var(--primary-color-dark);
   }
   
   .secondaryButton {
@@ -100,22 +116,24 @@ body {
   }
 
   .gradientButton {
-    
-    /* Colorful gradient of blue to purple to red to orange to yellow */
     background: repeating-linear-gradient(to right, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4), var(--gradient-color-5), var(--gradient-color-4), var(--gradient-color-3), var(--gradient-color-2), var(--gradient-color-1));
     background-size: 200% 100%;
     background-position: 0 0;
     color: white;
-    /* Shdow underneath the text */
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
-  
-  footer {
+
+  .feedback-link a {
     font-size: 12px;
-    color: #6b7280;
-    margin-top: 8px;
-    text-align: center;
-    width: 100%;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .feedback-link a:hover {
+    color: var(--primary-color-dark);
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
   
   .container {
@@ -183,7 +201,12 @@ body {
     right: 0;
     bottom: 0;
     background-color: #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: .4s;
+  }
+
+  .slider:hover {
+    background-color: #b3b3b3;
   }
   
   .slider:before {
@@ -194,15 +217,15 @@ body {
     left: 4px;
     bottom: 4px;
     background-color: white;
-    transition: .4s;
+    transition: .2s;
   }
   
   input:checked + .slider {
-    background-color: #3b82f6;
+    background-color: var(--primary-color);
   }
   
   input:focus + .slider {
-    box-shadow: 0 0 1px #3b82f6;
+    box-shadow: 0 0 1px var(--primary-color);
   }
   
   input:checked + .slider:before {
@@ -232,12 +255,11 @@ body {
   }
 
   .advanced-toggle {
-    /* all: unset; */
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 4px;
+    padding: 4px 8px;
     cursor: pointer;
     color: #4b5563;
     font-size: 14px;
@@ -254,7 +276,7 @@ body {
     border-color: #d1d5db;
   }
 
-  .advanced-toggle .arrow {
+  .advanced-toggle .up-arrow {
     font-size: 10px;
     transition: transform 0.2s ease;
     color: #6b7280;
@@ -267,9 +289,9 @@ body {
     background-color: #ffffff;
   }
 
-  .advanced-toggle.open .arrow {
+  .advanced-toggle.open .up-arrow {
     transform: rotate(180deg);
-    color: #3b82f6;
+    color: var(--primary-color);
   }
 
   .advanced-content {
@@ -288,7 +310,16 @@ body {
   }
 
   .author {
-    color: #3b82f6;
-    text-decoration: dotted;
+    color: var(--gradient-color-1);
+    font-weight: 600;
+    text-align: center;
+    /* Regular cursor */
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.2s ease;
+  }
+
+  .author:hover {
+    color: var(--gradient-color-1-dark);
   }
   
