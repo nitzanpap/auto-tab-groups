@@ -6,7 +6,7 @@
     -moz-user-select: none; /* Firefox */
     user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
     /* CSS Variables */
-    --gradient-color-1: #5d00ff;
+    --gradient-color-1: #7424ff;
     --gradient-color-2: #ff0090;
     --gradient-color-3: #ff0054;
     --gradient-color-4: #ff5400;
@@ -20,7 +20,7 @@
     --text-secondary-color: #111827; /* Dark gray for primary text */
 
     /* Dark variants */
-    --gradient-color-1-dark: #4b00d9;
+    --gradient-color-1-dark: #5b21b6;
     --gradient-color-2-dark: #d9007a;
     --gradient-color-3-dark: #d9003c;
     --gradient-color-4-dark: #d94f00;
@@ -86,17 +86,14 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     transition: background-position 0.25s ease-in-out, transform 0.1s ease-in-out, background-color 0.2s ease;
     white-space: nowrap;
-    background-position: 0 0;
     color: white;
   }
 
   .button:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    background-position: 100% 0;
   }
 
   .button:active {
-    background-position: 200% 0;
     transform: scale(0.95);
   }
   
@@ -112,7 +109,6 @@ body {
   .secondaryButton {
     background: var(--secondary-color);
     color: var(--text-secondary-color);
-    background-size: 200% 100%;
   }
   .secondaryButton:hover {
     background-color: var(--secondary-color-dark);
@@ -120,18 +116,45 @@ body {
   
   .destructiveButton {
     background: var(--destructive-color);
-    background-size: 200% 100%;
   }
   .destructiveButton:hover {
     background-color: var(--destructive-color-dark);
   }
 
   .gradientButton {
-    background: repeating-linear-gradient(to right, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4), var(--gradient-color-5), var(--gradient-color-4), var(--gradient-color-3), var(--gradient-color-2), var(--gradient-color-1));
+    background: linear-gradient(45deg, var(--gradient-color-1), var(--gradient-color-2), var(--gradient-color-3), var(--gradient-color-4), var(--gradient-color-5));
     background-size: 200% 100%;
     background-position: 0 0;
     color: white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: background-position 0.25s ease-in-out;
+    animation: gradient 10s linear infinite;
+  }
+
+  .gradientButton:hover {
+    background-position: 100% 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* Change gradient direction on hover */
+    background-position: 100% 0;
+  }
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+  .feedback-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
   }
 
   .feedback-link a {
@@ -213,7 +236,7 @@ body {
     bottom: 0;
     background-color: #ccc;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: .4s;
+    transition: .2s;
   }
 
   .slider:hover {
@@ -228,15 +251,27 @@ body {
     left: 4px;
     bottom: 4px;
     background-color: white;
-    transition: .2s;
+    transition: .1s;
   }
   
   input:checked + .slider {
     background-color: var(--primary-color);
   }
+
+  input:checked + .slider:hover {
+    background-color: var(--primary-color-dark);
+  }
   
   input:focus + .slider {
     box-shadow: 0 0 1px var(--primary-color);
+  }
+
+  input:focus + .slider:hover {
+    box-shadow: 0 0 1px var(--primary-color-dark);
+  }
+
+  input:checked + .slider:hover {
+    background-color: var(--primary-color-dark);
   }
   
   input:checked + .slider:before {
@@ -332,4 +367,3 @@ body {
   .author:hover {
     color: var(--gradient-color-1-dark);
   }
-  
