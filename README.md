@@ -22,27 +22,36 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 ## 🚀 Features
 
 - 🪄 Intelligent tab grouping by domain:
-  - Automatically groups tabs by their domain
+  - Automatically groups tabs by their domain/subdomain
   - Smart domain name display (e.g., "github" instead of "www.github.com")
   - Special handling for IP addresses, localhost, and .local domains
+- 📎 Group management:
+  - One-click collapse/expand all groups
+  - Real-time group updates
+  - Maintains existing groups without duplicates
 - 🎨 Advanced color management:
   - Consistent colors for each domain group
   - Random color generation with one click
   - Optional preservation of manually customized colors
   - Remembers color preferences across browser sessions
-- 📎 Group management:
-  - One-click collapse/expand all groups
-  - Real-time group updates
-  - Maintains existing groups without duplicates
 - ⚙️ Configuration options:
   - Toggle auto-grouping (on/off)
-  - Toggle only applying to new tabs (on/off)
   - Toggle grouping by subdomain (on/off)
+  - Toggle only applying to new tabs (on/off)
   - Toggle preservation of manual color choices (on/off)
+- Sidebar & vertical tab groups support:
+  - Displays tab groups in the sidebar for easy access
+  - Allows quick navigation between groups
+  - Sidebar popup as an alternative to the main popup
 
 ## Planned Features
 
 - Group tabs by custom rules (e.g., keyword, container, time opened)
+- Add customizable mapping for domain names to group titles
+- Add support for pinned tabs.
+  - Pinned tabs will not be grouped.
+  - Pinning a tab will ungroup it from any existing group.
+  - Unpinning a tab will apply the default grouping behavior.
 - Save/Load window state, including tab groups, pinned tabs, and window position
 - AI-powered tab grouping (In Progress):
   - Server-side AI grouping API with token-based usage tracking
@@ -86,9 +95,9 @@ The AI grouping feature is currently under active development with:
 
 1. Install dependencies:
 
-```bash
-npm install
-```
+    ```bash
+    npm install
+    ```
 
 2. Available scripts:
 
