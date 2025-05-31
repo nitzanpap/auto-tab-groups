@@ -4,6 +4,15 @@
 
 import {tabGroupState} from '../state/TabGroupState.js';
 
+export const DEFAULT_STATE = {
+  autoGroupingEnabled: true,
+  onlyApplyToNewTabsEnabled: false,
+  groupBySubDomainEnabled: false,
+  preserveManualColors: false,
+  domainColors: {},
+  manuallySetColors: [],
+};
+
 class StorageManager {
   /**
    * Saves the current state to browser storage
@@ -22,12 +31,7 @@ class StorageManager {
    */
   async loadState() {
     try {
-      const data = await browser.storage.local.get({
-        autoGroupingEnabled: true,
-        onlyApplyToNewTabsEnabled: false,
-        groupBySubDomainEnabled: true,
-        domainColors: {},
-      });
+      const data = await browser.storage.local.get(DEFAULT_STATE);
 
       tabGroupState.updateFromStorage(data);
       console.log('State loaded successfully:', data);
