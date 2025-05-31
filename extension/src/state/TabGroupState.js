@@ -2,13 +2,15 @@
  * Manages the state of tab groups and their configurations
  */
 
+import {DEFAULT_STATE} from '../config/StorageManager.js';
+
 class TabGroupState {
   constructor() {
     this.domainColors = new Map();
-    this.autoGroupingEnabled = true;
-    this.onlyApplyToNewTabsEnabled = false;
-    this.groupBySubDomainEnabled = true;
-    this.preserveManualColors = false;
+    this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled;
+    this.onlyApplyToNewTabsEnabled = DEFAULT_STATE.onlyApplyToNewTabsEnabled;
+    this.groupBySubDomainEnabled = DEFAULT_STATE.groupBySubDomainEnabled;
+    this.preserveManualColors = DEFAULT_STATE.preserveManualColors;
     this.manuallySetColors = new Set();
   }
 
