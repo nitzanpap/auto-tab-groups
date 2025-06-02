@@ -130,6 +130,12 @@ class TabGroupService {
 
       // Group tabs by domain
       for (const tab of tabs) {
+        // Skip pinned tabs
+        if (tab.pinned) {
+          console.log(`[groupTabsByDomain] Skipping pinned tab ${tab.id}`);
+          continue;
+        }
+
         if (!tab.url) continue;
         const domain = extractDomain(
           tab.url,
@@ -220,6 +226,13 @@ class TabGroupService {
     try {
       // 1. Get tab info and extract domain
       const tab = await browser.tabs.get(tabId);
+
+      // Skip pinned tabs
+      if (tab.pinned) {
+        console.log(`[moveTabToGroup] Skipping pinned tab ${tabId}`);
+        return;
+      }
+
       if (!tab.url) return;
 
       const domain = extractDomain(
