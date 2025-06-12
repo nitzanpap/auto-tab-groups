@@ -1,3 +1,4 @@
+// Chrome-compatible popup script
 const groupButton = document.getElementById('group');
 const ungroupButton = document.getElementById('ungroup');
 const generateNewColorsButton = document.getElementById('generateNewColors');
@@ -14,18 +15,23 @@ const preserveManualColorsToggle = document.getElementById(
   'preserveManualColors',
 );
 
+// Browser API compatibility - use chrome for Chrome, browser for Firefox
+const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
+
 const updateVersionDisplay = () => {
   // Get the version number from the manifest and display it.
   const versionNumberElement = document.getElementById('versionNumber');
-  const manifest = browser.runtime.getManifest();
+  const manifest = browserAPI.runtime.getManifest();
   console.log(manifest);
   versionNumberElement.textContent = manifest.version;
 };
 
 // Function to update collapse button text based on state
 async function updateCollapseButtonText() {
-  const response = await browser.runtime.sendMessage({
-    action: 'getGroupsCollapseState',
+  const response = await new Promise((resolve) => {
+    browserAPI.runtime.sendMessage({
+      action: 'getGroupsCollapseState',
+    }, resolve);
   });
   const isCollapsed = response.isCollapsed;
   collapseOrExpandAllText.textContent = isCollapsed
@@ -35,25 +41,32 @@ async function updateCollapseButtonText() {
 
 updateVersionDisplay();
 
+// Helper function for sending messages (Chrome compatibility)
+function sendMessage(message) {
+  return new Promise((resolve) => {
+    browserAPI.runtime.sendMessage(message, resolve);
+  });
+}
+
 // Event listeners
 groupButton.addEventListener('click', () => {
-  browser.runtime.sendMessage({action: 'group'});
+  sendMessage({action: 'group'});
 });
 
 ungroupButton.addEventListener('click', () => {
-  browser.runtime.sendMessage({action: 'ungroup'});
+  sendMessage({action: 'ungroup'});
 });
 
 generateNewColorsButton.addEventListener('click', () => {
-  browser.runtime.sendMessage({action: 'generateNewColors'});
+  sendMessage({action: 'generateNewColors'});
 });
 
 toggleCollapse.addEventListener('click', async () => {
-  const response = await browser.runtime.sendMessage({
+  const response = await sendMessage({
     action: 'getGroupsCollapseState',
   });
   const shouldCollapse = !response.isCollapsed;
-  await browser.runtime.sendMessage({
+  await sendMessage({
     action: 'toggleCollapse',
     collapse: shouldCollapse,
   });
@@ -64,27 +77,23 @@ toggleCollapse.addEventListener('click', async () => {
 updateCollapseButtonText();
 
 // Initialize the toggle states when popup opens.
-browser.runtime.sendMessage({action: 'getAutoGroupState'}).then(response => {
+sendMessage({action: 'getAutoGroupState'}).then(response => {
   autoGroupToggle.checked = response.enabled;
 });
 
-browser.runtime
-  .sendMessage({action: 'getOnlyApplyToNewTabs'})
-  .then(response => {
-    onlyApplyToNewTabsToggle.checked = response.enabled;
-  });
+sendMessage({action: 'getOnlyApplyToNewTabs'}).then(response => {
+  onlyApplyToNewTabsToggle.checked = response.enabled;
+});
 
-browser.runtime.sendMessage({action: 'getGroupBySubDomain'}, response => {
+sendMessage({action: 'getGroupBySubDomain'}).then(response => {
   if (response && response.enabled !== undefined) {
     groupBySubDomainToggle.checked = response.enabled;
   }
 });
 
-browser.runtime
-  .sendMessage({action: 'getPreserveManualColors'})
-  .then(response => {
-    preserveManualColorsToggle.checked = response.enabled;
-  });
+sendMessage({action: 'getPreserveManualColors'}).then(response => {
+  preserveManualColorsToggle.checked = response.enabled;
+});
 
 // Advanced section toggle.
 advancedToggle.addEventListener('click', () => {
@@ -94,14 +103,14 @@ advancedToggle.addEventListener('click', () => {
 
 // Listen for toggle changes.
 autoGroupToggle.addEventListener('change', event => {
-  browser.runtime.sendMessage({
+  sendMessage({
     action: 'toggleAutoGroup',
     enabled: event.target.checked,
   });
 });
 
 onlyApplyToNewTabsToggle.addEventListener('change', event => {
-  browser.runtime.sendMessage({
+  sendMessage({
     action: 'toggleOnlyNewTabs',
     enabled: event.target.checked,
   });
@@ -109,14 +118,14 @@ onlyApplyToNewTabsToggle.addEventListener('change', event => {
 
 groupBySubDomainToggle.addEventListener('change', () => {
   const enabled = groupBySubDomainToggle.checked;
-  browser.runtime.sendMessage({
+  sendMessage({
     action: 'toggleGroupBySubDomain',
     enabled: enabled,
   });
 });
 
 preserveManualColorsToggle.addEventListener('change', event => {
-  browser.runtime.sendMessage({
+  sendMessage({
     action: 'togglePreserveManualColors',
     enabled: event.target.checked,
   });

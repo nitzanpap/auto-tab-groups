@@ -1,8 +1,12 @@
-# 🔖 Auto Tab Groups (Firefox Extension)
+# 🔖 Auto Tab Groups (Cross-Browser Extension)
 
-This is a lightweight Firefox extension that automatically groups open tabs by domain, with intelligent domain name handling for better organization.
+A lightweight cross-browser extension that automatically groups open tabs by domain, with intelligent domain name handling for better organization. Works on both Chrome and Firefox!
 
-📥 **[Install from Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**
+## 📦 Downloads
+
+🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**  
+🌐 **Chrome Web Store** *(coming soon)*  
+💻 **Developer Builds**: See [`extension/`](extension/) folder for latest builds
 
 ## Example of tab groups in the navigation bar
 
@@ -14,8 +18,14 @@ This is a lightweight Firefox extension that automatically groups open tabs by d
 
 ---
 
-> ⚠️ Requires **Firefox 138+** for `tabs.group()` support.
-> ⚠️ Requires **Firefox 139+** for title and color support.
+## 🌐 Browser Compatibility
+
+| Browser | Version | Status |
+|---------|---------|--------|
+| Firefox | 139+ | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Chrome | Latest | ✅ Fully supported (Manifest V3, Tab Groups API) |
+
+**Note**: Firefox 139+ required for full Tab Groups API support and enhanced features.
 
 ---
 
@@ -67,6 +77,51 @@ The AI grouping feature is currently under active development with:
 - Premium model designed with free trial tokens and unlimited premium usage
 
 **Since this is open source, to run the AI grouping feature locally, users will need to provide their own API key.**
+
+---
+
+## 🛠️ Development
+
+The extension is built with a unified codebase supporting both Chrome and Firefox:
+
+### Quick Start
+
+```bash
+cd extension/
+npm install
+```
+
+### Build Commands
+
+```bash
+# Build for Chrome
+npm run build:chrome
+
+# Build for Firefox  
+npm run build:firefox
+
+# Build for both browsers
+npm run build
+
+# Development mode
+npm run dev:chrome    # Sets up for Chrome development
+npm run dev:firefox   # Sets up for Firefox development
+```
+
+### Project Structure
+
+```
+extension/
+├── src/                          # Single source code base
+│   ├── manifest.chrome.json     # Chrome Manifest V3
+│   ├── manifest.firefox.json    # Firefox Manifest V3
+│   ├── utils/BrowserAPI.js       # Cross-browser compatibility layer
+│   └── ...                      # Shared components
+├── package.json                  # Build scripts for both browsers
+└── README.md                     # Detailed development docs
+```
+
+For detailed development information, see [`extension/README.md`](extension/README.md).
 
 ---
 
@@ -218,6 +273,26 @@ The extension provides convenient ways to manage your tab groups:
 1. Update the version in `manifest.json`
 2. Build using `npm run build`
 3. Upload the .xpi file to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/)
+
+## 🌐 Browser Compatibility
+
+### Firefox Extension
+
+- **Location**: `extension_firefox/`
+- **Manifest**: V2
+- **Requirements**: Firefox 139+ for full features
+- **Install**: [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
+
+### Chrome Extension
+
+- **Location**: `extension_chrome/`
+- **Manifest**: V3
+- **Requirements**: Chrome 88+ (Chrome 95+ recommended)
+- **Status**: Ready for Chrome Web Store submission
+
+Both extensions share the same core functionality with browser-specific optimizations.
+
+---
 
 ## 👨‍💻 Author
 

@@ -1,10 +1,11 @@
 /**
- * Service for managing browser tab groups
+ * Service for managing browser tab groups (Chrome-compatible version)
  */
 
 import {tabGroupState} from '../state/TabGroupState.js';
 import {extractDomain, getDomainDisplayName} from '../utils/DomainUtils.js';
 import {storageManager} from '../config/StorageManager.js';
+import '../utils/BrowserAPI.js'; // Import browser compatibility layer
 
 class TabGroupService {
   /**
@@ -14,7 +15,7 @@ class TabGroupService {
    */
   async getGroupDomain(groupId) {
     try {
-      const tabs = await browser.tabs.query({groupId});
+      const tabs = await browserAPI.tabs.query({groupId});
       if (tabs.length === 0) return null;
 
       const firstTab = tabs[0];
@@ -41,12 +42,12 @@ class TabGroupService {
         `[createGroup] Creating new group for domain "${domain}" with tabs:`,
         tabIds,
       );
-      const groupId = await browser.tabs.group({tabIds});
+      const groupId = await browserAPI.tabs.group({tabIds});
       console.log(
         `[createGroup] Created group with ID ${groupId} for domain "${domain}"`,
       );
 
-      if (browser.tabGroups) {
+      if (browserAPI.tabGroups) {
         await this.setGroupTitleAndColor(groupId, domain);
         await this.handleGroupColorAssignment(groupId, domain);
       } else {
@@ -72,7 +73,7 @@ class TabGroupService {
       console.log(
         `[setGroupTitleAndColor] Setting title "${displayName}" for group ${groupId}`,
       );
-      const groupInfo = await browser.tabGroups.get(groupId);
+      const groupInfo = await browserAPI.tabGroups.get(groupId);
       const updateProperties = {
         title: displayName ?? groupInfo.title,
       };
@@ -84,7 +85,7 @@ class TabGroupService {
         );
       }
 
-      await browser.tabGroups.update(groupId, updateProperties);
+      await browserAPI.tabGroups.update(groupId, updateProperties);
     } catch (error) {
       console.error(
         '[setGroupTitleAndColor] Error setting group title/color:',
@@ -100,7 +101,7 @@ class TabGroupService {
    */
   async handleGroupColorAssignment(groupId, domain) {
     try {
-      const groupInfo = await browser.tabGroups.get(groupId);
+      const groupInfo = await browserAPI.tabGroups.get(groupId);
       if (!tabGroupState.getColor(domain)) {
         tabGroupState.setColor(domain, groupInfo.color);
         await storageManager.saveState();
@@ -124,7 +125,7 @@ class TabGroupService {
   async groupTabsByDomain() {
     try {
       console.log('[groupTabsByDomain] Starting to group all tabs by domain');
-      const tabs = await browser.tabs.query({currentWindow: true});
+      const tabs = await browserAPI.tabs.query({currentWindow: true});
       console.log('[groupTabsByDomain] Found tabs:', tabs);
       const domainTabsMap = new Map();
 
@@ -155,7 +156,7 @@ class TabGroupService {
       );
 
       // Get existing groups
-      const existingGroups = await browser.tabGroups.query({
+      const existingGroups = await browserAPI.tabGroups.query({
         windowId: tabs[0].windowId,
       });
       console.log('[groupTabsByDomain] Existing groups:', existingGroups);
@@ -177,7 +178,7 @@ class TabGroupService {
             `[groupTabsByDomain] Adding tabs to existing group for "${domain}":`,
             tabIds,
           );
-          await browser.tabs.group({
+          await browserAPI.tabs.group({
             tabIds,
             groupId: matchingGroup.id,
           });
@@ -202,10 +203,10 @@ class TabGroupService {
    */
   async ungroupAllTabs() {
     try {
-      const tabs = await browser.tabs.query({currentWindow: true});
+      const tabs = await browserAPI.tabs.query({currentWindow: true});
       for (const tab of tabs) {
         try {
-          await browser.tabs.ungroup(tab.id);
+          await browserAPI.tabs.ungroup(tab.id);
         } catch (error) {
           console.error(`Error ungrouping tab ${tab.id}:`, error);
         }
@@ -225,7 +226,7 @@ class TabGroupService {
 
     try {
       // 1. Get tab info and extract domain
-      const tab = await browser.tabs.get(tabId);
+      const tab = await browserAPI.tabs.get(tabId);
 
       // Skip pinned tabs
       if (tab.pinned) {
@@ -248,7 +249,7 @@ class TabGroupService {
       );
 
       // 2. Get all groups in the current window
-      const groups = await browser.tabGroups.query({windowId: tab.windowId});
+      const groups = await browserAPI.tabGroups.query({windowId: tab.windowId});
       console.log(`[moveTabToGroup] Existing groups in window:`, groups);
 
       // 3. Find group with matching title
@@ -266,7 +267,7 @@ class TabGroupService {
         console.log(
           `[moveTabToGroup] Moving tab ${tabId} to existing group ${targetGroup.id}`,
         );
-        await browser.tabs.group({
+        await browserAPI.tabs.group({
           tabIds: [tabId],
           groupId: targetGroup.id,
         });
@@ -287,7 +288,7 @@ class TabGroupService {
    */
   async removeEmptyGroup(groupId) {
     try {
-      const tabs = await browser.tabs.query({groupId});
+      const tabs = await browserAPI.tabs.query({groupId});
       if (tabs.length === 0) {
         console.log(`[removeEmptyGroup] Removing empty group ${groupId}`);
       }
@@ -308,7 +309,7 @@ class TabGroupService {
         '[generateNewColors] Starting to generate new colors for all groups',
       );
 
-      // Available Firefox tab group colors
+      // Available Chrome tab group colors (different from Firefox)
       const colors = [
         'blue',
         'cyan',
@@ -322,8 +323,8 @@ class TabGroupService {
       ];
 
       // Get all groups in the current window
-      const currentWindow = await browser.windows.getCurrent();
-      const groups = await browser.tabGroups.query({
+      const currentWindow = await browserAPI.windows.getCurrent();
+      const groups = await browserAPI.tabGroups.query({
         windowId: currentWindow.id,
       });
 
@@ -373,7 +374,7 @@ class TabGroupService {
         tabGroupState.setColor(domain, newColor);
 
         // Update the group's color
-        await browser.tabGroups.update(group.id, {color: newColor});
+        await browserAPI.tabGroups.update(group.id, {color: newColor});
         console.log(
           `[generateNewColors] Assigned random color "${newColor}" to domain "${domain}"`,
         );
@@ -400,14 +401,14 @@ class TabGroupService {
       );
 
       // Get all groups in the current window
-      const currentWindow = await browser.windows.getCurrent();
-      const groups = await browser.tabGroups.query({
+      const currentWindow = await browserAPI.windows.getCurrent();
+      const groups = await browserAPI.tabGroups.query({
         windowId: currentWindow.id,
       });
 
       // Update each group's collapsed state
       for (const group of groups) {
-        await browser.tabGroups.update(group.id, {collapsed: collapse});
+        await browserAPI.tabGroups.update(group.id, {collapsed: collapse});
       }
 
       console.log(
@@ -424,8 +425,8 @@ class TabGroupService {
    */
   async getGroupsCollapseState() {
     try {
-      const currentWindow = await browser.windows.getCurrent();
-      const groups = await browser.tabGroups.query({
+      const currentWindow = await browserAPI.windows.getCurrent();
+      const groups = await browserAPI.tabGroups.query({
         windowId: currentWindow.id,
       });
 
@@ -442,13 +443,14 @@ class TabGroupService {
 }
 
 export const tabGroupService = new TabGroupService();
+
 async function logTabsAndGroups(tabs) {
   console.log(
     '[groupTabsByDomain] All current tabs before cleanup:',
     tabs.map(tab => (tab.url ? tab.url : 'No URL')),
   );
   console.log('[groupTabsByDomain] Tab grouping complete');
-  const allGroups = await browser.tabGroups.query({
+  const allGroups = await browserAPI.tabGroups.query({
     windowId: tabs[0].windowId,
   });
   const groupedDomains = await Promise.all(
@@ -460,7 +462,7 @@ async function logTabsAndGroups(tabs) {
         );
         return null;
       }
-      const tabsInGroup = await browser.tabs.query({groupId: group.id});
+      const tabsInGroup = await browserAPI.tabs.query({groupId: group.id});
       const domainsInGroup = tabsInGroup
         .map(tab =>
           extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled),

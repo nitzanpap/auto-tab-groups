@@ -1,0 +1,30 @@
+{
+  "name": "auto-tab-groups",
+  "version": "1.2.0",
+  "description": "Cross-browser extension that automatically groups tabs by domain",
+  "scripts": {
+    "rename-generated-extension-from-zip-to-xpi": "find . -name '*.zip' -exec sh -c 'mv \"$0\" \"${0%.zip}.xpi\"' {} \\;",
+    "build:chrome": "cp src/manifest.chrome.json src/manifest.json && cd src && zip -r ../auto-tab-groups-chrome.zip . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Chrome extension built: auto-tab-groups-chrome.zip'",
+    "build:firefox": "cp src/manifest.firefox.json src/manifest.json && cd src && web-ext build && npm run rename-generated-extension-from-zip-to-xpi",
+    "build": "npm run clean && npm run build:chrome && npm run build:firefox",
+    "clean": "rm -f *.zip *.xpi",
+    "test": "npx playwright test",
+    "test:chrome": "BROWSER=chrome npx playwright test",
+    "test:firefox": "BROWSER=firefox npx playwright test",
+    "dev:chrome": "cp src/manifest.chrome.json src/manifest.json && echo 'Chrome manifest ready for development - load src/ folder in chrome://extensions/'",
+    "dev:firefox": "cp src/manifest.firefox.json src/manifest.json && echo 'Firefox manifest ready for development - load src/ folder in about:debugging'",
+    "dev:clean": "rm -f src/manifest.json && echo 'Development manifest cleaned'"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "web-ext": "^8.7.1"
+  },
+  "keywords": [
+    "chrome-extension",
+    "firefox-addon",
+    "tab-management",
+    "productivity"
+  ],
+  "author": "Nitzan Papini",
+  "license": "MIT"
+}

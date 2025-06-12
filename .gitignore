@@ -1,3 +1,17 @@
 dist/
 web-ext-artifacts/
 node_modules/
+*.zip
+*.xpi
+*.tar.gz
+*.tgz
+*.log
+
+# Ignore test results and reports
+test-report/
+playwright-report/
+test-results/
+TEST_REPORT.md
+
+# Ignore generated manifest file.
+manifest.json
