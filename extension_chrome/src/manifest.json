@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Tab Groups",
+  "author": "Nitzan Papini",
+  "version": "1.1.7",
+  "description": "Automatically groups tabs by domain.",
+  "permissions": ["tabs", "storage", "tabGroups"],
+  "side_panel": {
+    "default_path": "public/sidebar.html"
+  },
+  "action": {
+    "default_popup": "public/popup.html",
+    "default_icon": {
+      "16": "assets/icon.svg",
+      "48": "assets/icon.svg",
+      "128": "assets/icon.svg"
+    }
+  },
+  "icons": {
+    "16": "assets/icon.svg",
+    "48": "assets/icon.svg",
+    "128": "assets/icon.svg"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

@@ -219,6 +219,26 @@ The extension provides convenient ways to manage your tab groups:
 2. Build using `npm run build`
 3. Upload the .xpi file to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/)
 
+## 🌐 Browser Compatibility
+
+### Firefox Extension
+
+- **Location**: `extension_firefox/`
+- **Manifest**: V2
+- **Requirements**: Firefox 139+ for full features
+- **Install**: [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
+
+### Chrome Extension
+
+- **Location**: `extension_chrome/`
+- **Manifest**: V3
+- **Requirements**: Chrome 88+ (Chrome 95+ recommended)
+- **Status**: Ready for Chrome Web Store submission
+
+Both extensions share the same core functionality with browser-specific optimizations.
+
+---
+
 ## 👨‍💻 Author
 
 Built by [Nitzan Papini](https://github.com/nitzanpap)
