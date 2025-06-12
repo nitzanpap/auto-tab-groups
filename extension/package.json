@@ -1,6 +1,6 @@
 {
   "name": "auto-tab-groups",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "scripts": {
     "rename-generated-extension-from-zip-to-xpi": "find . -name '*.zip' -exec sh -c 'mv \"$0\" \"${0%.zip}.xpi\"' {} \\;",
