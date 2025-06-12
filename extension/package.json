@@ -3,7 +3,7 @@
   "version": "1.2.2",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "scripts": {
-    "rename-generated-extension-from-zip-to-xpi": "find . -name '*.zip' -exec sh -c 'mv \"$0\" \"${0%.zip}.xpi\"' {} \\;",
+    "rename-generated-extension-from-zip-to-xpi": "find . -name 'auto_tab_groups-*.zip' -exec sh -c 'mv \"$0\" \"${0%.zip}.xpi\"' {} \\;",
     "build:chrome": "cp src/manifest.chrome.json src/manifest.json && cd src && zip -r ../auto-tab-groups-chrome.zip . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Chrome extension built: auto-tab-groups-chrome.zip'",
     "build:firefox": "cp src/manifest.firefox.json src/manifest.json && cd src && web-ext build && npm run rename-generated-extension-from-zip-to-xpi",
     "build": "npm run clean && npm run build:chrome && npm run build:firefox",
