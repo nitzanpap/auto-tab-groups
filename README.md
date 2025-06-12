@@ -22,10 +22,10 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 | Browser | Version | Status |
 |---------|---------|--------|
-| Firefox | 138+ | ✅ Fully supported |
-| Chrome | Latest | ✅ Fully supported |
+| Firefox | 109+ | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Chrome | Latest | ✅ Fully supported (Manifest V3, Tab Groups API) |
 
-**Note**: Firefox requires version 138+ for `tabs.group()` support and 139+ for enhanced title and color features.
+**Note**: Both browsers now use Manifest V3 with full Tab Groups API support. Firefox 109+ required for Manifest V3 support.
 
 ---
 
@@ -114,7 +114,7 @@ npm run dev:firefox   # Sets up for Firefox development
 extension/
 ├── src/                          # Single source code base
 │   ├── manifest.chrome.json     # Chrome Manifest V3
-│   ├── manifest.firefox.json    # Firefox Manifest V2
+│   ├── manifest.firefox.json    # Firefox Manifest V3
 │   ├── utils/BrowserAPI.js       # Cross-browser compatibility layer
 │   └── ...                      # Shared components
 ├── package.json                  # Build scripts for both browsers

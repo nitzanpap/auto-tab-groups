@@ -21,16 +21,16 @@ The extension uses a unified codebase with browser-specific builds:
 
 - **Single source code** in `src/` folder
 - **Browser detection** via `BrowserAPI.js` compatibility layer
-- **Separate manifests** for Chrome (V3) and Firefox (V2)
-- **Build scripts** generate browser-specific packages
+- **Manifest V3** for both Chrome and Firefox (unified architecture)
+- **Browser-specific features** handled gracefully (e.g., Chrome's side_panel vs Firefox's sidebar_action)
 
 ### Key Components
 
 ```
 src/
 ├── manifest.chrome.json    # Chrome Manifest V3
-├── manifest.firefox.json   # Firefox Manifest V2
-├── background.js           # Service worker/background script
+├── manifest.firefox.json   # Firefox Manifest V3
+├── background.js           # Service worker (both browsers)
 ├── utils/
 │   ├── BrowserAPI.js      # Cross-browser compatibility layer
 │   └── DomainUtils.js     # Domain processing utilities
@@ -132,12 +132,13 @@ npm run test:firefox
 
 | Feature | Chrome | Firefox | Solution |
 |---------|--------|---------|----------|
-| Manifest | V3 | V2 | Separate manifest files |
-| Background | Service Worker | Background Script | BrowserAPI.js detection |
+| Manifest | V3 | V3 | Unified architecture |
+| Background | Service Worker | Background Scripts | ES modules support |
 | APIs | `chrome.*` | `browser.*` | Unified browserAPI object |
 | Storage | Callback-based | Promise-based | Promisified Chrome APIs |
-| Tab Groups | Native support | Simulated | Feature detection |
-| Icons | PNG required | SVG supported | PNG format (universal) |
+| Tab Groups | Native support | Native support | Both browsers support tabGroups API |
+| Side Panel | `side_panel` | `sidebar_action` | Browser-specific manifest keys |
+| Icons | PNG required | SVG/PNG supported | PNG format (universal) |
 
 ## 🐛 Troubleshooting
 
