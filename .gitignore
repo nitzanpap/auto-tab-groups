@@ -12,3 +12,6 @@ test-report/
 playwright-report/
 test-results/
 TEST_REPORT.md
+
+# Ignore generated manifest file.
+manifest.json
