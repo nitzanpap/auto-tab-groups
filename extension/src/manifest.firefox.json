@@ -6,7 +6,13 @@
   "description": "Automatically groups tabs by domain.",
   "permissions": ["tabs", "storage", "tabGroups"],
   "sidebar_action": {
-    "default_panel": "public/sidebar.html"
+    "default_panel": "public/sidebar.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    },
+    "default_title": "Auto Tab Groups"
   },
   "action": {
     "default_popup": "public/popup.html",
