@@ -2,6 +2,7 @@ dist/
 web-ext-artifacts/
 node_modules/
 *.zip
+*.xpi
 *.tar.gz
 *.tgz
 *.log

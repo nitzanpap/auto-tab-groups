@@ -1,0 +1,27 @@
+{
+  "name": "auto-tab-groups",
+  "version": "1.1.7",
+  "description": "Cross-browser extension that automatically groups tabs by domain",
+  "scripts": {
+    "build:chrome": "npm run clean && cp src/manifest.chrome.json src/manifest.json && cd src && zip -r ../auto-tab-groups-chrome.zip . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Chrome extension built: auto-tab-groups-chrome.zip'",
+    "build:firefox": "npm run clean && cp src/manifest.firefox.json src/manifest.json && cd src && zip -r ../auto-tab-groups-firefox.xpi . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Firefox extension built: auto-tab-groups-firefox.xpi'",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "clean": "rm -f *.zip *.xpi",
+    "test": "npx playwright test",
+    "test:chrome": "BROWSER=chrome npx playwright test",
+    "test:firefox": "BROWSER=firefox npx playwright test",
+    "dev:chrome": "cp src/manifest.chrome.json src/manifest.json",
+    "dev:firefox": "cp src/manifest.firefox.json src/manifest.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "keywords": [
+    "chrome-extension",
+    "firefox-addon",
+    "tab-management",
+    "productivity"
+  ],
+  "author": "Nitzan Papini",
+  "license": "MIT"
+}
