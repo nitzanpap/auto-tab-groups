@@ -82,6 +82,26 @@ Firefox was showing errors because it was using Manifest V2 while the codebase w
 | Tab Groups API | ✅ | ⚠️ Limited | ✅ Graceful degradation |
 | Side Panel | `side_panel` | `sidebar_action` | ✅ Browser-specific keys |
 
+### ✅ Additional Firefox Fixes
+
+#### Sidebar Icon Display
+
+Firefox requires explicit icon configuration for the sidebar:
+
+```json
+"sidebar_action": {
+  "default_panel": "public/sidebar.html",
+  "default_icon": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png", 
+    "128": "assets/icon128.png"
+  },
+  "default_title": "Auto Tab Groups"
+}
+```
+
+Without the `default_icon` property in `sidebar_action`, Firefox won't display the extension icon in the vertical sidebar panel.
+
 ## 🧪 Testing
 
 Run Firefox development mode to test:
