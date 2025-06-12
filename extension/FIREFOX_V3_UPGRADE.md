@@ -82,6 +82,25 @@ Firefox was showing errors because it was using Manifest V2 while the codebase w
 | Tab Groups API | ✅ | ⚠️ Limited | ✅ Graceful degradation |
 | Side Panel | `side_panel` | `sidebar_action` | ✅ Browser-specific keys |
 
+### Firefox-Specific Settings
+
+Added `browser_specific_settings` for proper Firefox Add-ons (AMO) compatibility:
+
+```json
+"browser_specific_settings": {
+  "gecko": {
+    "id": "auto-tab-groups@nitzanpapini.dev",
+    "strict_min_version": "139.0"
+  }
+}
+```
+
+This ensures:
+
+- **Unique extension ID** for Firefox Add-ons store
+- **Minimum version requirement** (Firefox 139+) for full Tab Groups API support  
+- **Proper AMO submission** compatibility
+
 ### ✅ Additional Firefox Fixes
 
 #### Sidebar Icon Display

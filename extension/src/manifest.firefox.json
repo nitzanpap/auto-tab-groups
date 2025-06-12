@@ -5,6 +5,12 @@
   "version": "1.2.0",
   "description": "Automatically groups tabs by domain.",
   "permissions": ["tabs", "storage", "tabGroups"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{442789cf-4ff6-4a85-bf5b-53aa3282f1a2}",
+      "strict_min_version": "139.0"
+    }
+  },
   "sidebar_action": {
     "default_panel": "public/sidebar.html",
     "default_icon": {
