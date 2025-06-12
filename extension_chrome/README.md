@@ -25,6 +25,7 @@ This is the Chrome-compatible version of the Auto Tab Groups extension, built wi
 - ✅ Collapse/expand group controls
 - ✅ Configuration options (auto-grouping, subdomain handling, etc.)
 - ✅ Side panel support
+- ✅ Proper icon display (PNG format for Chrome compatibility)
 
 ## Development
 
