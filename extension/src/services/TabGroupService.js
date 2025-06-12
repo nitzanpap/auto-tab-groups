@@ -334,6 +334,12 @@ class TabGroupService {
     try {
       console.log("[generateNewColors] Starting to generate new colors for all groups")
 
+      // Check if tab groups are supported in this browser
+      if (!browserAPI.tabGroups) {
+        console.log("[generateNewColors] Tab groups not supported in this browser, skipping")
+        return
+      }
+
       // Available Chrome tab group colors (different from Firefox)
       const colors = ["blue", "cyan", "grey", "green", "orange", "pink", "purple", "red", "yellow"]
 
@@ -406,6 +412,12 @@ class TabGroupService {
         `[toggleAllGroupsCollapse] Setting all groups to ${collapse ? "collapsed" : "expanded"}`
       )
 
+      // Check if tab groups are supported in this browser
+      if (!browserAPI.tabGroups) {
+        console.log("[toggleAllGroupsCollapse] Tab groups not supported in this browser, skipping")
+        return
+      }
+
       // Get all groups in the current window
       const currentWindow = await browserAPI.windows.getCurrent()
       const groups = await browserAPI.tabGroups.query({
@@ -431,6 +443,12 @@ class TabGroupService {
    */
   async getGroupsCollapseState() {
     try {
+      // Check if tab groups are supported in this browser
+      if (!browserAPI.tabGroups) {
+        console.log("[getGroupsCollapseState] Tab groups not supported in this browser")
+        return false
+      }
+
       const currentWindow = await browserAPI.windows.getCurrent()
       const groups = await browserAPI.tabGroups.query({
         windowId: currentWindow.id,
@@ -453,6 +471,13 @@ async function logTabsAndGroups(tabs) {
     tabs.map((tab) => (tab.url ? tab.url : "No URL"))
   )
   console.log("[groupTabsByDomain] Tab grouping complete")
+  
+  // Check if tab groups are supported in this browser
+  if (!browserAPI.tabGroups) {
+    console.log("[logTabsAndGroups] Tab groups not supported in this browser, skipping group logging")
+    return
+  }
+  
   const allGroups = await browserAPI.tabGroups.query({
     windowId: tabs[0].windowId,
   })

@@ -12,11 +12,16 @@ import "./utils/BrowserAPI.js" // Import browser compatibility layer
   try {
     await storageManager.loadState()
     console.log("Extension initialized successfully")
-
+    
+    console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
+    console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
+    
     // Auto-group existing tabs if auto-grouping is enabled
     if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
       console.log("Auto-grouping is enabled, grouping existing tabs...")
       await tabGroupService.groupTabsByDomain()
+    } else {
+      console.log("Auto-grouping conditions not met - either disabled or only-new-tabs is enabled")
     }
   } catch (error) {
     console.error("Error initializing extension:", error)
