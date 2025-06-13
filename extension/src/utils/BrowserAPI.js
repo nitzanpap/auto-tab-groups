@@ -31,7 +31,13 @@ const browserAPI = (() => {
     // In Chrome MV3, tabGroups API is already promise-based, no need to promisify
     const tabGroupsAPI = api.tabGroups
       ? isChromeMV3
-        ? api.tabGroups // Use directly in MV3
+        ? {
+            // Use directly in MV3 but ensure proper binding
+            ...api.tabGroups,
+            query: api.tabGroups.query.bind(api.tabGroups),
+            get: api.tabGroups.get.bind(api.tabGroups),
+            update: api.tabGroups.update.bind(api.tabGroups),
+          }
         : {
             // Promisify for MV2
             ...api.tabGroups,
@@ -46,27 +52,36 @@ const browserAPI = (() => {
       ...api,
       tabs: {
         ...api.tabs,
-        query: isChromeMV3 ? api.tabs.query : promisify(api.tabs.query.bind(api.tabs)),
-        get: isChromeMV3 ? api.tabs.get : promisify(api.tabs.get.bind(api.tabs)),
-        group: isChromeMV3 ? api.tabs.group : promisify(api.tabs.group.bind(api.tabs)),
-        ungroup: isChromeMV3 ? api.tabs.ungroup : promisify(api.tabs.ungroup.bind(api.tabs)),
+        query: isChromeMV3
+          ? api.tabs.query.bind(api.tabs)
+          : promisify(api.tabs.query.bind(api.tabs)),
+        get: isChromeMV3 ? api.tabs.get.bind(api.tabs) : promisify(api.tabs.get.bind(api.tabs)),
+        group: isChromeMV3
+          ? api.tabs.group.bind(api.tabs)
+          : promisify(api.tabs.group.bind(api.tabs)),
+        ungroup: isChromeMV3
+          ? api.tabs.ungroup.bind(api.tabs)
+          : promisify(api.tabs.ungroup.bind(api.tabs)),
       },
       tabGroups: tabGroupsAPI,
       windows: {
         ...api.windows,
         getCurrent: isChromeMV3
-          ? api.windows.getCurrent
+          ? api.windows.getCurrent.bind(api.windows)
           : promisify(api.windows.getCurrent.bind(api.windows)),
+        getAll: isChromeMV3
+          ? api.windows.getAll.bind(api.windows)
+          : promisify(api.windows.getAll.bind(api.windows)),
       },
       storage: {
         ...api.storage,
         local: {
           ...api.storage.local,
           get: isChromeMV3
-            ? api.storage.local.get
+            ? api.storage.local.get.bind(api.storage.local)
             : promisify(api.storage.local.get.bind(api.storage.local)),
           set: isChromeMV3
-            ? api.storage.local.set
+            ? api.storage.local.set.bind(api.storage.local)
             : promisify(api.storage.local.set.bind(api.storage.local)),
         },
       },
