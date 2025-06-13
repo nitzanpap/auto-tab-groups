@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Auto Tab Groups",
   "author": "Nitzan Papini",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Automatically groups tabs by domain.",
   "permissions": ["tabs", "storage", "tabGroups"],
   "side_panel": {

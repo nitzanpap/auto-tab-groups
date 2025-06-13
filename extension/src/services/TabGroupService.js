@@ -49,7 +49,17 @@ class TabGroupService {
 
       return null
     } catch (error) {
-      console.error(`[getGroupDomain] Error getting domain for group ${groupId}:`, error)
+      // Group was likely removed, check if we have it in our stored mappings
+      const storedDomain = tabGroupState.getGroupDomain(groupId)
+      if (storedDomain) {
+        console.log(
+          `[getGroupDomain] Group ${groupId} no longer exists but found stored domain: ${storedDomain}`
+        )
+        return storedDomain
+      }
+
+      // Only log as warning since this is expected behavior when groups are removed
+      console.warn(`[getGroupDomain] Group ${groupId} no longer exists and no stored mapping found`)
       return null
     }
   }
@@ -630,6 +640,7 @@ async function logTabsAndGroups(tabs) {
       }
       const tabsInGroup = await browserAPI.tabs.query({ groupId: group.id })
       const domainsInGroup = tabsInGroup
+        .filter((tab) => tab.url) // Filter out tabs without URLs
         .map((tab) => extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled))
         .filter(Boolean)
       return {
