@@ -1,5 +1,12 @@
 /**
  * Main background service worker for the Chrome extension (Manifest V3)
+ *
+ * IMPORTANT: Single Source of Truth (SSOT) Architecture
+ * - Browser storage (chrome.storage.local) is the authoritative source for all state
+ * - In-memory state is only used for performance optimization
+ * - Service workers can restart at any time, losing all in-memory state
+ * - All operations must ensure state is loaded from storage before proceeding
+ * - This prevents issues where rules "disappear" due to service worker restarts
  */
 
 import { tabGroupState } from "./state/TabGroupState.js"
@@ -11,35 +18,69 @@ import { rulesService } from "./services/RulesService.js"
 // Access the unified browser API
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
 
-// Initialize state when the extension loads
-;(async () => {
-  try {
-    await storageManager.loadState()
-    console.log("Extension initialized successfully")
+// State initialization flag to ensure it only happens once per service worker instance
+let stateInitialized = false
 
-    console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
-    console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
-
-    // Auto-group existing tabs if auto-grouping is enabled
-    if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
-      console.log("Auto-grouping is enabled, grouping existing tabs...")
-      await tabGroupService.groupTabsWithRules()
-    } else {
-      console.log("Auto-grouping conditions not met - either disabled or only-new-tabs is enabled")
+/**
+ * Ensures state is loaded from storage (SSOT) before any operations
+ * This must be called before any tab grouping operations
+ */
+async function ensureStateLoaded() {
+  if (!stateInitialized) {
+    try {
+      console.log("Service worker starting - loading state from storage...")
+      await storageManager.loadState()
+      stateInitialized = true
+      console.log("State loaded successfully from storage")
+      console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
+      console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
+      console.log("Custom rules count:", Object.keys(tabGroupState.customRules || {}).length)
+    } catch (error) {
+      console.error("Error loading state from storage:", error)
+      throw error
     }
-  } catch (error) {
-    console.error("Error initializing extension:", error)
   }
-})()
+}
+
+// Always load state when service worker starts - SSOT from browser storage
+ensureStateLoaded()
+  .then(async () => {
+    try {
+      // Auto-group existing tabs if auto-grouping is enabled and conditions are met
+      if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+        console.log("Auto-grouping is enabled, preserving existing colors and grouping tabs...")
+
+        // First, preserve any existing group colors to maintain UX consistency
+        await tabGroupService.preserveExistingGroupColors()
+
+        // Then proceed with grouping
+        await tabGroupService.groupTabsWithRules()
+      } else {
+        console.log(
+          "Auto-grouping conditions not met - either disabled or only-new-tabs is enabled"
+        )
+      }
+    } catch (error) {
+      console.error("Error during initial auto-grouping:", error)
+    }
+  })
+  .catch((error) => {
+    console.error("Critical error: Failed to load state on service worker start:", error)
+  })
 
 // Message handler for popup communication (Chrome MV3 compatible)
 browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   ;(async () => {
     try {
+      // Ensure state is loaded from storage before any operation (SSOT)
+      await ensureStateLoaded()
+
       let result
 
       switch (msg.action) {
         case "group":
+          // Preserve existing colors before regrouping for better UX
+          await tabGroupService.preserveExistingGroupColors()
           await tabGroupService.groupTabsWithRules()
           result = { success: true }
           break
@@ -80,6 +121,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           await storageManager.saveState()
 
           if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+            await tabGroupService.preserveExistingGroupColors()
             await tabGroupService.groupTabsWithRules()
           }
           result = { enabled: tabGroupState.autoGroupingEnabled }
@@ -127,6 +169,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
             // Re-group tabs if auto-grouping is enabled
             if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+              await tabGroupService.preserveExistingGroupColors()
               await tabGroupService.groupTabsWithRules()
             }
           } catch (error) {
@@ -185,30 +228,34 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 })
 
 // Tab event listeners
-browserAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
   if (changeInfo.url) {
     console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
     tabGroupService.moveTabToGroup(tabId)
   }
 })
 
-browserAPI.tabs.onCreated.addListener((tab) => {
+browserAPI.tabs.onCreated.addListener(async (tab) => {
   console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
   if (tab.url) {
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
     tabGroupService.moveTabToGroup(tab.id)
   }
 })
 
-browserAPI.tabs.onRemoved.addListener((tabId, removeInfo) => {
+browserAPI.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   console.log(`[tabs.onRemoved] Tab ${tabId} removed from group: ${removeInfo.groupId}`)
   if (removeInfo.groupId) {
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
     tabGroupService.removeEmptyGroup(removeInfo.groupId)
   }
 })
 
-browserAPI.tabs.onMoved.addListener((tabId) => {
+browserAPI.tabs.onMoved.addListener(async (tabId) => {
   console.log(`[tabs.onMoved] Tab ${tabId} moved`)
+  await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
   tabGroupService.moveTabToGroup(tabId)
 })
 
@@ -216,6 +263,8 @@ browserAPI.tabs.onMoved.addListener((tabId) => {
 if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
   browserAPI.tabGroups.onUpdated.addListener(async (group) => {
     try {
+      await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+
       const domain = await tabGroupService.getGroupDomain(group.id)
       if (!domain) return
 

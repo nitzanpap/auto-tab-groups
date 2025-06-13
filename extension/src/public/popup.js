@@ -14,6 +14,9 @@ const preserveManualColorsToggle = document.getElementById("preserveManualColors
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
 
+console.log("[Popup/Sidebar] Initialized with browserAPI:", browserAPI ? "Available" : "Not available")
+console.log("[Popup/Sidebar] Current context:", document.querySelector('.sidebar-container') ? 'Sidebar' : 'Popup')
+
 const updateVersionDisplay = () => {
   // Get the version number from the manifest and display it.
   const versionNumberElement = document.getElementById("versionNumber")
@@ -136,7 +139,9 @@ onlyApplyToNewTabsToggle.addEventListener("change", (event) => {
 })
 
 groupBySubDomainToggle.addEventListener("change", () => {
+  console.log("[Popup/Sidebar] groupBySubDomainToggle changed")
   const enabled = groupBySubDomainToggle.checked
+  console.log("[Popup/Sidebar] Sending toggleGroupBySubDomain message with enabled:", enabled)
   sendMessage({
     action: "toggleGroupBySubDomain",
     enabled: enabled,
@@ -369,8 +374,19 @@ async function deleteRule(ruleId, ruleName) {
 }
 
 // Custom Rules Event Listeners
-rulesToggle.addEventListener("click", toggleRulesSection)
-addRuleButton.addEventListener("click", addRule)
+console.log("[Popup/Sidebar] Setting up Custom Rules event listeners")
+console.log("[Popup/Sidebar] rulesToggle element:", rulesToggle)
+console.log("[Popup/Sidebar] addRuleButton element:", addRuleButton)
+
+if (rulesToggle) {
+  rulesToggle.addEventListener("click", toggleRulesSection)
+  console.log("[Popup/Sidebar] Added rulesToggle click listener")
+}
+
+if (addRuleButton) {
+  addRuleButton.addEventListener("click", addRule)
+  console.log("[Popup/Sidebar] Added addRuleButton click listener")
+}
 
 // Load custom rules on popup open
 loadCustomRules()

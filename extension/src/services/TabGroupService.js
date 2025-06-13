@@ -705,21 +705,32 @@ class TabGroupService {
       for (const [groupKey, groupData] of groupTabsMap.entries()) {
         const { tabs: tabIds, info } = groupData
 
-        // Find matching existing group
+        // Find matching existing group using robust domain resolution
         let matchingGroup = null
         for (const group of existingGroups) {
-          // For custom rules, match by group title
-          // For domain groups, match by stored domain mapping
           if (info.type === "custom") {
+            // For custom rules, match by group title
             if (group.title === info.name) {
               matchingGroup = group
               break
             }
           } else {
-            const groupDomain = await this.getGroupDomain(group.id)
-            if (groupDomain === info.domain) {
-              matchingGroup = group
-              break
+            // For domain groups, resolve domain using actual tabs in the group
+            try {
+              const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
+              if (groupTabs.length > 0) {
+                const firstTab = groupTabs[0]
+                const existingGroupInfo = await this.resolveGroupForTab(firstTab)
+                if (existingGroupInfo && existingGroupInfo.domain === info.domain) {
+                  matchingGroup = group
+                  console.log(
+                    `[groupTabsWithRules] Found matching group ${group.id} for domain "${info.domain}"`
+                  )
+                  break
+                }
+              }
+            } catch (error) {
+              console.warn(`[groupTabsWithRules] Error checking group ${group.id}:`, error)
             }
           }
         }
@@ -790,6 +801,88 @@ class TabGroupService {
       await storageManager.saveState()
     } catch (error) {
       console.error("[createCustomRuleGroup] Error creating custom rule group:", error)
+    }
+  }
+  /**
+   * Preserves existing group colors before regrouping operations
+   * This ensures consistent UX when service worker restarts trigger regrouping
+   * IMPORTANT: Uses same domain resolution logic as regrouping to ensure matching
+   */
+  async preserveExistingGroupColors() {
+    try {
+      console.log(
+        "[preserveExistingGroupColors] Scanning existing groups to preserve current colors..."
+      )
+
+      // Check if tab groups are supported
+      if (!browserAPI.tabGroups) {
+        console.log("[preserveExistingGroupColors] Tab groups not supported, skipping")
+        return
+      }
+
+      // Get the target window
+      const targetWindow = await this.getTargetWindow()
+      if (!targetWindow) {
+        console.log("[preserveExistingGroupColors] No suitable window found")
+        return
+      }
+
+      // Get all existing groups
+      const existingGroups = await browserAPI.tabGroups.query({
+        windowId: targetWindow.id,
+      })
+
+      console.log(`[preserveExistingGroupColors] Found ${existingGroups.length} existing groups`)
+
+      let colorsPreserved = 0
+
+      // For each existing group, determine how regrouping would resolve its tabs
+      for (const group of existingGroups) {
+        try {
+          // Get tabs in this group to determine the domain regrouping would use
+          const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
+          if (groupTabs.length === 0) continue
+
+          // Use the first tab to determine how regrouping would resolve this group
+          const firstTab = groupTabs[0]
+          const groupInfo = await this.resolveGroupForTab(firstTab)
+
+          if (groupInfo && group.color) {
+            const targetDomain = groupInfo.domain
+            const storedColor = tabGroupState.getColor(targetDomain)
+
+            // Always update stored color to match current group color for UX consistency
+            if (storedColor !== group.color) {
+              console.log(
+                `[preserveExistingGroupColors] Updating stored color for "${targetDomain}" from "${
+                  storedColor || "none"
+                }" to current "${group.color}"`
+              )
+              tabGroupState.setColor(targetDomain, group.color)
+              colorsPreserved++
+            } else {
+              console.log(
+                `[preserveExistingGroupColors] Color for "${targetDomain}" already matches current "${group.color}"`
+              )
+            }
+          }
+        } catch (error) {
+          console.warn(`[preserveExistingGroupColors] Error processing group ${group.id}:`, error)
+        }
+      }
+
+      if (colorsPreserved > 0) {
+        await storageManager.saveState()
+        console.log(
+          `[preserveExistingGroupColors] Updated ${colorsPreserved} group colors to match current state`
+        )
+      } else {
+        console.log(
+          "[preserveExistingGroupColors] All stored colors already match current group colors"
+        )
+      }
+    } catch (error) {
+      console.error("[preserveExistingGroupColors] Error preserving existing group colors:", error)
     }
   }
 }

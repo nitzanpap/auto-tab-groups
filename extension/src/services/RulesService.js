@@ -32,13 +32,17 @@ class RulesService {
       return cachedResult
     }
 
-    // Get custom rules from storage
+    // Get custom rules from storage (SSOT) - this ensures we always have the latest rules
+    // even if the service worker was restarted and in-memory state was lost
     const customRules = await this.getCustomRules()
     console.log(
       `[findMatchingRule] Checking domain "${domain}" against ${
         Object.keys(customRules).length
-      } rules`
+      } rules (loaded from storage)`
     )
+
+    // Update cache timestamp since we're loading fresh data
+    this.lastCacheUpdate = now
 
     // Find matching rule
     let matchingRule = null
@@ -146,10 +150,12 @@ class RulesService {
   }
 
   /**
-   * Gets all custom rules from storage
+   * Gets all custom rules from storage (SSOT)
    * @returns {Promise<Object>} Custom rules object
    */
   async getCustomRules() {
+    // Always load fresh state from storage to ensure SSOT
+    // This protects against service worker restarts that might clear in-memory state
     const state = await storageManager.loadState()
     return state?.customRules || {}
   }
