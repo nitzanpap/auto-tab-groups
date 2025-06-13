@@ -164,8 +164,9 @@ Custom rules allow you to create named tab groups that combine multiple domains 
 1. Open the extension popup
 2. Click "🔧 Custom Rules" to expand the section
 3. Click "➕ Add New Rule" to create your first rule
-4. Enter a group name and list domains (one per line)
-5. Choose a color and save
+4. Enter a group name (or let the system suggest one)
+5. **Quick add from current tabs**: Select domains from your currently open tabs instead of typing them manually
+6. Choose a color and save
 
 ### Technical Details
 

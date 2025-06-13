@@ -36,10 +36,13 @@ class RulesModal {
     this.ruleId = null
     this.currentRule = null
     this.selectedColor = "blue"
+    this.currentTabs = []
+    this.selectedDomains = new Set()
 
     this.initializeElements()
     this.initializeEventListeners()
     this.populateColorSelector()
+    this.loadCurrentTabs()
     this.loadRuleData()
   }
 
@@ -54,6 +57,8 @@ class RulesModal {
     this.cancelButton = document.getElementById("cancelButton")
     this.nameError = document.getElementById("nameError")
     this.domainsError = document.getElementById("domainsError")
+    this.refreshTabsBtn = document.getElementById("refreshTabsBtn")
+    this.currentTabsContainer = document.getElementById("currentTabsContainer")
   }
 
   initializeEventListeners() {
@@ -65,6 +70,9 @@ class RulesModal {
     // Real-time validation
     this.nameInput.addEventListener("blur", () => this.validateField("name"))
     this.domainsInput.addEventListener("blur", () => this.validateField("domains"))
+
+    // Current tabs events
+    this.refreshTabsBtn.addEventListener("click", () => this.loadCurrentTabs())
   }
 
   populateColorSelector() {
@@ -303,6 +311,292 @@ class RulesModal {
     return new Promise((resolve) => {
       browserAPI.runtime.sendMessage(message, resolve)
     })
+  }
+
+  /**
+   * Load and display current tabs for easy domain selection
+   */
+  async loadCurrentTabs() {
+    try {
+      this.currentTabsContainer.innerHTML =
+        '<div class="loading-tabs">Loading current tabs...</div>'
+
+      // Get all tabs in the current window
+      const tabs = await browserAPI.tabs.query({})
+
+      // Extract domains and group by domain with tab counts
+      const domainCounts = new Map()
+      const domainTitles = new Map() // Store representative titles
+
+      tabs.forEach((tab) => {
+        if (
+          !tab.url ||
+          tab.url.startsWith("chrome://") ||
+          tab.url.startsWith("moz-extension://") ||
+          tab.url.startsWith("about:")
+        ) {
+          return // Skip extension and internal pages
+        }
+
+        try {
+          const url = new URL(tab.url)
+          const domain = url.hostname.toLowerCase()
+
+          if (domain) {
+            domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1)
+            if (!domainTitles.has(domain)) {
+              domainTitles.set(domain, tab.title || domain)
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to parse URL:", tab.url)
+        }
+      })
+
+      this.currentTabs = Array.from(domainCounts.entries())
+        .map(([domain, count]) => ({
+          domain,
+          count,
+          title: domainTitles.get(domain),
+        }))
+        .sort((a, b) => {
+          // Sort by count descending, then alphabetically
+          if (a.count !== b.count) return b.count - a.count
+          return a.domain.localeCompare(b.domain)
+        })
+
+      this.renderCurrentTabs()
+    } catch (error) {
+      console.error("Error loading current tabs:", error)
+      this.currentTabsContainer.innerHTML =
+        '<div class="empty-tabs">Failed to load current tabs</div>'
+    }
+  }
+
+  /**
+   * Render the current tabs list
+   */
+  renderCurrentTabs() {
+    if (this.currentTabs.length === 0) {
+      this.currentTabsContainer.innerHTML = '<div class="empty-tabs">No tabs found</div>'
+      return
+    }
+
+    const tabsHtml = this.currentTabs
+      .map((tab) => {
+        const isSelected = this.selectedDomains.has(tab.domain)
+        return `
+        <div class="tab-domain-item ${isSelected ? "selected" : ""}" data-domain="${tab.domain}">
+          <input type="checkbox" class="tab-domain-checkbox" ${
+            isSelected ? "checked" : ""
+          } data-domain="${tab.domain}">
+          <div class="tab-domain-info">
+            <div class="tab-domain-name" title="${tab.domain}">${tab.domain}</div>
+            <div class="tab-count">${tab.count} tab${tab.count === 1 ? "" : "s"}</div>
+          </div>
+        </div>
+      `
+      })
+      .join("")
+
+    const actionsHtml = `
+      <div class="tabs-actions">
+        <button type="button" class="tabs-action-btn" id="selectAllBtn">
+          Select All
+        </button>
+        <button type="button" class="tabs-action-btn" id="clearAllBtn">
+          Clear All
+        </button>
+        <button type="button" class="tabs-action-btn" id="addSelectedBtn">
+          Add Selected
+        </button>
+      </div>
+    `
+
+    this.currentTabsContainer.innerHTML = tabsHtml + actionsHtml
+
+    // Add event listeners for the dynamically created elements
+    this.addCurrentTabsEventListeners()
+  }
+
+  /**
+   * Add event listeners for dynamically created current tabs elements
+   */
+  addCurrentTabsEventListeners() {
+    // Add event listeners for action buttons
+    const selectAllBtn = document.getElementById("selectAllBtn")
+    const clearAllBtn = document.getElementById("clearAllBtn")
+    const addSelectedBtn = document.getElementById("addSelectedBtn")
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", () => this.selectAllDomains())
+    }
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener("click", () => this.clearAllDomains())
+    }
+    if (addSelectedBtn) {
+      addSelectedBtn.addEventListener("click", () => this.addSelectedToTextarea())
+    }
+
+    // Add event listeners for checkboxes and domain items
+    const checkboxes = this.currentTabsContainer.querySelectorAll(".tab-domain-checkbox")
+    const domainItems = this.currentTabsContainer.querySelectorAll(".tab-domain-item")
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", (e) => {
+        const domain = e.target.dataset.domain
+        if (domain) {
+          this.toggleDomainSelection(domain)
+        }
+      })
+    })
+
+    domainItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
+        // Don't trigger if clicking on the checkbox itself
+        if (e.target.type === "checkbox") return
+
+        const domain = item.dataset.domain
+        if (domain) {
+          this.toggleDomainSelection(domain)
+        }
+      })
+    })
+  }
+
+  /**
+   * Toggle domain selection
+   */
+  toggleDomainSelection(domain) {
+    if (this.selectedDomains.has(domain)) {
+      this.selectedDomains.delete(domain)
+    } else {
+      this.selectedDomains.add(domain)
+    }
+    this.renderCurrentTabs()
+  }
+
+  /**
+   * Select all domains
+   */
+  selectAllDomains() {
+    this.currentTabs.forEach((tab) => {
+      this.selectedDomains.add(tab.domain)
+    })
+    this.renderCurrentTabs()
+  }
+
+  /**
+   * Clear all domain selections
+   */
+  clearAllDomains() {
+    this.selectedDomains.clear()
+    this.renderCurrentTabs()
+  }
+
+  /**
+   * Add selected domains to the textarea
+   */
+  addSelectedToTextarea() {
+    if (this.selectedDomains.size === 0) {
+      return
+    }
+
+    const currentDomains = parseDomainsText(this.domainsInput.value)
+    const allDomains = new Set([...currentDomains, ...this.selectedDomains])
+
+    this.domainsInput.value = Array.from(allDomains).sort().join("\n")
+
+    // Suggest a rule name if the name field is empty
+    if (!this.nameInput.value.trim() && this.selectedDomains.size > 0) {
+      this.suggestRuleName()
+    }
+
+    // Clear selections after adding
+    this.selectedDomains.clear()
+    this.renderCurrentTabs()
+
+    // Trigger validation
+    this.validateField("domains")
+  }
+
+  /**
+   * Suggest a rule name based on selected domains
+   */
+  suggestRuleName() {
+    const domains = Array.from(this.selectedDomains)
+
+    // Common domain patterns and suggested names
+    const suggestions = {
+      // Communication
+      communication: [
+        "discord.com",
+        "slack.com",
+        "teams.microsoft.com",
+        "zoom.us",
+        "meet.google.com",
+        "skype.com",
+      ],
+      // Development
+      development: [
+        "github.com",
+        "gitlab.com",
+        "stackoverflow.com",
+        "developer.mozilla.org",
+        "codepen.io",
+      ],
+      // Social Media
+      social: [
+        "facebook.com",
+        "twitter.com",
+        "instagram.com",
+        "linkedin.com",
+        "reddit.com",
+        "tiktok.com",
+      ],
+      // Google Services
+      google: [
+        "google.com",
+        "gmail.com",
+        "drive.google.com",
+        "docs.google.com",
+        "calendar.google.com",
+      ],
+      // Shopping
+      shopping: ["amazon.com", "ebay.com", "etsy.com", "shopify.com", "walmart.com"],
+      // News
+      news: ["cnn.com", "bbc.com", "reuters.com", "nytimes.com", "techcrunch.com"],
+      // Entertainment
+      entertainment: ["youtube.com", "netflix.com", "spotify.com", "twitch.tv", "hulu.com"],
+    }
+
+    // Find the best matching category
+    let bestMatch = { category: "", score: 0 }
+
+    for (const [category, categoryDomains] of Object.entries(suggestions)) {
+      const matchCount = domains.filter((domain) =>
+        categoryDomains.some((catDomain) => domain.includes(catDomain.replace(".com", "")))
+      ).length
+
+      const score = matchCount / domains.length // Percentage of matches
+
+      if (score > bestMatch.score && score >= 0.5) {
+        // At least 50% match
+        bestMatch = { category, score }
+      }
+    }
+
+    if (bestMatch.category) {
+      // Capitalize first letter
+      const suggestion = bestMatch.category.charAt(0).toUpperCase() + bestMatch.category.slice(1)
+      this.nameInput.value = suggestion
+      this.nameInput.style.backgroundColor = "#f0fff4" // Light green hint
+
+      // Remove the hint after a few seconds
+      setTimeout(() => {
+        this.nameInput.style.backgroundColor = ""
+      }, 3000)
+    }
   }
 }
 

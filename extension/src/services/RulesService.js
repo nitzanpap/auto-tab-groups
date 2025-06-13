@@ -27,19 +27,30 @@ class RulesService {
     const now = Date.now()
 
     if (this.domainRuleCache.has(cacheKey) && now - this.lastCacheUpdate < this.CACHE_DURATION) {
-      return this.domainRuleCache.get(cacheKey)
+      const cachedResult = this.domainRuleCache.get(cacheKey)
+      console.log(`[findMatchingRule] Cache hit for "${domain}":`, cachedResult?.name || "no match")
+      return cachedResult
     }
 
     // Get custom rules from storage
     const customRules = await this.getCustomRules()
+    console.log(
+      `[findMatchingRule] Checking domain "${domain}" against ${
+        Object.keys(customRules).length
+      } rules`
+    )
 
     // Find matching rule
     let matchingRule = null
     for (const rule of Object.values(customRules)) {
       if (!rule.enabled) continue
 
+      console.log(`[findMatchingRule] Checking rule "${rule.name}" with domains:`, rule.domains)
       for (const ruleDomain of rule.domains) {
         if (this.domainMatches(domain, ruleDomain)) {
+          console.log(
+            `[findMatchingRule] Domain "${domain}" matches rule domain "${ruleDomain}" in rule "${rule.name}"`
+          )
           // If multiple rules match, use the one with higher priority (lower number = higher priority)
           if (!matchingRule || rule.priority < matchingRule.priority) {
             matchingRule = rule
@@ -52,6 +63,7 @@ class RulesService {
     this.domainRuleCache.set(cacheKey, matchingRule)
     this.lastCacheUpdate = now
 
+    console.log(`[findMatchingRule] Final match for "${domain}":`, matchingRule?.name || "no match")
     return matchingRule
   }
 
@@ -77,26 +89,52 @@ class RulesService {
    * @returns {Promise<Object>} Group information with name, type, and rule
    */
   async resolveGroupForTab(url) {
-    const domain = extractDomain(url)
-    if (!domain) return null
+    const baseDomain = extractDomain(url, false) // Base domain without subdomain
+    const fullDomain = extractDomain(url, true) // Full domain with subdomain
+
+    console.log(
+      `[resolveGroupForTab] Processing URL "${url}": base="${baseDomain}", full="${fullDomain}"`
+    )
+
+    if (!baseDomain) return null
 
     // Check custom rules first (highest priority)
-    const matchingRule = await this.findMatchingRule(domain)
+    // Try both full domain and base domain for better matching
+    let matchingRule = null
+
+    // First try with full domain (subdomain included)
+    if (fullDomain && fullDomain !== baseDomain) {
+      console.log(`[resolveGroupForTab] Checking custom rules for full domain: "${fullDomain}"`)
+      matchingRule = await this.findMatchingRule(fullDomain)
+    }
+
+    // If no match with subdomain, try with base domain
+    if (!matchingRule) {
+      console.log(`[resolveGroupForTab] Checking custom rules for base domain: "${baseDomain}"`)
+      matchingRule = await this.findMatchingRule(baseDomain)
+    }
+
     if (matchingRule) {
+      console.log(
+        `[resolveGroupForTab] Found custom rule match: "${matchingRule.name}" for domain "${
+          fullDomain || baseDomain
+        }"`
+      )
       return {
         name: matchingRule.name,
         type: "custom",
         rule: matchingRule,
-        domain: domain,
+        domain: fullDomain || baseDomain, // Use the domain that was actually matched
       }
     }
 
     // Fall back to domain-based grouping
+    console.log(`[resolveGroupForTab] No custom rule match, using domain grouping: "${baseDomain}"`)
     return {
-      name: domain,
+      name: baseDomain,
       type: "domain",
       rule: null,
-      domain: domain,
+      domain: baseDomain,
     }
   }
 
