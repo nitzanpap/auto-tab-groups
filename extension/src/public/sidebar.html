@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,7 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-      rel="stylesheet" />
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div class="sidebar-container">
@@ -16,13 +17,9 @@
       <main>
         <div class="button-group-row">
           <button id="group" class="button primaryButton">📁 Group Tabs</button>
-          <button id="ungroup" class="button primaryButton">
-            ❌ Ungroup All
-          </button>
+          <button id="ungroup" class="button primaryButton">❌ Ungroup All</button>
         </div>
-        <button id="generateNewColors" class="button gradientButton">
-          🎨 Generate New Colors
-        </button>
+        <button id="generateNewColors" class="button gradientButton">🎨 Generate New Colors</button>
         <div class="toggle-container">
           <span class="toggle-label" id="collapseOrExpandAllText"></span>
           <label class="switch">
@@ -59,15 +56,12 @@
           <button class="advanced-toggle">
             <span class="noselect">Advanced</span>
             <span class="up-arrow">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                width="24"
-                height="24">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
                 <path
                   d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
                   style="fill: #ff8e31"
-                  data-name="Up" />
+                  data-name="Up"
+                />
               </svg>
             </span>
           </button>
@@ -86,7 +80,7 @@
         <div class="separator"></div>
         <div>
           Made by <span class="author selectable">Nitzan Papini</span>, for
-          Firefox 🦊
+          <span id="browserName">Firefox</span> <span id="browserEmoji">🦊</span>
         </div>
         <div class="feedback-link">
           <a
