@@ -10,11 +10,9 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## Example of tab groups in the navigation bar
 
-[![Example of tab groups in the navigation bar](images/example-tab-navbar-with-groups.png)](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
+[![Example of the extension in Chrome](images/chrome-images/tab-groups-with-popup.png)](https://chrome.google.com/webstore/detail/auto-tab-groups/)
 
-## Extension popup interface
-
-[![Extension popup interface](images/popup.png)](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
+[![Example of the extension in Firefox](images/firefox-images/tab-groups-with-popup-firefox.png)](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
 
 ---
 
