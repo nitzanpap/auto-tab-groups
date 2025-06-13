@@ -387,3 +387,200 @@ body {
   .author:hover {
     color: var(--gradient-color-1-dark);
   }
+
+/* Custom Rules Section Styles */
+.rules-section {
+    margin-top: 16px;
+}
+
+.rules-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.rules-toggle:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.rules-toggle.expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none;
+    background: #e9ecef;
+}
+
+.rules-count {
+    color: #6c757d;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.rules-content {
+    display: none;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 16px;
+}
+
+.rules-content.expanded {
+    display: block;
+}
+
+.rules-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.rule-item:hover {
+    background: #e9ecef;
+}
+
+.rule-item.disabled {
+    opacity: 0.6;
+}
+
+.rule-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rule-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: #212529;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rule-domains {
+    font-size: 12px;
+    color: #6c757d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rule-color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.rule-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.rule-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+    color: #6c757d;
+}
+
+.rule-action-btn:hover {
+    background: #dee2e6;
+    color: #495057;
+}
+
+.rule-action-btn.edit {
+    color: #0d6efd;
+}
+
+.rule-action-btn.delete {
+    color: #dc3545;
+}
+
+.rules-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+}
+
+.rules-button {
+    background: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rules-button:hover {
+    background: #dee2e6;
+    border-color: #adb5bd;
+}
+
+.empty-rules {
+    text-align: center;
+    color: #6c757d;
+    font-size: 13px;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Toggle switch for rule enable/disable */
+.rule-toggle {
+    margin-left: 8px;
+}
+
+.rule-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+}
+
+/* Loading and error states */
+.rules-loading {
+    text-align: center;
+    color: #6c757d;
+    font-size: 13px;
+    padding: 16px;
+}
+
+.rules-error {
+    text-align: center;
+    color: #dc3545;
+    font-size: 13px;
+    padding: 16px;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}

@@ -6,6 +6,7 @@ import { tabGroupState } from "./state/TabGroupState.js"
 import { tabGroupService } from "./services/TabGroupService.js"
 import { storageManager } from "./config/StorageManager.js"
 import "./utils/BrowserAPI.js" // Import browser compatibility layer
+import { rulesService } from "./services/RulesService.js"
 
 // Access the unified browser API
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
@@ -22,7 +23,7 @@ const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? br
     // Auto-group existing tabs if auto-grouping is enabled
     if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
       console.log("Auto-grouping is enabled, grouping existing tabs...")
-      await tabGroupService.groupTabsByDomain()
+      await tabGroupService.groupTabsWithRules()
     } else {
       console.log("Auto-grouping conditions not met - either disabled or only-new-tabs is enabled")
     }
@@ -39,7 +40,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       switch (msg.action) {
         case "group":
-          await tabGroupService.groupTabsByDomain()
+          await tabGroupService.groupTabsWithRules()
           result = { success: true }
           break
 
@@ -79,7 +80,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           await storageManager.saveState()
 
           if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
-            await tabGroupService.groupTabsByDomain()
+            await tabGroupService.groupTabsWithRules()
           }
           result = { enabled: tabGroupState.autoGroupingEnabled }
           break
@@ -106,9 +107,64 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
           if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
             await tabGroupService.ungroupAllTabs()
-            await tabGroupService.groupTabsByDomain()
+            await tabGroupService.groupTabsWithRules()
           }
           result = { enabled: tabGroupState.groupBySubDomainEnabled }
+          break
+
+        // Custom Rules Management
+        case "getCustomRules":
+          const rules = await rulesService.getCustomRules()
+          result = { customRules: rules }
+          break
+
+        case "addCustomRule":
+          try {
+            const ruleId = await rulesService.addRule(msg.ruleData)
+            result = { success: true, ruleId }
+
+            // Re-group tabs if auto-grouping is enabled
+            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+              await tabGroupService.groupTabsWithRules()
+            }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "updateCustomRule":
+          try {
+            await rulesService.updateRule(msg.ruleId, msg.ruleData)
+            result = { success: true }
+
+            // Re-group tabs if auto-grouping is enabled
+            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+              await tabGroupService.ungroupAllTabs()
+              await tabGroupService.groupTabsWithRules()
+            }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "deleteCustomRule":
+          try {
+            await rulesService.deleteRule(msg.ruleId)
+            result = { success: true }
+
+            // Re-group tabs if auto-grouping is enabled
+            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+              await tabGroupService.ungroupAllTabs()
+              await tabGroupService.groupTabsWithRules()
+            }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "getRulesStats":
+          const stats = await rulesService.getRulesStats()
+          result = { stats }
           break
 
         default:

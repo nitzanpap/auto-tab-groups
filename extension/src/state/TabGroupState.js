@@ -13,6 +13,8 @@ class TabGroupState {
     this.groupBySubDomainEnabled = DEFAULT_STATE.groupBySubDomainEnabled
     this.preserveManualColors = DEFAULT_STATE.preserveManualColors
     this.manuallySetColors = new Set()
+    this.customRules = new Map() // Maps ruleId -> rule object
+    this.ruleMatchingMode = DEFAULT_STATE.ruleMatchingMode
   }
 
   /**
@@ -80,10 +82,12 @@ class TabGroupState {
     this.onlyApplyToNewTabsEnabled = data.onlyApplyToNewTabsEnabled
     this.groupBySubDomainEnabled = data.groupBySubDomainEnabled
     this.preserveManualColors = data.preserveManualColors
+    this.ruleMatchingMode = data.ruleMatchingMode || DEFAULT_STATE.ruleMatchingMode
 
     this.domainColors.clear()
     this.groupDomains.clear()
     this.manuallySetColors.clear()
+    this.customRules.clear()
 
     if (data.domainColors) {
       Object.entries(data.domainColors).forEach(([domain, color]) => {
@@ -102,6 +106,12 @@ class TabGroupState {
         this.manuallySetColors.add(domain)
       })
     }
+
+    if (data.customRules) {
+      Object.entries(data.customRules).forEach(([ruleId, rule]) => {
+        this.customRules.set(ruleId, rule)
+      })
+    }
   }
 
   /**
@@ -117,7 +127,78 @@ class TabGroupState {
       domainColors: Object.fromEntries(this.domainColors),
       groupDomains: Object.fromEntries(this.groupDomains),
       manuallySetColors: Array.from(this.manuallySetColors),
+      customRules: Object.fromEntries(this.customRules),
+      ruleMatchingMode: this.ruleMatchingMode,
     }
+  }
+
+  /**
+   * Adds a custom rule
+   * @param {string} ruleId - Rule ID
+   * @param {Object} rule - Rule object
+   */
+  addCustomRule(ruleId, rule) {
+    this.customRules.set(ruleId, rule)
+  }
+
+  /**
+   * Updates a custom rule
+   * @param {string} ruleId - Rule ID
+   * @param {Object} rule - Updated rule object
+   */
+  updateCustomRule(ruleId, rule) {
+    if (this.customRules.has(ruleId)) {
+      this.customRules.set(ruleId, rule)
+    }
+  }
+
+  /**
+   * Deletes a custom rule
+   * @param {string} ruleId - Rule ID to delete
+   */
+  deleteCustomRule(ruleId) {
+    this.customRules.delete(ruleId)
+  }
+
+  /**
+   * Gets a custom rule by ID
+   * @param {string} ruleId - Rule ID
+   * @returns {Object|undefined} Rule object or undefined
+   */
+  getCustomRule(ruleId) {
+    return this.customRules.get(ruleId)
+  }
+
+  /**
+   * Gets all custom rules
+   * @returns {Array} Array of [ruleId, rule] pairs
+   */
+  getCustomRules() {
+    return [...this.customRules.entries()]
+  }
+
+  /**
+   * Gets all custom rules as an object
+   * @returns {Object} Object with ruleId as key and rule as value
+   */
+  getCustomRulesObject() {
+    return Object.fromEntries(this.customRules)
+  }
+
+  /**
+   * Sets the rule matching mode
+   * @param {string} mode - Matching mode ('exact', 'contains', 'regex')
+   */
+  setRuleMatchingMode(mode) {
+    this.ruleMatchingMode = mode
+  }
+
+  /**
+   * Gets the rule matching mode
+   * @returns {string} Current matching mode
+   */
+  getRuleMatchingMode() {
+    return this.ruleMatchingMode
   }
 }
 

@@ -6,6 +6,7 @@ A cross-browser extension that automatically groups tabs by domain, supporting b
 
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
 - ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain
+- ✅ **Custom rules** - Create named groups that combine multiple domains
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
 - ✅ **Collapse/expand controls** - Manage tab group visibility
@@ -139,6 +140,40 @@ Then use `web-ext run`, or load in the `manifest.json` file in Firefox's about:d
 | Tab Groups | Native support | Native support | Both browsers support tabGroups API |
 | Side Panel | `side_panel` | `sidebar_action` | Browser-specific manifest keys |
 | Icons | PNG required | SVG/PNG supported | PNG format (universal) |
+
+## 🔧 Custom Rules Feature
+
+### Overview
+
+Custom rules allow you to create named tab groups that combine multiple domains under a single group. This gives you more control over how your tabs are organized beyond simple domain-based grouping.
+
+### How It Works
+
+1. **Priority System**: Custom rules take priority over domain-based grouping
+2. **Fallback**: Domains not covered by custom rules still use automatic domain grouping
+3. **Real-time**: Changes to rules immediately re-group existing tabs
+
+### Example Use Cases
+
+- **Communication**: Group `discord.com`, `teams.microsoft.com`, `slack.com` under "Communication"
+- **Development**: Group `github.com`, `stackoverflow.com`, `docs.google.com` under "Dev Tools"
+- **Social Media**: Group `twitter.com`, `facebook.com`, `instagram.com` under "Social"
+
+### Using Custom Rules
+
+1. Open the extension popup
+2. Click "🔧 Custom Rules" to expand the section
+3. Click "➕ Add New Rule" to create your first rule
+4. Enter a group name and list domains (one per line)
+5. Choose a color and save
+
+### Technical Details
+
+- **Rule Storage**: Rules are stored in browser local storage
+- **Domain Matching**: Currently supports exact domain matching
+- **Performance**: Rules are cached for fast matching
+- **Validation**: Comprehensive validation for rule names and domains
+- **Limits**: Maximum 20 domains per rule, 50 character rule names
 
 ## 🐛 Troubleshooting
 
