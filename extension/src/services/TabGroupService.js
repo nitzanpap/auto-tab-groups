@@ -463,9 +463,22 @@ class TabGroupService {
       // Create a copy of the colors array to track available colors
       let availableColors = [...colors]
 
-      // Assign random colors to each group
+      // Assign random colors to each group using robust domain resolution
       for (const group of groups) {
-        const domain = await this.getGroupDomain(group.id)
+        let domain = null
+        try {
+          // Use robust domain resolution (same as preservation and matching logic)
+          const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
+          if (groupTabs.length > 0) {
+            const firstTab = groupTabs[0]
+            const groupInfo = await this.resolveGroupForTab(firstTab)
+            domain = groupInfo?.domain
+          }
+        } catch (error) {
+          console.warn(`[generateNewColors] Error resolving domain for group ${group.id}:`, error)
+          continue
+        }
+
         if (!domain) continue
 
         // Skip if the domain has a manually set color and we're preserving manual colors
