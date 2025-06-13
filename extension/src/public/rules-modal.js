@@ -5,6 +5,13 @@
 // Browser API compatibility
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
 
+// Global rule modal data (replaces inline script for CSP compliance)
+const ruleModalData = {
+  isEdit: false,
+  ruleId: null,
+  ruleData: null,
+}
+
 // Color definitions (copied from RulesUtils to avoid import issues)
 const RULE_COLORS = [
   { name: "Blue", value: "blue", hex: "#4285f4" },
@@ -147,12 +154,15 @@ class RulesModal {
 
   async handleSubmit(e) {
     e.preventDefault()
+    console.log("[RulesModal] Form submitted")
 
     if (!this.validateForm()) {
+      console.log("[RulesModal] Form validation failed")
       return
     }
 
     const ruleData = this.collectFormData()
+    console.log("[RulesModal] Collected rule data:", ruleData)
 
     try {
       this.saveButton.disabled = true
@@ -168,12 +178,15 @@ class RulesModal {
         message.ruleId = this.ruleId
       }
 
+      console.log("[RulesModal] About to send message:", message)
       const response = await this.sendMessage(message)
 
       if (response && response.success) {
+        console.log("[RulesModal] Rule saved successfully, closing modal")
         // Close modal and refresh parent
         window.close()
       } else {
+        console.error("[RulesModal] Save failed:", response)
         this.showError(response?.error || "Failed to save rule")
       }
     } catch (error) {
@@ -308,8 +321,22 @@ class RulesModal {
   }
 
   sendMessage(message) {
-    return new Promise((resolve) => {
-      browserAPI.runtime.sendMessage(message, resolve)
+    console.log("[RulesModal] Sending message:", message)
+    return new Promise((resolve, reject) => {
+      try {
+        browserAPI.runtime.sendMessage(message, (response) => {
+          if (browserAPI.runtime.lastError) {
+            console.error("[RulesModal] Message error:", browserAPI.runtime.lastError)
+            reject(new Error(browserAPI.runtime.lastError.message))
+          } else {
+            console.log("[RulesModal] Message response:", response)
+            resolve(response)
+          }
+        })
+      } catch (error) {
+        console.error("[RulesModal] Failed to send message:", error)
+        reject(error)
+      }
     })
   }
 

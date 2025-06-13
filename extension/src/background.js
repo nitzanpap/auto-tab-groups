@@ -119,8 +119,10 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "addCustomRule":
+          console.log("[Background] Received addCustomRule message:", msg.ruleData)
           try {
             const ruleId = await rulesService.addRule(msg.ruleData)
+            console.log("[Background] Rule added successfully with ID:", ruleId)
             result = { success: true, ruleId }
 
             // Re-group tabs if auto-grouping is enabled

@@ -11,7 +11,7 @@ const browserAPI = (() => {
   // For Chrome, we need to promisify some APIs that are callback-based
   if (typeof browser === "undefined" && typeof chrome !== "undefined") {
     // Check if we're in Chrome MV3 where many APIs are already promise-based
-    const isChromeMV3 = chrome.runtime.getManifest().manifest_version === 3
+    const isChromeMV3 = chrome.runtime?.getManifest?.()?.manifest_version === 3
 
     // Chrome-specific promisification for APIs that need it
     const promisify =

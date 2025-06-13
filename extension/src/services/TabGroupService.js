@@ -75,7 +75,24 @@ class TabGroupService {
 
     try {
       console.log(`[createGroup] Creating new group for domain "${domain}" with tabs:`, tabIds)
-      const groupId = await browserAPI.tabs.group({ tabIds })
+
+      // Validate that all tabs still exist before trying to group them
+      const validTabIds = []
+      for (const tabId of tabIds) {
+        try {
+          await browserAPI.tabs.get(tabId)
+          validTabIds.push(tabId)
+        } catch (error) {
+          console.warn(`[createGroup] Tab ${tabId} no longer exists, skipping`)
+        }
+      }
+
+      if (validTabIds.length === 0) {
+        console.log(`[createGroup] No valid tabs remaining for domain "${domain}"`)
+        return
+      }
+
+      const groupId = await browserAPI.tabs.group({ tabIds: validTabIds })
       console.log(`[createGroup] Created group with ID ${groupId} for domain "${domain}"`)
 
       // Store the group-domain mapping immediately
@@ -369,7 +386,12 @@ class TabGroupService {
         }
       }
     } catch (error) {
-      console.error("[moveTabToGroup] Error moving tab to group:", error)
+      // Handle specific error cases
+      if (error.message?.includes("No tab with id")) {
+        console.log(`[moveTabToGroup] Tab ${tabId} no longer exists, skipping grouping`)
+      } else {
+        console.error("[moveTabToGroup] Error moving tab to group:", error)
+      }
     } finally {
       this.pendingOperations.delete(operationKey)
     }
