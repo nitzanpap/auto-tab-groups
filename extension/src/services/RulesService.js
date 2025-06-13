@@ -129,12 +129,19 @@ class RulesService {
     }
 
     // Fall back to domain-based grouping
-    console.log(`[resolveGroupForTab] No custom rule match, using domain grouping: "${baseDomain}"`)
+    // Use the appropriate domain based on the subdomain setting
+    const domainForGrouping = tabGroupState.groupBySubDomainEnabled
+      ? fullDomain || baseDomain
+      : baseDomain
+
+    console.log(
+      `[resolveGroupForTab] No custom rule match, using domain grouping: "${domainForGrouping}" (subdomain enabled: ${tabGroupState.groupBySubDomainEnabled})`
+    )
     return {
-      name: baseDomain,
+      name: domainForGrouping,
       type: "domain",
       rule: null,
-      domain: baseDomain,
+      domain: domainForGrouping,
     }
   }
 
