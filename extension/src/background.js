@@ -12,10 +12,10 @@ import "./utils/BrowserAPI.js" // Import browser compatibility layer
   try {
     await storageManager.loadState()
     console.log("Extension initialized successfully")
-    
+
     console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
     console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
-    
+
     // Auto-group existing tabs if auto-grouping is enabled
     if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
       console.log("Auto-grouping is enabled, grouping existing tabs...")
@@ -124,25 +124,30 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 })
 
 // Tab event listeners
-browserAPI.tabs.onUpdated.addListener((tabId, changeInfo) => {
+browserAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
   if (changeInfo.url) {
+    console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
     tabGroupService.moveTabToGroup(tabId)
   }
 })
 
 browserAPI.tabs.onCreated.addListener((tab) => {
+  console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
   if (tab.url) {
     tabGroupService.moveTabToGroup(tab.id)
   }
 })
 
 browserAPI.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  console.log(`[tabs.onRemoved] Tab ${tabId} removed from group: ${removeInfo.groupId}`)
   if (removeInfo.groupId) {
     tabGroupService.removeEmptyGroup(removeInfo.groupId)
   }
 })
 
 browserAPI.tabs.onMoved.addListener((tabId) => {
+  console.log(`[tabs.onMoved] Tab ${tabId} moved`)
   tabGroupService.moveTabToGroup(tabId)
 })
 
@@ -163,6 +168,19 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
       }
     } catch (error) {
       console.error("[tabGroups.onUpdated] Error handling group update:", error)
+    }
+  })
+}
+
+// Listen for tab group removal
+if (browserAPI.tabGroups && browserAPI.tabGroups.onRemoved) {
+  browserAPI.tabGroups.onRemoved.addListener(async (group) => {
+    try {
+      console.log(`[tabGroups.onRemoved] Group ${group.id} was removed, cleaning up mapping`)
+      tabGroupState.removeGroup(group.id)
+      await storageManager.saveState()
+    } catch (error) {
+      console.error("[tabGroups.onRemoved] Error handling group removal:", error)
     }
   })
 }

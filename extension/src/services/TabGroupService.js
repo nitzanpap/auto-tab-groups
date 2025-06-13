@@ -16,17 +16,35 @@ class TabGroupService {
   }
 
   /**
-   * Gets the domain of a group by looking at its first tab
+   * Gets the domain of a group using the reliable stored mapping
    * @param {number} groupId
-   * @returns {Promise<string|null>} The domain of the group or null if no tabs found
+   * @returns {Promise<string|null>} The domain of the group or null if no mapping found
    */
   async getGroupDomain(groupId) {
     try {
-      const tabs = await browserAPI.tabs.query({ groupId })
-      if (tabs.length === 0) return null
+      // Primary method: Use stored group-domain mapping
+      const storedDomain = tabGroupState.getGroupDomain(groupId)
+      if (storedDomain) {
+        return storedDomain
+      }
 
-      const firstTab = tabs[0]
-      return extractDomain(firstTab.url, tabGroupState.groupBySubDomainEnabled)
+      // Fallback: Parse from group title for existing groups without stored mapping
+      const group = await browserAPI.tabGroups.get(groupId)
+      if (group && group.title) {
+        const title = group.title
+        if (title === "") return "extensions"
+
+        // Convert display name back to domain
+        const domain = title.includes(".") ? title : `${title}.com`
+
+        // Store this mapping for future use
+        tabGroupState.setGroupDomain(groupId, domain)
+        await storageManager.saveState()
+
+        return domain
+      }
+
+      return null
     } catch (error) {
       console.error(`[getGroupDomain] Error getting domain for group ${groupId}:`, error)
       return null
@@ -46,12 +64,18 @@ class TabGroupService {
       const groupId = await browserAPI.tabs.group({ tabIds })
       console.log(`[createGroup] Created group with ID ${groupId} for domain "${domain}"`)
 
+      // Store the group-domain mapping immediately
+      tabGroupState.setGroupDomain(groupId, domain)
+
       if (browserAPI.tabGroups) {
         await this.setGroupTitleAndColor(groupId, domain)
         await this.handleGroupColorAssignment(groupId, domain)
       } else {
         console.log("[createGroup] tabGroups API not available in this browser version")
       }
+
+      // Save the updated state with the new group mapping
+      await storageManager.saveState()
     } catch (error) {
       console.error("[createGroup] Error creating group:", error)
     }
@@ -251,6 +275,7 @@ class TabGroupService {
       console.log(
         `[moveTabToGroup] Processing tab ${tabId} with URL "${tab.url}" and domain "${domain}"`
       )
+      console.log(`[moveTabToGroup] Tab is currently in group: ${tab.groupId}`)
 
       // 2. Get all groups in the current window
       const groups = await browserAPI.tabGroups.query({ windowId: tab.windowId })
@@ -260,6 +285,7 @@ class TabGroupService {
       let targetGroup = null
       for (const group of groups) {
         const groupDomain = await this.getGroupDomain(group.id)
+        console.log(`[moveTabToGroup] Group ${group.id} has domain: ${groupDomain}`)
         if (groupDomain === domain) {
           targetGroup = group
           break
@@ -267,6 +293,8 @@ class TabGroupService {
       }
 
       if (targetGroup) {
+        console.log(`[moveTabToGroup] Found target group ${targetGroup.id} for domain "${domain}"`)
+
         // Skip if tab is already in the correct group
         if (tab.groupId === targetGroup.id) {
           console.log(
@@ -275,11 +303,22 @@ class TabGroupService {
           return
         }
 
-        console.log(`[moveTabToGroup] Moving tab ${tabId} to existing group ${targetGroup.id}`)
+        console.log(
+          `[moveTabToGroup] Moving tab ${tabId} from group ${tab.groupId} to existing group ${targetGroup.id}`
+        )
+
+        // Store the old group ID for cleanup
+        const oldGroupId = tab.groupId
+
         await browserAPI.tabs.group({
           tabIds: [tabId],
           groupId: targetGroup.id,
         })
+
+        // Clean up the old group if it's now empty
+        if (oldGroupId && oldGroupId !== targetGroup.id) {
+          await this.removeEmptyGroup(oldGroupId)
+        }
       } else {
         // Double-check: query groups again to avoid race conditions
         const freshGroups = await browserAPI.tabGroups.query({ windowId: tab.windowId })
@@ -296,13 +335,31 @@ class TabGroupService {
           console.log(
             `[moveTabToGroup] Found existing group ${freshTargetGroup.id} on second check, moving tab ${tabId}`
           )
+
+          // Store the old group ID for cleanup
+          const oldGroupId = tab.groupId
+
           await browserAPI.tabs.group({
             tabIds: [tabId],
             groupId: freshTargetGroup.id,
           })
+
+          // Clean up the old group if it's now empty
+          if (oldGroupId && oldGroupId !== freshTargetGroup.id) {
+            await this.removeEmptyGroup(oldGroupId)
+          }
         } else {
           console.log(`[moveTabToGroup] Creating new group for "${domain}" with tab ${tabId}`)
+
+          // Store the old group ID for cleanup
+          const oldGroupId = tab.groupId
+
           await this.createGroup(domain, [tabId])
+
+          // Clean up the old group if it's now empty
+          if (oldGroupId) {
+            await this.removeEmptyGroup(oldGroupId)
+          }
         }
       }
     } catch (error) {
@@ -318,9 +375,16 @@ class TabGroupService {
    */
   async removeEmptyGroup(groupId) {
     try {
+      console.log(`[removeEmptyGroup] Checking if group ${groupId} is empty`)
       const tabs = await browserAPI.tabs.query({ groupId })
       if (tabs.length === 0) {
-        console.log(`[removeEmptyGroup] Removing empty group ${groupId}`)
+        console.log(`[removeEmptyGroup] Group ${groupId} is empty, cleaning up mapping`)
+        // Remove the group-domain mapping
+        tabGroupState.removeGroup(groupId)
+        await storageManager.saveState()
+        // Note: In Chrome, empty groups are automatically removed by the browser
+      } else {
+        console.log(`[removeEmptyGroup] Group ${groupId} still has ${tabs.length} tabs, keeping it`)
       }
     } catch (error) {
       console.error(`[removeEmptyGroup] Error checking empty group ${groupId}:`, error)
@@ -471,13 +535,15 @@ async function logTabsAndGroups(tabs) {
     tabs.map((tab) => (tab.url ? tab.url : "No URL"))
   )
   console.log("[groupTabsByDomain] Tab grouping complete")
-  
+
   // Check if tab groups are supported in this browser
   if (!browserAPI.tabGroups) {
-    console.log("[logTabsAndGroups] Tab groups not supported in this browser, skipping group logging")
+    console.log(
+      "[logTabsAndGroups] Tab groups not supported in this browser, skipping group logging"
+    )
     return
   }
-  
+
   const allGroups = await browserAPI.tabGroups.query({
     windowId: tabs[0].windowId,
   })
