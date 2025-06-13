@@ -7,6 +7,9 @@ import { tabGroupService } from "./services/TabGroupService.js"
 import { storageManager } from "./config/StorageManager.js"
 import "./utils/BrowserAPI.js" // Import browser compatibility layer
 
+// Access the unified browser API
+const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
+
 // Initialize state when the extension loads
 ;(async () => {
   try {

@@ -7,6 +7,9 @@ import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils.js"
 import { storageManager } from "../config/StorageManager.js"
 import "../utils/BrowserAPI.js" // Import browser compatibility layer
 
+// Access the unified browser API
+const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
+
 class TabGroupService {
   constructor() {
     // Track ongoing operations to prevent race conditions
@@ -404,14 +407,20 @@ class TabGroupService {
         return
       }
 
-      // Available Chrome tab group colors (different from Firefox)
+      // Available Chrome tab group colors
       const colors = ["blue", "cyan", "grey", "green", "orange", "pink", "purple", "red", "yellow"]
 
-      // Get all groups in the current window
-      const currentWindow = await browserAPI.windows.getCurrent()
+      // Get the main browser window (not popup) that contains tab groups
+      const targetWindow = await this.getTargetWindow()
+      if (!targetWindow) {
+        console.log("[generateNewColors] No suitable window found")
+        return
+      }
+
       const groups = await browserAPI.tabGroups.query({
-        windowId: currentWindow.id,
+        windowId: targetWindow.id,
       })
+      console.log("[generateNewColors] Found groups:", groups)
 
       // Clear existing color mappings, except manually set ones if preserveManualColors is true
       if (tabGroupState.preserveManualColors) {
@@ -454,8 +463,12 @@ class TabGroupService {
         tabGroupState.setColor(domain, newColor)
 
         // Update the group's color
-        await browserAPI.tabGroups.update(group.id, { color: newColor })
-        console.log(`[generateNewColors] Assigned random color "${newColor}" to domain "${domain}"`)
+        try {
+          await browserAPI.tabGroups.update(group.id, { color: newColor })
+          console.log(`[generateNewColors] Assigned color "${newColor}" to domain "${domain}"`)
+        } catch (updateError) {
+          console.error(`[generateNewColors] Error updating group ${group.id}:`, updateError)
+        }
       }
 
       // Save the new color mappings
@@ -482,15 +495,25 @@ class TabGroupService {
         return
       }
 
-      // Get all groups in the current window
-      const currentWindow = await browserAPI.windows.getCurrent()
+      // Get the main browser window (not popup) that contains tab groups
+      const targetWindow = await this.getTargetWindow()
+      if (!targetWindow) {
+        console.log("[toggleAllGroupsCollapse] No suitable window found")
+        return
+      }
+
       const groups = await browserAPI.tabGroups.query({
-        windowId: currentWindow.id,
+        windowId: targetWindow.id,
       })
+      console.log("[toggleAllGroupsCollapse] Found groups:", groups)
 
       // Update each group's collapsed state
       for (const group of groups) {
-        await browserAPI.tabGroups.update(group.id, { collapsed: collapse })
+        try {
+          await browserAPI.tabGroups.update(group.id, { collapsed: collapse })
+        } catch (updateError) {
+          console.error(`[toggleAllGroupsCollapse] Error updating group ${group.id}:`, updateError)
+        }
       }
 
       console.log(
@@ -513,16 +536,67 @@ class TabGroupService {
         return false
       }
 
-      const currentWindow = await browserAPI.windows.getCurrent()
+      // Get the main browser window (not popup) that contains tab groups
+      const targetWindow = await this.getTargetWindow()
+      if (!targetWindow) {
+        console.log("[getGroupsCollapseState] No suitable window found")
+        return false
+      }
+
       const groups = await browserAPI.tabGroups.query({
-        windowId: currentWindow.id,
+        windowId: targetWindow.id,
       })
 
       // Check if any group is collapsed
-      return groups.some((group) => group.collapsed)
+      const isCollapsed = groups.some((group) => group.collapsed)
+      return isCollapsed
     } catch (error) {
       console.error("[getGroupsCollapseState] Error getting groups state:", error)
       return false
+    }
+  }
+
+  /**
+   * Gets the target browser window for tab group operations
+   * Avoids popup windows and finds the main browser window with tab groups
+   * @returns {Promise<Object|null>} The target window object or null if none found
+   */
+  async getTargetWindow() {
+    try {
+      const windows = await browserAPI.windows.getAll({ windowTypes: ["normal"] })
+
+      if (windows.length === 0) {
+        console.log("[getTargetWindow] No normal windows found")
+        return null
+      }
+
+      if (windows.length === 1) {
+        // Only one normal window, use it
+        return windows[0]
+      }
+
+      // Multiple windows, try to find the focused one first
+      const focusedWindow = windows.find((w) => w.focused)
+      if (focusedWindow) {
+        return focusedWindow
+      }
+
+      // Fall back to the window with the most tabs
+      let targetWindow = windows[0]
+      let maxTabs = 0
+
+      for (const window of windows) {
+        const tabs = await browserAPI.tabs.query({ windowId: window.id })
+        if (tabs.length > maxTabs) {
+          maxTabs = tabs.length
+          targetWindow = window
+        }
+      }
+
+      return targetWindow
+    } catch (error) {
+      console.error("[getTargetWindow] Error determining target window:", error)
+      return null
     }
   }
 }

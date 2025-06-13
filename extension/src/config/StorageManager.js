@@ -5,6 +5,9 @@
 import { tabGroupState } from "../state/TabGroupState.js"
 import "../utils/BrowserAPI.js" // Import browser compatibility layer
 
+// Access the unified browser API
+const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
+
 export const DEFAULT_STATE = {
   autoGroupingEnabled: true,
   onlyApplyToNewTabsEnabled: false,
