@@ -26,91 +26,91 @@ The extension uses a unified codebase with browser-specific builds:
 
 ### Key Components
 
-```
-src/
-├── manifest.chrome.json    # Chrome Manifest V3
-├── manifest.firefox.json   # Firefox Manifest V3
-├── background.js           # Service worker (both browsers)
-├── utils/
-│   ├── BrowserAPI.js      # Cross-browser compatibility layer
-│   └── DomainUtils.js     # Domain processing utilities
-├── config/
-│   └── StorageManager.js  # Cross-browser storage handling
-├── services/
-│   └── TabGroupService.js # Tab grouping logic
-├── state/
-│   └── TabGroupState.js   # State management
-├── public/
-│   ├── popup.html         # Extension popup
-│   ├── popup.js           # Popup logic
-│   ├── popup.css          # Styling
-│   └── sidebar.html       # Side panel/sidebar
-└── assets/
-    ├── icon16.png         # Icons (PNG for compatibility)
-    ├── icon48.png
-    └── icon128.png
-```
+    ```
+    src/
+    ├── manifest.chrome.json    # Chrome Manifest V3
+    ├── manifest.firefox.json   # Firefox Manifest V3
+    ├── background.js           # Service worker (both browsers)
+    ├── utils/
+    │   ├── BrowserAPI.js      # Cross-browser compatibility layer
+    │   └── DomainUtils.js     # Domain processing utilities
+    ├── config/
+    │   └── StorageManager.js  # Cross-browser storage handling
+    ├── services/
+    │   └── TabGroupService.js # Tab grouping logic
+    ├── state/
+    │   └── TabGroupState.js   # State management
+    ├── public/
+    │   ├── popup.html         # Extension popup
+    │   ├── popup.js           # Popup logic
+    │   ├── popup.css          # Styling
+    │   └── sidebar.html       # Side panel/sidebar
+    └── assets/
+        ├── icon16.png         # Icons (PNG for compatibility)
+        ├── icon48.png
+        └── icon128.png
+    ```
 
 ## 🛠️ Development
 
 ### Prerequisites
 
-```bash
-npm install
-```
+    ```bash
+    npm install
+    ```
 
 ### Building
 
 #### Build for Chrome
 
-```bash
-npm run build:chrome
-```
+    ```bash
+    npm run build:chrome
+    ```
 
 Creates: `auto-tab-groups-chrome.zip`
 
 #### Build for Firefox
 
-```bash
-npm run build:firefox
-```
+    ```bash
+    npm run build:firefox
+    ```
 
 Creates: `auto-tab-groups-firefox.xpi`
 
 #### Build for both browsers
 
-```bash
-npm run build
-```
+    ```bash
+    npm run build
+    ```
 
 ### Development Mode
 
 #### Chrome Development
 
-```bash
-npm run dev:chrome
-```
+    ```bash
+    npm run dev:chrome
+    ```
 
 Then load the `src/` folder in Chrome's extension manager.
 
 #### Firefox Development
 
-```bash
-npm run dev:firefox
-```
+    ```bash
+    npm run dev:firefox
+    ```
 
-Then use `web-ext run` or load in Firefox's about:debugging.
+Then use `web-ext run`, or load in the `manifest.json` file in Firefox's about:debugging.
 
 ### Testing
 
-```bash
-# Test both browsers
-npm test
+    ```bash
+    # Test both browsers
+    npm test
 
-# Test specific browser
-npm run test:chrome
-npm run test:firefox
-```
+    # Test specific browser
+    npm run test:chrome
+    npm run test:firefox
+    ```
 
 ## 📦 Installation
 
@@ -173,4 +173,4 @@ All major functionality tested across:
 
 ---
 
-*Built with ❤️ for productivity and clean tab management*
+## *Built with ❤️ for productivity and clean tab management*
