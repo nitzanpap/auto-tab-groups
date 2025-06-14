@@ -6,15 +6,18 @@ body {
   padding: 20px;
   background: #f5f5f5;
   color: #333;
-  min-width: 400px;
-  max-width: 500px;
+  min-width: 600px;
+  max-width: 800px;
+  min-height: 90vh;
 }
 
 .modal-container {
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .modal-header {
@@ -29,7 +32,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .form-label {
@@ -210,11 +213,12 @@ body {
 }
 
 .current-tabs-container {
-  max-height: 150px;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background: #f7fafc;
+  margin-bottom: 8px;
 }
 
 .loading-tabs {
@@ -280,26 +284,36 @@ body {
 }
 
 .tabs-actions {
-  padding: 8px 12px;
-  border-top: 1px solid #e2e8f0;
-  background: #f7fafc;
+  padding: 8px 0;
   display: flex;
   gap: 8px;
   justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f7fafc;
 }
 
 .tabs-action-btn {
-  background: none;
+  background: #ffffff;
   border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 8px 16px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   transition: all 0.2s ease;
   color: #4a5568;
+  min-width: 80px;
 }
 
 .tabs-action-btn:hover {
   background: #edf2f7;
   border-color: #a0aec0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tabs-action-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }

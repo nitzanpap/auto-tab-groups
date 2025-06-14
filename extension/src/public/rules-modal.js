@@ -66,6 +66,7 @@ class RulesModal {
     this.domainsError = document.getElementById("domainsError")
     this.refreshTabsBtn = document.getElementById("refreshTabsBtn")
     this.currentTabsContainer = document.getElementById("currentTabsContainer")
+    this.tabsActionsContainer = document.getElementById("tabsActionsContainer")
   }
 
   initializeEventListeners() {
@@ -80,6 +81,28 @@ class RulesModal {
 
     // Current tabs events
     this.refreshTabsBtn.addEventListener("click", () => this.loadCurrentTabs())
+
+    // Action buttons event listeners
+    this.initializeActionButtons()
+  }
+
+  /**
+   * Initialize action buttons event listeners
+   */
+  initializeActionButtons() {
+    const selectAllBtn = document.getElementById("selectAllBtn")
+    const clearAllBtn = document.getElementById("clearAllBtn")
+    const addSelectedBtn = document.getElementById("addSelectedBtn")
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", () => this.selectAllDomains())
+    }
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener("click", () => this.clearAllDomains())
+    }
+    if (addSelectedBtn) {
+      addSelectedBtn.addEventListener("click", () => this.addSelectedToTextarea())
+    }
   }
 
   populateColorSelector() {
@@ -406,6 +429,7 @@ class RulesModal {
   renderCurrentTabs() {
     if (this.currentTabs.length === 0) {
       this.currentTabsContainer.innerHTML = '<div class="empty-tabs">No tabs found</div>'
+      this.tabsActionsContainer.style.display = "none"
       return
     }
 
@@ -426,21 +450,8 @@ class RulesModal {
       })
       .join("")
 
-    const actionsHtml = `
-      <div class="tabs-actions">
-        <button type="button" class="tabs-action-btn" id="selectAllBtn">
-          Select All
-        </button>
-        <button type="button" class="tabs-action-btn" id="clearAllBtn">
-          Clear All
-        </button>
-        <button type="button" class="tabs-action-btn" id="addSelectedBtn">
-          Add Selected
-        </button>
-      </div>
-    `
-
-    this.currentTabsContainer.innerHTML = tabsHtml + actionsHtml
+    this.currentTabsContainer.innerHTML = tabsHtml
+    this.tabsActionsContainer.style.display = "flex"
 
     // Add event listeners for the dynamically created elements
     this.addCurrentTabsEventListeners()
@@ -450,21 +461,6 @@ class RulesModal {
    * Add event listeners for dynamically created current tabs elements
    */
   addCurrentTabsEventListeners() {
-    // Add event listeners for action buttons
-    const selectAllBtn = document.getElementById("selectAllBtn")
-    const clearAllBtn = document.getElementById("clearAllBtn")
-    const addSelectedBtn = document.getElementById("addSelectedBtn")
-
-    if (selectAllBtn) {
-      selectAllBtn.addEventListener("click", () => this.selectAllDomains())
-    }
-    if (clearAllBtn) {
-      clearAllBtn.addEventListener("click", () => this.clearAllDomains())
-    }
-    if (addSelectedBtn) {
-      addSelectedBtn.addEventListener("click", () => this.addSelectedToTextarea())
-    }
-
     // Add event listeners for checkboxes and domain items
     const checkboxes = this.currentTabsContainer.querySelectorAll(".tab-domain-checkbox")
     const domainItems = this.currentTabsContainer.querySelectorAll(".tab-domain-item")
