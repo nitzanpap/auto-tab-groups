@@ -46,6 +46,10 @@ async function ensureStateLoaded() {
 ensureStateLoaded()
   .then(async () => {
     try {
+      // Rebuild group-domain mappings to handle stale group IDs after service worker restart
+      console.log("Rebuilding group-domain mappings after service worker restart...")
+      await tabGroupService.rebuildGroupDomainMappings()
+
       // Auto-group existing tabs if auto-grouping is enabled and conditions are met
       if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
         console.log("Auto-grouping is enabled, preserving existing colors and grouping tabs...")
@@ -79,6 +83,8 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       switch (msg.action) {
         case "group":
+          // Rebuild mappings to ensure they're fresh before grouping
+          await tabGroupService.rebuildGroupDomainMappings()
           // Preserve existing colors before regrouping for better UX
           await tabGroupService.preserveExistingGroupColors()
           await tabGroupService.groupTabsWithRules()
@@ -229,34 +235,50 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // Tab event listeners
 browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
-  if (changeInfo.url) {
-    console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
-    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-    tabGroupService.moveTabToGroup(tabId)
+  try {
+    console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
+    if (changeInfo.url) {
+      console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
+      await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+      await tabGroupService.moveTabToGroup(tabId)
+    }
+  } catch (error) {
+    console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error)
   }
 })
 
 browserAPI.tabs.onCreated.addListener(async (tab) => {
-  console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
-  if (tab.url) {
-    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-    tabGroupService.moveTabToGroup(tab.id)
+  try {
+    console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
+    if (tab.url) {
+      await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+      await tabGroupService.moveTabToGroup(tab.id)
+    }
+  } catch (error) {
+    console.error(`[tabs.onCreated] Error handling tab ${tab.id} creation:`, error)
   }
 })
 
 browserAPI.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
-  console.log(`[tabs.onRemoved] Tab ${tabId} removed from group: ${removeInfo.groupId}`)
-  if (removeInfo.groupId) {
-    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-    tabGroupService.removeEmptyGroup(removeInfo.groupId)
+  try {
+    console.log(`[tabs.onRemoved] Tab ${tabId} removed from group: ${removeInfo.groupId}`)
+    if (removeInfo.groupId) {
+      await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+      await tabGroupService.removeEmptyGroup(removeInfo.groupId)
+    }
+  } catch (error) {
+    console.error(`[tabs.onRemoved] Error handling tab ${tabId} removal:`, error)
   }
 })
 
 browserAPI.tabs.onMoved.addListener(async (tabId) => {
-  console.log(`[tabs.onMoved] Tab ${tabId} moved`)
-  await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-  tabGroupService.moveTabToGroup(tabId)
+  try {
+    console.log(`[tabs.onMoved] Tab ${tabId} moved`)
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+    await tabGroupService.moveTabToGroup(tabId)
+  } catch (error) {
+    console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
+  }
 })
 
 // Listen for tab group updates (including color changes)

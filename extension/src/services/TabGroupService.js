@@ -211,11 +211,59 @@ class TabGroupService {
 
       // Process each domain
       for (const [domain, tabIds] of domainTabsMap.entries()) {
-        // Find a matching group by checking the domain of its first tab
+        // Find a matching group using improved resilient matching
         let matchingGroup = null
         for (const group of existingGroups) {
-          const groupDomain = await this.getGroupDomain(group.id)
-          if (groupDomain === domain) {
+          let isMatch = false
+
+          // Method 1: Check stored domain mapping
+          const storedGroupDomain = await this.getGroupDomain(group.id)
+          if (storedGroupDomain === domain) {
+            isMatch = true
+          }
+
+          // Method 2: If stored mapping doesn't match, check by examining group's tabs
+          if (!isMatch) {
+            try {
+              const groupTabs = await browserAPI.tabs.query({
+                windowId: tabs[0].windowId,
+                groupId: group.id,
+              })
+
+              if (groupTabs.length > 0) {
+                const groupDomain = extractDomain(
+                  groupTabs[0].url,
+                  tabGroupState.groupBySubDomainEnabled
+                )
+                if (groupDomain === domain) {
+                  isMatch = true
+                  // Update the stored mapping since it was incorrect/missing
+                  console.log(
+                    `[groupTabsByDomain] Updating stale group mapping: ${group.id} -> ${domain}`
+                  )
+                  tabGroupState.setGroupDomain(group.id, domain)
+                  await storageManager.saveState()
+                }
+              }
+            } catch (error) {
+              console.warn(`[groupTabsByDomain] Error checking group ${group.id} tabs:`, error)
+            }
+          }
+
+          // Method 3: As a last resort, check by group title (display name)
+          if (!isMatch) {
+            const displayName = getDomainDisplayName(domain)
+            if (group.title === displayName) {
+              isMatch = true
+              console.log(
+                `[groupTabsByDomain] Matching by title, updating mapping: ${group.id} -> ${domain}`
+              )
+              tabGroupState.setGroupDomain(group.id, domain)
+              await storageManager.saveState()
+            }
+          }
+
+          if (isMatch) {
             matchingGroup = group
             break
           }
@@ -317,7 +365,7 @@ class TabGroupService {
       const groups = await browserAPI.tabGroups.query({ windowId: tab.windowId })
       console.log(`[moveTabToGroup] Existing groups in window:`, groups)
 
-      // 4. Find matching existing group
+      // 4. Find matching existing group with improved resilient matching
       let targetGroup = null
       for (const group of groups) {
         let isMatch = false
@@ -326,9 +374,53 @@ class TabGroupService {
           // For custom rules, match by group title
           isMatch = group.title === groupInfo.name
         } else {
-          // For domain groups, match by stored domain mapping
-          const groupDomain = await this.getGroupDomain(group.id)
-          isMatch = groupDomain === groupInfo.domain
+          // For domain groups, try multiple matching approaches for resilience
+
+          // Method 1: Check stored domain mapping
+          const storedGroupDomain = await this.getGroupDomain(group.id)
+          if (storedGroupDomain === groupInfo.domain) {
+            isMatch = true
+          }
+
+          // Method 2: If stored mapping doesn't match, check by examining group's tabs
+          if (!isMatch) {
+            try {
+              const groupTabs = await browserAPI.tabs.query({
+                windowId: tab.windowId,
+                groupId: group.id,
+              })
+
+              if (groupTabs.length > 0) {
+                // Check if any tab in the group matches our domain
+                const groupDomain = extractDomain(
+                  groupTabs[0].url,
+                  tabGroupState.groupBySubDomainEnabled
+                )
+                if (groupDomain === groupInfo.domain) {
+                  isMatch = true
+                  // Update the stored mapping since it was incorrect/missing
+                  console.log(
+                    `[moveTabToGroup] Updating stale group mapping: ${group.id} -> ${groupInfo.domain}`
+                  )
+                  tabGroupState.setGroupDomain(group.id, groupInfo.domain)
+                  await storageManager.saveState()
+                }
+              }
+            } catch (error) {
+              console.warn(`[moveTabToGroup] Error checking group ${group.id} tabs:`, error)
+            }
+          }
+
+          // Method 3: As a last resort, check by group title (display name)
+          if (!isMatch && group.title === groupInfo.displayName) {
+            isMatch = true
+            // Update the stored mapping
+            console.log(
+              `[moveTabToGroup] Matching by title, updating mapping: ${group.id} -> ${groupInfo.domain}`
+            )
+            tabGroupState.setGroupDomain(group.id, groupInfo.domain)
+            await storageManager.saveState()
+          }
         }
 
         if (isMatch) {
@@ -896,6 +988,92 @@ class TabGroupService {
       }
     } catch (error) {
       console.error("[preserveExistingGroupColors] Error preserving existing group colors:", error)
+    }
+  }
+
+  /**
+   * Rebuilds the group-domain mappings by examining actual existing groups
+   * This is crucial after service worker restarts when stored group IDs may be stale
+   */
+  async rebuildGroupDomainMappings() {
+    // Skip if tab groups are not supported (e.g., Firefox)
+    if (!browserAPI.tabGroups) {
+      console.log("[rebuildGroupDomainMappings] Tab groups not supported, skipping rebuild")
+      return
+    }
+
+    try {
+      console.log("[rebuildGroupDomainMappings] Rebuilding group-domain mappings...")
+
+      // Clear existing mappings
+      tabGroupState.groupDomains.clear()
+
+      // Get all existing groups in all windows
+      const windows = await browserAPI.windows.getAll()
+
+      for (const window of windows) {
+        try {
+          const groups = await browserAPI.tabGroups.query({ windowId: window.id })
+
+          for (const group of groups) {
+            try {
+              // Get tabs in this group to determine the domain
+              const tabs = await browserAPI.tabs.query({
+                windowId: window.id,
+                groupId: group.id,
+              })
+
+              if (tabs.length > 0) {
+                // Use the first tab's domain to determine the group's domain
+                const firstTab = tabs[0]
+                if (firstTab.url) {
+                  const domain = extractDomain(firstTab.url, tabGroupState.groupBySubDomainEnabled)
+                  if (domain) {
+                    // Verify this is actually the correct domain by checking if all tabs match
+                    const allTabsMatchDomain = tabs.every((tab) => {
+                      if (!tab.url) return false
+                      const tabDomain = extractDomain(
+                        tab.url,
+                        tabGroupState.groupBySubDomainEnabled
+                      )
+                      return tabDomain === domain
+                    })
+
+                    if (allTabsMatchDomain) {
+                      console.log(
+                        `[rebuildGroupDomainMappings] Mapping group ${group.id} to domain "${domain}"`
+                      )
+                      tabGroupState.setGroupDomain(group.id, domain)
+                    } else {
+                      console.log(
+                        `[rebuildGroupDomainMappings] Group ${group.id} has mixed domains, skipping`
+                      )
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.warn(
+                `[rebuildGroupDomainMappings] Error processing group ${group.id}:`,
+                error
+              )
+            }
+          }
+        } catch (error) {
+          console.warn(`[rebuildGroupDomainMappings] Error processing window ${window.id}:`, error)
+        }
+      }
+
+      // Save the rebuilt mappings
+      await storageManager.saveState()
+
+      console.log("[rebuildGroupDomainMappings] Group-domain mappings rebuilt successfully")
+      console.log(
+        "[rebuildGroupDomainMappings] Current mappings:",
+        Object.fromEntries(tabGroupState.groupDomains)
+      )
+    } catch (error) {
+      console.error("[rebuildGroupDomainMappings] Error rebuilding group-domain mappings:", error)
     }
   }
 }
