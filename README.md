@@ -29,32 +29,64 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 🚀 Features
 
-- 🪄 Intelligent tab grouping by domain:
-  - Automatically groups tabs by their domain/subdomain
-  - Smart domain name display (e.g., "github" instead of "www.github.com")
-  - Special handling for IP addresses, localhost, and .local domains
-- 📎 Group management:
-  - One-click collapse/expand all groups
-  - Real-time group updates
-  - Maintains existing groups without duplicates
-- 🎨 Advanced color management:
-  - Consistent colors for each domain group
-  - Random color generation with one click
-  - Optional preservation of manually customized colors
-  - Remembers color preferences across browser sessions
-- ⚙️ Configuration options:
-  - Toggle auto-grouping (on/off)
-  - Toggle grouping by subdomain (on/off)
-  - Toggle only applying to new tabs (on/off)
-  - Toggle preservation of manual color choices (on/off)
-- Sidebar & vertical tab groups support:
-  - Displays tab groups in the sidebar for easy access
-  - Allows quick navigation between groups
-  - Sidebar popup as an alternative to the main popup
+- ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
+- ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain
+- ✅ **Custom rules** - Create named groups that combine multiple domains
+- ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
+- ✅ **Color management** - Persistent group colors across browser sessions
+- ✅ **Collapse/expand controls** - Manage tab group visibility
+- ✅ **Configuration options** - Auto-grouping, subdomain handling, etc.
+- ✅ **Side panel support** - Chrome side panel and Firefox sidebar
+- ✅ **Modern UI** - Clean, responsive interface
+
+### 🪄 Intelligent Tab Grouping
+
+- Automatically groups tabs by their domain/subdomain
+- Smart domain name display (e.g., "github" instead of "www.github.com")
+- Special handling for IP addresses, localhost, and .local domains
+- Real-time group updates as you browse
+
+### � Custom Rules System
+
+- **Priority System**: Custom rules take priority over domain-based grouping
+- **Fallback**: Domains not covered by custom rules still use automatic domain grouping
+- **Real-time**: Changes to rules immediately re-group existing tabs
+- **Quick add from current tabs**: Select domains from your currently open tabs instead of typing them manually
+- **Example Use Cases**:
+  - **Communication**: Group `discord.com`, `teams.microsoft.com`, `slack.com` under "Communication"
+  - **Development**: Group `github.com`, `stackoverflow.com`, `docs.google.com` under "Dev Tools"
+  - **Social Media**: Group `twitter.com`, `facebook.com`, `instagram.com` under "Social"
+
+### 📎 Group Management
+
+- One-click collapse/expand all groups
+- Real-time group updates
+- Maintains existing groups without duplicates
+- Group/Ungroup all tabs with one click
+
+### 🎨 Advanced Color Management
+
+- Consistent colors for each domain group
+- Random color generation with one click
+- Optional preservation of manually customized colors
+- Remembers color preferences across browser sessions
+
+### ⚙️ Configuration Options
+
+- Toggle auto-grouping (on/off)
+- Toggle grouping by subdomain (on/off)
+- Toggle only applying to new tabs (on/off)
+- Toggle preservation of manual color choices (on/off)
+
+### 📱 Side Panel & Sidebar Support
+
+- Chrome side panel and Firefox sidebar integration
+- Displays tab groups for easy access
+- Allows quick navigation between groups
+- Sidebar popup as an alternative to the main popup
 
 ## Planned Features
 
-- Group tabs by custom rules (e.g., keyword, container, time opened)
 - Add customizable mapping for domain names to group titles
 - Add support for pinned tabs.
   - Pinned tabs will not be grouped.
@@ -108,7 +140,7 @@ npm run dev:firefox   # Sets up for Firefox development
 
 ### Project Structure
 
-```
+```sh
 extension/
 ├── src/                          # Single source code base
 │   ├── manifest.chrome.json     # Chrome Manifest V3
@@ -125,20 +157,43 @@ For detailed development information, see [`extension/README.md`](extension/READ
 
 ## 📦 Project Structure
 
-- `background.js`: Main background script for managing tab groups
-- `services/`:
-  - `TabGroupService.js`: Core tab grouping logic and color management
-  - `DomainUtils.js`: Domain name processing and formatting utilities
-- `state/`:
-  - `TabGroupState.js`: State management for settings and color preferences
-- `manifest.json`: Extension manifest file
-- `popup/`: UI components for extension controls
-- `server/`: Backend for AI-powered tab grouping (in development)
-  - `cmd/api/`: Server entry point and configuration
-  - `internal/`: Core server components
-    - `database/`: Database access layer
-    - `server/`: HTTP server and route handlers
-- `docs/`: Documentation for AI features and implementation plans
+```text
+extension/
+├── src/                          # Single source code base
+│   ├── manifest.chrome.json     # Chrome Manifest V3
+│   ├── manifest.firefox.json    # Firefox Manifest V3
+│   ├── background.js             # Service worker (both browsers)
+│   ├── utils/
+│   │   ├── BrowserAPI.js        # Cross-browser compatibility layer
+│   │   ├── DomainUtils.js       # Domain processing utilities
+│   │   └── RulesUtils.js        # Custom rules utilities
+│   ├── config/
+│   │   └── StorageManager.js    # Cross-browser storage handling
+│   ├── services/
+│   │   ├── TabGroupService.js   # Tab grouping logic
+│   │   └── RulesService.js      # Custom rules management
+│   ├── state/
+│   │   └── TabGroupState.js     # State management
+│   ├── public/
+│   │   ├── popup.html           # Extension popup
+│   │   ├── popup.js             # Popup logic
+│   │   ├── popup.css            # Styling
+│   │   ├── rules-modal.html     # Custom rules modal
+│   │   ├── rules-modal.js       # Rules modal logic
+│   │   └── sidebar.html         # Side panel/sidebar
+│   └── assets/
+│       ├── icon16.png           # Icons (PNG for compatibility)
+│       ├── icon48.png
+│       └── icon128.png
+├── package.json                  # Build scripts for both browsers
+└── README.md                     # Detailed development docs
+server/                           # Backend for AI-powered tab grouping (in development)
+├── cmd/api/                      # Server entry point and configuration
+├── internal/                     # Core server components
+│   ├── database/                 # Database access layer
+│   └── server/                   # HTTP server and route handlers
+└── docs/                         # Documentation for AI features and implementation plans
+```
 
 ---
 
@@ -200,6 +255,24 @@ The extension works automatically in the background, grouping tabs by domain wit
 - Access advanced settings:
   - Group by subdomain
   - Preserve manual color choices
+- Create and manage custom rules for advanced grouping
+
+### Custom Rules
+
+Create named tab groups that combine multiple domains under a single group:
+
+1. Open the extension popup
+2. Click "🔧 Custom Rules" to expand the section
+3. Click "➕ Add New Rule" to create your first rule
+4. Enter a group name (or let the system suggest one)
+5. **Quick add from current tabs**: Select domains from your currently open tabs instead of typing them manually
+6. Choose a color and save
+
+**Example Use Cases**:
+
+- **Communication**: Group `discord.com`, `teams.microsoft.com`, `slack.com` under "Communication"
+- **Development**: Group `github.com`, `stackoverflow.com`, `docs.google.com` under "Dev Tools"
+- **Social Media**: Group `twitter.com`, `facebook.com`, `instagram.com` under "Social"
 
 ### Color Management
 
@@ -271,24 +344,6 @@ The extension provides convenient ways to manage your tab groups:
 1. Update the version in `manifest.json`
 2. Build using `npm run build`
 3. Upload the .xpi file to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/)
-
-## 🌐 Browser Compatibility
-
-### Firefox Extension
-
-- **Location**: `extension_firefox/`
-- **Manifest**: V2
-- **Requirements**: Firefox 139+ for full features
-- **Install**: [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)
-
-### Chrome Extension
-
-- **Location**: `extension_chrome/`
-- **Manifest**: V3
-- **Requirements**: Chrome 88+ (Chrome 95+ recommended)
-- **Status**: Ready for Chrome Web Store submission
-
-Both extensions share the same core functionality with browser-specific optimizations.
 
 ---
 
