@@ -14,8 +14,14 @@ const preserveManualColorsToggle = document.getElementById("preserveManualColors
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
 
-console.log("[Popup/Sidebar] Initialized with browserAPI:", browserAPI ? "Available" : "Not available")
-console.log("[Popup/Sidebar] Current context:", document.querySelector('.sidebar-container') ? 'Sidebar' : 'Popup')
+console.log(
+  "[Popup/Sidebar] Initialized with browserAPI:",
+  browserAPI ? "Available" : "Not available"
+)
+console.log(
+  "[Popup/Sidebar] Current context:",
+  document.querySelector(".sidebar-container") ? "Sidebar" : "Popup"
+)
 
 const updateVersionDisplay = () => {
   // Get the version number from the manifest and display it.
@@ -238,11 +244,12 @@ function updateRulesDisplay() {
   rulesList.innerHTML = ""
 
   if (rulesArray.length === 0) {
-    rulesList.innerHTML = `
-      <div class="empty-rules">
-        No custom rules yet. Create your first rule to group tabs by your preferences!
-      </div>
-    `
+    // Create empty state message safely
+    const emptyDiv = document.createElement("div")
+    emptyDiv.className = "empty-rules"
+    emptyDiv.textContent =
+      "No custom rules yet. Create your first rule to group tabs by your preferences!"
+    rulesList.appendChild(emptyDiv)
     return
   }
 
@@ -269,25 +276,53 @@ function createRuleElement(rule) {
   const colorHex = RULE_COLORS[rule.color] || RULE_COLORS.blue
   const domainsDisplay = formatDomainsDisplay(rule.domains)
 
-  ruleItem.innerHTML = `
-    <div class="rule-color-indicator" style="background-color: ${colorHex}"></div>
-    <div class="rule-info">
-      <div class="rule-name">${escapeHtml(rule.name)}</div>
-      <div class="rule-domains">${escapeHtml(domainsDisplay)}</div>
-    </div>
-    <div class="rule-actions">
-      <button class="rule-action-btn edit" title="Edit rule" data-rule-id="${rule.id}">
-        ✏️
-      </button>
-      <button class="rule-action-btn delete" title="Delete rule" data-rule-id="${rule.id}">
-        🗑️
-      </button>
-    </div>
-  `
+  // Create color indicator
+  const colorIndicator = document.createElement("div")
+  colorIndicator.className = "rule-color-indicator"
+  colorIndicator.style.backgroundColor = colorHex
 
-  // Add event listeners
-  const editBtn = ruleItem.querySelector(".edit")
-  const deleteBtn = ruleItem.querySelector(".delete")
+  // Create rule info container
+  const ruleInfo = document.createElement("div")
+  ruleInfo.className = "rule-info"
+
+  // Create rule name
+  const ruleName = document.createElement("div")
+  ruleName.className = "rule-name"
+  ruleName.textContent = rule.name
+
+  // Create rule domains
+  const ruleDomains = document.createElement("div")
+  ruleDomains.className = "rule-domains"
+  ruleDomains.textContent = domainsDisplay
+
+  ruleInfo.appendChild(ruleName)
+  ruleInfo.appendChild(ruleDomains)
+
+  // Create rule actions
+  const ruleActions = document.createElement("div")
+  ruleActions.className = "rule-actions"
+
+  // Create edit button
+  const editBtn = document.createElement("button")
+  editBtn.className = "rule-action-btn edit"
+  editBtn.title = "Edit rule"
+  editBtn.setAttribute("data-rule-id", rule.id)
+  editBtn.textContent = "✏️"
+
+  // Create delete button
+  const deleteBtn = document.createElement("button")
+  deleteBtn.className = "rule-action-btn delete"
+  deleteBtn.title = "Delete rule"
+  deleteBtn.setAttribute("data-rule-id", rule.id)
+  deleteBtn.textContent = "🗑️"
+
+  ruleActions.appendChild(editBtn)
+  ruleActions.appendChild(deleteBtn)
+
+  // Assemble the rule item
+  ruleItem.appendChild(colorIndicator)
+  ruleItem.appendChild(ruleInfo)
+  ruleItem.appendChild(ruleActions)
 
   editBtn.addEventListener("click", () => editRule(rule.id))
   deleteBtn.addEventListener("click", () => deleteRule(rule.id, rule.name))
@@ -295,20 +330,17 @@ function createRuleElement(rule) {
   return ruleItem
 }
 
-// Escape HTML to prevent XSS
-function escapeHtml(text) {
-  const div = document.createElement("div")
-  div.textContent = text
-  return div.innerHTML
-}
-
 // Show rules error
 function showRulesError(message) {
-  rulesList.innerHTML = `
-    <div class="rules-error">
-      ${escapeHtml(message)}
-    </div>
-  `
+  // Clear the container
+  rulesList.innerHTML = ""
+
+  // Create error element safely
+  const errorDiv = document.createElement("div")
+  errorDiv.className = "rules-error"
+  errorDiv.textContent = message
+
+  rulesList.appendChild(errorDiv)
 }
 
 // Toggle rules section

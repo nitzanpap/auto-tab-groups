@@ -368,8 +368,12 @@ class RulesModal {
    */
   async loadCurrentTabs() {
     try {
-      this.currentTabsContainer.innerHTML =
-        '<div class="loading-tabs">Loading current tabs...</div>'
+      // Clear container and show loading
+      this.currentTabsContainer.innerHTML = ""
+      const loadingDiv = document.createElement("div")
+      loadingDiv.className = "loading-tabs"
+      loadingDiv.textContent = "Loading current tabs..."
+      this.currentTabsContainer.appendChild(loadingDiv)
 
       // Get all tabs in the current window
       const tabs = await browserAPI.tabs.query({})
@@ -418,8 +422,11 @@ class RulesModal {
       this.renderCurrentTabs()
     } catch (error) {
       console.error("Error loading current tabs:", error)
-      this.currentTabsContainer.innerHTML =
-        '<div class="empty-tabs">Failed to load current tabs</div>'
+      this.currentTabsContainer.innerHTML = ""
+      const errorDiv = document.createElement("div")
+      errorDiv.className = "empty-tabs"
+      errorDiv.textContent = "Failed to load current tabs"
+      this.currentTabsContainer.appendChild(errorDiv)
     }
   }
 
@@ -428,29 +435,55 @@ class RulesModal {
    */
   renderCurrentTabs() {
     if (this.currentTabs.length === 0) {
-      this.currentTabsContainer.innerHTML = '<div class="empty-tabs">No tabs found</div>'
+      this.currentTabsContainer.innerHTML = ""
+      const emptyDiv = document.createElement("div")
+      emptyDiv.className = "empty-tabs"
+      emptyDiv.textContent = "No tabs found"
+      this.currentTabsContainer.appendChild(emptyDiv)
       this.tabsActionsContainer.style.display = "none"
       return
     }
 
-    const tabsHtml = this.currentTabs
-      .map((tab) => {
-        const isSelected = this.selectedDomains.has(tab.domain)
-        return `
-        <div class="tab-domain-item ${isSelected ? "selected" : ""}" data-domain="${tab.domain}">
-          <input type="checkbox" class="tab-domain-checkbox" ${
-            isSelected ? "checked" : ""
-          } data-domain="${tab.domain}">
-          <div class="tab-domain-info">
-            <div class="tab-domain-name" title="${tab.domain}">${tab.domain}</div>
-            <div class="tab-count">${tab.count} tab${tab.count === 1 ? "" : "s"}</div>
-          </div>
-        </div>
-      `
-      })
-      .join("")
+    // Clear the container
+    this.currentTabsContainer.innerHTML = ""
 
-    this.currentTabsContainer.innerHTML = tabsHtml
+    // Create DOM elements safely
+    this.currentTabs.forEach((tab) => {
+      const isSelected = this.selectedDomains.has(tab.domain)
+
+      const tabItem = document.createElement("div")
+      tabItem.className = `tab-domain-item ${isSelected ? "selected" : ""}`
+      tabItem.setAttribute("data-domain", tab.domain)
+
+      const checkbox = document.createElement("input")
+      checkbox.type = "checkbox"
+      checkbox.className = "tab-domain-checkbox"
+      checkbox.setAttribute("data-domain", tab.domain)
+      if (isSelected) {
+        checkbox.checked = true
+      }
+
+      const domainInfo = document.createElement("div")
+      domainInfo.className = "tab-domain-info"
+
+      const domainName = document.createElement("div")
+      domainName.className = "tab-domain-name"
+      domainName.title = tab.domain
+      domainName.textContent = tab.domain
+
+      const tabCount = document.createElement("div")
+      tabCount.className = "tab-count"
+      tabCount.textContent = `${tab.count} tab${tab.count === 1 ? "" : "s"}`
+
+      domainInfo.appendChild(domainName)
+      domainInfo.appendChild(tabCount)
+
+      tabItem.appendChild(checkbox)
+      tabItem.appendChild(domainInfo)
+
+      this.currentTabsContainer.appendChild(tabItem)
+    })
+
     this.tabsActionsContainer.style.display = "flex"
 
     // Add event listeners for the dynamically created elements
