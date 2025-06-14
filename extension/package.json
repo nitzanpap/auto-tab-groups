@@ -1,6 +1,6 @@
 {
   "name": "auto-tab-groups",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "scripts": {
     "build:chrome": "cp src/manifest.chrome.json src/manifest.json && cd src && zip -r ../auto-tab-groups-chrome.zip . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Chrome extension built: auto-tab-groups-chrome.zip'",
