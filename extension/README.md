@@ -2,6 +2,12 @@
 
 A cross-browser extension that automatically groups tabs by domain, supporting both Chrome and Firefox.
 
+## Bugs / Issues / Feature Requests
+
+Please report any issues or feature requests [here](https://docs.google.com/forms/d/e/1FAIpQLScdrbrDYZaTXEcpj7KQD6oGpv_TQ1iMIV19DeUxNlIO5sSUtg/viewform?usp=dialog).
+
+If you like this extension, please consider rating it 5 stars :)
+
 ## 🚀 Features
 
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
