@@ -2,8 +2,17 @@
  * Rules Modal JavaScript for managing custom tab grouping rules
  */
 
+// Import utilities from DomainUtils
+import { extractDomain, validateStrictDomain } from "../utils/DomainUtils.js"
+
 // Browser API compatibility
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
+
+// Helper function to convert validateStrictDomain to boolean (for backward compatibility)
+function isValidStrictDomain(domain) {
+  const result = validateStrictDomain(domain)
+  return result.isValid
+}
 
 // Global rule modal data (replaces inline script for CSP compliance)
 const ruleModalData = {
@@ -457,27 +466,18 @@ class RulesModal {
       const domainTitles = new Map() // Store representative titles
 
       tabs.forEach((tab) => {
-        if (
-          !tab.url ||
-          tab.url.startsWith("chrome://") ||
-          tab.url.startsWith("moz-extension://") ||
-          tab.url.startsWith("about:")
-        ) {
-          return // Skip extension and internal pages
+        // Use extractDomain utility to properly handle all URL types
+        // Include subdomains for better domain suggestions (e.g., "addons.mozilla.org" not just "mozilla.org")
+        const domain = extractDomain(tab.url, true)
+
+        // Skip invalid domains, system domains, and domains that don't pass strict validation
+        if (!domain || domain === "system" || !isValidStrictDomain(domain)) {
+          return
         }
 
-        try {
-          const url = new URL(tab.url)
-          const domain = url.hostname.toLowerCase()
-
-          if (domain) {
-            domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1)
-            if (!domainTitles.has(domain)) {
-              domainTitles.set(domain, tab.title || domain)
-            }
-          }
-        } catch (error) {
-          console.warn("Failed to parse URL:", tab.url)
+        domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1)
+        if (!domainTitles.has(domain)) {
+          domainTitles.set(domain, tab.title || domain)
         }
       })
 
