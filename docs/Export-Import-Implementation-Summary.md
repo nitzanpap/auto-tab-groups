@@ -16,20 +16,20 @@
 
 ### Frontend Changes
 
-3. **popup.html** - Added UI elements:
+1. **popup.html** - Added UI elements:
    - Export button (📤 Export)
    - Import button (📥 Import)  
    - Hidden file input for import
    - Help text for the feature
 
-4. **popup.js** - Added functionality:
+2. **popup.js** - Added functionality:
    - `exportRules()` - Triggers download of JSON file
    - `importRules()` - Opens file picker
    - `handleFileImport()` - Processes selected files
    - `showRulesMessage()` - Shows success/error feedback
    - Button state management (disable export when no rules)
 
-5. **popup.css** - Added styling:
+3. **popup.css** - Added styling:
    - Import/export button layout
    - Success/error message styling
    - Disabled button states
@@ -37,12 +37,12 @@
 
 ### Documentation & Testing
 
-6. **Documentation**:
+1. **Documentation**:
    - Comprehensive feature documentation in `docs/Rules-Export-Import-Feature.md`
    - Updated main README.md with new feature
    - Sample import file for testing
 
-7. **Testing**:
+2. **Testing**:
    - Unit test for export/import logic validation
    - Sample test data and import files
    - Error handling verification
@@ -75,7 +75,7 @@
 
 ## 📁 File Structure
 
-```
+```sh
 extension/
 ├── src/
 │   ├── services/

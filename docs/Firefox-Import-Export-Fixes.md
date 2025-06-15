@@ -55,7 +55,7 @@ const isPopupContext = !document.querySelector(".sidebar-container")
 
 ### Import Strategy
 
-```
+```js
 if (isPopupContext) {
   // Open dedicated import page in new tab
   browserAPI.tabs.create({ url: "public/import-rules.html" })
