@@ -63,6 +63,21 @@ class TabGroupServiceSimplified {
           tabIds: [tabId],
           groupId: existingGroup.id,
         })
+
+        // Update group color if this is from a custom rule
+        if (customRule && customRule.color && existingGroup.color !== customRule.color) {
+          try {
+            await browserAPI.tabGroups.update(existingGroup.id, {
+              color: customRule.color,
+            })
+            console.log(
+              `[TabGroupService] Updated existing group ${existingGroup.id} color to "${customRule.color}" from rule "${customRule.name}"`
+            )
+          } catch (colorError) {
+            console.warn(`[TabGroupService] Failed to update existing group color:`, colorError)
+          }
+        }
+
         return true
       }
 
@@ -77,17 +92,29 @@ class TabGroupServiceSimplified {
 
       console.log(`[TabGroupService] Tab grouped, received group ID: ${groupId}`)
 
-      // Set the group title (with error handling)
+      // Set the group title and color (with error handling)
       try {
-        await browserAPI.tabGroups.update(groupId, {
+        const updateOptions = {
           title: expectedTitle,
-        })
+        }
+
+        // If this is from a custom rule, apply the custom color
+        if (customRule && customRule.color) {
+          updateOptions.color = customRule.color
+          console.log(
+            `[TabGroupService] Applying custom color "${customRule.color}" from rule "${customRule.name}"`
+          )
+        }
+
+        await browserAPI.tabGroups.update(groupId, updateOptions)
         console.log(
-          `[TabGroupService] Successfully set group ${groupId} title to "${expectedTitle}"`
+          `[TabGroupService] Successfully updated group ${groupId} with title "${expectedTitle}" and color "${
+            updateOptions.color || "default"
+          }"`
         )
       } catch (updateError) {
-        console.warn(`[TabGroupService] Failed to update group ${groupId} title:`, updateError)
-        // Continue anyway - the group exists even if title update failed
+        console.warn(`[TabGroupService] Failed to update group ${groupId}:`, updateError)
+        // Continue anyway - the group exists even if title/color update failed
       }
 
       console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
@@ -277,12 +304,34 @@ class TabGroupServiceSimplified {
         return { isCollapsed: false }
       }
 
+      // Get the currently active tab to check if it's in a group
+      const [activeTab] = await browserAPI.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+
+      let activeTabGroupId = null
+      if (activeTab && activeTab.groupId !== browserAPI.tabGroups.TAB_GROUP_ID_NONE) {
+        activeTabGroupId = activeTab.groupId
+        console.log(
+          `[TabGroupService] Active tab is in group ${activeTabGroupId}, will avoid collapsing this group`
+        )
+      }
+
       // Check current state - if any group is expanded, we'll collapse all. If all are collapsed, we'll expand all.
       const hasExpandedGroups = groups.some((group) => !group.collapsed)
       const newCollapsedState = hasExpandedGroups
 
       for (const group of groups) {
         try {
+          // Skip collapsing the group that contains the active tab (Firefox compatibility)
+          if (newCollapsedState && group.id === activeTabGroupId) {
+            console.log(
+              `[TabGroupService] Skipping collapse of group ${group.id} containing active tab`
+            )
+            continue
+          }
+
           await browserAPI.tabGroups.update(group.id, {
             collapsed: newCollapsedState,
           })
@@ -320,9 +369,28 @@ class TabGroupServiceSimplified {
         return { isCollapsed: false }
       }
 
-      // If all groups are collapsed, return true. Otherwise false.
-      const allCollapsed = groups.every((group) => group.collapsed)
-      return { isCollapsed: allCollapsed }
+      // Get the currently active tab to check if it's in a group
+      const [activeTab] = await browserAPI.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+
+      let activeTabGroupId = null
+      if (activeTab && activeTab.groupId !== browserAPI.tabGroups.TAB_GROUP_ID_NONE) {
+        activeTabGroupId = activeTab.groupId
+      }
+
+      // Check if all non-active groups are collapsed
+      // (We don't count the active group since it can't be collapsed in Firefox)
+      const nonActiveGroups = groups.filter((group) => group.id !== activeTabGroupId)
+
+      if (nonActiveGroups.length === 0) {
+        // All groups contain the active tab (shouldn't happen, but handle it)
+        return { isCollapsed: false }
+      }
+
+      const allNonActiveCollapsed = nonActiveGroups.every((group) => group.collapsed)
+      return { isCollapsed: allNonActiveCollapsed }
     } catch (error) {
       console.error(`[TabGroupService] Error getting collapse state:`, error)
       return { isCollapsed: false }

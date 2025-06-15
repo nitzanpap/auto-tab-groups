@@ -72,16 +72,26 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify the tab uses the new group name
 - [ ] Verify existing tabs in the old group are moved to the new group
 
+### Test 9: Custom Rule Color Assignment
+
+- [ ] Create a custom rule for a domain (e.g., `github.com`)
+- [ ] Assign a specific color (e.g., red) to the rule
+- [ ] Save the rule
+- [ ] Navigate to the domain covered by the rule
+- [ ] Verify the tab group is created with the custom color from the rule
+- [ ] Create another tab for the same domain
+- [ ] Verify it joins the existing group and maintains the custom color
+
 ## Auto-Grouping Toggle Tests
 
-### Test 9: Disable Auto-Grouping
+### Test 10: Disable Auto-Grouping
 
 - [ ] Disable auto-grouping in settings
 - [ ] Create new tabs to various domains
 - [ ] Verify no new groups are created
 - [ ] Verify tabs remain ungrouped
 
-### Test 10: Re-enable Auto-Grouping
+### Test 11: Re-enable Auto-Grouping
 
 - [ ] Re-enable auto-grouping in settings
 - [ ] Create new tabs to various domains
@@ -91,7 +101,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Generate New Colors Tests
 
-### Test 11: Generate New Colors
+### Test 12: Generate New Colors
 
 - [ ] Create several tab groups for different domains
 - [ ] Note the current colors of the groups
@@ -101,7 +111,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Collapse All Groups Tests
 
-### Test 12: Toggle Collapse All Groups
+### Test 13: Toggle Collapse All Groups
 
 - [ ] Create several tab groups with tabs
 - [ ] Verify all groups are initially expanded (tabs visible)
@@ -110,9 +120,19 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Click "Expand all groups" button (button text should change)
 - [ ] Verify all groups are now expanded again
 
+### Test 14: Firefox Collapse Compatibility
+
+- [ ] In Firefox, create several tab groups with tabs
+- [ ] Navigate to a tab that is inside one of the groups (make it the active tab)
+- [ ] Click "Collapse all groups" button
+- [ ] Verify all groups collapse EXCEPT the group containing the active tab
+- [ ] Verify no new tab is created by Firefox
+- [ ] Switch to a tab in a different group and repeat the test
+- [ ] Verify the behavior adapts to protect the active tab's group
+
 ## Edge Cases and Error Handling
 
-### Test 13: Invalid URLs
+### Test 15: Invalid URLs
 
 - [ ] Navigate to `about:blank`
 - [ ] Navigate to `chrome://extensions`
@@ -120,13 +140,13 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify no groups are created for these URLs
 - [ ] Verify no errors occur
 
-### Test 14: Very Long Domain Names
+### Test 16: Very Long Domain Names
 
 - [ ] Navigate to a domain with a very long name
 - [ ] Verify group is created with appropriate truncation if needed
 - [ ] Verify extension remains functional
 
-### Test 15: Special Characters in Domains
+### Test 17: Special Characters in Domains
 
 - [ ] Navigate to domains with special characters (if possible)
 - [ ] Verify groups are created with sanitized names
@@ -134,7 +154,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Pinned Tab Handling Tests
 
-### Test 16: Pinned Tab Creation
+### Test 18: Pinned Tab Creation
 
 - [ ] Create a tab and navigate to `github.com`
 - [ ] Pin the tab (right-click → Pin tab)
@@ -142,7 +162,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify the pinned tab remains in its original position
 - [ ] Check console logs for: "Tab X is pinned, skipping grouping"
 
-### Test 17: Pinned Tab URL Update
+### Test 19: Pinned Tab URL Update
 
 - [ ] Create a tab, navigate to `github.com`, and pin it
 - [ ] Update the URL to `chatgpt.com` in the pinned tab
@@ -150,7 +170,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify the pinned tab remains pinned and in place
 - [ ] Check console logs for: "Tab X is pinned, skipping grouping"
 
-### Test 18: Unpin Previously Pinned Tab
+### Test 20: Unpin Previously Pinned Tab
 
 - [ ] Have a pinned tab with URL `github.com`
 - [ ] Unpin the tab (right-click → Unpin tab)
@@ -159,7 +179,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Create another tab to `github.com`
 - [ ] Verify both tabs are in the same GitHub group
 
-### Test 19: Mixed Pinned and Unpinned Tabs
+### Test 21: Mixed Pinned and Unpinned Tabs
 
 - [ ] Create tabs for `github.com` - one pinned, one unpinned
 - [ ] Verify only the unpinned tab is grouped
@@ -169,21 +189,21 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Performance and Stability Tests
 
-### Test 20: Rapid Tab Creation
+### Test 22: Rapid Tab Creation
 
 - [ ] Quickly create 10+ tabs to different domains
 - [ ] Verify all tabs are grouped correctly
 - [ ] Verify no duplicate groups are created
 - [ ] Verify extension remains responsive
 
-### Test 21: Rapid URL Changes
+### Test 23: Rapid URL Changes
 
 - [ ] In a single tab, rapidly change URLs between different domains
 - [ ] Verify tab moves between groups correctly
 - [ ] Verify no orphaned groups are left behind
 - [ ] Verify extension remains stable
 
-### Test 22: Multiple Windows
+### Test 24: Multiple Windows
 
 - [ ] Open multiple browser windows
 - [ ] Create tabs in different windows for the same domains
@@ -192,14 +212,14 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Browser Restart and Persistence Tests
 
-### Test 23: Settings Persistence
+### Test 25: Settings Persistence
 
 - [ ] Configure custom rules and settings
 - [ ] Restart the browser
 - [ ] Verify all settings are preserved
 - [ ] Verify custom rules still work
 
-### Test 24: Group State After Restart
+### Test 26: Group State After Restart
 
 - [ ] Create several grouped tabs
 - [ ] Restart the browser
@@ -209,7 +229,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Cross-Browser Testing (Firefox)
 
-### Test 25: Firefox Compatibility
+### Test 27: Firefox Compatibility
 
 - [ ] Install extension in Firefox
 - [ ] Run basic grouping tests (Tests 1-3)
@@ -218,7 +238,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Regression Testing
 
-### Test 26: Core Functionality Regression
+### Test 28: Core Functionality Regression
 
 - [ ] Run Tests 1, 2, 6, 11, and 16 after any code changes
 - [ ] Verify no existing functionality is broken
