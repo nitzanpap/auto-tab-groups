@@ -86,3 +86,52 @@ export function getDomainDisplayName(domain) {
     return domain // Fallback to original domain if error occurs
   }
 }
+
+/**
+ * Validates a strict domain format (NO wildcards allowed)
+ * Use this for validating actual domains, not rule patterns
+ * @param {string} domain - Domain to validate (no wildcards allowed)
+ * @returns {Object} Validation result with isValid and error message
+ */
+export function validateStrictDomain(domain) {
+  if (!domain || typeof domain !== "string") {
+    return { isValid: false, error: "Domain must be a string" }
+  }
+
+  const cleanDomain = domain.trim().toLowerCase()
+
+  if (cleanDomain.length === 0) {
+    return { isValid: false, error: "Domain cannot be empty" }
+  }
+
+  if (cleanDomain.length > 253) {
+    return { isValid: false, error: "Domain too long (max 253 characters)" }
+  }
+
+  // Reject wildcards - this is for strict domain validation
+  if (cleanDomain.includes("*")) {
+    return { isValid: false, error: "Wildcards not allowed in domain format" }
+  }
+
+  // Regular domain validation
+  const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+  if (!domainPattern.test(cleanDomain)) {
+    return { isValid: false, error: "Invalid domain format" }
+  }
+
+  // Check for invalid patterns
+  if (cleanDomain.startsWith(".") || cleanDomain.endsWith(".")) {
+    return { isValid: false, error: "Domain cannot start or end with a dot" }
+  }
+
+  if (cleanDomain.includes("..")) {
+    return { isValid: false, error: "Domain cannot contain consecutive dots" }
+  }
+
+  if (cleanDomain.startsWith("-") || cleanDomain.endsWith("-")) {
+    return { isValid: false, error: "Domain cannot start or end with a hyphen" }
+  }
+
+  return { isValid: true, error: null }
+}

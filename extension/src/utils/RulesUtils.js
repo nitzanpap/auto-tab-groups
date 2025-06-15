@@ -3,11 +3,11 @@
  */
 
 /**
- * Validates a domain string format (supports wildcards)
- * @param {string} domain - Domain to validate (supports *.domain.com format)
+ * Validates a domain string format for custom rules (supports wildcards)
+ * @param {string} domain - Domain to validate (supports *.domain.com format for rules)
  * @returns {Object} Validation result with isValid and error message
  */
-export function validateDomain(domain) {
+export function validateRuleDomain(domain) {
   if (!domain || typeof domain !== "string") {
     return { isValid: false, error: "Domain must be a string" }
   }
@@ -124,7 +124,7 @@ export function sanitizeDomains(domains) {
   const seen = new Set()
 
   for (const domain of domains) {
-    const validation = validateDomain(domain)
+    const validation = validateRuleDomain(domain)
     if (validation.isValid) {
       const cleanDomain = domain.trim().toLowerCase()
       if (!seen.has(cleanDomain)) {
@@ -237,7 +237,7 @@ export function validateRuleData(ruleData, existingRules = []) {
     // Validate each domain
     const validDomains = []
     for (const domain of ruleData.domains) {
-      const validation = validateDomain(domain)
+      const validation = validateRuleDomain(domain)
       if (!validation.isValid) {
         errors.push(`Invalid domain "${domain}": ${validation.error}`)
       } else {

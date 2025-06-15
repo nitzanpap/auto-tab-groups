@@ -306,7 +306,7 @@ class RulesModal {
 
     // Validate each domain format (support wildcards)
     for (const domain of domains) {
-      if (!this.isValidDomainFormat(domain)) {
+      if (!this.isValidRuleDomainFormat(domain)) {
         this.showFieldError("domains", `Invalid domain format: ${domain}`)
         return false
       }
@@ -334,11 +334,12 @@ class RulesModal {
   }
 
   /**
-   * Validates domain format with wildcard support
+   * Validates domain format for custom rules (supports wildcards)
+   * This is specifically for rule validation, not general domain validation
    * @param {string} domain - Domain to validate (supports *.domain.com format)
    * @returns {boolean} True if domain format is valid
    */
-  isValidDomainFormat(domain) {
+  isValidRuleDomainFormat(domain) {
     if (!domain || typeof domain !== "string") {
       return false
     }
