@@ -12,9 +12,6 @@ export const DEFAULT_STATE = {
   autoGroupingEnabled: true,
   onlyApplyToNewTabsEnabled: false,
   groupBySubDomainEnabled: false,
-  preserveManualColors: false,
-  domainColors: {},
-  manuallySetColors: [],
   customRules: {},
   ruleMatchingMode: "exact",
 }

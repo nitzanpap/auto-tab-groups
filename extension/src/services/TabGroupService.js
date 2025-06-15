@@ -1,1120 +1,230 @@
 /**
- * Service for managing browser tab groups (Chrome-compatible version)
+ * Simplified Tab Group Service - Browser as SSOT
+ * Uses browser state as the single source of truth, no complex state management
  */
 
 import { tabGroupState } from "../state/TabGroupState.js"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils.js"
-import { storageManager } from "../config/StorageManager.js"
 import { rulesService } from "./RulesService.js"
-import "../utils/BrowserAPI.js" // Import browser compatibility layer
+import "../utils/BrowserAPI.js"
 
-// Access the unified browser API
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
 
-class TabGroupService {
-  constructor() {
-    // Track ongoing operations to prevent race conditions
-    this.pendingOperations = new Set()
-    // Flag to temporarily disable auto-grouping during bulk operations
-    this.isPerformingBulkOperation = false
-  }
-
+class TabGroupServiceSimplified {
   /**
-   * Gets the domain of a group using the reliable stored mapping
-   * @param {number} groupId
-   * @returns {Promise<string|null>} The domain of the group or null if no mapping found
+   * Handles a tab update - moves tab to correct group based on its current URL
+   * @param {number} tabId - The tab ID that changed
+   * @returns {Promise<boolean>} True if successful
    */
-  async getGroupDomain(groupId) {
-    try {
-      // Primary method: Use stored group-domain mapping
-      const storedDomain = tabGroupState.getGroupDomain(groupId)
-      if (storedDomain) {
-        return storedDomain
-      }
-
-      // Fallback: Parse from group title for existing groups without stored mapping
-      const group = await browserAPI.tabGroups.get(groupId)
-      if (group && group.title) {
-        const title = group.title
-        if (title === "") return "extensions"
-
-        // Convert display name back to domain
-        const domain = title.includes(".") ? title : `${title}.com`
-
-        // Store this mapping for future use
-        tabGroupState.setGroupDomain(groupId, domain)
-        await storageManager.saveState()
-
-        return domain
-      }
-
-      return null
-    } catch (error) {
-      // Group was likely removed, check if we have it in our stored mappings
-      const storedDomain = tabGroupState.getGroupDomain(groupId)
-      if (storedDomain) {
-        console.log(
-          `[getGroupDomain] Group ${groupId} no longer exists but found stored domain: ${storedDomain}`
-        )
-        return storedDomain
-      }
-
-      // Only log as warning since this is expected behavior when groups are removed
-      console.warn(`[getGroupDomain] Group ${groupId} no longer exists and no stored mapping found`)
-      return null
+  async handleTabUpdate(tabId) {
+    if (!tabGroupState.autoGroupingEnabled) {
+      return false
     }
-  }
-
-  /**
-   * Creates a new tab group for a domain
-   * @param {string} domain
-   * @param {number[]} tabIds
-   */
-  async createGroup(domain, tabIds) {
-    if (tabIds.length === 0) return
 
     try {
-      console.log(`[createGroup] Creating new group for domain "${domain}" with tabs:`, tabIds)
+      console.log(`[TabGroupService] Processing tab ${tabId}`)
 
-      // Validate that all tabs still exist before trying to group them
-      const validTabIds = []
-      for (const tabId of tabIds) {
-        try {
-          await browserAPI.tabs.get(tabId)
-          validTabIds.push(tabId)
-        } catch (error) {
-          console.warn(`[createGroup] Tab ${tabId} no longer exists, skipping`)
-        }
-      }
-
-      if (validTabIds.length === 0) {
-        console.log(`[createGroup] No valid tabs remaining for domain "${domain}"`)
-        return
-      }
-
-      const groupId = await browserAPI.tabs.group({ tabIds: validTabIds })
-      console.log(`[createGroup] Created group with ID ${groupId} for domain "${domain}"`)
-
-      // Store the group-domain mapping immediately
-      tabGroupState.setGroupDomain(groupId, domain)
-
-      if (browserAPI.tabGroups) {
-        await this.setGroupTitleAndColor(groupId, domain)
-        await this.handleGroupColorAssignment(groupId, domain)
-      } else {
-        console.log("[createGroup] tabGroups API not available in this browser version")
-      }
-
-      // Save the updated state with the new group mapping
-      await storageManager.saveState()
-    } catch (error) {
-      console.error("[createGroup] Error creating group:", error)
-    }
-  }
-
-  /**
-   * Sets the title and color for a tab group
-   * @param {number} groupId
-   * @param {string} domain
-   */
-  async setGroupTitleAndColor(groupId, domain) {
-    if (!groupId) return
-
-    try {
-      const displayName = getDomainDisplayName(domain)
-      console.log(`[setGroupTitleAndColor] Setting title "${displayName}" for group ${groupId}`)
-      const groupInfo = await browserAPI.tabGroups.get(groupId)
-      const updateProperties = {
-        title: displayName ?? groupInfo.title,
-      }
-
-      if (domain && tabGroupState.getColor(domain)) {
-        updateProperties.color = tabGroupState.getColor(domain)
-        console.log(
-          `[setGroupTitleAndColor] Also setting color "${updateProperties.color}" for group ${groupId}`
-        )
-      }
-
-      await browserAPI.tabGroups.update(groupId, updateProperties)
-    } catch (error) {
-      console.error("[setGroupTitleAndColor] Error setting group title/color:", error)
-    }
-  }
-
-  /**
-   * Handles color assignment for a new group
-   * @param {number} groupId
-   * @param {string} domain
-   */
-  async handleGroupColorAssignment(groupId, domain) {
-    try {
-      const groupInfo = await browserAPI.tabGroups.get(groupId)
-      if (!tabGroupState.getColor(domain)) {
-        tabGroupState.setColor(domain, groupInfo.color)
-        await storageManager.saveState()
-      }
-
-      const displayName = getDomainDisplayName(domain)
-      if (tabGroupState.getColor(domain) !== groupInfo.color || groupInfo.title !== displayName) {
-        await this.setGroupTitleAndColor(groupId, domain)
-      }
-    } catch (error) {
-      console.error("Error handling group color assignment:", error)
-    }
-  }
-
-  /**
-   * Groups all tabs in the current window by domain
-   */
-  async groupTabsByDomain() {
-    // Prevent conflicts with ongoing moveTabToGroup operations
-    const operationKey = "groupTabsByDomain"
-    if (this.pendingOperations.has(operationKey)) {
-      console.log("[groupTabsByDomain] Operation already in progress, skipping")
-      return
-    }
-
-    this.pendingOperations.add(operationKey)
-    this.isPerformingBulkOperation = true
-
-    try {
-      console.log("[groupTabsByDomain] Starting to group all tabs by domain")
-      const tabs = await browserAPI.tabs.query({ currentWindow: true })
-      console.log("[groupTabsByDomain] Found tabs:", tabs)
-      const domainTabsMap = new Map()
-
-      // Group tabs by domain
-      for (const tab of tabs) {
-        // Skip pinned tabs
-        if (tab.pinned) {
-          console.log(`[groupTabsByDomain] Skipping pinned tab ${tab.id}`)
-          continue
-        }
-
-        if (!tab.url) continue
-        const domain = extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled)
-        if (!domain) continue
-
-        if (!domainTabsMap.has(domain)) {
-          domainTabsMap.set(domain, [])
-        }
-        domainTabsMap.get(domain).push(tab.id)
-      }
-
-      console.log("[groupTabsByDomain] Grouped tabs by domain:", Object.fromEntries(domainTabsMap))
-
-      // Get existing groups
-      const existingGroups = await browserAPI.tabGroups.query({
-        windowId: tabs[0].windowId,
-      })
-      console.log("[groupTabsByDomain] Existing groups:", existingGroups)
-
-      // Process each domain
-      for (const [domain, tabIds] of domainTabsMap.entries()) {
-        // Find a matching group using improved resilient matching
-        let matchingGroup = null
-        for (const group of existingGroups) {
-          let isMatch = false
-
-          // Method 1: Check stored domain mapping
-          const storedGroupDomain = await this.getGroupDomain(group.id)
-          if (storedGroupDomain === domain) {
-            isMatch = true
-          }
-
-          // Method 2: If stored mapping doesn't match, check by examining group's tabs
-          if (!isMatch) {
-            try {
-              const groupTabs = await browserAPI.tabs.query({
-                windowId: tabs[0].windowId,
-                groupId: group.id,
-              })
-
-              if (groupTabs.length > 0) {
-                const groupDomain = extractDomain(
-                  groupTabs[0].url,
-                  tabGroupState.groupBySubDomainEnabled
-                )
-                if (groupDomain === domain) {
-                  isMatch = true
-                  // Update the stored mapping since it was incorrect/missing
-                  console.log(
-                    `[groupTabsByDomain] Updating stale group mapping: ${group.id} -> ${domain}`
-                  )
-                  tabGroupState.setGroupDomain(group.id, domain)
-                  await storageManager.saveState()
-                }
-              }
-            } catch (error) {
-              console.warn(`[groupTabsByDomain] Error checking group ${group.id} tabs:`, error)
-            }
-          }
-
-          // Method 3: As a last resort, check by group title (display name)
-          if (!isMatch) {
-            const displayName = getDomainDisplayName(domain)
-            if (group.title === displayName) {
-              isMatch = true
-              console.log(
-                `[groupTabsByDomain] Matching by title, updating mapping: ${group.id} -> ${domain}`
-              )
-              tabGroupState.setGroupDomain(group.id, domain)
-              await storageManager.saveState()
-            }
-          }
-
-          if (isMatch) {
-            matchingGroup = group
-            break
-          }
-        }
-
-        if (matchingGroup) {
-          console.log(`[groupTabsByDomain] Adding tabs to existing group for "${domain}":`, tabIds)
-          await browserAPI.tabs.group({
-            tabIds,
-            groupId: matchingGroup.id,
-          })
-        } else {
-          console.log(`[groupTabsByDomain] Creating new group for "${domain}":`, tabIds)
-          await this.createGroup(domain, tabIds)
-        }
-      }
-
-      await logTabsAndGroups(tabs)
-      console.log("[groupTabsByDomain] Tab grouping complete")
-    } catch (error) {
-      console.error("[groupTabsByDomain] Error grouping tabs:", error)
-    } finally {
-      this.isPerformingBulkOperation = false
-      this.pendingOperations.delete(operationKey)
-    }
-  }
-
-  /**
-   * Ungroups all tabs in the current window
-   */
-  async ungroupAllTabs() {
-    this.isPerformingBulkOperation = true
-
-    try {
-      const tabs = await browserAPI.tabs.query({ currentWindow: true })
-      for (const tab of tabs) {
-        try {
-          await browserAPI.tabs.ungroup(tab.id)
-        } catch (error) {
-          console.error(`Error ungrouping tab ${tab.id}:`, error)
-        }
-      }
-      console.log("All tabs ungrouped")
-    } catch (error) {
-      console.error("Error ungrouping tabs:", error)
-    } finally {
-      this.isPerformingBulkOperation = false
-    }
-  }
-
-  /**
-   * Moves a tab to its appropriate group based on domain
-   * @param {number} tabId
-   */
-  /**
-   * Moves a single tab to the appropriate group based on custom rules or domain
-   * @param {number} tabId - The ID of the tab to move
-   */
-  async moveTabToGroup(tabId) {
-    if (!tabGroupState.autoGroupingEnabled) return
-
-    // Skip auto-grouping during bulk operations to prevent race conditions
-    if (this.isPerformingBulkOperation) {
-      console.log(`[moveTabToGroup] Bulk operation in progress, skipping tab ${tabId}`)
-      return
-    }
-
-    // Prevent race conditions by tracking ongoing operations
-    const operationKey = `moveTab-${tabId}`
-    if (this.pendingOperations.has(operationKey)) {
-      console.log(`[moveTabToGroup] Operation already pending for tab ${tabId}, skipping`)
-      return
-    }
-
-    this.pendingOperations.add(operationKey)
-
-    try {
-      // 1. Get tab info
+      // Step 1: Get tab info from browser (SSOT)
       const tab = await browserAPI.tabs.get(tabId)
+      console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
-      // Skip pinned tabs
+      // Step 1.5: Check if tab is pinned - pinned tabs should not be grouped
       if (tab.pinned) {
-        console.log(`[moveTabToGroup] Skipping pinned tab ${tabId}`)
-        return
+        console.log(`[TabGroupService] Tab ${tabId} is pinned, skipping grouping`)
+        return false
       }
 
-      if (!tab.url) return
-
-      // 2. Resolve appropriate group using rules service
-      const groupInfo = await this.resolveGroupForTab(tab)
-      if (!groupInfo) return
-
-      console.log(
-        `[moveTabToGroup] Processing tab ${tabId} with URL "${tab.url}" - resolved to group "${groupInfo.displayName}" (${groupInfo.type})`
-      )
-      console.log(`[moveTabToGroup] Tab is currently in group: ${tab.groupId}`)
-
-      // 3. Get all groups in the current window
-      const groups = await browserAPI.tabGroups.query({ windowId: tab.windowId })
-      console.log(`[moveTabToGroup] Existing groups in window:`, groups)
-
-      // 4. Find matching existing group with improved resilient matching
-      let targetGroup = null
-      for (const group of groups) {
-        let isMatch = false
-
-        if (groupInfo.type === "custom") {
-          // For custom rules, match by group title
-          isMatch = group.title === groupInfo.name
-        } else {
-          // For domain groups, try multiple matching approaches for resilience
-
-          // Method 1: Check stored domain mapping
-          const storedGroupDomain = await this.getGroupDomain(group.id)
-          if (storedGroupDomain === groupInfo.domain) {
-            isMatch = true
-          }
-
-          // Method 2: If stored mapping doesn't match, check by examining group's tabs
-          if (!isMatch) {
-            try {
-              const groupTabs = await browserAPI.tabs.query({
-                windowId: tab.windowId,
-                groupId: group.id,
-              })
-
-              if (groupTabs.length > 0) {
-                // Check if any tab in the group matches our domain
-                const groupDomain = extractDomain(
-                  groupTabs[0].url,
-                  tabGroupState.groupBySubDomainEnabled
-                )
-                if (groupDomain === groupInfo.domain) {
-                  isMatch = true
-                  // Update the stored mapping since it was incorrect/missing
-                  console.log(
-                    `[moveTabToGroup] Updating stale group mapping: ${group.id} -> ${groupInfo.domain}`
-                  )
-                  tabGroupState.setGroupDomain(group.id, groupInfo.domain)
-                  await storageManager.saveState()
-                }
-              }
-            } catch (error) {
-              console.warn(`[moveTabToGroup] Error checking group ${group.id} tabs:`, error)
-            }
-          }
-
-          // Method 3: As a last resort, check by group title (display name)
-          if (!isMatch && group.title === groupInfo.displayName) {
-            isMatch = true
-            // Update the stored mapping
-            console.log(
-              `[moveTabToGroup] Matching by title, updating mapping: ${group.id} -> ${groupInfo.domain}`
-            )
-            tabGroupState.setGroupDomain(group.id, groupInfo.domain)
-            await storageManager.saveState()
-          }
-        }
-
-        if (isMatch) {
-          targetGroup = group
-          console.log(
-            `[moveTabToGroup] Found matching ${groupInfo.type} group ${group.id} for "${groupInfo.displayName}"`
-          )
-          break
-        }
+      // Step 2: Extract domain and determine expected group title
+      const domain = extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled)
+      if (!domain) {
+        console.log(`[TabGroupService] No domain extracted, skipping`)
+        return false
       }
 
-      if (targetGroup) {
-        // Skip if tab is already in the correct group
-        if (tab.groupId === targetGroup.id) {
-          console.log(
-            `[moveTabToGroup] Tab ${tabId} is already in the correct group for "${groupInfo.displayName}"`
-          )
-          return
+      // Step 3: Check for custom rules first
+      const customRule = await rulesService.findMatchingRule(domain)
+      const expectedTitle = customRule ? customRule.name : getDomainDisplayName(domain)
+
+      console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
+
+      // Step 4: Find existing group by title (browser as SSOT)
+      const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
+
+      if (existingGroup) {
+        // Group exists - check if tab is already in it
+        if (tab.groupId === existingGroup.id) {
+          console.log(`[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`)
+          return true
         }
 
-        console.log(
-          `[moveTabToGroup] Moving tab ${tabId} from group ${tab.groupId} to existing group ${targetGroup.id}`
-        )
-
-        // Store the old group ID for cleanup
-        const oldGroupId = tab.groupId
-
+        // Move tab to existing group
+        console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
         await browserAPI.tabs.group({
           tabIds: [tabId],
-          groupId: targetGroup.id,
+          groupId: existingGroup.id,
         })
+        return true
+      }
 
-        // Clean up the old group if it's now empty
-        if (oldGroupId && oldGroupId !== targetGroup.id) {
-          await this.removeEmptyGroup(oldGroupId)
-        }
-      } else {
-        // 5. Create new group
+      // Step 5: No group exists - create new one by grouping the tab first
+      console.log(`[TabGroupService] Creating new group "${expectedTitle}" for tab ${tabId}`)
+
+      // In Chrome, you create a group by grouping tabs, not by creating an empty group
+      const groupId = await browserAPI.tabs.group({
+        tabIds: [tabId],
+        // windowId: tab.windowId, // Not needed when grouping existing tabs
+      })
+
+      console.log(`[TabGroupService] Tab grouped, received group ID: ${groupId}`)
+
+      // Set the group title (with error handling)
+      try {
+        await browserAPI.tabGroups.update(groupId, {
+          title: expectedTitle,
+        })
         console.log(
-          `[moveTabToGroup] Creating new group for "${groupInfo.displayName}" with tab ${tabId}`
+          `[TabGroupService] Successfully set group ${groupId} title to "${expectedTitle}"`
         )
-
-        // Store the old group ID for cleanup
-        const oldGroupId = tab.groupId
-
-        if (groupInfo.type === "custom") {
-          await this.createCustomRuleGroup(groupInfo.name, groupInfo.rule, [tabId])
-        } else {
-          await this.createGroup(groupInfo.domain, [tabId])
-        }
-
-        // Clean up the old group if it's now empty
-        if (oldGroupId) {
-          await this.removeEmptyGroup(oldGroupId)
-        }
+      } catch (updateError) {
+        console.warn(`[TabGroupService] Failed to update group ${groupId} title:`, updateError)
+        // Continue anyway - the group exists even if title update failed
       }
+
+      console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
+      return true
     } catch (error) {
-      // Handle specific error cases
-      if (error.message?.includes("No tab with id")) {
-        console.log(`[moveTabToGroup] Tab ${tabId} no longer exists, skipping grouping`)
-      } else {
-        console.error("[moveTabToGroup] Error moving tab to group:", error)
-      }
-    } finally {
-      this.pendingOperations.delete(operationKey)
-    }
-  }
-
-  /**
-   * Removes a group if it's empty
-   * @param {number} groupId
-   */
-  async removeEmptyGroup(groupId) {
-    try {
-      console.log(`[removeEmptyGroup] Checking if group ${groupId} is empty`)
-      const tabs = await browserAPI.tabs.query({ groupId })
-      if (tabs.length === 0) {
-        console.log(`[removeEmptyGroup] Group ${groupId} is empty, cleaning up mapping`)
-        // Remove the group-domain mapping
-        tabGroupState.removeGroup(groupId)
-        await storageManager.saveState()
-        // Note: In Chrome, empty groups are automatically removed by the browser
-      } else {
-        console.log(`[removeEmptyGroup] Group ${groupId} still has ${tabs.length} tabs, keeping it`)
-      }
-    } catch (error) {
-      console.error(`[removeEmptyGroup] Error checking empty group ${groupId}:`, error)
-    }
-  }
-
-  /**
-   * Generates new colors for all domains in the current window
-   */
-  async generateNewColors() {
-    try {
-      console.log("[generateNewColors] Starting to generate new colors for all groups")
-
-      // Check if tab groups are supported in this browser
-      if (!browserAPI.tabGroups) {
-        console.log("[generateNewColors] Tab groups not supported in this browser, skipping")
-        return
-      }
-
-      // Available Chrome tab group colors
-      const colors = ["blue", "cyan", "grey", "green", "orange", "pink", "purple", "red", "yellow"]
-
-      // Get the main browser window (not popup) that contains tab groups
-      const targetWindow = await this.getTargetWindow()
-      if (!targetWindow) {
-        console.log("[generateNewColors] No suitable window found")
-        return
-      }
-
-      const groups = await browserAPI.tabGroups.query({
-        windowId: targetWindow.id,
-      })
-      console.log("[generateNewColors] Found groups:", groups)
-
-      // Clear existing color mappings, except manually set ones if preserveManualColors is true
-      if (tabGroupState.preserveManualColors) {
-        // Only clear colors for domains that weren't manually set
-        for (const [domain] of tabGroupState.getDomainColors()) {
-          if (!tabGroupState.manuallySetColors.has(domain)) {
-            tabGroupState.domainColors.delete(domain)
-          }
-        }
-      } else {
-        tabGroupState.domainColors.clear()
-        tabGroupState.manuallySetColors.clear()
-      }
-
-      // Create a copy of the colors array to track available colors
-      let availableColors = [...colors]
-
-      // Assign random colors to each group using robust domain resolution
-      for (const group of groups) {
-        let domain = null
-        try {
-          // Use robust domain resolution (same as preservation and matching logic)
-          const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
-          if (groupTabs.length > 0) {
-            const firstTab = groupTabs[0]
-            const groupInfo = await this.resolveGroupForTab(firstTab)
-            domain = groupInfo?.domain
-          }
-        } catch (error) {
-          console.warn(`[generateNewColors] Error resolving domain for group ${group.id}:`, error)
-          continue
-        }
-
-        if (!domain) continue
-
-        // Skip if the domain has a manually set color and we're preserving manual colors
-        if (tabGroupState.preserveManualColors && tabGroupState.manuallySetColors.has(domain)) {
-          console.log(`[generateNewColors] Preserving manual color for domain "${domain}"`)
-          continue
-        }
-
-        // If we've used all colors, refill the available colors
-        if (availableColors.length === 0) {
-          availableColors = [...colors]
-        }
-
-        // Pick a random color from the available ones
-        const randomIndex = Math.floor(Math.random() * availableColors.length)
-        const newColor = availableColors[randomIndex]
-        // Remove the used color from available colors
-        availableColors.splice(randomIndex, 1)
-
-        tabGroupState.setColor(domain, newColor)
-
-        // Update the group's color
-        try {
-          await browserAPI.tabGroups.update(group.id, { color: newColor })
-          console.log(`[generateNewColors] Assigned color "${newColor}" to domain "${domain}"`)
-        } catch (updateError) {
-          console.error(`[generateNewColors] Error updating group ${group.id}:`, updateError)
-        }
-      }
-
-      // Save the new color mappings
-      await storageManager.saveState()
-      console.log("[generateNewColors] New colors generated and saved successfully")
-    } catch (error) {
-      console.error("[generateNewColors] Error generating new colors:", error)
-    }
-  }
-
-  /**
-   * Toggles collapse state for all groups in the current window
-   * @param {boolean} collapse - Whether to collapse (true) or expand (false)
-   */
-  async toggleAllGroupsCollapse(collapse) {
-    try {
-      console.log(
-        `[toggleAllGroupsCollapse] Setting all groups to ${collapse ? "collapsed" : "expanded"}`
-      )
-
-      // Check if tab groups are supported in this browser
-      if (!browserAPI.tabGroups) {
-        console.log("[toggleAllGroupsCollapse] Tab groups not supported in this browser, skipping")
-        return
-      }
-
-      // Get the main browser window (not popup) that contains tab groups
-      const targetWindow = await this.getTargetWindow()
-      if (!targetWindow) {
-        console.log("[toggleAllGroupsCollapse] No suitable window found")
-        return
-      }
-
-      const groups = await browserAPI.tabGroups.query({
-        windowId: targetWindow.id,
-      })
-      console.log("[toggleAllGroupsCollapse] Found groups:", groups)
-
-      // Update each group's collapsed state
-      for (const group of groups) {
-        try {
-          await browserAPI.tabGroups.update(group.id, { collapsed: collapse })
-        } catch (updateError) {
-          console.error(`[toggleAllGroupsCollapse] Error updating group ${group.id}:`, updateError)
-        }
-      }
-
-      console.log(
-        `[toggleAllGroupsCollapse] Successfully ${collapse ? "collapsed" : "expanded"} all groups`
-      )
-    } catch (error) {
-      console.error("[toggleAllGroupsCollapse] Error toggling groups:", error)
-    }
-  }
-
-  /**
-   * Gets the collapse state of groups in the current window
-   * @returns {Promise<boolean>} True if any group is collapsed, false if all are expanded
-   */
-  async getGroupsCollapseState() {
-    try {
-      // Check if tab groups are supported in this browser
-      if (!browserAPI.tabGroups) {
-        console.log("[getGroupsCollapseState] Tab groups not supported in this browser")
-        return false
-      }
-
-      // Get the main browser window (not popup) that contains tab groups
-      const targetWindow = await this.getTargetWindow()
-      if (!targetWindow) {
-        console.log("[getGroupsCollapseState] No suitable window found")
-        return false
-      }
-
-      const groups = await browserAPI.tabGroups.query({
-        windowId: targetWindow.id,
-      })
-
-      // Check if any group is collapsed
-      const isCollapsed = groups.some((group) => group.collapsed)
-      return isCollapsed
-    } catch (error) {
-      console.error("[getGroupsCollapseState] Error getting groups state:", error)
+      console.error(`[TabGroupService] Error processing tab ${tabId}:`, error)
       return false
     }
   }
 
   /**
-   * Gets the target browser window for tab group operations
-   * Avoids popup windows and finds the main browser window with tab groups
-   * @returns {Promise<Object|null>} The target window object or null if none found
+   * Finds an existing group by title in the given window
+   * @param {string} title - The group title to search for
+   * @param {number} windowId - The window ID
+   * @returns {Promise<Object|null>} The group object or null
    */
-  async getTargetWindow() {
+  async findGroupByTitle(title, windowId) {
     try {
-      const windows = await browserAPI.windows.getAll({ windowTypes: ["normal"] })
+      const groups = await browserAPI.tabGroups.query({ windowId })
+      const matchingGroup = groups.find((group) => group.title === title)
 
-      if (windows.length === 0) {
-        console.log("[getTargetWindow] No normal windows found")
-        return null
+      if (matchingGroup) {
+        console.log(
+          `[TabGroupService] Found existing group ${matchingGroup.id} with title "${title}"`
+        )
+      } else {
+        console.log(`[TabGroupService] No existing group found with title "${title}"`)
       }
 
-      if (windows.length === 1) {
-        // Only one normal window, use it
-        return windows[0]
-      }
-
-      // Multiple windows, try to find the focused one first
-      const focusedWindow = windows.find((w) => w.focused)
-      if (focusedWindow) {
-        return focusedWindow
-      }
-
-      // Fall back to the window with the most tabs
-      let targetWindow = windows[0]
-      let maxTabs = 0
-
-      for (const window of windows) {
-        const tabs = await browserAPI.tabs.query({ windowId: window.id })
-        if (tabs.length > maxTabs) {
-          maxTabs = tabs.length
-          targetWindow = window
-        }
-      }
-
-      return targetWindow
+      return matchingGroup || null
     } catch (error) {
-      console.error("[getTargetWindow] Error determining target window:", error)
+      console.error(`[TabGroupService] Error finding group by title "${title}":`, error)
       return null
     }
   }
 
   /**
-   * Resolves the appropriate group for a tab based on custom rules or domain
-   * @param {Object} tab - The tab object
-   * @returns {Promise<Object|null>} Group resolution info or null
+   * Groups all tabs in the current window (bulk operation)
+   * @returns {Promise<boolean>} True if successful
    */
-  async resolveGroupForTab(tab) {
-    if (!tab.url) return null
-
-    // Use the rules service to determine grouping
-    const groupInfo = await rulesService.resolveGroupForTab(tab.url)
-    if (!groupInfo) return null
-
-    return {
-      name: groupInfo.name,
-      type: groupInfo.type, // 'custom' or 'domain'
-      rule: groupInfo.rule,
-      domain: groupInfo.domain,
-      displayName:
-        groupInfo.type === "custom" ? groupInfo.name : getDomainDisplayName(groupInfo.domain),
+  async groupAllTabs() {
+    if (!tabGroupState.autoGroupingEnabled) {
+      return false
     }
-  }
-
-  /**
-   * Groups all tabs using custom rules with domain fallback
-   */
-  async groupTabsWithRules() {
-    // Prevent conflicts with ongoing operations
-    const operationKey = "groupTabsWithRules"
-    if (this.pendingOperations.has(operationKey)) {
-      console.log("[groupTabsWithRules] Operation already in progress, skipping")
-      return
-    }
-
-    this.pendingOperations.add(operationKey)
-    this.isPerformingBulkOperation = true
 
     try {
-      console.log("[groupTabsWithRules] Starting to group all tabs with rules")
+      console.log(`[TabGroupService] Starting bulk grouping of all tabs`)
+
       const tabs = await browserAPI.tabs.query({ currentWindow: true })
-      console.log("[groupTabsWithRules] Found tabs:", tabs)
-      const groupTabsMap = new Map() // Maps group name to tab IDs
 
-      // Resolve grouping for each tab
       for (const tab of tabs) {
-        // Skip pinned tabs
-        if (tab.pinned) {
-          console.log(`[groupTabsWithRules] Skipping pinned tab ${tab.id}`)
-          continue
-        }
-
-        const groupInfo = await this.resolveGroupForTab(tab)
-        if (!groupInfo) continue
-
-        const groupKey = `${groupInfo.type}:${groupInfo.name}`
-        if (!groupTabsMap.has(groupKey)) {
-          groupTabsMap.set(groupKey, {
-            tabs: [],
-            info: groupInfo,
-          })
-        }
-        groupTabsMap.get(groupKey).tabs.push(tab.id)
-      }
-
-      console.log(
-        "[groupTabsWithRules] Grouped tabs:",
-        Object.fromEntries(
-          Array.from(groupTabsMap.entries()).map(([key, value]) => [key, value.tabs])
-        )
-      )
-
-      // Get existing groups
-      const existingGroups = await browserAPI.tabGroups.query({
-        windowId: tabs[0]?.windowId,
-      })
-      console.log("[groupTabsWithRules] Existing groups:", existingGroups)
-
-      // Process each group
-      for (const [groupKey, groupData] of groupTabsMap.entries()) {
-        const { tabs: tabIds, info } = groupData
-
-        // Find matching existing group using robust domain resolution
-        let matchingGroup = null
-        for (const group of existingGroups) {
-          if (info.type === "custom") {
-            // For custom rules, match by group title
-            if (group.title === info.name) {
-              matchingGroup = group
-              break
-            }
-          } else {
-            // For domain groups, resolve domain using actual tabs in the group
-            try {
-              const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
-              if (groupTabs.length > 0) {
-                const firstTab = groupTabs[0]
-                const existingGroupInfo = await this.resolveGroupForTab(firstTab)
-                if (existingGroupInfo && existingGroupInfo.domain === info.domain) {
-                  matchingGroup = group
-                  console.log(
-                    `[groupTabsWithRules] Found matching group ${group.id} for domain "${info.domain}"`
-                  )
-                  break
-                }
-              }
-            } catch (error) {
-              console.warn(`[groupTabsWithRules] Error checking group ${group.id}:`, error)
-            }
-          }
-        }
-
-        if (matchingGroup) {
-          console.log(
-            `[groupTabsWithRules] Adding tabs to existing group "${info.displayName}":`,
-            tabIds
-          )
-          await browserAPI.tabs.group({
-            tabIds,
-            groupId: matchingGroup.id,
-          })
-        } else {
-          console.log(`[groupTabsWithRules] Creating new group "${info.displayName}":`, tabIds)
-
-          if (info.type === "custom") {
-            await this.createCustomRuleGroup(info.name, info.rule, tabIds)
-          } else {
-            await this.createGroup(info.domain, tabIds)
-          }
+        if (tab.url && !tab.url.startsWith("chrome-extension://")) {
+          await this.handleTabUpdate(tab.id)
+          // Small delay to prevent overwhelming the browser
+          await new Promise((resolve) => setTimeout(resolve, 10))
         }
       }
 
-      await logTabsAndGroups(tabs)
-      console.log("[groupTabsWithRules] Tab grouping with rules complete")
+      console.log(`[TabGroupService] Bulk grouping completed`)
+      return true
     } catch (error) {
-      console.error("[groupTabsWithRules] Error grouping tabs with rules:", error)
-    } finally {
-      this.isPerformingBulkOperation = false
-      this.pendingOperations.delete(operationKey)
+      console.error(`[TabGroupService] Error during bulk grouping:`, error)
+      return false
     }
   }
 
   /**
-   * Creates a new tab group for a custom rule
-   * @param {string} ruleName - The name of the custom rule
-   * @param {Object} rule - The rule object
-   * @param {number[]} tabIds - Array of tab IDs to group
+   * Ungroups all tabs in the current window
+   * @returns {Promise<boolean>} True if successful
    */
-  async createCustomRuleGroup(ruleName, rule, tabIds) {
-    if (tabIds.length === 0) return
-
+  async ungroupAllTabs() {
     try {
-      console.log(
-        `[createCustomRuleGroup] Creating new custom group "${ruleName}" with tabs:`,
-        tabIds
-      )
-      const groupId = await browserAPI.tabs.group({ tabIds })
-      console.log(`[createCustomRuleGroup] Created group with ID ${groupId} for rule "${ruleName}"`)
+      console.log(`[TabGroupService] Ungrouping all tabs`)
+      const tabs = await browserAPI.tabs.query({ currentWindow: true })
+      const groupedTabs = tabs.filter((tab) => tab.groupId && tab.groupId !== -1)
 
-      // Store the group-rule mapping (using rule name as identifier)
-      tabGroupState.setGroupDomain(groupId, `custom:${ruleName}`)
-
-      if (browserAPI.tabGroups) {
-        await browserAPI.tabGroups.update(groupId, {
-          title: ruleName,
-          color: rule.color || "blue",
-        })
-        console.log(
-          `[createCustomRuleGroup] Set group title to "${ruleName}" and color to ${
-            rule.color || "blue"
-          }`
-        )
+      if (groupedTabs.length > 0) {
+        await browserAPI.tabs.ungroup(groupedTabs.map((tab) => tab.id))
+        console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`)
       }
 
-      // Save the updated state with the new group mapping
-      await storageManager.saveState()
+      return true
     } catch (error) {
-      console.error("[createCustomRuleGroup] Error creating custom rule group:", error)
+      console.error(`[TabGroupService] Error ungrouping tabs:`, error)
+      return false
     }
   }
+
   /**
-   * Preserves existing group colors before regrouping operations
-   * This ensures consistent UX when service worker restarts trigger regrouping
-   * IMPORTANT: Uses same domain resolution logic as regrouping to ensure matching
+   * Removes an empty group (no-op in simplified version, browser handles this)
+   * @param {number} groupId - The group ID to check and remove if empty
+   * @returns {Promise<boolean>} True if successful
    */
+  async removeEmptyGroup(groupId) {
+    // In the simplified version, we let the browser handle empty group cleanup
+    console.log(`[TabGroupService] Group ${groupId} cleanup handled by browser`)
+    return true
+  }
+
+  /**
+   * Moves a tab to the correct group based on its current URL
+   * @param {number} tabId - The tab ID to move
+   * @returns {Promise<boolean>} True if successful
+   */
+  async moveTabToGroup(tabId) {
+    // This is essentially the same as handleTabUpdate
+    return await this.handleTabUpdate(tabId)
+  }
+
+  /**
+   * Gets the domain for a given group ID by examining its tabs
+   * @param {number} groupId - The group ID
+   * @returns {Promise<string|null>} Domain or null if not found
+   */
+  async getGroupDomain(groupId) {
+    try {
+      const tabs = await browserAPI.tabs.query({ groupId })
+      if (tabs.length === 0) return null
+
+      // Extract domain from the first tab's URL
+      const domain = extractDomain(tabs[0].url, tabGroupState.groupBySubDomainEnabled)
+      return domain
+    } catch (error) {
+      console.error(`[TabGroupService] Error getting group domain:`, error)
+      return null
+    }
+  }
+
+  // Legacy method aliases for backward compatibility
+  async groupTabsWithRules() {
+    return await this.groupAllTabs()
+  }
+
   async preserveExistingGroupColors() {
-    try {
-      console.log(
-        "[preserveExistingGroupColors] Scanning existing groups to preserve current colors..."
-      )
-
-      // Check if tab groups are supported
-      if (!browserAPI.tabGroups) {
-        console.log("[preserveExistingGroupColors] Tab groups not supported, skipping")
-        return
-      }
-
-      // Get the target window
-      const targetWindow = await this.getTargetWindow()
-      if (!targetWindow) {
-        console.log("[preserveExistingGroupColors] No suitable window found")
-        return
-      }
-
-      // Get all existing groups
-      const existingGroups = await browserAPI.tabGroups.query({
-        windowId: targetWindow.id,
-      })
-
-      console.log(`[preserveExistingGroupColors] Found ${existingGroups.length} existing groups`)
-
-      let colorsPreserved = 0
-
-      // For each existing group, determine how regrouping would resolve its tabs
-      for (const group of existingGroups) {
-        try {
-          // Get tabs in this group to determine the domain regrouping would use
-          const groupTabs = await browserAPI.tabs.query({ groupId: group.id })
-          if (groupTabs.length === 0) continue
-
-          // Use the first tab to determine how regrouping would resolve this group
-          const firstTab = groupTabs[0]
-          const groupInfo = await this.resolveGroupForTab(firstTab)
-
-          if (groupInfo && group.color) {
-            const targetDomain = groupInfo.domain
-            const storedColor = tabGroupState.getColor(targetDomain)
-
-            // Always update stored color to match current group color for UX consistency
-            if (storedColor !== group.color) {
-              console.log(
-                `[preserveExistingGroupColors] Updating stored color for "${targetDomain}" from "${
-                  storedColor || "none"
-                }" to current "${group.color}"`
-              )
-              tabGroupState.setColor(targetDomain, group.color)
-              colorsPreserved++
-            } else {
-              console.log(
-                `[preserveExistingGroupColors] Color for "${targetDomain}" already matches current "${group.color}"`
-              )
-            }
-          }
-        } catch (error) {
-          console.warn(`[preserveExistingGroupColors] Error processing group ${group.id}:`, error)
-        }
-      }
-
-      if (colorsPreserved > 0) {
-        await storageManager.saveState()
-        console.log(
-          `[preserveExistingGroupColors] Updated ${colorsPreserved} group colors to match current state`
-        )
-      } else {
-        console.log(
-          "[preserveExistingGroupColors] All stored colors already match current group colors"
-        )
-      }
-    } catch (error) {
-      console.error("[preserveExistingGroupColors] Error preserving existing group colors:", error)
-    }
-  }
-
-  /**
-   * Rebuilds the group-domain mappings by examining actual existing groups
-   * This is crucial after service worker restarts when stored group IDs may be stale
-   */
-  async rebuildGroupDomainMappings() {
-    // Skip if tab groups are not supported (e.g., Firefox)
-    if (!browserAPI.tabGroups) {
-      console.log("[rebuildGroupDomainMappings] Tab groups not supported, skipping rebuild")
-      return
-    }
-
-    try {
-      console.log("[rebuildGroupDomainMappings] Rebuilding group-domain mappings...")
-
-      // Clear existing mappings
-      tabGroupState.groupDomains.clear()
-
-      // Get all existing groups in all windows
-      const windows = await browserAPI.windows.getAll()
-
-      for (const window of windows) {
-        try {
-          const groups = await browserAPI.tabGroups.query({ windowId: window.id })
-
-          for (const group of groups) {
-            try {
-              // Get tabs in this group to determine the domain
-              const tabs = await browserAPI.tabs.query({
-                windowId: window.id,
-                groupId: group.id,
-              })
-
-              if (tabs.length > 0) {
-                // Use the first tab's domain to determine the group's domain
-                const firstTab = tabs[0]
-                if (firstTab.url) {
-                  const domain = extractDomain(firstTab.url, tabGroupState.groupBySubDomainEnabled)
-                  if (domain) {
-                    // Verify this is actually the correct domain by checking if all tabs match
-                    const allTabsMatchDomain = tabs.every((tab) => {
-                      if (!tab.url) return false
-                      const tabDomain = extractDomain(
-                        tab.url,
-                        tabGroupState.groupBySubDomainEnabled
-                      )
-                      return tabDomain === domain
-                    })
-
-                    if (allTabsMatchDomain) {
-                      console.log(
-                        `[rebuildGroupDomainMappings] Mapping group ${group.id} to domain "${domain}"`
-                      )
-                      tabGroupState.setGroupDomain(group.id, domain)
-                    } else {
-                      console.log(
-                        `[rebuildGroupDomainMappings] Group ${group.id} has mixed domains, skipping`
-                      )
-                    }
-                  }
-                }
-              }
-            } catch (error) {
-              console.warn(
-                `[rebuildGroupDomainMappings] Error processing group ${group.id}:`,
-                error
-              )
-            }
-          }
-        } catch (error) {
-          console.warn(`[rebuildGroupDomainMappings] Error processing window ${window.id}:`, error)
-        }
-      }
-
-      // Save the rebuilt mappings
-      await storageManager.saveState()
-
-      console.log("[rebuildGroupDomainMappings] Group-domain mappings rebuilt successfully")
-      console.log(
-        "[rebuildGroupDomainMappings] Current mappings:",
-        Object.fromEntries(tabGroupState.groupDomains)
-      )
-    } catch (error) {
-      console.error("[rebuildGroupDomainMappings] Error rebuilding group-domain mappings:", error)
-    }
+    // No-op in simplified version - browser manages colors
+    return true
   }
 }
 
-export const tabGroupService = new TabGroupService()
-
-async function logTabsAndGroups(tabs) {
-  console.log(
-    "[groupTabsByDomain] All current tabs before cleanup:",
-    tabs.map((tab) => (tab.url ? tab.url : "No URL"))
-  )
-  console.log("[groupTabsByDomain] Tab grouping complete")
-
-  // Check if tab groups are supported in this browser
-  if (!browserAPI.tabGroups) {
-    console.log(
-      "[logTabsAndGroups] Tab groups not supported in this browser, skipping group logging"
-    )
-    return
-  }
-
-  const allGroups = await browserAPI.tabGroups.query({
-    windowId: tabs[0].windowId,
-  })
-  const groupedDomains = await Promise.all(
-    allGroups.map(async (group) => {
-      const groupDomain = await tabGroupService.getGroupDomain(group.id)
-      if (!groupDomain) {
-        console.warn(`[groupTabsByDomain] Group ${group.id} has no domain, skipping`)
-        return null
-      }
-      const tabsInGroup = await browserAPI.tabs.query({ groupId: group.id })
-      const domainsInGroup = tabsInGroup
-        .filter((tab) => tab.url) // Filter out tabs without URLs
-        .map((tab) => extractDomain(tab.url, tabGroupState.groupBySubDomainEnabled))
-        .filter(Boolean)
-      return {
-        groupTitle: group.title || groupDomain,
-        tabsDomainsInside: Array.from(new Set(domainsInGroup)),
-      }
-    })
-  )
-  console.log("[groupTabsByDomain] All groups with domains:", groupedDomains)
-}
+export const tabGroupService = new TabGroupServiceSimplified()

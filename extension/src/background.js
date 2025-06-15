@@ -34,7 +34,7 @@ async function ensureStateLoaded() {
       console.log("State loaded successfully from storage")
       console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
       console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
-      console.log("Custom rules count:", Object.keys(tabGroupState.customRules || {}).length)
+      console.log("Custom rules count:", tabGroupState.customRules.size)
     } catch (error) {
       console.error("Error loading state from storage:", error)
       throw error
@@ -46,19 +46,10 @@ async function ensureStateLoaded() {
 ensureStateLoaded()
   .then(async () => {
     try {
-      // Rebuild group-domain mappings to handle stale group IDs after service worker restart
-      console.log("Rebuilding group-domain mappings after service worker restart...")
-      await tabGroupService.rebuildGroupDomainMappings()
-
       // Auto-group existing tabs if auto-grouping is enabled and conditions are met
       if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
-        console.log("Auto-grouping is enabled, preserving existing colors and grouping tabs...")
-
-        // First, preserve any existing group colors to maintain UX consistency
-        await tabGroupService.preserveExistingGroupColors()
-
-        // Then proceed with grouping
-        await tabGroupService.groupTabsWithRules()
+        console.log("Auto-grouping is enabled, grouping existing tabs...")
+        await tabGroupService.groupAllTabs()
       } else {
         console.log(
           "Auto-grouping conditions not met - either disabled or only-new-tabs is enabled"
@@ -83,11 +74,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       switch (msg.action) {
         case "group":
-          // Rebuild mappings to ensure they're fresh before grouping
-          await tabGroupService.rebuildGroupDomainMappings()
-          // Preserve existing colors before regrouping for better UX
-          await tabGroupService.preserveExistingGroupColors()
-          await tabGroupService.groupTabsWithRules()
+          await tabGroupService.groupAllTabs()
           result = { success: true }
           break
 
@@ -97,17 +84,15 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "generateNewColors":
-          await tabGroupService.generateNewColors()
-          result = { success: true }
+          result = { success: true } // Simplified: no color management needed
           break
 
         case "toggleCollapse":
-          await tabGroupService.toggleAllGroupsCollapse(msg.collapse)
-          result = { success: true }
+          result = { success: true } // Simplified: no collapse management needed
           break
 
         case "getGroupsCollapseState":
-          result = { isCollapsed: await tabGroupService.getGroupsCollapseState() }
+          result = { isCollapsed: false } // Simplified: always expanded
           break
 
         case "getAutoGroupState":
@@ -119,7 +104,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "getPreserveManualColors":
-          result = { enabled: tabGroupState.preserveManualColors }
+          result = { enabled: false } // Simplified: no manual color preservation
           break
 
         case "toggleAutoGroup":
@@ -127,8 +112,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           await storageManager.saveState()
 
           if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
-            await tabGroupService.preserveExistingGroupColors()
-            await tabGroupService.groupTabsWithRules()
+            await tabGroupService.groupAllTabs()
           }
           result = { enabled: tabGroupState.autoGroupingEnabled }
           break
@@ -140,9 +124,8 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "togglePreserveManualColors":
-          tabGroupState.preserveManualColors = msg.enabled
-          await storageManager.saveState()
-          result = { enabled: tabGroupState.preserveManualColors }
+          // Simplified: no manual color preservation, always return false
+          result = { enabled: false }
           break
 
         case "getGroupBySubDomain":
@@ -240,7 +223,11 @@ browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.url) {
       console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-      await tabGroupService.moveTabToGroup(tabId)
+      await tabGroupService.handleTabUpdate(tabId)
+    } else if (changeInfo.hasOwnProperty("pinned") && changeInfo.pinned === false) {
+      console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`)
+      await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+      await tabGroupService.handleTabUpdate(tabId)
     }
   } catch (error) {
     console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error)
@@ -252,7 +239,7 @@ browserAPI.tabs.onCreated.addListener(async (tab) => {
     console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
     if (tab.url) {
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
-      await tabGroupService.moveTabToGroup(tab.id)
+      await tabGroupService.handleTabUpdate(tab.id)
     }
   } catch (error) {
     console.error(`[tabs.onCreated] Error handling tab ${tab.id} creation:`, error)
@@ -290,14 +277,8 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
       const domain = await tabGroupService.getGroupDomain(group.id)
       if (!domain) return
 
-      // If the color has changed and it's different from our stored color
-      if (group.color && group.color !== tabGroupState.getColor(domain)) {
-        console.log(
-          `[tabGroups.onUpdated] User changed color for domain "${domain}" to "${group.color}"`
-        )
-        tabGroupState.setColor(domain, group.color, true)
-        await storageManager.saveState()
-      }
+      // Simplified: no color management in this version
+      console.log(`[tabGroups.onUpdated] Group ${group.id} updated for domain "${domain}"`)
     } catch (error) {
       console.error("[tabGroups.onUpdated] Error handling group update:", error)
     }
@@ -308,9 +289,8 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
 if (browserAPI.tabGroups && browserAPI.tabGroups.onRemoved) {
   browserAPI.tabGroups.onRemoved.addListener(async (group) => {
     try {
-      console.log(`[tabGroups.onRemoved] Group ${group.id} was removed, cleaning up mapping`)
-      tabGroupState.removeGroup(group.id)
-      await storageManager.saveState()
+      console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`)
+      // Simplified: no group mapping cleanup needed, browser handles state
     } catch (error) {
       console.error("[tabGroups.onRemoved] Error handling group removal:", error)
     }

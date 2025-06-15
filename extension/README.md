@@ -4,7 +4,7 @@ A cross-browser extension that automatically groups tabs by domain, supporting b
 
 ## Bugs / Issues / Feature Requests
 
-Please report any issues or feature requests [here](https://docs.google.com/forms/d/e/1FAIpQLScdrbrDYZaTXEcpj7KQD6oGpv_TQ1iMIV19DeUxNlIO5sSUtg/viewform?usp=dialog).
+Please report any issues or feature requests using our [feedback form](https://docs.google.com/forms/d/e/1FAIpQLScdrbrDYZaTXEcpj7KQD6oGpv_TQ1iMIV19DeUxNlIO5sSUtg/viewform?usp=dialog).
 
 If you like this extension, please consider rating it 5 stars :)
 
@@ -181,6 +181,13 @@ Custom rules allow you to create named tab groups that combine multiple domains 
 - **Performance**: Rules are cached for fast matching
 - **Validation**: Comprehensive validation for rule names and domains
 - **Limits**: Maximum 20 domains per rule, 50 character rule names
+
+## 📖 Documentation
+
+- **[Tab Group Creation Flow](TAB_GROUP_CREATION_FLOW.md)** - How browser tab groups actually work
+- **[Simplified Architecture](SIMPLIFIED_ARCHITECTURE.md)** - Overview of the stateless, browser-as-SSOT approach
+- **[API Fix Summary](TAB_GROUPS_API_FIX.md)** - Details on tab group API compatibility fixes
+- **[Refactoring Complete](REFACTORING_FIX_COMPLETE.md)** - Summary of architecture improvements
 
 ## 🐛 Troubleshooting
 

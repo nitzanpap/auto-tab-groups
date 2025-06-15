@@ -37,6 +37,8 @@ const browserAPI = (() => {
             query: api.tabGroups.query.bind(api.tabGroups),
             get: api.tabGroups.get.bind(api.tabGroups),
             update: api.tabGroups.update.bind(api.tabGroups),
+            onUpdated: api.tabGroups.onUpdated,
+            onRemoved: api.tabGroups.onRemoved,
           }
         : {
             // Promisify for MV2
@@ -44,6 +46,8 @@ const browserAPI = (() => {
             query: promisify(api.tabGroups.query.bind(api.tabGroups)),
             get: promisify(api.tabGroups.get.bind(api.tabGroups)),
             update: promisify(api.tabGroups.update.bind(api.tabGroups)),
+            onUpdated: api.tabGroups.onUpdated,
+            onRemoved: api.tabGroups.onRemoved,
           }
       : undefined
 

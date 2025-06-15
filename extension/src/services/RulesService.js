@@ -1,19 +1,12 @@
 /**
- * Service for managing custom tab grouping rules
+ * Simplified Rules Service - Browser as SSOT
+ * Manages custom tab grouping rules with stateless operations
  */
 
 import { storageManager } from "../config/StorageManager.js"
 import { tabGroupState } from "../state/TabGroupState.js"
-import { extractDomain } from "../utils/DomainUtils.js"
 
 class RulesService {
-  constructor() {
-    // Cache for performance optimization
-    this.domainRuleCache = new Map()
-    this.lastCacheUpdate = 0
-    this.CACHE_DURATION = 60000 // 1 minute cache
-  }
-
   /**
    * Finds a matching custom rule for a given domain
    * @param {string} domain - The domain to match against rules
@@ -22,57 +15,37 @@ class RulesService {
   async findMatchingRule(domain) {
     if (!domain) return null
 
-    // Check cache first
-    const cacheKey = domain.toLowerCase()
-    const now = Date.now()
+    console.log(`[RulesService] Checking domain "${domain}" for custom rules`)
 
-    if (this.domainRuleCache.has(cacheKey) && now - this.lastCacheUpdate < this.CACHE_DURATION) {
-      const cachedResult = this.domainRuleCache.get(cacheKey)
-      console.log(`[findMatchingRule] Cache hit for "${domain}":`, cachedResult?.name || "no match")
-      return cachedResult
-    }
+    // Get custom rules from state (already loaded from storage)
+    const customRules = tabGroupState.getCustomRulesObject()
+    const ruleCount = Object.keys(customRules).length
 
-    // Get custom rules from storage (SSOT) - this ensures we always have the latest rules
-    // even if the service worker was restarted and in-memory state was lost
-    const customRules = await this.getCustomRules()
-    console.log(
-      `[findMatchingRule] Checking domain "${domain}" against ${
-        Object.keys(customRules).length
-      } rules (loaded from storage)`
-    )
-
-    // Update cache timestamp since we're loading fresh data
-    this.lastCacheUpdate = now
+    console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
     // Find matching rule
-    let matchingRule = null
-    for (const rule of Object.values(customRules)) {
-      if (!rule.enabled) continue
+    for (const [ruleId, rule] of Object.entries(customRules)) {
+      if (!rule.enabled) {
+        console.log(`[RulesService] Skipping disabled rule: ${rule.name}`)
+        continue
+      }
 
-      console.log(`[findMatchingRule] Checking rule "${rule.name}" with domains:`, rule.domains)
+      console.log(`[RulesService] Checking rule "${rule.name}" with domains:`, rule.domains)
+
       for (const ruleDomain of rule.domains) {
         if (this.domainMatches(domain, ruleDomain)) {
-          console.log(
-            `[findMatchingRule] Domain "${domain}" matches rule domain "${ruleDomain}" in rule "${rule.name}"`
-          )
-          // If multiple rules match, use the one with higher priority (lower number = higher priority)
-          if (!matchingRule || rule.priority < matchingRule.priority) {
-            matchingRule = rule
-          }
+          console.log(`[RulesService] ✅ Domain "${domain}" matches rule "${rule.name}"`)
+          return rule
         }
       }
     }
 
-    // Update cache
-    this.domainRuleCache.set(cacheKey, matchingRule)
-    this.lastCacheUpdate = now
-
-    console.log(`[findMatchingRule] Final match for "${domain}":`, matchingRule?.name || "no match")
-    return matchingRule
+    console.log(`[RulesService] No matching rule found for domain "${domain}"`)
+    return null
   }
 
   /**
-   * Checks if a domain matches a rule domain
+   * Checks if a domain matches a rule domain (exact match)
    * @param {string} tabDomain - Domain from the tab
    * @param {string} ruleDomain - Domain from the rule
    * @returns {boolean} True if domains match
@@ -83,81 +56,16 @@ class RulesService {
     const cleanTabDomain = tabDomain.toLowerCase().trim()
     const cleanRuleDomain = ruleDomain.toLowerCase().trim()
 
-    // Exact match for now (wildcards can be added later)
+    // Exact match
     return cleanTabDomain === cleanRuleDomain
   }
 
   /**
-   * Determines the appropriate group for a tab based on custom rules or domain
-   * @param {string} url - The tab URL
-   * @returns {Promise<Object>} Group information with name, type, and rule
-   */
-  async resolveGroupForTab(url) {
-    const baseDomain = extractDomain(url, false) // Base domain without subdomain
-    const fullDomain = extractDomain(url, true) // Full domain with subdomain
-
-    console.log(
-      `[resolveGroupForTab] Processing URL "${url}": base="${baseDomain}", full="${fullDomain}"`
-    )
-
-    if (!baseDomain) return null
-
-    // Check custom rules first (highest priority)
-    // Try both full domain and base domain for better matching
-    let matchingRule = null
-
-    // First try with full domain (subdomain included)
-    if (fullDomain && fullDomain !== baseDomain) {
-      console.log(`[resolveGroupForTab] Checking custom rules for full domain: "${fullDomain}"`)
-      matchingRule = await this.findMatchingRule(fullDomain)
-    }
-
-    // If no match with subdomain, try with base domain
-    if (!matchingRule) {
-      console.log(`[resolveGroupForTab] Checking custom rules for base domain: "${baseDomain}"`)
-      matchingRule = await this.findMatchingRule(baseDomain)
-    }
-
-    if (matchingRule) {
-      console.log(
-        `[resolveGroupForTab] Found custom rule match: "${matchingRule.name}" for domain "${
-          fullDomain || baseDomain
-        }"`
-      )
-      return {
-        name: matchingRule.name,
-        type: "custom",
-        rule: matchingRule,
-        domain: fullDomain || baseDomain, // Use the domain that was actually matched
-      }
-    }
-
-    // Fall back to domain-based grouping
-    // Use the appropriate domain based on the subdomain setting
-    const domainForGrouping = tabGroupState.groupBySubDomainEnabled
-      ? fullDomain || baseDomain
-      : baseDomain
-
-    console.log(
-      `[resolveGroupForTab] No custom rule match, using domain grouping: "${domainForGrouping}" (subdomain enabled: ${tabGroupState.groupBySubDomainEnabled})`
-    )
-    return {
-      name: domainForGrouping,
-      type: "domain",
-      rule: null,
-      domain: domainForGrouping,
-    }
-  }
-
-  /**
-   * Gets all custom rules from storage (SSOT)
-   * @returns {Promise<Object>} Custom rules object
+   * Gets all custom rules from state
+   * @returns {Object} Custom rules object
    */
   async getCustomRules() {
-    // Always load fresh state from storage to ensure SSOT
-    // This protects against service worker restarts that might clear in-memory state
-    const state = await storageManager.loadState()
-    return state?.customRules || {}
+    return tabGroupState.getCustomRulesObject()
   }
 
   /**
@@ -187,9 +95,6 @@ class RulesService {
 
     // Save to storage
     await storageManager.saveState()
-
-    // Clear cache
-    this.clearCache()
 
     console.log(`[RulesService] Added new rule: ${rule.name} (${ruleId})`)
     return ruleId
@@ -227,9 +132,6 @@ class RulesService {
     // Save to storage
     await storageManager.saveState()
 
-    // Clear cache
-    this.clearCache()
-
     console.log(`[RulesService] Updated rule: ${updatedRule.name} (${ruleId})`)
     return true
   }
@@ -250,9 +152,6 @@ class RulesService {
 
     // Save to storage
     await storageManager.saveState()
-
-    // Clear cache
-    this.clearCache()
 
     console.log(`[RulesService] Deleted rule: ${ruleId}`)
     return true
@@ -312,14 +211,6 @@ class RulesService {
   }
 
   /**
-   * Clears the domain-rule cache
-   */
-  clearCache() {
-    this.domainRuleCache.clear()
-    this.lastCacheUpdate = 0
-  }
-
-  /**
    * Gets statistics about custom rules usage
    * @returns {Promise<Object>} Usage statistics
    */
@@ -337,7 +228,6 @@ class RulesService {
       enabledRules,
       disabledRules: totalRules - enabledRules,
       totalDomains,
-      cacheSize: this.domainRuleCache.size,
     }
   }
 }
