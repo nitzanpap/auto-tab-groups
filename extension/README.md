@@ -6,7 +6,7 @@ A cross-browser extension that automatically groups tabs by domain, supporting b
 
 Please report any issues or feature requests using our [feedback form](https://docs.google.com/forms/d/e/1FAIpQLScdrbrDYZaTXEcpj7KQD6oGpv_TQ1iMIV19DeUxNlIO5sSUtg/viewform?usp=dialog).
 
-If you like this extension, please consider rating it 5 stars :)
+If you like this extension, please consider rating it 5 stars ⭐ :)
 
 ## 🚀 Features
 
