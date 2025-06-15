@@ -5,8 +5,16 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 ## 📦 Downloads
 
 🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**  
-🌐 **Chrome Web Store** *(coming soon)*  
+🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
 💻 **Developer Builds**: See [`extension/`](extension/) folder for latest builds
+
+## 🆕 What's New
+
+### Enhanced International Domain Support
+
+- ✨ **Country Code Second-Level Domain (ccSLD) Support**: Proper handling of international domains like `abc.net.au`, `.co.uk`, `.com.au`
+- 🌍 **Better Grouping for International Users**: Domains like `abc.net.au` now correctly group as "abc" instead of "net"
+- 🔧 **Improved Domain Extraction**: Supports 15+ countries with accurate domain name detection
 
 ## Example of tab groups in the navigation bar
 
@@ -43,10 +51,11 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 - Automatically groups tabs by their domain/subdomain
 - Smart domain name display (e.g., "github" instead of "www.github.com")
+- **Country code second-level domain (ccSLD) support** - Properly handles domains like `dailymail.co.uk`, `example.co.uk`, `abc.net.au`, etc.
 - Special handling for IP addresses, localhost, and .local domains
 - Real-time group updates as you browse
 
-### � Custom Rules System
+### 🛠️ Custom Rules System
 
 - **Priority System**: Custom rules take priority over domain-based grouping
 - **Fallback**: Domains not covered by custom rules still use automatic domain grouping
@@ -87,12 +96,6 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## Planned Features
 
-- Add customizable mapping for domain names to group titles
-- Add support for pinned tabs.
-  - Pinned tabs will not be grouped.
-  - Pinning a tab will ungroup it from any existing group.
-  - Unpinning a tab will apply the default grouping behavior.
-- Save/Load window state, including tab groups, pinned tabs, and window position
 - AI-powered tab grouping (In Progress):
   - Server-side AI grouping API with token-based usage tracking
   - Free tier with limited trial tokens and premium tier with unlimited usage
@@ -307,8 +310,12 @@ The extension provides convenient ways to manage your tab groups:
 - Uses the [`browser.tabs.group()`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/group) API
 - Groups tabs based on their root domain
 - Maintains group consistency during tab operations (refresh, new tab, etc.)
+- **Smart domain extraction** with support for country code second-level domains (ccSLDs):
+  - `abc.net.au` → Groups as "abc" (recognizes `co.au` as single TLD)
+  - `shop.example.co.uk` → Groups as "example" (recognizes `co.uk` as single TLD)
+  - `www.github.com` → Groups as "github" (standard domain handling)
 - Intelligently formats domain names for group titles:
-  - Removes TLD (e.g., ".com", ".org")
+  - Removes TLD properly (e.g., ".com", ".org", ".co.il", ".co.uk")
   - Removes "www" subdomain when present
   - Special handling for IP addresses and local domains
 
@@ -318,6 +325,28 @@ The extension provides convenient ways to manage your tab groups:
 - Provides unified controls for group visibility
 - Maintains group state during tab operations
 - Ensures smooth transitions when collapsing/expanding
+
+### 🌍 Country Code Second-Level Domain (ccSLD) Support
+
+The extension includes intelligent handling for country-specific domains that use two-part top-level domains:
+
+**Supported ccSLDs include:**
+
+- **United Kingdom**: `.co.uk`, `.org.uk`, `.net.uk`, `.ac.uk`, `.gov.uk`
+- **Australia**: `.com.au`, `.net.au`, `.org.au`, `.edu.au`, `.gov.au`
+- **New Zealand**: `.co.nz`, `.net.nz`, `.org.nz`, `.ac.nz`, `.govt.nz`
+- **South Africa**: `.co.za`, `.org.za`, `.net.za`, `.ac.za`, `.gov.za`
+- **Japan**: `.co.jp`, `.or.jp`, `.ne.jp`, `.ac.jp`, `.go.jp`
+- **South Korea**: `.co.kr`, `.or.kr`, `.ne.kr`, `.ac.kr`, `.go.kr`
+- And many more...
+
+**Examples:**
+
+- `abc.net.au` → Groups as "abc" (not "co")
+- `shop.example.co.uk` → Groups as "example" (not "co")
+- `api.service.com.au` → Groups as "service" (not "com")
+
+This ensures that international users get proper domain grouping regardless of their country's domain structure.
 
 ## 📚 Resources
 
