@@ -530,6 +530,14 @@ body {
     display: flex;
     justify-content: center;
     padding-top: 8px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rules-import-export {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
 }
 
 .rules-button {
@@ -543,27 +551,35 @@ body {
     transition: all 0.2s ease;
 }
 
+.rules-button.secondary {
+    background: #f8f9fa;
+    color: #6c757d;
+    border-color: #dee2e6;
+    font-size: 11px;
+    padding: 6px 12px;
+}
+
 .rules-button:hover {
     background: #dee2e6;
     border-color: #adb5bd;
 }
 
-.empty-rules {
-    text-align: center;
-    color: #6c757d;
-    font-size: 13px;
-    padding: 20px;
-    font-style: italic;
+.rules-button.secondary:hover {
+    background: #e9ecef;
+    color: #495057;
 }
 
-/* Toggle switch for rule enable/disable */
-.rule-toggle {
-    margin-left: 8px;
+.rules-button:disabled {
+    background: #f8f9fa;
+    color: #adb5bd;
+    border-color: #e9ecef;
+    cursor: not-allowed;
 }
 
-.rule-toggle input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
+.rules-button:disabled:hover {
+    background: #f8f9fa;
+    color: #adb5bd;
+    border-color: #e9ecef;
 }
 
 /* Loading and error states */
@@ -579,8 +595,46 @@ body {
     color: #dc3545;
     font-size: 13px;
     padding: 16px;
-    background: #fff5f5;
-    border: 1px solid #fed7d7;
+    font-style: italic;
+}
+
+.rules-message {
+    padding: 8px 12px;
+    margin: 8px 0;
     border-radius: 4px;
-    margin-bottom: 12px;
+    font-size: 12px;
+    text-align: center;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+.rules-message.success {
+    background-color: #d1edff;
+    color: #0066cc;
+    border: 1px solid #b3d9ff;
+}
+
+.rules-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.rules-message.info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.export-import-help {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #6c757d;
+    text-align: center;
 }

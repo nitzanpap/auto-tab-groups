@@ -64,6 +64,26 @@
             </div>
             <div class="rules-actions">
               <button id="addRuleButton" class="button rules-button">➕ Add New Rule</button>
+              <div class="rules-import-export">
+                <button
+                  id="exportRulesButton"
+                  class="button rules-button secondary"
+                  title="Export all rules to JSON file"
+                >
+                  📤 Export
+                </button>
+                <button
+                  id="importRulesButton"
+                  class="button rules-button secondary"
+                  title="Import rules from JSON file"
+                >
+                  📥 Import
+                </button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none" />
+              </div>
+              <div class="help-text export-import-help">
+                Export/import rules as JSON files for backup or sharing
+              </div>
             </div>
           </div>
         </div>

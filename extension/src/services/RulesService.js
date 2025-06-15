@@ -264,6 +264,141 @@ class RulesService {
       totalDomains,
     }
   }
+
+  /**
+   * Exports all custom rules as JSON
+   * @returns {Promise<string>} JSON string of all rules
+   */
+  async exportRules() {
+    const customRules = await this.getCustomRules()
+    const exportData = {
+      version: "1.0",
+      exportDate: new Date().toISOString(),
+      rules: customRules,
+      totalRules: Object.keys(customRules).length,
+    }
+
+    console.log(`[RulesService] Exporting ${exportData.totalRules} custom rules`)
+    return JSON.stringify(exportData, null, 2)
+  }
+
+  /**
+   * Imports custom rules from JSON data
+   * @param {string} jsonData - JSON string containing rules to import
+   * @param {boolean} replaceExisting - Whether to replace existing rules or merge
+   * @returns {Promise<Object>} Import result with success status and details
+   */
+  async importRules(jsonData, replaceExisting = false) {
+    try {
+      const importData = JSON.parse(jsonData)
+
+      // Validate import data structure
+      if (!importData.rules || typeof importData.rules !== "object") {
+        throw new Error("Invalid import file: Missing or invalid rules data")
+      }
+
+      const importRules = importData.rules
+      const importCount = Object.keys(importRules).length
+
+      if (importCount === 0) {
+        throw new Error("No rules found in import file")
+      }
+
+      console.log(
+        `[RulesService] Importing ${importCount} rules, replaceExisting: ${replaceExisting}`
+      )
+
+      // Validate each rule before importing
+      const validationErrors = []
+      const validRules = {}
+
+      for (const [ruleId, ruleData] of Object.entries(importRules)) {
+        const validation = this.validateRule(ruleData)
+        if (validation.isValid) {
+          // Generate new ID if replaceExisting is false and rule already exists
+          let finalRuleId = ruleId
+          if (!replaceExisting && tabGroupState.getCustomRule(ruleId)) {
+            finalRuleId = this.generateRuleId()
+          }
+
+          validRules[finalRuleId] = {
+            ...ruleData,
+            id: finalRuleId,
+            importedAt: new Date().toISOString(),
+          }
+        } else {
+          validationErrors.push(
+            `Rule "${ruleData.name || ruleId}": ${validation.errors.join(", ")}`
+          )
+        }
+      }
+
+      const validCount = Object.keys(validRules).length
+      if (validCount === 0) {
+        throw new Error(`No valid rules found. Errors: ${validationErrors.join("; ")}`)
+      }
+
+      // Clear existing rules if replacing
+      if (replaceExisting) {
+        const existingRules = Object.keys(tabGroupState.getCustomRulesObject())
+        existingRules.forEach((ruleId) => {
+          tabGroupState.deleteCustomRule(ruleId)
+        })
+        console.log(`[RulesService] Cleared ${existingRules.length} existing rules`)
+      }
+
+      // Import valid rules
+      for (const [ruleId, rule] of Object.entries(validRules)) {
+        tabGroupState.addCustomRule(ruleId, rule)
+      }
+
+      // Save to storage
+      await storageManager.saveState()
+
+      const result = {
+        success: true,
+        imported: validCount,
+        total: importCount,
+        skipped: importCount - validCount,
+        validationErrors: validationErrors,
+        replacedExisting: replaceExisting,
+      }
+
+      console.log(`[RulesService] Import completed:`, result)
+      return result
+    } catch (error) {
+      console.error(`[RulesService] Import failed:`, error)
+      return {
+        success: false,
+        error: error.message,
+        imported: 0,
+        total: 0,
+        skipped: 0,
+      }
+    }
+  }
+
+  /**
+   * Gets import/export statistics
+   * @returns {Promise<Object>} Statistics about rules suitable for export/import
+   */
+  async getExportStats() {
+    const customRules = await this.getCustomRules()
+    const totalRules = Object.keys(customRules).length
+    const enabledRules = Object.values(customRules).filter((rule) => rule.enabled).length
+    const totalDomains = Object.values(customRules).reduce(
+      (sum, rule) => sum + rule.domains.length,
+      0
+    )
+
+    return {
+      totalRules,
+      enabledRules,
+      disabledRules: totalRules - enabledRules,
+      totalDomains,
+      exportReady: totalRules > 0,
+    }
+  }
 }
 
 // Export singleton instance

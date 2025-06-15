@@ -200,6 +200,39 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { stats }
           break
 
+        case "exportRules":
+          try {
+            const exportData = await rulesService.exportRules()
+            result = { success: true, data: exportData }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "importRules":
+          try {
+            const importResult = await rulesService.importRules(msg.jsonData, msg.replaceExisting)
+            result = { success: importResult.success, ...importResult }
+
+            // Re-group tabs if auto-grouping is enabled and import was successful
+            if (importResult.success && tabGroupState.autoGroupingEnabled) {
+              await tabGroupService.ungroupAllTabs()
+              await tabGroupService.groupTabsWithRules()
+            }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "getExportStats":
+          try {
+            const exportStats = await rulesService.getExportStats()
+            result = { success: true, stats: exportStats }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
         default:
           result = { error: "Unknown action" }
       }

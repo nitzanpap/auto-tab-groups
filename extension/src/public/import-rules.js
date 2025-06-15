@@ -1,0 +1,155 @@
+// Import Rules Page Script
+const browserAPI = typeof browser !== "undefined" ? browser : chrome
+
+const selectFileButton = document.getElementById("selectFileButton")
+const fileInput = document.getElementById("fileInput")
+const importArea = document.getElementById("importArea")
+const importOptions = document.getElementById("importOptions")
+const importButton = document.getElementById("importButton")
+const importResult = document.getElementById("importResult")
+const resultMessage = document.getElementById("resultMessage")
+
+let selectedFile = null
+
+// Helper function for sending messages
+function sendMessage(message) {
+  return new Promise((resolve) => {
+    browserAPI.runtime.sendMessage(message, resolve)
+  })
+}
+
+// File selection event handlers
+selectFileButton.addEventListener("click", () => {
+  fileInput.click()
+})
+
+importArea.addEventListener("click", () => {
+  fileInput.click()
+})
+
+fileInput.addEventListener("change", handleFileSelection)
+
+// Drag and drop handlers
+importArea.addEventListener("dragover", (e) => {
+  e.preventDefault()
+  importArea.classList.add("dragover")
+})
+
+importArea.addEventListener("dragleave", () => {
+  importArea.classList.remove("dragover")
+})
+
+importArea.addEventListener("drop", (e) => {
+  e.preventDefault()
+  importArea.classList.remove("dragover")
+
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    handleFile(files[0])
+  }
+})
+
+// File handling
+function handleFileSelection(event) {
+  const file = event.target.files[0]
+  if (file) {
+    handleFile(file)
+  }
+}
+
+function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith(".json")) {
+    showResult("Please select a JSON file.", "error")
+    return
+  }
+
+  selectedFile = file
+
+  // Show import options
+  importOptions.style.display = "block"
+
+  // Update UI to show selected file
+  importArea.innerHTML = `
+    <div>
+      <h3>✅ File Selected</h3>
+      <p><strong>${file.name}</strong></p>
+      <p>Size: ${(file.size / 1024).toFixed(1)} KB</p>
+      <p style="color: #666; margin-top: 15px;">
+        Choose import options below and click "Import Rules"
+      </p>
+    </div>
+  `
+}
+
+// Import button handler
+importButton.addEventListener("click", async () => {
+  if (!selectedFile) {
+    showResult("Please select a file first.", "error")
+    return
+  }
+
+  try {
+    importButton.disabled = true
+    importButton.textContent = "Importing..."
+
+    const text = await selectedFile.text()
+    const importMode = document.querySelector('input[name="importMode"]:checked').value
+    const replaceExisting = importMode === "replace"
+
+    const response = await sendMessage({
+      action: "importRules",
+      jsonData: text,
+      replaceExisting: replaceExisting,
+    })
+
+    if (response && response.success) {
+      const message =
+        `Import successful!\n\n` +
+        `• Imported: ${response.imported} rules\n` +
+        `• Skipped: ${response.skipped} rules\n` +
+        (response.validationErrors.length > 0
+          ? `• Errors: ${response.validationErrors.slice(0, 3).join("; ")}${
+              response.validationErrors.length > 3 ? "..." : ""
+            }`
+          : "")
+
+      showResult(message, "success")
+    } else {
+      showResult(response?.error || "Failed to import rules", "error")
+    }
+  } catch (error) {
+    console.error("Error importing rules:", error)
+    showResult("Failed to import rules: " + error.message, "error")
+  } finally {
+    importButton.disabled = false
+    importButton.textContent = "Import Rules"
+  }
+})
+
+function showResult(message, type) {
+  resultMessage.textContent = message
+  importResult.className = `import-result ${type}`
+  importResult.style.display = "block"
+
+  // Scroll to result
+  importResult.scrollIntoView({ behavior: "smooth" })
+}
+
+// Close button handler
+const closeButton = document.getElementById("closeButton")
+closeButton.addEventListener("click", async () => {
+  try {
+    // Get the current tab and close it
+    const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true })
+    if (tabs.length > 0) {
+      await browserAPI.tabs.remove(tabs[0].id)
+    }
+  } catch (error) {
+    console.error("Error closing tab:", error)
+    // Fallback to window.close()
+    window.close()
+  }
+})
+
+// Initialize
+console.log("[Import Rules] Page initialized")

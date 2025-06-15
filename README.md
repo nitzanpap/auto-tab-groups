@@ -40,6 +40,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
 - ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain
 - ✅ **Custom rules** - Create named groups that combine multiple domains
+- ✅ **Rules export/import** - Backup, share, and migrate custom rules as JSON files
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
 - ✅ **Collapse/expand controls** - Manage tab group visibility

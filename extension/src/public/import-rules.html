@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Import Rules - Auto Tab Groups</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .import-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .import-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .import-header h1 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .import-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: border-color 0.3s ease;
+      }
+
+      .import-area:hover {
+        border-color: #007bff;
+      }
+
+      .import-area.dragover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+      }
+
+      .file-input-wrapper {
+        margin: 20px 0;
+      }
+
+      .file-input-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+      }
+
+      .file-input-button:hover {
+        background: #0056b3;
+      }
+
+      .import-options {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .import-result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 6px;
+        display: none;
+      }
+
+      .import-result.success {
+        background: #d1edff;
+        color: #0066cc;
+        border: 1px solid #b3d9ff;
+      }
+
+      .import-result.error {
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+      }
+
+      .close-button {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      .close-button:hover {
+        background: #545b62;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="import-container">
+      <div class="import-header">
+        <h1>📥 Import Rules</h1>
+        <p>Import custom rules from a JSON file</p>
+      </div>
+
+      <div class="import-area" id="importArea">
+        <div>
+          <h3>📁 Select a JSON file to import</h3>
+          <p>Drag and drop a file here, or click to browse</p>
+
+          <div class="file-input-wrapper">
+            <button class="file-input-button" id="selectFileButton">Select JSON File</button>
+            <input type="file" id="fileInput" accept=".json" style="display: none" />
+          </div>
+
+          <p style="font-size: 14px; color: #666; margin-top: 15px">
+            Supported format: JSON files exported from Auto Tab Groups
+          </p>
+        </div>
+      </div>
+
+      <div class="import-options" id="importOptions" style="display: none">
+        <h4>Import Options</h4>
+        <label style="display: block; margin: 10px 0">
+          <input type="radio" name="importMode" value="merge" checked />
+          <strong>Merge</strong> - Add imported rules alongside existing ones
+        </label>
+        <label style="display: block; margin: 10px 0">
+          <input type="radio" name="importMode" value="replace" />
+          <strong>Replace</strong> - Remove all existing rules and import new ones
+        </label>
+
+        <button id="importButton" class="file-input-button" style="margin-top: 15px">
+          Import Rules
+        </button>
+      </div>
+
+      <div class="import-result" id="importResult">
+        <div id="resultMessage"></div>
+        <button class="close-button" id="closeButton">Close Tab</button>
+      </div>
+    </div>
+
+    <script src="import-rules.js"></script>
+  </body>
+</html>

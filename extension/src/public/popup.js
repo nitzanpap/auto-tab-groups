@@ -114,6 +114,9 @@ const rulesContent = document.querySelector(".rules-content")
 const rulesCount = document.getElementById("rulesCount")
 const rulesList = document.getElementById("rulesList")
 const addRuleButton = document.getElementById("addRuleButton")
+const exportRulesButton = document.getElementById("exportRulesButton")
+const importRulesButton = document.getElementById("importRulesButton")
+const importFileInput = document.getElementById("importFileInput")
 
 // Custom Rules State
 let customRulesExpanded = false
@@ -186,6 +189,13 @@ function updateRulesDisplay() {
 
   // Update count
   rulesCount.textContent = `(${enabledRules.length})`
+
+  // Update export button state
+  if (exportRulesButton) {
+    exportRulesButton.disabled = rulesArray.length === 0
+    exportRulesButton.title =
+      rulesArray.length === 0 ? "No rules to export" : "Export all rules to JSON file"
+  }
 
   // Clear existing rules
   rulesList.innerHTML = ""
@@ -352,6 +362,137 @@ async function deleteRule(ruleId, ruleName) {
   }
 }
 
+// Export rules
+async function exportRules() {
+  try {
+    const response = await sendMessage({ action: "exportRules" })
+
+    if (response && response.success) {
+      // Create and trigger download
+      const blob = new Blob([response.data], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `auto-tab-groups-rules-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      // Show success message
+      showRulesMessage("Rules exported successfully!", "success")
+    } else {
+      alert(response?.error || "Failed to export rules")
+    }
+  } catch (error) {
+    console.error("Error exporting rules:", error)
+    alert("Failed to export rules")
+  }
+}
+
+// Import rules
+async function importRules() {
+  // Detect if we're in a popup context (as opposed to sidebar)
+  const isPopupContext = !document.querySelector(".sidebar-container")
+
+  if (isPopupContext) {
+    // In popup context, we need to open a new tab for file import to avoid popup closing
+    try {
+      const url = browserAPI.runtime.getURL("public/import-rules.html")
+      await browserAPI.tabs.create({
+        url: url,
+        active: true,
+      })
+    } catch (error) {
+      console.error("Error opening import page:", error)
+      // Fallback: show instruction message and try direct input
+      alert(
+        "Import Rules Instructions:\n\n" +
+          "Due to Firefox popup limitations, please:\n" +
+          "1. Keep this popup open\n" +
+          "2. Select your JSON file when the dialog opens\n" +
+          "3. The import will process automatically\n\n" +
+          "Tip: Use the Firefox sidebar for easier importing!"
+      )
+
+      // Try direct file input anyway
+      setTimeout(() => {
+        importFileInput.click()
+      }, 100)
+    }
+  } else {
+    // In sidebar context, direct file input works fine
+    importFileInput.click()
+  }
+}
+
+// Handle file import
+async function handleFileImport(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Reset the input so the same file can be selected again
+  event.target.value = ""
+
+  try {
+    const text = await file.text()
+
+    // Ask user if they want to replace existing rules or merge
+    const replaceExisting = confirm(
+      "Do you want to replace all existing rules?\n\n" +
+        "• Click OK to REPLACE all existing rules with imported ones\n" +
+        "• Click Cancel to MERGE imported rules with existing ones"
+    )
+
+    const response = await sendMessage({
+      action: "importRules",
+      jsonData: text,
+      replaceExisting: replaceExisting,
+    })
+
+    if (response && response.success) {
+      // Reload rules and update display
+      await loadCustomRules()
+
+      const message =
+        `Import successful!\n` +
+        `• Imported: ${response.imported} rules\n` +
+        `• Skipped: ${response.skipped} rules\n` +
+        (response.validationErrors.length > 0
+          ? `• Errors: ${response.validationErrors.slice(0, 3).join("; ")}${
+              response.validationErrors.length > 3 ? "..." : ""
+            }`
+          : "")
+
+      showRulesMessage("Rules imported successfully!", "success")
+      alert(message)
+    } else {
+      alert(response?.error || "Failed to import rules")
+    }
+  } catch (error) {
+    console.error("Error importing rules:", error)
+    alert("Failed to import rules: " + error.message)
+  }
+}
+
+// Show rules message (success/error)
+function showRulesMessage(message, type = "info") {
+  // Create message element
+  const messageDiv = document.createElement("div")
+  messageDiv.className = `rules-message ${type}`
+  messageDiv.textContent = message
+
+  // Insert at top of rules list
+  rulesList.insertBefore(messageDiv, rulesList.firstChild)
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    if (messageDiv.parentNode) {
+      messageDiv.parentNode.removeChild(messageDiv)
+    }
+  }, 3000)
+}
+
 // Custom Rules Event Listeners
 console.log("[Popup/Sidebar] Setting up Custom Rules event listeners")
 console.log("[Popup/Sidebar] rulesToggle element:", rulesToggle)
@@ -365,6 +506,21 @@ if (rulesToggle) {
 if (addRuleButton) {
   addRuleButton.addEventListener("click", addRule)
   console.log("[Popup/Sidebar] Added addRuleButton click listener")
+}
+
+if (exportRulesButton) {
+  exportRulesButton.addEventListener("click", exportRules)
+  console.log("[Popup/Sidebar] Added exportRulesButton click listener")
+}
+
+if (importRulesButton) {
+  importRulesButton.addEventListener("click", importRules)
+  console.log("[Popup/Sidebar] Added importRulesButton click listener")
+}
+
+if (importFileInput) {
+  importFileInput.addEventListener("change", handleFileImport)
+  console.log("[Popup/Sidebar] Added importFileInput change listener")
 }
 
 // Load custom rules on popup open
