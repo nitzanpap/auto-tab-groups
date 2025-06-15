@@ -11,7 +11,7 @@ If you like this extension, please consider rating it 5 stars :)
 ## 🚀 Features
 
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
-- ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain
+- ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain/subdomain
 - ✅ **Custom rules** - Create named groups that combine multiple domains
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
