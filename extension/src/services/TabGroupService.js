@@ -272,6 +272,20 @@ class TabGroupServiceSimplified {
         windowId: browserAPI.windows.WINDOW_ID_CURRENT,
       })
 
+      // Get all custom rules to check which groups should be skipped
+      const customRules = await rulesService.getCustomRules()
+      const customRuleNames = new Set()
+
+      // Collect custom rule names that have colors defined
+      for (const rule of Object.values(customRules)) {
+        if (rule.color && rule.name) {
+          customRuleNames.add(rule.name)
+          console.log(
+            `[TabGroupService] Found custom rule "${rule.name}" with color "${rule.color}" - will skip this group`
+          )
+        }
+      }
+
       // Available colors in Chrome
       const colors = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"]
 
@@ -279,6 +293,14 @@ class TabGroupServiceSimplified {
       const colorMapping = await storageManager.getGroupColorMapping()
 
       for (const group of groups) {
+        // Skip groups that match custom rules with colors
+        if (customRuleNames.has(group.title)) {
+          console.log(
+            `[TabGroupService] Skipping group "${group.title}" - it matches a custom rule with a defined color`
+          )
+          continue
+        }
+
         // Pick a random color
         const randomColor = colors[Math.floor(Math.random() * colors.length)]
 
@@ -304,7 +326,7 @@ class TabGroupServiceSimplified {
       // Save the updated color mapping
       await storageManager.saveGroupColorMapping(colorMapping)
 
-      console.log(`[TabGroupService] Finished generating new colors for ${groups.length} groups`)
+      console.log(`[TabGroupService] Finished generating new colors for groups`)
       return true
     } catch (error) {
       console.error(`[TabGroupService] Error generating new colors:`, error)

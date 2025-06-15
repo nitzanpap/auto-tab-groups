@@ -38,7 +38,8 @@ This document summarizes the UI improvements and persistent color mapping featur
 #### Service Layer (`TabGroupService.js`)
 
 - **Group Creation**: When creating new groups, check for saved colors and apply them
-- **Generate New Colors**: Save new random colors to persistent storage
+- **Generate New Colors**: Save new random colors to persistent storage, but **preserve custom rule colors**
+- **Custom Rule Protection**: Groups matching custom rules with defined colors are skipped during random color generation
 - **Color Restoration**: New `restoreSavedColors()` method to restore colors on startup
 - **Background Integration**: Automatically restore colors when extension starts
 
@@ -62,15 +63,17 @@ This document summarizes the UI improvements and persistent color mapping featur
 - **Reliability**: Colors are preserved across browser restarts
 - **Consistency**: Groups maintain their assigned colors even when tabs are moved
 - **Automatic**: Works seamlessly without user intervention
+- **Custom Rule Protection**: Groups created from custom rules keep their rule-defined colors even during random color generation
 - **Custom Rules**: Custom rule colors are still prioritized and saved persistently
 
 ## Benefits
 
 1. **Better UX**: Two separate stateless buttons eliminate confusion and provide predictable behavior
 2. **Color Persistence**: Users don't lose their color assignments after restart
-3. **Seamless Integration**: New features work with existing functionality
-4. **Cross-Browser**: Compatible with both Chrome and Firefox
-5. **Backward Compatible**: Existing installations will work without issues
+3. **Custom Rule Respect**: Random color generation preserves intentionally set custom rule colors
+4. **Seamless Integration**: New features work with existing functionality
+5. **Cross-Browser**: Compatible with both Chrome and Firefox
+6. **Backward Compatible**: Existing installations will work without issues
 
 ## Files Modified
 
