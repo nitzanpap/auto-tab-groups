@@ -31,11 +31,13 @@
           <textarea
             id="ruleDomains"
             class="form-input form-textarea"
-            placeholder="Enter one domain per line&#10;discord.com&#10;teams.microsoft.com&#10;meet.google.com&#10;slack.com"
+            placeholder="Enter one domain per line&#10;discord.com&#10;teams.microsoft.com&#10;*.google.com&#10;slack.com"
             required
           ></textarea>
           <div class="error-message" id="domainsError"></div>
-          <div class="help-text">Enter one domain per line (max 20 domains per rule)</div>
+          <div class="help-text">
+            Enter one domain per line. Supports wildcards: *.domain.com (max 20 domains per rule)
+          </div>
 
           <!-- Current Tabs Selection -->
           <div class="current-tabs-section">

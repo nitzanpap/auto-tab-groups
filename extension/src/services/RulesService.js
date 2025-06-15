@@ -45,9 +45,9 @@ class RulesService {
   }
 
   /**
-   * Checks if a domain matches a rule domain (exact match)
+   * Checks if a domain matches a rule domain (supports wildcards)
    * @param {string} tabDomain - Domain from the tab
-   * @param {string} ruleDomain - Domain from the rule
+   * @param {string} ruleDomain - Domain from the rule (supports *.domain.com format)
    * @returns {boolean} True if domains match
    */
   domainMatches(tabDomain, ruleDomain) {
@@ -56,7 +56,27 @@ class RulesService {
     const cleanTabDomain = tabDomain.toLowerCase().trim()
     const cleanRuleDomain = ruleDomain.toLowerCase().trim()
 
-    // Exact match
+    // Check for wildcard pattern (*.domain.com)
+    if (cleanRuleDomain.startsWith("*.")) {
+      const baseDomain = cleanRuleDomain.substring(2) // Remove "*."
+
+      // Validate that baseDomain is not empty and contains at least one dot
+      if (!baseDomain || !baseDomain.includes(".")) {
+        console.warn(`[RulesService] Invalid wildcard pattern: ${cleanRuleDomain}`)
+        return false
+      }
+
+      // Check for exact match with base domain (mozilla.org matches *.mozilla.org)
+      if (cleanTabDomain === baseDomain) {
+        return true
+      }
+
+      // Check for subdomain match (developer.mozilla.org matches *.mozilla.org)
+      // Must end with .baseDomain to ensure it's actually a subdomain
+      return cleanTabDomain.endsWith("." + baseDomain)
+    }
+
+    // Exact match (backward compatibility)
     return cleanTabDomain === cleanRuleDomain
   }
 
@@ -188,10 +208,24 @@ class RulesService {
           errors.push("All domains must be non-empty strings")
           break
         }
-        // Basic domain validation (can be enhanced)
+
         const cleanDomain = domain.trim()
-        if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanDomain)) {
-          errors.push(`Invalid domain format: ${cleanDomain}`)
+
+        // Check for wildcard pattern
+        if (cleanDomain.startsWith("*.")) {
+          const baseDomain = cleanDomain.substring(2)
+
+          // Validate wildcard pattern
+          if (!baseDomain || baseDomain.includes("*")) {
+            errors.push(`Invalid wildcard pattern: ${cleanDomain}. Use format: *.domain.com`)
+          } else if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
+            errors.push(`Invalid base domain in wildcard: ${cleanDomain}`)
+          }
+        } else {
+          // Regular domain validation
+          if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanDomain)) {
+            errors.push(`Invalid domain format: ${cleanDomain}`)
+          }
         }
       }
     }

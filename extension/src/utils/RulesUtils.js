@@ -3,8 +3,8 @@
  */
 
 /**
- * Validates a domain string format
- * @param {string} domain - Domain to validate
+ * Validates a domain string format (supports wildcards)
+ * @param {string} domain - Domain to validate (supports *.domain.com format)
  * @returns {Object} Validation result with isValid and error message
  */
 export function validateDomain(domain) {
@@ -22,7 +22,25 @@ export function validateDomain(domain) {
     return { isValid: false, error: "Domain too long (max 253 characters)" }
   }
 
-  // Basic domain pattern - allows letters, numbers, dots, hyphens
+  // Check for wildcard pattern (*.domain.com)
+  if (cleanDomain.startsWith("*.")) {
+    const baseDomain = cleanDomain.substring(2) // Remove "*."
+
+    // Validate wildcard pattern
+    if (!baseDomain || baseDomain.includes("*")) {
+      return { isValid: false, error: "Invalid wildcard pattern. Use format: *.domain.com" }
+    }
+
+    // Validate the base domain part
+    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!domainPattern.test(baseDomain)) {
+      return { isValid: false, error: "Invalid base domain in wildcard pattern" }
+    }
+
+    return { isValid: true }
+  }
+
+  // Regular domain validation
   const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
   if (!domainPattern.test(cleanDomain)) {

@@ -304,10 +304,9 @@ class RulesModal {
       return false
     }
 
-    // Validate each domain format
-    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    // Validate each domain format (support wildcards)
     for (const domain of domains) {
-      if (!domainPattern.test(domain)) {
+      if (!this.isValidDomainFormat(domain)) {
         this.showFieldError("domains", `Invalid domain format: ${domain}`)
         return false
       }
@@ -332,6 +331,80 @@ class RulesModal {
 
     const inputElement = fieldName === "name" ? this.nameInput : this.domainsInput
     inputElement.style.borderColor = "#e2e8f0"
+  }
+
+  /**
+   * Validates domain format with wildcard support
+   * @param {string} domain - Domain to validate (supports *.domain.com format)
+   * @returns {boolean} True if domain format is valid
+   */
+  isValidDomainFormat(domain) {
+    if (!domain || typeof domain !== "string") {
+      return false
+    }
+
+    const cleanDomain = domain.trim().toLowerCase()
+
+    if (cleanDomain.length === 0) {
+      return false
+    }
+
+    if (cleanDomain.length > 253) {
+      return false
+    }
+
+    // Check for wildcard pattern (*.domain.com)
+    if (cleanDomain.startsWith("*.")) {
+      const baseDomain = cleanDomain.substring(2) // Remove "*."
+
+      // Validate wildcard pattern
+      if (!baseDomain || baseDomain.includes("*")) {
+        return false
+      }
+
+      // Validate the base domain part
+      const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+      if (!domainPattern.test(baseDomain)) {
+        return false
+      }
+
+      // Additional checks for base domain
+      if (baseDomain.startsWith(".") || baseDomain.endsWith(".")) {
+        return false
+      }
+
+      if (baseDomain.includes("..")) {
+        return false
+      }
+
+      if (baseDomain.startsWith("-") || baseDomain.endsWith("-")) {
+        return false
+      }
+
+      return true
+    }
+
+    // Regular domain validation
+    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+    if (!domainPattern.test(cleanDomain)) {
+      return false
+    }
+
+    // Check for invalid patterns
+    if (cleanDomain.startsWith(".") || cleanDomain.endsWith(".")) {
+      return false
+    }
+
+    if (cleanDomain.includes("..")) {
+      return false
+    }
+
+    if (cleanDomain.startsWith("-") || cleanDomain.endsWith("-")) {
+      return false
+    }
+
+    return true
   }
 
   showError(message) {
