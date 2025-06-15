@@ -34,6 +34,9 @@ async function ensureStateLoaded() {
       console.log("State loaded successfully from storage")
       console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
       console.log("Custom rules count:", tabGroupState.customRules.size)
+
+      // Restore saved colors for existing groups
+      await tabGroupService.restoreSavedColors()
     } catch (error) {
       console.error("Error loading state from storage:", error)
       throw error
@@ -82,6 +85,21 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         case "generateNewColors":
           await tabGroupService.generateNewColors()
+          result = { success: true }
+          break
+
+        case "restoreSavedColors":
+          await tabGroupService.restoreSavedColors()
+          result = { success: true }
+          break
+
+        case "collapseAll":
+          await tabGroupService.collapseAllGroups()
+          result = { success: true }
+          break
+
+        case "expandAll":
+          await tabGroupService.expandAllGroups()
           result = { success: true }
           break
 

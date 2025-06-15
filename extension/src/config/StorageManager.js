@@ -13,6 +13,7 @@ export const DEFAULT_STATE = {
   groupBySubDomainEnabled: false,
   customRules: {},
   ruleMatchingMode: "exact",
+  groupColorMapping: {},
 }
 
 class StorageManager {
@@ -100,6 +101,64 @@ class StorageManager {
       console.log("Rule matching mode saved successfully")
     } catch (error) {
       console.error("Error saving rule matching mode:", error)
+    }
+  }
+
+  /**
+   * Gets group color mapping from storage
+   * @returns {Promise<Object>} Group color mapping object (groupTitle -> color)
+   */
+  async getGroupColorMapping() {
+    try {
+      const data = await browserAPI.storage.local.get(["groupColorMapping"])
+      return data.groupColorMapping || {}
+    } catch (error) {
+      console.error("Error loading group color mapping:", error)
+      return {}
+    }
+  }
+
+  /**
+   * Saves group color mapping to storage
+   * @param {Object} colorMapping - Group color mapping object (groupTitle -> color)
+   */
+  async saveGroupColorMapping(colorMapping) {
+    try {
+      await browserAPI.storage.local.set({ groupColorMapping: colorMapping })
+      console.log("Group color mapping saved successfully")
+    } catch (error) {
+      console.error("Error saving group color mapping:", error)
+    }
+  }
+
+  /**
+   * Updates a single group's color in the mapping
+   * @param {string} groupTitle - The group title
+   * @param {string} color - The color to assign
+   */
+  async updateGroupColor(groupTitle, color) {
+    try {
+      const colorMapping = await this.getGroupColorMapping()
+      colorMapping[groupTitle] = color
+      await this.saveGroupColorMapping(colorMapping)
+      console.log(`Updated color mapping for group "${groupTitle}" to "${color}"`)
+    } catch (error) {
+      console.error("Error updating group color:", error)
+    }
+  }
+
+  /**
+   * Gets the saved color for a group title
+   * @param {string} groupTitle - The group title
+   * @returns {Promise<string|null>} The saved color or null if not found
+   */
+  async getGroupColor(groupTitle) {
+    try {
+      const colorMapping = await this.getGroupColorMapping()
+      return colorMapping[groupTitle] || null
+    } catch (error) {
+      console.error("Error getting group color:", error)
+      return null
     }
   }
 }

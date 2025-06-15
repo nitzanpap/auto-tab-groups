@@ -6,6 +6,7 @@
 import { tabGroupState } from "../state/TabGroupState.js"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils.js"
 import { rulesService } from "./RulesService.js"
+import { storageManager } from "../config/StorageManager.js"
 import "../utils/BrowserAPI.js"
 
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
@@ -104,9 +105,24 @@ class TabGroupServiceSimplified {
           console.log(
             `[TabGroupService] Applying custom color "${customRule.color}" from rule "${customRule.name}"`
           )
+        } else {
+          // Check if we have a saved color for this group title
+          const savedColor = await storageManager.getGroupColor(expectedTitle)
+          if (savedColor) {
+            updateOptions.color = savedColor
+            console.log(
+              `[TabGroupService] Applying saved color "${savedColor}" for group "${expectedTitle}"`
+            )
+          }
         }
 
         await browserAPI.tabGroups.update(groupId, updateOptions)
+
+        // Save the color mapping if we applied a color
+        if (updateOptions.color) {
+          await storageManager.updateGroupColor(expectedTitle, updateOptions.color)
+        }
+
         console.log(
           `[TabGroupService] Successfully updated group ${groupId} with title "${expectedTitle}" and color "${
             updateOptions.color || "default"
@@ -259,6 +275,9 @@ class TabGroupServiceSimplified {
       // Available colors in Chrome
       const colors = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"]
 
+      // Get current color mapping to update it
+      const colorMapping = await storageManager.getGroupColorMapping()
+
       for (const group of groups) {
         // Pick a random color
         const randomColor = colors[Math.floor(Math.random() * colors.length)]
@@ -267,6 +286,10 @@ class TabGroupServiceSimplified {
           await browserAPI.tabGroups.update(group.id, {
             color: randomColor,
           })
+
+          // Save the color mapping for persistence
+          colorMapping[group.title] = randomColor
+
           console.log(
             `[TabGroupService] Set group ${group.id} ("${group.title}") to color ${randomColor}`
           )
@@ -277,6 +300,9 @@ class TabGroupServiceSimplified {
           )
         }
       }
+
+      // Save the updated color mapping
+      await storageManager.saveGroupColorMapping(colorMapping)
 
       console.log(`[TabGroupService] Finished generating new colors for ${groups.length} groups`)
       return true
@@ -394,6 +420,146 @@ class TabGroupServiceSimplified {
     } catch (error) {
       console.error(`[TabGroupService] Error getting collapse state:`, error)
       return { isCollapsed: false }
+    }
+  }
+
+  /**
+   * Restores saved colors for existing groups
+   * @returns {Promise<boolean>} True if successful
+   */
+  async restoreSavedColors() {
+    try {
+      console.log(`[TabGroupService] Restoring saved colors for existing groups`)
+
+      // Get all tab groups in the current window
+      const groups = await browserAPI.tabGroups.query({
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+      })
+
+      const colorMapping = await storageManager.getGroupColorMapping()
+      let restoredCount = 0
+
+      for (const group of groups) {
+        const savedColor = colorMapping[group.title]
+        if (savedColor && savedColor !== group.color) {
+          try {
+            await browserAPI.tabGroups.update(group.id, {
+              color: savedColor,
+            })
+            restoredCount++
+            console.log(
+              `[TabGroupService] Restored color "${savedColor}" for group "${group.title}"`
+            )
+          } catch (updateError) {
+            console.warn(
+              `[TabGroupService] Failed to restore color for group ${group.id}:`,
+              updateError
+            )
+          }
+        }
+      }
+
+      console.log(`[TabGroupService] Restored colors for ${restoredCount} groups`)
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error restoring saved colors:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Collapses all tab groups
+   * @returns {Promise<boolean>} True if successful
+   */
+  async collapseAllGroups() {
+    try {
+      console.log(`[TabGroupService] Collapsing all groups`)
+
+      // Get all tab groups in the current window
+      const groups = await browserAPI.tabGroups.query({
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+      })
+
+      if (groups.length === 0) {
+        console.log(`[TabGroupService] No groups found to collapse`)
+        return true
+      }
+
+      // Get the currently active tab to check if it's in a group
+      const [activeTab] = await browserAPI.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+
+      let activeTabGroupId = null
+      if (activeTab && activeTab.groupId !== browserAPI.tabGroups.TAB_GROUP_ID_NONE) {
+        activeTabGroupId = activeTab.groupId
+        console.log(
+          `[TabGroupService] Active tab is in group ${activeTabGroupId}, will avoid collapsing this group`
+        )
+      }
+
+      for (const group of groups) {
+        try {
+          // Skip collapsing the group that contains the active tab (Firefox compatibility)
+          if (group.id === activeTabGroupId) {
+            console.log(
+              `[TabGroupService] Skipping collapse of group ${group.id} containing active tab`
+            )
+            continue
+          }
+
+          await browserAPI.tabGroups.update(group.id, {
+            collapsed: true,
+          })
+          console.log(`[TabGroupService] Collapsed group ${group.id} ("${group.title}")`)
+        } catch (updateError) {
+          console.warn(`[TabGroupService] Failed to collapse group ${group.id}:`, updateError)
+        }
+      }
+
+      console.log(`[TabGroupService] Finished collapsing groups`)
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error collapsing groups:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Expands all tab groups
+   * @returns {Promise<boolean>} True if successful
+   */
+  async expandAllGroups() {
+    try {
+      console.log(`[TabGroupService] Expanding all groups`)
+
+      // Get all tab groups in the current window
+      const groups = await browserAPI.tabGroups.query({
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+      })
+
+      if (groups.length === 0) {
+        console.log(`[TabGroupService] No groups found to expand`)
+        return true
+      }
+
+      for (const group of groups) {
+        try {
+          await browserAPI.tabGroups.update(group.id, {
+            collapsed: false,
+          })
+          console.log(`[TabGroupService] Expanded group ${group.id} ("${group.title}")`)
+        } catch (updateError) {
+          console.warn(`[TabGroupService] Failed to expand group ${group.id}:`, updateError)
+        }
+      }
+
+      console.log(`[TabGroupService] Finished expanding all groups`)
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error expanding groups:`, error)
+      return false
     }
   }
 

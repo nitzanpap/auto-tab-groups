@@ -2,8 +2,8 @@
 const groupButton = document.getElementById("group")
 const ungroupButton = document.getElementById("ungroup")
 const generateNewColorsButton = document.getElementById("generateNewColors")
-const collapseOrExpandAllText = document.getElementById("collapseOrExpandAllText")
-const toggleCollapse = document.getElementById("toggleCollapse")
+const collapseAllButton = document.getElementById("collapseAllButton")
+const expandAllButton = document.getElementById("expandAllButton")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
 const groupBySubDomainToggle = document.getElementById("groupBySubDomain")
 
@@ -48,20 +48,6 @@ const updateBrowserDisplay = () => {
   }
 }
 
-// Function to update collapse button text based on state
-async function updateCollapseButtonText() {
-  const response = await new Promise((resolve) => {
-    browserAPI.runtime.sendMessage(
-      {
-        action: "getGroupsCollapseState",
-      },
-      resolve
-    )
-  })
-  const isCollapsed = response.isCollapsed
-  collapseOrExpandAllText.textContent = isCollapsed ? "➕ Expand all" : "➖ Collapse all groups"
-}
-
 updateVersionDisplay()
 updateBrowserDisplay()
 
@@ -85,20 +71,13 @@ generateNewColorsButton.addEventListener("click", () => {
   sendMessage({ action: "generateNewColors" })
 })
 
-toggleCollapse.addEventListener("click", async () => {
-  const response = await sendMessage({
-    action: "getGroupsCollapseState",
-  })
-  const shouldCollapse = !response.isCollapsed
-  await sendMessage({
-    action: "toggleCollapse",
-    collapse: shouldCollapse,
-  })
-  updateCollapseButtonText()
+collapseAllButton.addEventListener("click", () => {
+  sendMessage({ action: "collapseAll" })
 })
 
-// Initialize button states
-updateCollapseButtonText()
+expandAllButton.addEventListener("click", () => {
+  sendMessage({ action: "expandAll" })
+})
 
 // Initialize the toggle states when popup opens.
 sendMessage({ action: "getAutoGroupState" }).then((response) => {
