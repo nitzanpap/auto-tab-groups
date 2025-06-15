@@ -97,11 +97,23 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## Planned Features
 
-- AI-powered tab grouping (In Progress):
+- **AI-powered tab grouping (In Progress)**:
   - Server-side AI grouping API with token-based usage tracking
   - Free tier with limited trial tokens and premium tier with unlimited usage
   - Smart grouping based on tab content, not just domain names
   - Secure data handling with proper authentication and encryption
+  - Option to run locally with your own API key
+  - Manually invoking AI for creating rules and grouping tabs based on them.
+  - Letting the AI to autonomously decide to group tabs, and creating rules.
+- **Custom Rules UI Enhancements**:
+  - Improved user interface for managing custom rules
+  - Better visualization of rule priorities and conflicts
+- **Search Functionality**:
+  - Search through open tabs and groups
+  - Filter by domain, group name, or custom rules
+- **Improve Security, XSS, and CSP**:
+  - Enhanced security measures to prevent XSS attacks
+  - Content Security Policy (CSP) updates for better protection
 
 The AI grouping feature is currently under active development with:
 
