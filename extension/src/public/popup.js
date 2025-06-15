@@ -392,37 +392,36 @@ async function exportRules() {
 
 // Import rules
 async function importRules() {
-  // Detect if we're in a popup context (as opposed to sidebar)
-  const isPopupContext = !document.querySelector(".sidebar-container")
+  // Always use the dedicated import page for better UX and consistency
+  // This provides drag-and-drop functionality and avoids popup/sidebar closing issues
+  try {
+    const url = browserAPI.runtime.getURL("public/import-rules.html")
+    await browserAPI.tabs.create({
+      url: url,
+      active: true,
+    })
+  } catch (error) {
+    console.error("Error opening import page:", error)
 
-  if (isPopupContext) {
-    // In popup context, we need to open a new tab for file import to avoid popup closing
-    try {
-      const url = browserAPI.runtime.getURL("public/import-rules.html")
-      await browserAPI.tabs.create({
-        url: url,
-        active: true,
-      })
-    } catch (error) {
-      console.error("Error opening import page:", error)
-      // Fallback: show instruction message and try direct input
+    // Fallback to direct file input
+    const isPopupContext = !document.querySelector(".sidebar-container")
+
+    if (isPopupContext) {
+      // Show instruction message for popup context
       alert(
         "Import Rules Instructions:\n\n" +
-          "Due to Firefox popup limitations, please:\n" +
+          "Due to popup limitations, please:\n" +
           "1. Keep this popup open\n" +
           "2. Select your JSON file when the dialog opens\n" +
           "3. The import will process automatically\n\n" +
-          "Tip: Use the Firefox sidebar for easier importing!"
+          "Note: For better experience, consider using the sidebar!"
       )
-
-      // Try direct file input anyway
-      setTimeout(() => {
-        importFileInput.click()
-      }, 100)
     }
-  } else {
-    // In sidebar context, direct file input works fine
-    importFileInput.click()
+
+    // Try direct file input as last resort
+    setTimeout(() => {
+      importFileInput.click()
+    }, 100)
   }
 }
 

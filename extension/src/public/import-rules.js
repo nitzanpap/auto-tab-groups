@@ -68,17 +68,33 @@ function handleFile(file) {
   // Show import options
   importOptions.style.display = "block"
 
-  // Update UI to show selected file
-  importArea.innerHTML = `
-    <div>
-      <h3>✅ File Selected</h3>
-      <p><strong>${file.name}</strong></p>
-      <p>Size: ${(file.size / 1024).toFixed(1)} KB</p>
-      <p style="color: #666; margin-top: 15px;">
-        Choose import options below and click "Import Rules"
-      </p>
-    </div>
-  `
+  // Update UI to show selected file using safe DOM manipulation
+  importArea.innerHTML = "" // Clear existing content
+
+  const containerDiv = document.createElement("div")
+
+  const title = document.createElement("h3")
+  title.textContent = "✅ File Selected"
+
+  const fileName = document.createElement("p")
+  const fileNameStrong = document.createElement("strong")
+  fileNameStrong.textContent = file.name
+  fileName.appendChild(fileNameStrong)
+
+  const fileSize = document.createElement("p")
+  fileSize.textContent = `Size: ${(file.size / 1024).toFixed(1)} KB`
+
+  const instructions = document.createElement("p")
+  instructions.style.color = "#666"
+  instructions.style.marginTop = "15px"
+  instructions.textContent = 'Choose import options below and click "Import Rules"'
+
+  containerDiv.appendChild(title)
+  containerDiv.appendChild(fileName)
+  containerDiv.appendChild(fileSize)
+  containerDiv.appendChild(instructions)
+
+  importArea.appendChild(containerDiv)
 }
 
 // Import button handler
