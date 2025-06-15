@@ -20,14 +20,51 @@ function sendMessage(message) {
 
 // File selection event handlers
 selectFileButton.addEventListener("click", () => {
+  console.log("[Import] Select file button clicked")
+  // Clear any previous file selection
+  fileInput.value = ""
   fileInput.click()
 })
 
 importArea.addEventListener("click", () => {
+  console.log("[Import] Import area clicked")
+  // Clear any previous file selection
+  fileInput.value = ""
   fileInput.click()
 })
 
 fileInput.addEventListener("change", handleFileSelection)
+
+// Also listen for input event as backup
+fileInput.addEventListener("input", (event) => {
+  console.log("[Import] Input event triggered")
+  if (!selectedFile && event.target.files.length > 0) {
+    handleFileSelection(event)
+  }
+})
+
+// Handle focus events to catch cases where file dialog was dismissed
+let fileDialogOpen = false
+
+fileInput.addEventListener("click", () => {
+  fileDialogOpen = true
+  console.log("[Import] File dialog opened")
+})
+
+window.addEventListener("focus", () => {
+  if (fileDialogOpen) {
+    fileDialogOpen = false
+    console.log("[Import] Window focused after file dialog")
+
+    // Check if a file was selected after a short delay
+    setTimeout(() => {
+      if (fileInput.files.length > 0 && !selectedFile) {
+        console.log("[Import] Found file after focus, processing...")
+        handleFileSelection({ target: fileInput })
+      }
+    }, 100)
+  }
+})
 
 // Drag and drop handlers
 importArea.addEventListener("dragover", (e) => {
@@ -51,13 +88,26 @@ importArea.addEventListener("drop", (e) => {
 
 // File handling
 function handleFileSelection(event) {
-  const file = event.target.files[0]
-  if (file) {
-    handleFile(file)
-  }
+  console.log("[Import] File selection event triggered")
+  console.log("[Import] Files:", event.target.files)
+  console.log("[Import] Files length:", event.target.files.length)
+
+  // Add a small delay to ensure the file is fully loaded
+  setTimeout(() => {
+    const file = event.target.files[0]
+    if (file) {
+      console.log("[Import] File selected:", file.name, file.size)
+      handleFile(file)
+    } else {
+      console.log("[Import] No file selected")
+      // Don't show error on first attempt, just wait for user to try again
+    }
+  }, 50) // Small delay to ensure file is ready
 }
 
 function handleFile(file) {
+  console.log("[Import] Processing file:", file.name)
+
   if (!file.name.toLowerCase().endsWith(".json")) {
     showResult("Please select a JSON file.", "error")
     return
