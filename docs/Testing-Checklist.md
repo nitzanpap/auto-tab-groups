@@ -89,24 +89,26 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Navigate to existing tabs (change URLs)
 - [ ] Verify tab updates are processed
 
-## "Only Apply to New Tabs" Tests
+## Generate New Colors Tests
 
-### Test 11: Only New Tabs Mode
+### Test 11: Generate New Colors
 
-- [ ] Enable "Only apply to new tabs" setting
-- [ ] Create existing ungrouped tabs to various domains
-- [ ] Verify existing tabs remain ungrouped
-- [ ] Create new tabs to the same domains
-- [ ] Verify only new tabs are grouped
+- [ ] Create several tab groups for different domains
+- [ ] Note the current colors of the groups
+- [ ] Click "Generate New Colors" button
+- [ ] Verify all groups now have different random colors
+- [ ] Verify the functionality works multiple times
 
-### Test 12: Apply to All Tabs Mode
+## Collapse All Groups Tests
 
-- [ ] Disable "Only apply to new tabs" setting
-- [ ] Have existing ungrouped tabs to various domains
-- [ ] Enable auto-grouping
-- [ ] Verify existing tabs are automatically grouped
-- [ ] Create new tabs
-- [ ] Verify new tabs are also grouped
+### Test 12: Toggle Collapse All Groups
+
+- [ ] Create several tab groups with tabs
+- [ ] Verify all groups are initially expanded (tabs visible)
+- [ ] Click "Collapse all groups" button
+- [ ] Verify all groups are now collapsed (tabs hidden)
+- [ ] Click "Expand all groups" button (button text should change)
+- [ ] Verify all groups are now expanded again
 
 ## Edge Cases and Error Handling
 

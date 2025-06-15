@@ -10,7 +10,6 @@ const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? br
 
 export const DEFAULT_STATE = {
   autoGroupingEnabled: true,
-  onlyApplyToNewTabsEnabled: false,
   groupBySubDomainEnabled: false,
   customRules: {},
   ruleMatchingMode: "exact",

@@ -33,7 +33,6 @@ async function ensureStateLoaded() {
       stateInitialized = true
       console.log("State loaded successfully from storage")
       console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
-      console.log("Only apply to new tabs:", tabGroupState.onlyApplyToNewTabsEnabled)
       console.log("Custom rules count:", tabGroupState.customRules.size)
     } catch (error) {
       console.error("Error loading state from storage:", error)
@@ -46,14 +45,12 @@ async function ensureStateLoaded() {
 ensureStateLoaded()
   .then(async () => {
     try {
-      // Auto-group existing tabs if auto-grouping is enabled and conditions are met
-      if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+      // Auto-group existing tabs if auto-grouping is enabled
+      if (tabGroupState.autoGroupingEnabled) {
         console.log("Auto-grouping is enabled, grouping existing tabs...")
         await tabGroupService.groupAllTabs()
       } else {
-        console.log(
-          "Auto-grouping conditions not met - either disabled or only-new-tabs is enabled"
-        )
+        console.log("Auto-grouping is disabled")
       }
     } catch (error) {
       console.error("Error during initial auto-grouping:", error)
@@ -84,15 +81,18 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "generateNewColors":
-          result = { success: true } // Simplified: no color management needed
+          await tabGroupService.generateNewColors()
+          result = { success: true }
           break
 
         case "toggleCollapse":
-          result = { success: true } // Simplified: no collapse management needed
+          const collapseResult = await tabGroupService.toggleAllGroupsCollapse()
+          result = { success: true, isCollapsed: collapseResult.isCollapsed }
           break
 
         case "getGroupsCollapseState":
-          result = { isCollapsed: false } // Simplified: always expanded
+          const collapseState = await tabGroupService.getGroupsCollapseState()
+          result = { isCollapsed: collapseState.isCollapsed }
           break
 
         case "getAutoGroupState":
@@ -100,32 +100,14 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         case "getOnlyApplyToNewTabs":
-          result = { enabled: tabGroupState.onlyApplyToNewTabsEnabled }
-          break
-
-        case "getPreserveManualColors":
-          result = { enabled: false } // Simplified: no manual color preservation
-          break
-
         case "toggleAutoGroup":
           tabGroupState.autoGroupingEnabled = msg.enabled
           await storageManager.saveState()
 
-          if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+          if (tabGroupState.autoGroupingEnabled) {
             await tabGroupService.groupAllTabs()
           }
           result = { enabled: tabGroupState.autoGroupingEnabled }
-          break
-
-        case "toggleOnlyNewTabs":
-          tabGroupState.onlyApplyToNewTabsEnabled = msg.enabled
-          await storageManager.saveState()
-          result = { enabled: tabGroupState.onlyApplyToNewTabsEnabled }
-          break
-
-        case "togglePreserveManualColors":
-          // Simplified: no manual color preservation, always return false
-          result = { enabled: false }
           break
 
         case "getGroupBySubDomain":
@@ -136,7 +118,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           tabGroupState.groupBySubDomainEnabled = msg.enabled
           await storageManager.saveState()
 
-          if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+          if (tabGroupState.autoGroupingEnabled) {
             await tabGroupService.ungroupAllTabs()
             await tabGroupService.groupTabsWithRules()
           }
@@ -157,8 +139,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             result = { success: true, ruleId }
 
             // Re-group tabs if auto-grouping is enabled
-            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
-              await tabGroupService.preserveExistingGroupColors()
+            if (tabGroupState.autoGroupingEnabled) {
               await tabGroupService.groupTabsWithRules()
             }
           } catch (error) {
@@ -172,7 +153,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             result = { success: true }
 
             // Re-group tabs if auto-grouping is enabled
-            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+            if (tabGroupState.autoGroupingEnabled) {
               await tabGroupService.ungroupAllTabs()
               await tabGroupService.groupTabsWithRules()
             }
@@ -187,7 +168,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             result = { success: true }
 
             // Re-group tabs if auto-grouping is enabled
-            if (tabGroupState.autoGroupingEnabled && !tabGroupState.onlyApplyToNewTabsEnabled) {
+            if (tabGroupState.autoGroupingEnabled) {
               await tabGroupService.ungroupAllTabs()
               await tabGroupService.groupTabsWithRules()
             }

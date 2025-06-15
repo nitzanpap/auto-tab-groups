@@ -9,7 +9,6 @@ class TabGroupState {
   constructor() {
     // Only user settings - no complex state management
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
-    this.onlyApplyToNewTabsEnabled = DEFAULT_STATE.onlyApplyToNewTabsEnabled
     this.groupBySubDomainEnabled = DEFAULT_STATE.groupBySubDomainEnabled
     this.customRules = new Map() // Maps ruleId -> rule object
     this.ruleMatchingMode = DEFAULT_STATE.ruleMatchingMode
@@ -21,7 +20,6 @@ class TabGroupState {
    */
   updateFromStorage(data) {
     this.autoGroupingEnabled = data.autoGroupingEnabled
-    this.onlyApplyToNewTabsEnabled = data.onlyApplyToNewTabsEnabled
     this.groupBySubDomainEnabled = data.groupBySubDomainEnabled
     this.ruleMatchingMode = data.ruleMatchingMode || DEFAULT_STATE.ruleMatchingMode
 
@@ -41,7 +39,6 @@ class TabGroupState {
   getStorageData() {
     return {
       autoGroupingEnabled: this.autoGroupingEnabled,
-      onlyApplyToNewTabsEnabled: this.onlyApplyToNewTabsEnabled,
       groupBySubDomainEnabled: this.groupBySubDomainEnabled,
       ruleMatchingMode: this.ruleMatchingMode,
       customRules: this.getCustomRulesObject(),

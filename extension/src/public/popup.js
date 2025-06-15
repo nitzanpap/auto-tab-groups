@@ -5,11 +5,7 @@ const generateNewColorsButton = document.getElementById("generateNewColors")
 const collapseOrExpandAllText = document.getElementById("collapseOrExpandAllText")
 const toggleCollapse = document.getElementById("toggleCollapse")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
-const onlyApplyToNewTabsToggle = document.getElementById("onlyApplyToNewTabs")
 const groupBySubDomainToggle = document.getElementById("groupBySubDomain")
-const advancedToggle = document.querySelector(".advanced-toggle")
-const advancedContent = document.querySelector(".advanced-content")
-const preserveManualColorsToggle = document.getElementById("preserveManualColors")
 
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -109,37 +105,16 @@ sendMessage({ action: "getAutoGroupState" }).then((response) => {
   autoGroupToggle.checked = response.enabled
 })
 
-sendMessage({ action: "getOnlyApplyToNewTabs" }).then((response) => {
-  onlyApplyToNewTabsToggle.checked = response.enabled
-})
-
 sendMessage({ action: "getGroupBySubDomain" }).then((response) => {
   if (response && response.enabled !== undefined) {
     groupBySubDomainToggle.checked = response.enabled
   }
 })
 
-sendMessage({ action: "getPreserveManualColors" }).then((response) => {
-  preserveManualColorsToggle.checked = response.enabled
-})
-
-// Advanced section toggle.
-advancedToggle.addEventListener("click", () => {
-  advancedToggle.classList.toggle("open")
-  advancedContent.classList.toggle("open")
-})
-
 // Listen for toggle changes.
 autoGroupToggle.addEventListener("change", (event) => {
   sendMessage({
     action: "toggleAutoGroup",
-    enabled: event.target.checked,
-  })
-})
-
-onlyApplyToNewTabsToggle.addEventListener("change", (event) => {
-  sendMessage({
-    action: "toggleOnlyNewTabs",
     enabled: event.target.checked,
   })
 })
@@ -151,13 +126,6 @@ groupBySubDomainToggle.addEventListener("change", () => {
   sendMessage({
     action: "toggleGroupBySubDomain",
     enabled: enabled,
-  })
-})
-
-preserveManualColorsToggle.addEventListener("change", (event) => {
-  sendMessage({
-    action: "togglePreserveManualColors",
-    enabled: event.target.checked,
   })
 })
 
