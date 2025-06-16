@@ -2,6 +2,7 @@
   "name": "auto-tab-groups",
   "version": "1.3.5",
   "description": "Cross-browser extension that automatically groups tabs by domain",
+  "author": "Nitzan Papini",
   "scripts": {
     "build:chrome": "cp src/manifest.chrome.json src/manifest.json && cd src && zip -r ../auto-tab-groups-chrome.zip . -x '*.DS_Store' 'manifest.*.json' && rm manifest.json && echo 'Chrome extension built: auto-tab-groups-chrome.zip'",
     "build:firefox": "cp src/manifest.firefox.json src/manifest.json && cd src && web-ext build && cd .. && VERSION=$(node -p \"require('./package.json').version\") && mv src/web-ext-artifacts/auto_tab_groups-*.zip src/web-ext-artifacts/auto-tab-groups-firefox-$VERSION.xpi && rm -f src/web-ext-artifacts/auto_tab_groups-*.zip && rm src/manifest.json && echo \"Firefox extension built: auto-tab-groups-firefox-$VERSION.xpi\"",
@@ -23,7 +24,5 @@
     "firefox-addon",
     "tab-management",
     "productivity"
-  ],
-  "author": "Nitzan Papini",
-  "license": "MIT"
+  ]
 }
