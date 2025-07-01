@@ -1,0 +1,18 @@
+# Build artifacts
+web-ext-artifacts/
+*.zip
+*.xpi
+auto-tab-groups-chrome.zip
+
+# Dependencies
+node_modules/
+
+# Test outputs
+playwright-report/
+test-results/
+
+# Manifest files (generated)
+src/manifest.json
+
+# Documentation that might have specific formatting
+*.md
