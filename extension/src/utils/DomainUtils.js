@@ -63,7 +63,7 @@ const COUNTRY_CODE_SLDS = new Set([
   "org.sg",
   "net.sg",
   "edu.sg",
-  "gov.sg",
+  "gov.sg"
 ])
 
 /**

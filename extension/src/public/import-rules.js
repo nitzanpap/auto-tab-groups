@@ -13,7 +13,7 @@ let selectedFile = null
 
 // Helper function for sending messages
 function sendMessage(message) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     browserAPI.runtime.sendMessage(message, resolve)
   })
 }
@@ -36,7 +36,7 @@ importArea.addEventListener("click", () => {
 fileInput.addEventListener("change", handleFileSelection)
 
 // Also listen for input event as backup
-fileInput.addEventListener("input", (event) => {
+fileInput.addEventListener("input", event => {
   console.log("[Import] Input event triggered")
   if (!selectedFile && event.target.files.length > 0) {
     handleFileSelection(event)
@@ -67,7 +67,7 @@ window.addEventListener("focus", () => {
 })
 
 // Drag and drop handlers
-importArea.addEventListener("dragover", (e) => {
+importArea.addEventListener("dragover", e => {
   e.preventDefault()
   importArea.classList.add("dragover")
 })
@@ -76,7 +76,7 @@ importArea.addEventListener("dragleave", () => {
   importArea.classList.remove("dragover")
 })
 
-importArea.addEventListener("drop", (e) => {
+importArea.addEventListener("drop", e => {
   e.preventDefault()
   importArea.classList.remove("dragover")
 
@@ -165,7 +165,7 @@ importButton.addEventListener("click", async () => {
     const response = await sendMessage({
       action: "importRules",
       jsonData: text,
-      replaceExisting: replaceExisting,
+      replaceExisting: replaceExisting
     })
 
     if (response && response.success) {

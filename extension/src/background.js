@@ -59,7 +59,7 @@ ensureStateLoaded()
       console.error("Error during initial auto-grouping:", error)
     }
   })
-  .catch((error) => {
+  .catch(error => {
     console.error("Critical error: Failed to load state on service worker start:", error)
   })
 
@@ -266,7 +266,7 @@ browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 })
 
-browserAPI.tabs.onCreated.addListener(async (tab) => {
+browserAPI.tabs.onCreated.addListener(async tab => {
   try {
     console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
     if (tab.url) {
@@ -290,7 +290,7 @@ browserAPI.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   }
 })
 
-browserAPI.tabs.onMoved.addListener(async (tabId) => {
+browserAPI.tabs.onMoved.addListener(async tabId => {
   try {
     console.log(`[tabs.onMoved] Tab ${tabId} moved`)
     await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
@@ -302,7 +302,7 @@ browserAPI.tabs.onMoved.addListener(async (tabId) => {
 
 // Listen for tab group updates (including color changes)
 if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
-  browserAPI.tabGroups.onUpdated.addListener(async (group) => {
+  browserAPI.tabGroups.onUpdated.addListener(async group => {
     try {
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
 
@@ -319,7 +319,7 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
 
 // Listen for tab group removal
 if (browserAPI.tabGroups && browserAPI.tabGroups.onRemoved) {
-  browserAPI.tabGroups.onRemoved.addListener(async (group) => {
+  browserAPI.tabGroups.onRemoved.addListener(async group => {
     try {
       console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`)
       // Simplified: no group mapping cleanup needed, browser handles state

@@ -14,7 +14,7 @@ function getDomainDisplayName(domain) {
       settings: "Settings",
       history: "History",
       bookmarks: "Bookmarks",
-      downloads: "Downloads",
+      downloads: "Downloads"
     }
 
     if (specialCases[domain]) {

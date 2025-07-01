@@ -65,10 +65,10 @@ test("TabGroupService modules load correctly", async ({ page }) => {
       "groupTabsByDomain",
       "ungroupAllTabs",
       "generateNewColors",
-      "toggleAllGroupsCollapse",
+      "toggleAllGroupsCollapse"
     ]
 
-    return requiredMethods.every((method) => typeof service[method] === "function")
+    return requiredMethods.every(method => typeof service[method] === "function")
   })
 
   expect(hasExpectedMethods).toBe(true)
@@ -125,7 +125,7 @@ test("Core services load independently", async ({ page }) => {
 
   // Wait for core services to load
   await page.waitForFunction(() => window.coreServicesLoaded || window.coreLoadError, {
-    timeout: 5000,
+    timeout: 5000
   })
 
   const loadError = await page.evaluate(() => window.coreLoadError)

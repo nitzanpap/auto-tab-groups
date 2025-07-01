@@ -103,11 +103,11 @@ class RulesService {
     const rule = {
       id: ruleId,
       name: ruleData.name.trim(),
-      domains: ruleData.domains.map((d) => d.toLowerCase().trim()).filter((d) => d),
+      domains: ruleData.domains.map(d => d.toLowerCase().trim()).filter(d => d),
       color: ruleData.color || "blue",
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     }
 
     // Add rule to state
@@ -140,10 +140,10 @@ class RulesService {
     const updatedRule = {
       ...customRules[ruleId],
       name: ruleData.name.trim(),
-      domains: ruleData.domains.map((d) => d.toLowerCase().trim()).filter((d) => d),
+      domains: ruleData.domains.map(d => d.toLowerCase().trim()).filter(d => d),
       color: ruleData.color || customRules[ruleId].color,
       enabled: ruleData.enabled !== false,
-      priority: ruleData.priority || customRules[ruleId].priority,
+      priority: ruleData.priority || customRules[ruleId].priority
     }
 
     // Update rule in state
@@ -232,7 +232,7 @@ class RulesService {
 
     return {
       isValid: errors.length === 0,
-      errors,
+      errors
     }
   }
 
@@ -251,7 +251,7 @@ class RulesService {
   async getRulesStats() {
     const customRules = await this.getCustomRules()
     const totalRules = Object.keys(customRules).length
-    const enabledRules = Object.values(customRules).filter((r) => r.enabled).length
+    const enabledRules = Object.values(customRules).filter(r => r.enabled).length
     const totalDomains = Object.values(customRules).reduce(
       (sum, rule) => sum + rule.domains.length,
       0
@@ -261,7 +261,7 @@ class RulesService {
       totalRules,
       enabledRules,
       disabledRules: totalRules - enabledRules,
-      totalDomains,
+      totalDomains
     }
   }
 
@@ -275,7 +275,7 @@ class RulesService {
       version: "1.0",
       exportDate: new Date().toISOString(),
       rules: customRules,
-      totalRules: Object.keys(customRules).length,
+      totalRules: Object.keys(customRules).length
     }
 
     console.log(`[RulesService] Exporting ${exportData.totalRules} custom rules`)
@@ -324,7 +324,7 @@ class RulesService {
           validRules[finalRuleId] = {
             ...ruleData,
             id: finalRuleId,
-            importedAt: new Date().toISOString(),
+            importedAt: new Date().toISOString()
           }
         } else {
           validationErrors.push(
@@ -341,7 +341,7 @@ class RulesService {
       // Clear existing rules if replacing
       if (replaceExisting) {
         const existingRules = Object.keys(tabGroupState.getCustomRulesObject())
-        existingRules.forEach((ruleId) => {
+        existingRules.forEach(ruleId => {
           tabGroupState.deleteCustomRule(ruleId)
         })
         console.log(`[RulesService] Cleared ${existingRules.length} existing rules`)
@@ -361,7 +361,7 @@ class RulesService {
         total: importCount,
         skipped: importCount - validCount,
         validationErrors: validationErrors,
-        replacedExisting: replaceExisting,
+        replacedExisting: replaceExisting
       }
 
       console.log(`[RulesService] Import completed:`, result)
@@ -373,7 +373,7 @@ class RulesService {
         error: error.message,
         imported: 0,
         total: 0,
-        skipped: 0,
+        skipped: 0
       }
     }
   }
@@ -385,7 +385,7 @@ class RulesService {
   async getExportStats() {
     const customRules = await this.getCustomRules()
     const totalRules = Object.keys(customRules).length
-    const enabledRules = Object.values(customRules).filter((rule) => rule.enabled).length
+    const enabledRules = Object.values(customRules).filter(rule => rule.enabled).length
     const totalDomains = Object.values(customRules).reduce(
       (sum, rule) => sum + rule.domains.length,
       0
@@ -396,7 +396,7 @@ class RulesService {
       enabledRules,
       disabledRules: totalRules - enabledRules,
       totalDomains,
-      exportReady: totalRules > 0,
+      exportReady: totalRules > 0
     }
   }
 }

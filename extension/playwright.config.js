@@ -13,14 +13,14 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     actionTimeout: 0,
     trace: "on-first-retry",
-    screenshot: "only-on-failure",
+    screenshot: "only-on-failure"
   },
   projects: [
     {
       name: "chromium",
       use: {
-        channel: "chrome",
-      },
-    },
-  ],
+        channel: "chrome"
+      }
+    }
+  ]
 })

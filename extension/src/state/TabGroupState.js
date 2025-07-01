@@ -41,7 +41,7 @@ class TabGroupState {
       autoGroupingEnabled: this.autoGroupingEnabled,
       groupBySubDomainEnabled: this.groupBySubDomainEnabled,
       ruleMatchingMode: this.ruleMatchingMode,
-      customRules: this.getCustomRulesObject(),
+      customRules: this.getCustomRulesObject()
     }
   }
 

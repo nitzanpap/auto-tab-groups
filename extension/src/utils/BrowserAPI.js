@@ -15,10 +15,10 @@ const browserAPI = (() => {
 
     // Chrome-specific promisification for APIs that need it
     const promisify =
-      (fn) =>
+      fn =>
       (...args) => {
         return new Promise((resolve, reject) => {
-          fn(...args, (result) => {
+          fn(...args, result => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message))
             } else {
@@ -38,7 +38,7 @@ const browserAPI = (() => {
             get: api.tabGroups.get.bind(api.tabGroups),
             update: api.tabGroups.update.bind(api.tabGroups),
             onUpdated: api.tabGroups.onUpdated,
-            onRemoved: api.tabGroups.onRemoved,
+            onRemoved: api.tabGroups.onRemoved
           }
         : {
             // Promisify for MV2
@@ -47,7 +47,7 @@ const browserAPI = (() => {
             get: promisify(api.tabGroups.get.bind(api.tabGroups)),
             update: promisify(api.tabGroups.update.bind(api.tabGroups)),
             onUpdated: api.tabGroups.onUpdated,
-            onRemoved: api.tabGroups.onRemoved,
+            onRemoved: api.tabGroups.onRemoved
           }
       : undefined
 
@@ -65,7 +65,7 @@ const browserAPI = (() => {
           : promisify(api.tabs.group.bind(api.tabs)),
         ungroup: isChromeMV3
           ? api.tabs.ungroup.bind(api.tabs)
-          : promisify(api.tabs.ungroup.bind(api.tabs)),
+          : promisify(api.tabs.ungroup.bind(api.tabs))
       },
       tabGroups: tabGroupsAPI,
       windows: {
@@ -75,7 +75,7 @@ const browserAPI = (() => {
           : promisify(api.windows.getCurrent.bind(api.windows)),
         getAll: isChromeMV3
           ? api.windows.getAll.bind(api.windows)
-          : promisify(api.windows.getAll.bind(api.windows)),
+          : promisify(api.windows.getAll.bind(api.windows))
       },
       storage: {
         ...api.storage,
@@ -86,14 +86,14 @@ const browserAPI = (() => {
             : promisify(api.storage.local.get.bind(api.storage.local)),
           set: isChromeMV3
             ? api.storage.local.set.bind(api.storage.local)
-            : promisify(api.storage.local.set.bind(api.storage.local)),
-        },
+            : promisify(api.storage.local.set.bind(api.storage.local))
+        }
       },
       runtime: {
         ...api.runtime,
         sendMessage: api.runtime.sendMessage, // Already promise-based in MV3
-        onMessage: api.runtime.onMessage,
-      },
+        onMessage: api.runtime.onMessage
+      }
     }
   }
 
