@@ -14,13 +14,6 @@ function isValidStrictDomain(domain) {
   return result.isValid
 }
 
-// Global rule modal data (replaces inline script for CSP compliance)
-const ruleModalData = {
-  isEdit: false,
-  ruleId: null,
-  ruleData: null
-}
-
 // Color definitions (copied from RulesUtils to avoid import issues)
 const RULE_COLORS = [
   { name: "Blue", value: "blue", hex: "#4285f4" },

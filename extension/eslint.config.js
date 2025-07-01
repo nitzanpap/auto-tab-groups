@@ -15,7 +15,16 @@ export default [
         console: "readonly",
         window: "readonly",
         document: "readonly",
-        globalThis: "readonly"
+        globalThis: "readonly",
+        process: "readonly",
+        module: "readonly",
+        require: "readonly",
+        setTimeout: "readonly",
+        alert: "readonly",
+        confirm: "readonly",
+        Blob: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly"
       }
     },
     plugins: {

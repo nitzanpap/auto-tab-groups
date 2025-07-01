@@ -24,7 +24,7 @@ class RulesService {
     console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
     // Find matching rule
-    for (const [ruleId, rule] of Object.entries(customRules)) {
+    for (const [, rule] of Object.entries(customRules)) {
       if (!rule.enabled) {
         console.log(`[RulesService] Skipping disabled rule: ${rule.name}`)
         continue

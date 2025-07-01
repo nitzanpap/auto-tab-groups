@@ -102,7 +102,7 @@ const browserAPI = (() => {
 })()
 
 // Export for use in modules
-if (typeof module !== "undefined" && module.exports) {
+if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = browserAPI
 } else if (typeof globalThis !== "undefined") {
   globalThis.browserAPI = browserAPI
