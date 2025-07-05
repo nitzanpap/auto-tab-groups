@@ -14,13 +14,6 @@ function isValidStrictDomain(domain) {
   return result.isValid
 }
 
-// Global rule modal data (replaces inline script for CSP compliance)
-const ruleModalData = {
-  isEdit: false,
-  ruleId: null,
-  ruleData: null,
-}
-
 // Color definitions (copied from RulesUtils to avoid import issues)
 const RULE_COLORS = [
   { name: "Blue", value: "blue", hex: "#4285f4" },
@@ -30,7 +23,7 @@ const RULE_COLORS = [
   { name: "Pink", value: "pink", hex: "#ff6d9d" },
   { name: "Purple", value: "purple", hex: "#9c27b0" },
   { name: "Cyan", value: "cyan", hex: "#00acc1" },
-  { name: "Orange", value: "orange", hex: "#ff9800" },
+  { name: "Orange", value: "orange", hex: "#ff9800" }
 ]
 
 // Utility functions
@@ -41,8 +34,8 @@ function parseDomainsText(domainsText) {
 
   return domainsText
     .split("\n")
-    .map((line) => line.trim().toLowerCase())
-    .filter((line) => line.length > 0)
+    .map(line => line.trim().toLowerCase())
+    .filter(line => line.length > 0)
     .filter((domain, index, arr) => arr.indexOf(domain) === index) // Remove duplicates
 }
 
@@ -79,7 +72,7 @@ class RulesModal {
   }
 
   initializeEventListeners() {
-    this.form.addEventListener("submit", (e) => this.handleSubmit(e))
+    this.form.addEventListener("submit", e => this.handleSubmit(e))
     this.cancelButton.addEventListener("click", () => this.handleCancel())
     this.nameInput.addEventListener("input", () => this.clearFieldError("name"))
     this.domainsInput.addEventListener("input", () => this.clearFieldError("domains"))
@@ -117,7 +110,7 @@ class RulesModal {
   populateColorSelector() {
     this.colorSelector.innerHTML = ""
 
-    RULE_COLORS.forEach((color) => {
+    RULE_COLORS.forEach(color => {
       const colorOption = document.createElement("div")
       colorOption.className = "color-option"
       colorOption.style.backgroundColor = color.hex
@@ -137,7 +130,7 @@ class RulesModal {
     this.selectedColor = colorValue
 
     // Update visual selection
-    this.colorSelector.querySelectorAll(".color-option").forEach((option) => {
+    this.colorSelector.querySelectorAll(".color-option").forEach(option => {
       option.classList.toggle("selected", option.dataset.color === colorValue)
     })
   }
@@ -161,7 +154,7 @@ class RulesModal {
   async loadExistingRule() {
     try {
       const response = await this.sendMessage({
-        action: "getCustomRules",
+        action: "getCustomRules"
       })
 
       if (response && response.customRules && response.customRules[this.ruleId]) {
@@ -203,7 +196,7 @@ class RulesModal {
       const action = this.isEdit ? "updateCustomRule" : "addCustomRule"
       const message = {
         action,
-        ruleData,
+        ruleData
       }
 
       if (this.isEdit) {
@@ -238,7 +231,7 @@ class RulesModal {
       domains: domains,
       color: this.selectedColor,
       enabled: this.enabledCheckbox.checked,
-      priority: 1, // Default priority
+      priority: 1 // Default priority
     }
   }
 
@@ -430,7 +423,7 @@ class RulesModal {
     console.log("[RulesModal] Sending message:", message)
     return new Promise((resolve, reject) => {
       try {
-        browserAPI.runtime.sendMessage(message, (response) => {
+        browserAPI.runtime.sendMessage(message, response => {
           if (browserAPI.runtime.lastError) {
             console.error("[RulesModal] Message error:", browserAPI.runtime.lastError)
             reject(new Error(browserAPI.runtime.lastError.message))
@@ -465,7 +458,7 @@ class RulesModal {
       const domainCounts = new Map()
       const domainTitles = new Map() // Store representative titles
 
-      tabs.forEach((tab) => {
+      tabs.forEach(tab => {
         // Use extractDomain utility to properly handle all URL types
         // Include subdomains for better domain suggestions (e.g., "addons.mozilla.org" not just "mozilla.org")
         const domain = extractDomain(tab.url, true)
@@ -485,7 +478,7 @@ class RulesModal {
         .map(([domain, count]) => ({
           domain,
           count,
-          title: domainTitles.get(domain),
+          title: domainTitles.get(domain)
         }))
         .sort((a, b) => {
           // Sort by count descending, then alphabetically
@@ -522,7 +515,7 @@ class RulesModal {
     this.currentTabsContainer.innerHTML = ""
 
     // Create DOM elements safely
-    this.currentTabs.forEach((tab) => {
+    this.currentTabs.forEach(tab => {
       const isSelected = this.selectedDomains.has(tab.domain)
 
       const tabItem = document.createElement("div")
@@ -572,8 +565,8 @@ class RulesModal {
     const checkboxes = this.currentTabsContainer.querySelectorAll(".tab-domain-checkbox")
     const domainItems = this.currentTabsContainer.querySelectorAll(".tab-domain-item")
 
-    checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", (e) => {
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener("change", e => {
         const domain = e.target.dataset.domain
         if (domain) {
           this.toggleDomainSelection(domain)
@@ -581,8 +574,8 @@ class RulesModal {
       })
     })
 
-    domainItems.forEach((item) => {
-      item.addEventListener("click", (e) => {
+    domainItems.forEach(item => {
+      item.addEventListener("click", e => {
         // Don't trigger if clicking on the checkbox itself
         if (e.target.type === "checkbox") return
 
@@ -610,7 +603,7 @@ class RulesModal {
    * Select all domains
    */
   selectAllDomains() {
-    this.currentTabs.forEach((tab) => {
+    this.currentTabs.forEach(tab => {
       this.selectedDomains.add(tab.domain)
     })
     this.renderCurrentTabs()
@@ -665,7 +658,7 @@ class RulesModal {
         "teams.microsoft.com",
         "zoom.us",
         "meet.google.com",
-        "skype.com",
+        "skype.com"
       ],
       // Development
       development: [
@@ -673,7 +666,7 @@ class RulesModal {
         "gitlab.com",
         "stackoverflow.com",
         "developer.mozilla.org",
-        "codepen.io",
+        "codepen.io"
       ],
       // Social Media
       social: [
@@ -682,7 +675,7 @@ class RulesModal {
         "instagram.com",
         "linkedin.com",
         "reddit.com",
-        "tiktok.com",
+        "tiktok.com"
       ],
       // Google Services
       google: [
@@ -690,22 +683,22 @@ class RulesModal {
         "gmail.com",
         "drive.google.com",
         "docs.google.com",
-        "calendar.google.com",
+        "calendar.google.com"
       ],
       // Shopping
       shopping: ["amazon.com", "ebay.com", "etsy.com", "shopify.com", "walmart.com"],
       // News
       news: ["cnn.com", "bbc.com", "reuters.com", "nytimes.com", "techcrunch.com"],
       // Entertainment
-      entertainment: ["youtube.com", "netflix.com", "spotify.com", "twitch.tv", "hulu.com"],
+      entertainment: ["youtube.com", "netflix.com", "spotify.com", "twitch.tv", "hulu.com"]
     }
 
     // Find the best matching category
     let bestMatch = { category: "", score: 0 }
 
     for (const [category, categoryDomains] of Object.entries(suggestions)) {
-      const matchCount = domains.filter((domain) =>
-        categoryDomains.some((catDomain) => domain.includes(catDomain.replace(".com", "")))
+      const matchCount = domains.filter(domain =>
+        categoryDomains.some(catDomain => domain.includes(catDomain.replace(".com", "")))
       ).length
 
       const score = matchCount / domains.length // Percentage of matches

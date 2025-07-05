@@ -13,7 +13,7 @@ export const DEFAULT_STATE = {
   groupBySubDomainEnabled: false,
   customRules: {},
   ruleMatchingMode: "exact",
-  groupColorMapping: {},
+  groupColorMapping: {}
 }
 
 class StorageManager {

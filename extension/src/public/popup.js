@@ -53,7 +53,7 @@ updateBrowserDisplay()
 
 // Helper function for sending messages (Chrome compatibility)
 function sendMessage(message) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     browserAPI.runtime.sendMessage(message, resolve)
   })
 }
@@ -80,21 +80,21 @@ expandAllButton.addEventListener("click", () => {
 })
 
 // Initialize the toggle states when popup opens.
-sendMessage({ action: "getAutoGroupState" }).then((response) => {
+sendMessage({ action: "getAutoGroupState" }).then(response => {
   autoGroupToggle.checked = response.enabled
 })
 
-sendMessage({ action: "getGroupBySubDomain" }).then((response) => {
+sendMessage({ action: "getGroupBySubDomain" }).then(response => {
   if (response && response.enabled !== undefined) {
     groupBySubDomainToggle.checked = response.enabled
   }
 })
 
 // Listen for toggle changes.
-autoGroupToggle.addEventListener("change", (event) => {
+autoGroupToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleAutoGroup",
-    enabled: event.target.checked,
+    enabled: event.target.checked
   })
 })
 
@@ -104,7 +104,7 @@ groupBySubDomainToggle.addEventListener("change", () => {
   console.log("[Popup/Sidebar] Sending toggleGroupBySubDomain message with enabled:", enabled)
   sendMessage({
     action: "toggleGroupBySubDomain",
-    enabled: enabled,
+    enabled: enabled
   })
 })
 
@@ -165,7 +165,7 @@ const RULE_COLORS = {
   pink: "#ff6d9d",
   purple: "#9c27b0",
   cyan: "#00acc1",
-  orange: "#ff9800",
+  orange: "#ff9800"
 }
 
 // Load and display custom rules
@@ -185,7 +185,7 @@ async function loadCustomRules() {
 // Update the rules display
 function updateRulesDisplay() {
   const rulesArray = Object.values(currentRules)
-  const enabledRules = rulesArray.filter((rule) => rule.enabled)
+  const enabledRules = rulesArray.filter(rule => rule.enabled)
 
   // Update count
   rulesCount.textContent = `(${enabledRules.length})`
@@ -219,7 +219,7 @@ function updateRulesDisplay() {
   })
 
   // Create rule items
-  rulesArray.forEach((rule) => {
+  rulesArray.forEach(rule => {
     const ruleElement = createRuleElement(rule)
     rulesList.appendChild(ruleElement)
   })
@@ -317,7 +317,7 @@ async function addRule() {
     const url = browserAPI.runtime.getURL("public/rules-modal.html")
     await browserAPI.tabs.create({
       url: url,
-      active: true,
+      active: true
     })
   } catch (error) {
     console.error("Error opening add rule modal:", error)
@@ -330,7 +330,7 @@ async function editRule(ruleId) {
     const url = browserAPI.runtime.getURL(`public/rules-modal.html?edit=true&ruleId=${ruleId}`)
     await browserAPI.tabs.create({
       url: url,
-      active: true,
+      active: true
     })
   } catch (error) {
     console.error("Error opening edit rule modal:", error)
@@ -346,7 +346,7 @@ async function deleteRule(ruleId, ruleName) {
   try {
     const response = await sendMessage({
       action: "deleteCustomRule",
-      ruleId: ruleId,
+      ruleId: ruleId
     })
 
     if (response && response.success) {
@@ -398,7 +398,7 @@ async function importRules() {
     const url = browserAPI.runtime.getURL("public/import-rules.html")
     await browserAPI.tabs.create({
       url: url,
-      active: true,
+      active: true
     })
   } catch (error) {
     console.error("Error opening import page:", error)
@@ -446,7 +446,7 @@ async function handleFileImport(event) {
     const response = await sendMessage({
       action: "importRules",
       jsonData: text,
-      replaceExisting: replaceExisting,
+      replaceExisting: replaceExisting
     })
 
     if (response && response.success) {

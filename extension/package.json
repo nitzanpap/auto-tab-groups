@@ -1,6 +1,7 @@
 {
   "name": "auto-tab-groups",
-  "version": "1.3.5",
+  "version": "1.4.0",
+  "type": "module",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "author": "Nitzan Papini",
   "scripts": {
@@ -13,11 +14,22 @@
     "test:firefox": "BROWSER=firefox npx playwright test",
     "dev:chrome": "cp src/manifest.chrome.json src/manifest.json && echo 'Chrome manifest ready for development - load src/ folder in chrome://extensions/'",
     "dev:firefox": "cp src/manifest.firefox.json src/manifest.json && echo 'Firefox manifest ready for development - load src/ folder in about:debugging'",
-    "dev:clean": "rm -f src/manifest.json && echo 'Development manifest cleaned'"
+    "dev:clean": "rm -f src/manifest.json && echo 'Development manifest cleaned'",
+    "lint": "eslint src/ tests/ *.js",
+    "lint:fix": "eslint src/ tests/ *.js --fix",
+    "format": "prettier --write \"src/**/*.{js,json,html,css}\" \"tests/**/*.{js,json}\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,json,html,css}\" \"tests/**/*.{js,json}\" \"*.{js,json,md}\"",
+    "code:check": "npm run lint && npm run format:check",
+    "code:fix": "npm run lint:fix && npm run format"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "web-ext": "^8.7.1"
+    "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.53.2",
+    "eslint": "^9.30.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.1",
+    "prettier": "^3.6.2",
+    "web-ext": "^8.8.0"
   },
   "keywords": [
     "chrome-extension",

@@ -59,7 +59,7 @@ ensureStateLoaded()
       console.error("Error during initial auto-grouping:", error)
     }
   })
-  .catch((error) => {
+  .catch(error => {
     console.error("Critical error: Failed to load state on service worker start:", error)
   })
 
@@ -103,15 +103,17 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { success: true }
           break
 
-        case "toggleCollapse":
+        case "toggleCollapse": {
           const collapseResult = await tabGroupService.toggleAllGroupsCollapse()
           result = { success: true, isCollapsed: collapseResult.isCollapsed }
           break
+        }
 
-        case "getGroupsCollapseState":
+        case "getGroupsCollapseState": {
           const collapseState = await tabGroupService.getGroupsCollapseState()
           result = { isCollapsed: collapseState.isCollapsed }
           break
+        }
 
         case "getAutoGroupState":
           result = { enabled: tabGroupState.autoGroupingEnabled }
@@ -144,10 +146,11 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break
 
         // Custom Rules Management
-        case "getCustomRules":
+        case "getCustomRules": {
           const rules = await rulesService.getCustomRules()
           result = { customRules: rules }
           break
+        }
 
         case "addCustomRule":
           console.log("[Background] Received addCustomRule message:", msg.ruleData)
@@ -195,10 +198,11 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           }
           break
 
-        case "getRulesStats":
+        case "getRulesStats": {
           const stats = await rulesService.getRulesStats()
           result = { stats }
           break
+        }
 
         case "exportRules":
           try {
@@ -249,14 +253,17 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 })
 
 // Tab event listeners
-browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   try {
     console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
     if (changeInfo.url) {
       console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
       await tabGroupService.handleTabUpdate(tabId)
-    } else if (changeInfo.hasOwnProperty("pinned") && changeInfo.pinned === false) {
+    } else if (
+      Object.prototype.hasOwnProperty.call(changeInfo, "pinned") &&
+      changeInfo.pinned === false
+    ) {
       console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`)
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
       await tabGroupService.handleTabUpdate(tabId)
@@ -266,7 +273,7 @@ browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 })
 
-browserAPI.tabs.onCreated.addListener(async (tab) => {
+browserAPI.tabs.onCreated.addListener(async tab => {
   try {
     console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
     if (tab.url) {
@@ -290,7 +297,7 @@ browserAPI.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   }
 })
 
-browserAPI.tabs.onMoved.addListener(async (tabId) => {
+browserAPI.tabs.onMoved.addListener(async tabId => {
   try {
     console.log(`[tabs.onMoved] Tab ${tabId} moved`)
     await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
@@ -302,7 +309,7 @@ browserAPI.tabs.onMoved.addListener(async (tabId) => {
 
 // Listen for tab group updates (including color changes)
 if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
-  browserAPI.tabGroups.onUpdated.addListener(async (group) => {
+  browserAPI.tabGroups.onUpdated.addListener(async group => {
     try {
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
 
@@ -319,7 +326,7 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onUpdated) {
 
 // Listen for tab group removal
 if (browserAPI.tabGroups && browserAPI.tabGroups.onRemoved) {
-  browserAPI.tabGroups.onRemoved.addListener(async (group) => {
+  browserAPI.tabGroups.onRemoved.addListener(async group => {
     try {
       console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`)
       // Simplified: no group mapping cleanup needed, browser handles state

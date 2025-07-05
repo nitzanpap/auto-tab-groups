@@ -62,14 +62,14 @@ class TabGroupServiceSimplified {
         console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
         await browserAPI.tabs.group({
           tabIds: [tabId],
-          groupId: existingGroup.id,
+          groupId: existingGroup.id
         })
 
         // Update group color if this is from a custom rule
         if (customRule && customRule.color && existingGroup.color !== customRule.color) {
           try {
             await browserAPI.tabGroups.update(existingGroup.id, {
-              color: customRule.color,
+              color: customRule.color
             })
             console.log(
               `[TabGroupService] Updated existing group ${existingGroup.id} color to "${customRule.color}" from rule "${customRule.name}"`
@@ -87,7 +87,7 @@ class TabGroupServiceSimplified {
 
       // In Chrome, you create a group by grouping tabs, not by creating an empty group
       const groupId = await browserAPI.tabs.group({
-        tabIds: [tabId],
+        tabIds: [tabId]
         // windowId: tab.windowId, // Not needed when grouping existing tabs
       })
 
@@ -96,7 +96,7 @@ class TabGroupServiceSimplified {
       // Set the group title and color (with error handling)
       try {
         const updateOptions = {
-          title: expectedTitle,
+          title: expectedTitle
         }
 
         // If this is from a custom rule, apply the custom color
@@ -150,7 +150,7 @@ class TabGroupServiceSimplified {
   async findGroupByTitle(title, windowId) {
     try {
       const groups = await browserAPI.tabGroups.query({ windowId })
-      const matchingGroup = groups.find((group) => group.title === title)
+      const matchingGroup = groups.find(group => group.title === title)
 
       if (matchingGroup) {
         console.log(
@@ -185,7 +185,7 @@ class TabGroupServiceSimplified {
         if (tab.url && !tab.url.startsWith("chrome-extension://")) {
           await this.handleTabUpdate(tab.id)
           // Small delay to prevent overwhelming the browser
-          await new Promise((resolve) => setTimeout(resolve, 10))
+          await new Promise(resolve => setTimeout(resolve, 10))
         }
       }
 
@@ -205,10 +205,10 @@ class TabGroupServiceSimplified {
     try {
       console.log(`[TabGroupService] Ungrouping all tabs`)
       const tabs = await browserAPI.tabs.query({ currentWindow: true })
-      const groupedTabs = tabs.filter((tab) => tab.groupId && tab.groupId !== -1)
+      const groupedTabs = tabs.filter(tab => tab.groupId && tab.groupId !== -1)
 
       if (groupedTabs.length > 0) {
-        await browserAPI.tabs.ungroup(groupedTabs.map((tab) => tab.id))
+        await browserAPI.tabs.ungroup(groupedTabs.map(tab => tab.id))
         console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`)
       }
 
@@ -269,7 +269,7 @@ class TabGroupServiceSimplified {
 
       // Get all tab groups in the current window
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       // Get all custom rules to check which groups should be skipped
@@ -306,7 +306,7 @@ class TabGroupServiceSimplified {
 
         try {
           await browserAPI.tabGroups.update(group.id, {
-            color: randomColor,
+            color: randomColor
           })
 
           // Save the color mapping for persistence
@@ -344,7 +344,7 @@ class TabGroupServiceSimplified {
 
       // Get all tab groups in the current window
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       if (groups.length === 0) {
@@ -355,7 +355,7 @@ class TabGroupServiceSimplified {
       // Get the currently active tab to check if it's in a group
       const [activeTab] = await browserAPI.tabs.query({
         active: true,
-        currentWindow: true,
+        currentWindow: true
       })
 
       let activeTabGroupId = null
@@ -367,7 +367,7 @@ class TabGroupServiceSimplified {
       }
 
       // Check current state - if any group is expanded, we'll collapse all. If all are collapsed, we'll expand all.
-      const hasExpandedGroups = groups.some((group) => !group.collapsed)
+      const hasExpandedGroups = groups.some(group => !group.collapsed)
       const newCollapsedState = hasExpandedGroups
 
       for (const group of groups) {
@@ -381,7 +381,7 @@ class TabGroupServiceSimplified {
           }
 
           await browserAPI.tabGroups.update(group.id, {
-            collapsed: newCollapsedState,
+            collapsed: newCollapsedState
           })
           console.log(
             `[TabGroupService] Set group ${group.id} ("${group.title}") collapsed state to ${newCollapsedState}`
@@ -410,7 +410,7 @@ class TabGroupServiceSimplified {
   async getGroupsCollapseState() {
     try {
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       if (groups.length === 0) {
@@ -420,7 +420,7 @@ class TabGroupServiceSimplified {
       // Get the currently active tab to check if it's in a group
       const [activeTab] = await browserAPI.tabs.query({
         active: true,
-        currentWindow: true,
+        currentWindow: true
       })
 
       let activeTabGroupId = null
@@ -430,14 +430,14 @@ class TabGroupServiceSimplified {
 
       // Check if all non-active groups are collapsed
       // (We don't count the active group since it can't be collapsed in Firefox)
-      const nonActiveGroups = groups.filter((group) => group.id !== activeTabGroupId)
+      const nonActiveGroups = groups.filter(group => group.id !== activeTabGroupId)
 
       if (nonActiveGroups.length === 0) {
         // All groups contain the active tab (shouldn't happen, but handle it)
         return { isCollapsed: false }
       }
 
-      const allNonActiveCollapsed = nonActiveGroups.every((group) => group.collapsed)
+      const allNonActiveCollapsed = nonActiveGroups.every(group => group.collapsed)
       return { isCollapsed: allNonActiveCollapsed }
     } catch (error) {
       console.error(`[TabGroupService] Error getting collapse state:`, error)
@@ -455,7 +455,7 @@ class TabGroupServiceSimplified {
 
       // Get all tab groups in the current window
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       const colorMapping = await storageManager.getGroupColorMapping()
@@ -466,7 +466,7 @@ class TabGroupServiceSimplified {
         if (savedColor && savedColor !== group.color) {
           try {
             await browserAPI.tabGroups.update(group.id, {
-              color: savedColor,
+              color: savedColor
             })
             restoredCount++
             console.log(
@@ -499,7 +499,7 @@ class TabGroupServiceSimplified {
 
       // Get all tab groups in the current window
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       if (groups.length === 0) {
@@ -510,7 +510,7 @@ class TabGroupServiceSimplified {
       // Get the currently active tab to check if it's in a group
       const [activeTab] = await browserAPI.tabs.query({
         active: true,
-        currentWindow: true,
+        currentWindow: true
       })
 
       let activeTabGroupId = null
@@ -532,7 +532,7 @@ class TabGroupServiceSimplified {
           }
 
           await browserAPI.tabGroups.update(group.id, {
-            collapsed: true,
+            collapsed: true
           })
           console.log(`[TabGroupService] Collapsed group ${group.id} ("${group.title}")`)
         } catch (updateError) {
@@ -558,7 +558,7 @@ class TabGroupServiceSimplified {
 
       // Get all tab groups in the current window
       const groups = await browserAPI.tabGroups.query({
-        windowId: browserAPI.windows.WINDOW_ID_CURRENT,
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
       })
 
       if (groups.length === 0) {
@@ -569,7 +569,7 @@ class TabGroupServiceSimplified {
       for (const group of groups) {
         try {
           await browserAPI.tabGroups.update(group.id, {
-            collapsed: false,
+            collapsed: false
           })
           console.log(`[TabGroupService] Expanded group ${group.id} ("${group.title}")`)
         } catch (updateError) {

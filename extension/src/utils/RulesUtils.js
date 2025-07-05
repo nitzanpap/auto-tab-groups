@@ -75,8 +75,8 @@ export function parseDomainsText(domainsText) {
 
   return domainsText
     .split("\n")
-    .map((line) => line.trim().toLowerCase())
-    .filter((line) => line.length > 0)
+    .map(line => line.trim().toLowerCase())
+    .filter(line => line.length > 0)
     .filter((domain, index, arr) => arr.indexOf(domain) === index) // Remove duplicates
 }
 
@@ -188,7 +188,7 @@ export const RULE_COLORS = [
   { name: "Pink", value: "pink", hex: "#ff6d9d" },
   { name: "Purple", value: "purple", hex: "#9c27b0" },
   { name: "Cyan", value: "cyan", hex: "#00acc1" },
-  { name: "Orange", value: "orange", hex: "#ff9800" },
+  { name: "Orange", value: "orange", hex: "#ff9800" }
 ]
 
 /**
@@ -197,7 +197,7 @@ export const RULE_COLORS = [
  * @returns {Object|null} Color object or null if not found
  */
 export function getColorInfo(colorValue) {
-  return RULE_COLORS.find((color) => color.value === colorValue) || null
+  return RULE_COLORS.find(color => color.value === colorValue) || null
 }
 
 /**
@@ -218,7 +218,7 @@ export function validateRuleData(ruleData, existingRules = []) {
 
   // Check for duplicate names
   const duplicateName = existingRules.find(
-    (rule) =>
+    rule =>
       rule.id !== ruleData.id &&
       rule.name.toLowerCase().trim() === ruleData.name?.toLowerCase().trim()
   )
@@ -249,7 +249,7 @@ export function validateRuleData(ruleData, existingRules = []) {
     for (const existingRule of existingRules) {
       if (existingRule.id === ruleData.id) continue
 
-      const conflicts = validDomains.filter((domain) => existingRule.domains.includes(domain))
+      const conflicts = validDomains.filter(domain => existingRule.domains.includes(domain))
 
       if (conflicts.length > 0) {
         warnings.push(
@@ -275,7 +275,7 @@ export function validateRuleData(ruleData, existingRules = []) {
   return {
     isValid: errors.length === 0,
     errors,
-    warnings,
+    warnings
   }
 }
 
@@ -293,6 +293,6 @@ export function createSafeRule(ruleData) {
     enabled: ruleData.enabled !== false,
     priority:
       typeof ruleData.priority === "number" && ruleData.priority > 0 ? ruleData.priority : 1,
-    createdAt: ruleData.createdAt || new Date().toISOString(),
+    createdAt: ruleData.createdAt || new Date().toISOString()
   }
 }
