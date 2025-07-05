@@ -14,6 +14,7 @@ import { tabGroupService } from "./services/TabGroupService.js"
 import { storageManager } from "./config/StorageManager.js"
 import "./utils/BrowserAPI.js" // Import browser compatibility layer
 import { rulesService } from "./services/RulesService.js"
+import AIGroupService from "./services/AIGroupService.js"
 
 // Access the unified browser API
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
@@ -232,6 +233,103 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           try {
             const exportStats = await rulesService.getExportStats()
             result = { success: true, stats: exportStats }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        // AI-powered grouping actions
+        case "initializeAI":
+          try {
+            const initialized = await AIGroupService.initialize(progress => {
+              // Send progress updates to popup
+              browserAPI.runtime
+                .sendMessage({
+                  action: "aiInitProgress",
+                  progress: progress
+                })
+                .catch(() => {
+                  // Ignore errors if popup is closed
+                })
+            })
+            result = { success: initialized }
+          } catch (error) {
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "aiGroupTabs":
+          try {
+            // Get all tabs
+            const tabs = await browserAPI.tabs.query({})
+
+            // Set tabs cache for AI service
+            AIGroupService.setTabsCache(tabs)
+
+            // Get AI suggestions
+            const suggestions = await AIGroupService.analyzeTabs(tabs)
+
+            // Apply the groupings if requested
+            if (msg.applyImmediately) {
+              for (const group of suggestions.groups) {
+                const tabIds = group.tabIds
+                if (tabIds.length > 0) {
+                  await browserAPI.tabs.group({
+                    tabIds: tabIds,
+                    createProperties: {
+                      title: group.name,
+                      color: group.suggestedColor || "blue"
+                    }
+                  })
+                }
+              }
+            }
+
+            result = { success: true, suggestions }
+          } catch (error) {
+            console.error("AI grouping error:", error)
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "aiCreateRules":
+          try {
+            const tabs = await browserAPI.tabs.query({})
+            AIGroupService.setTabsCache(tabs)
+
+            // Get AI suggestions
+            const suggestions = await AIGroupService.analyzeTabs(tabs)
+
+            // Generate rules from suggestions
+            const rules = AIGroupService.generateRulesFromSuggestions(suggestions)
+
+            // Add rules if requested
+            if (msg.addRules) {
+              for (const rule of rules) {
+                await rulesService.addRule(rule)
+              }
+
+              // Re-group tabs if auto-grouping is enabled
+              if (tabGroupState.autoGroupingEnabled) {
+                await tabGroupService.ungroupAllTabs()
+                await tabGroupService.groupTabsWithRules()
+              }
+            }
+
+            result = { success: true, rules, suggestions }
+          } catch (error) {
+            console.error("AI rule creation error:", error)
+            result = { success: false, error: error.message }
+          }
+          break
+
+        case "aiGetInsights":
+          try {
+            const tabs = await browserAPI.tabs.query({})
+            const groups = browserAPI.tabGroups ? await browserAPI.tabGroups.query({}) : []
+
+            const insights = await AIGroupService.getOrganizationInsights(tabs, groups)
+            result = { success: true, insights }
           } catch (error) {
             result = { success: false, error: error.message }
           }

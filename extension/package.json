@@ -36,5 +36,8 @@
     "firefox-addon",
     "tab-management",
     "productivity"
-  ]
+  ],
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.79"
+  }
 }

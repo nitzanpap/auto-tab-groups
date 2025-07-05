@@ -98,6 +98,247 @@ autoGroupToggle.addEventListener("change", event => {
   })
 })
 
+// AI Section Elements
+const aiSection = document.querySelector(".ai-section")
+const aiToggle = document.querySelector(".ai-toggle")
+const aiStatus = document.getElementById("aiStatus")
+const initializeAIButton = document.getElementById("initializeAI")
+const aiGroupTabsButton = document.getElementById("aiGroupTabs")
+const aiCreateRulesButton = document.getElementById("aiCreateRules")
+const aiGetInsightsButton = document.getElementById("aiGetInsights")
+const aiProgress = document.getElementById("aiProgress")
+const aiProgressFill = document.getElementById("aiProgressFill")
+const aiProgressText = document.getElementById("aiProgressText")
+const aiResults = document.getElementById("aiResults")
+
+let aiInitialized = false
+
+// AI Toggle functionality
+aiToggle.addEventListener("click", () => {
+  aiSection.classList.toggle("open")
+})
+
+// Initialize AI
+initializeAIButton.addEventListener("click", async () => {
+  if (aiInitialized) return
+
+  initializeAIButton.disabled = true
+  aiProgress.style.display = "block"
+  aiResults.style.display = "none"
+
+  // Listen for progress updates
+  const progressListener = message => {
+    if (message.action === "aiInitProgress") {
+      const progress = message.progress
+      aiProgressText.textContent = progress.text || "Loading AI model..."
+
+      if (progress.progress) {
+        const percentage = Math.round(progress.progress * 100)
+        aiProgressFill.style.width = percentage + "%"
+      }
+    }
+  }
+
+  browserAPI.runtime.onMessage.addListener(progressListener)
+
+  try {
+    const response = await sendMessage({ action: "initializeAI" })
+
+    if (response.success) {
+      aiInitialized = true
+      aiStatus.textContent = "(Ready)"
+      aiStatus.style.color = "#28a745"
+
+      // Enable AI buttons
+      aiGroupTabsButton.disabled = false
+      aiCreateRulesButton.disabled = false
+      aiGetInsightsButton.disabled = false
+
+      aiProgressText.textContent = "AI model loaded successfully!"
+      setTimeout(() => {
+        aiProgress.style.display = "none"
+      }, 2000)
+    } else {
+      throw new Error(response.error || "Failed to initialize AI")
+    }
+  } catch (error) {
+    console.error("AI initialization error:", error)
+    aiStatus.textContent = "(Error)"
+    aiStatus.style.color = "#dc3545"
+    aiProgressText.textContent = "Failed to load AI model: " + error.message
+    initializeAIButton.disabled = false
+  } finally {
+    browserAPI.runtime.onMessage.removeListener(progressListener)
+  }
+})
+
+// AI Group Tabs
+aiGroupTabsButton.addEventListener("click", async () => {
+  aiGroupTabsButton.disabled = true
+  aiResults.style.display = "none"
+
+  try {
+    const response = await sendMessage({
+      action: "aiGroupTabs",
+      applyImmediately: true
+    })
+
+    if (response.success) {
+      displayAISuggestions(response.suggestions)
+    } else {
+      throw new Error(response.error || "Failed to group tabs")
+    }
+  } catch (error) {
+    console.error("AI grouping error:", error)
+    displayError("Failed to group tabs: " + error.message)
+  } finally {
+    aiGroupTabsButton.disabled = false
+  }
+})
+
+// AI Create Rules
+aiCreateRulesButton.addEventListener("click", async () => {
+  aiCreateRulesButton.disabled = true
+  aiResults.style.display = "none"
+
+  try {
+    const response = await sendMessage({
+      action: "aiCreateRules",
+      addRules: false // Just suggest, don't add automatically
+    })
+
+    if (response.success) {
+      displayAIRules(response.rules, response.suggestions)
+    } else {
+      throw new Error(response.error || "Failed to create rules")
+    }
+  } catch (error) {
+    console.error("AI rules error:", error)
+    displayError("Failed to create rules: " + error.message)
+  } finally {
+    aiCreateRulesButton.disabled = false
+  }
+})
+
+// AI Get Insights
+aiGetInsightsButton.addEventListener("click", async () => {
+  aiGetInsightsButton.disabled = true
+  aiResults.style.display = "none"
+
+  try {
+    const response = await sendMessage({ action: "aiGetInsights" })
+
+    if (response.success) {
+      displayAIInsights(response.insights)
+    } else {
+      throw new Error(response.error || "Failed to get insights")
+    }
+  } catch (error) {
+    console.error("AI insights error:", error)
+    displayError("Failed to get insights: " + error.message)
+  } finally {
+    aiGetInsightsButton.disabled = false
+  }
+})
+
+// Display functions
+function displayAISuggestions(suggestions) {
+  aiResults.style.display = "block"
+  aiResults.innerHTML = `
+    <h3>AI Grouping Applied</h3>
+    ${suggestions.groups
+      .map(
+        group => `
+      <div class="ai-group-suggestion">
+        <div class="ai-group-name">${group.name}</div>
+        <div class="ai-group-description">${group.description || ""}</div>
+        <div class="ai-group-tabs">${group.tabIds.length} tabs grouped</div>
+      </div>
+    `
+      )
+      .join("")}
+    ${suggestions.reasoning ? `<div class="ai-reasoning">${suggestions.reasoning}</div>` : ""}
+  `
+}
+
+function displayAIRules(rules, suggestions) {
+  aiResults.style.display = "block"
+  aiResults.innerHTML = `
+    <h3>AI Suggested Rules</h3>
+    ${rules
+      .map(
+        rule => `
+      <div class="ai-group-suggestion">
+        <div class="ai-group-name">${rule.name}</div>
+        <div class="ai-group-description">${rule.description || ""}</div>
+        <div class="ai-group-tabs">Domains: ${rule.domains.join(", ")}</div>
+        <button class="button ai-button" onclick="addAIRule('${rule.id}')">Add Rule</button>
+      </div>
+    `
+      )
+      .join("")}
+    ${suggestions.reasoning ? `<div class="ai-reasoning">${suggestions.reasoning}</div>` : ""}
+  `
+
+  // Store rules globally for the add function
+  window.aiSuggestedRules = rules
+}
+
+function displayAIInsights(insights) {
+  aiResults.style.display = "block"
+  aiResults.innerHTML = `
+    <h3>Organization Insights</h3>
+    <div class="ai-insights">
+      <div class="ai-insights-list">
+        ${insights.insights.map(insight => `<li>${insight}</li>`).join("")}
+      </div>
+      ${
+        insights.suggestions.length > 0
+          ? `
+        <h4 style="margin-top: 12px; font-size: 13px;">Suggestions:</h4>
+        <div class="ai-insights-list">
+          ${insights.suggestions.map(suggestion => `<li>${suggestion}</li>`).join("")}
+        </div>
+      `
+          : ""
+      }
+      ${
+        insights.productivity_score !== undefined
+          ? `
+        <div style="margin-top: 12px; text-align: center;">
+          <strong>Productivity Score:</strong> ${insights.productivity_score}/100
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `
+}
+
+function displayError(message) {
+  aiResults.style.display = "block"
+  aiResults.innerHTML = `<div class="rules-message error">${message}</div>`
+}
+
+// Global function to add AI suggested rule
+window.addAIRule = async function (ruleId) {
+  const rule = window.aiSuggestedRules.find(r => r.id === ruleId)
+  if (!rule) return
+
+  try {
+    await sendMessage({
+      action: "aiCreateRules",
+      addRules: true
+    })
+
+    // Refresh the rules display
+    updateRulesDisplay()
+    displayError("Rule added successfully!")
+  } catch (error) {
+    displayError("Failed to add rule: " + error.message)
+  }
+}
+
 groupBySubDomainToggle.addEventListener("change", () => {
   console.log("[Popup/Sidebar] groupBySubDomainToggle changed")
   const enabled = groupBySubDomainToggle.checked
