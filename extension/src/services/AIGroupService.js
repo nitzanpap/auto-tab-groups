@@ -105,36 +105,17 @@ class AIGroupService {
       domain: new URL(tab.url).hostname
     }))
 
-    const prompt = `You are a browser tab organization assistant. Analyze these open tabs and suggest logical groupings based on their content, purpose, or project. Consider the title, URL, and domain of each tab.
+    const prompt = `Group these ${tabInfo.length} tabs by domain/content similarity:
 
-Tabs to analyze:
-${JSON.stringify(tabInfo, null, 2)}
+${tabInfo.map(tab => `${tab.id}: ${tab.domain}`).join("\n")}
 
-Provide grouping suggestions in this exact JSON format:
-{
-  "groups": [
-    {
-      "name": "Group Name",
-      "description": "Brief description of why these tabs belong together",
-      "tabIds": [list of tab IDs],
-      "suggestedColor": "blue"
-    }
-  ],
-  "reasoning": "Brief explanation of the overall grouping strategy"
-}
+Rules:
+- Every tab ID in exactly ONE group
+- 2+ tabs per group
+- No duplicates across groups
 
-Focus on creating 2-5 meaningful groups that help with productivity. Consider:
-- Project-based grouping (tabs related to the same task/project)  
-- Content type (documentation, communication, entertainment)
-- Workflow stages (research, development, testing)
-
-IMPORTANT: 
-- Try to include ALL tabs in groups (maximize coverage)
-- Only create groups with 2 or more tabs
-- Each tab can only belong to ONE group
-- Use ONLY these colors: blue, cyan, green, grey, orange, pink, purple, red, yellow
-- Provide exactly ONE color per group (not multiple options)
-- Keep response concise`
+JSON:
+{"groups":[{"name":"Group Name","tabIds":[id1,id2],"suggestedColor":"blue"}]}`
 
     try {
       const response = await this.engine.chat.completions.create({
@@ -153,6 +134,21 @@ IMPORTANT:
 
       const aiResponse = response.choices[0].message.content
       console.log("AI grouping response:", aiResponse)
+
+      // Check if response is truncated
+      if (!aiResponse.trim().endsWith("}")) {
+        console.warn("[AI] Response appears truncated, attempting to fix...")
+        // Try to salvage what we can
+        const lastBraceIndex = aiResponse.lastIndexOf("}")
+        if (lastBraceIndex > 0) {
+          const fixedResponse = aiResponse.substring(0, lastBraceIndex + 1)
+          console.log("[AI] Using truncated response:", fixedResponse)
+          const suggestions = JSON.parse(fixedResponse)
+          return this.validateAndEnrichSuggestions(suggestions, groupableTabs)
+        } else {
+          throw new Error("AI response too truncated to parse")
+        }
+      }
 
       // Parse and validate the response
       const suggestions = JSON.parse(aiResponse)
@@ -176,17 +172,30 @@ IMPORTANT:
     const usedTabIds = new Set()
 
     // Validate and clean up suggestions
-    const validGroups = suggestions.groups.filter(group => {
-      if (!group.name || !Array.isArray(group.tabIds)) return false
+    const validGroups = []
+
+    suggestions.groups.forEach(group => {
+      if (!group.name || !Array.isArray(group.tabIds)) {
+        console.log(`[AI] Skipping invalid group: ${group.name}`)
+        return
+      }
 
       // Remove duplicate tab IDs and filter valid ones that haven't been used yet
       const uniqueTabIds = [...new Set(group.tabIds)]
-      group.tabIds = uniqueTabIds.filter(id => validTabIds.has(id) && !usedTabIds.has(id))
+      const availableTabIds = uniqueTabIds.filter(id => validTabIds.has(id) && !usedTabIds.has(id))
+
+      if (availableTabIds.length < 2) {
+        console.log(
+          `[AI] Skipping group "${group.name}": only ${availableTabIds.length} available tabs`
+        )
+        return
+      }
 
       // Mark tab IDs as used
-      group.tabIds.forEach(id => usedTabIds.add(id))
+      availableTabIds.forEach(id => usedTabIds.add(id))
 
       // Parse color (take first valid color if multiple provided)
+      let color = "blue"
       if (group.suggestedColor && typeof group.suggestedColor === "string") {
         const validColors = [
           "blue",
@@ -200,13 +209,17 @@ IMPORTANT:
           "yellow"
         ]
         const suggestedColors = group.suggestedColor.split("|").map(c => c.trim())
-        group.suggestedColor = validColors.find(c => suggestedColors.includes(c)) || "blue"
-      } else {
-        group.suggestedColor = "blue"
+        color = validColors.find(c => suggestedColors.includes(c)) || "blue"
       }
 
-      // Only keep groups with 2+ tabs
-      return group.tabIds.length >= 2
+      validGroups.push({
+        name: group.name,
+        description: group.description,
+        tabIds: availableTabIds,
+        suggestedColor: color
+      })
+
+      console.log(`[AI] Created group "${group.name}" with ${availableTabIds.length} tabs`)
     })
 
     // Create a "Miscellaneous" group for remaining ungrouped tabs
