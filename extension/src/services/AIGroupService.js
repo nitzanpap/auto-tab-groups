@@ -1,7 +1,4 @@
 import { CreateMLCEngine } from "@mlc-ai/web-llm"
-import browserAPI from "../utils/BrowserAPI.js"
-import TabGroupState from "../state/TabGroupState.js"
-import RulesService from "./RulesService.js"
 
 class AIGroupService {
   constructor() {
@@ -31,8 +28,9 @@ class AIGroupService {
     this.initProgressCallback = progressCallback
 
     try {
-      console.log("Initializing WebLLM engine...")
+      console.log("WebLLM AI initialization started...")
 
+      // Initialize the real WebLLM engine with default configuration
       this.engine = await CreateMLCEngine(this.modelId, {
         initProgressCallback: progress => {
           console.log("WebLLM init progress:", progress)
@@ -46,7 +44,7 @@ class AIGroupService {
       console.log("WebLLM engine initialized successfully")
       return true
     } catch (error) {
-      console.error("Failed to initialize WebLLM:", error)
+      console.error("Failed to initialize AI:", error)
       this.isInitialized = false
       return false
     } finally {
@@ -67,8 +65,40 @@ class AIGroupService {
       }
     }
 
-    // Prepare tab information for AI analysis
-    const tabInfo = tabs.map(tab => ({
+    console.log(`[AI] Starting analysis of ${tabs.length} total tabs`)
+    console.log(
+      `[AI] All tabs:`,
+      tabs.map(t => ({ id: t.id, title: t.title, url: t.url }))
+    )
+
+    // Filter out system tabs and prepare tab information for AI analysis
+    const groupableTabs = tabs.filter(tab => {
+      try {
+        const url = new URL(tab.url)
+        // Exclude system URLs that can't be grouped
+        const isGroupable =
+          !url.protocol.startsWith("chrome") &&
+          !url.protocol.startsWith("moz-extension") &&
+          !url.protocol.startsWith("edge") &&
+          !url.hostname.includes("extension")
+
+        if (!isGroupable) {
+          console.log(`[AI] Excluding tab ${tab.id}: ${tab.url} (system tab)`)
+        }
+        return isGroupable
+      } catch {
+        console.log(`[AI] Excluding tab ${tab.id}: invalid URL`)
+        return false
+      }
+    })
+
+    console.log(`[AI] Filtered to ${groupableTabs.length} groupable tabs`)
+    console.log(
+      `[AI] Groupable tabs:`,
+      groupableTabs.map(t => ({ id: t.id, title: t.title, url: t.url }))
+    )
+
+    const tabInfo = groupableTabs.map(tab => ({
       id: tab.id,
       title: tab.title,
       url: tab.url,
@@ -87,19 +117,24 @@ Provide grouping suggestions in this exact JSON format:
       "name": "Group Name",
       "description": "Brief description of why these tabs belong together",
       "tabIds": [list of tab IDs],
-      "suggestedColor": "blue|red|yellow|green|pink|purple|cyan|orange"
+      "suggestedColor": "blue"
     }
   ],
   "reasoning": "Brief explanation of the overall grouping strategy"
 }
 
-Focus on creating meaningful groups that help with productivity. Consider:
-- Project-based grouping (tabs related to the same task/project)
+Focus on creating 2-5 meaningful groups that help with productivity. Consider:
+- Project-based grouping (tabs related to the same task/project)  
 - Content type (documentation, communication, entertainment)
 - Workflow stages (research, development, testing)
-- Time-based activities (morning routine, work tasks)
 
-Only create groups with 2 or more tabs. Tabs can only belong to one group.`
+IMPORTANT: 
+- Try to include ALL tabs in groups (maximize coverage)
+- Only create groups with 2 or more tabs
+- Each tab can only belong to ONE group
+- Use ONLY these colors: blue, cyan, green, grey, orange, pink, purple, red, yellow
+- Provide exactly ONE color per group (not multiple options)
+- Keep response concise`
 
     try {
       const response = await this.engine.chat.completions.create({
@@ -112,7 +147,7 @@ Only create groups with 2 or more tabs. Tabs can only belong to one group.`
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 500,
         response_format: { type: "json_object" }
       })
 
@@ -121,7 +156,7 @@ Only create groups with 2 or more tabs. Tabs can only belong to one group.`
 
       // Parse and validate the response
       const suggestions = JSON.parse(aiResponse)
-      return this.validateAndEnrichSuggestions(suggestions, tabs)
+      return this.validateAndEnrichSuggestions(suggestions, groupableTabs)
     } catch (error) {
       console.error("Error analyzing tabs with AI:", error)
       throw error
@@ -144,20 +179,62 @@ Only create groups with 2 or more tabs. Tabs can only belong to one group.`
     const validGroups = suggestions.groups.filter(group => {
       if (!group.name || !Array.isArray(group.tabIds)) return false
 
-      // Filter valid tab IDs that haven't been used yet
-      group.tabIds = group.tabIds.filter(id => validTabIds.has(id) && !usedTabIds.has(id))
+      // Remove duplicate tab IDs and filter valid ones that haven't been used yet
+      const uniqueTabIds = [...new Set(group.tabIds)]
+      group.tabIds = uniqueTabIds.filter(id => validTabIds.has(id) && !usedTabIds.has(id))
 
       // Mark tab IDs as used
       group.tabIds.forEach(id => usedTabIds.add(id))
+
+      // Parse color (take first valid color if multiple provided)
+      if (group.suggestedColor && typeof group.suggestedColor === "string") {
+        const validColors = [
+          "blue",
+          "cyan",
+          "green",
+          "grey",
+          "orange",
+          "pink",
+          "purple",
+          "red",
+          "yellow"
+        ]
+        const suggestedColors = group.suggestedColor.split("|").map(c => c.trim())
+        group.suggestedColor = validColors.find(c => suggestedColors.includes(c)) || "blue"
+      } else {
+        group.suggestedColor = "blue"
+      }
 
       // Only keep groups with 2+ tabs
       return group.tabIds.length >= 2
     })
 
+    // Create a "Miscellaneous" group for remaining ungrouped tabs
+    const ungroupedTabs = tabs.filter(t => !usedTabIds.has(t.id))
+    console.log(
+      `[AI] ${ungroupedTabs.length} tabs remain ungrouped:`,
+      ungroupedTabs.map(t => ({ id: t.id, title: t.title }))
+    )
+
+    if (ungroupedTabs.length >= 2) {
+      validGroups.push({
+        name: "Miscellaneous",
+        description: "Other tabs that don't fit into specific categories",
+        tabIds: ungroupedTabs.map(t => t.id),
+        suggestedColor: "grey"
+      })
+      console.log(`[AI] Created Miscellaneous group with ${ungroupedTabs.length} tabs`)
+    }
+
+    console.log(
+      `[AI] Final groups:`,
+      validGroups.map(g => ({ name: g.name, count: g.tabIds.length, color: g.suggestedColor }))
+    )
+
     return {
       groups: validGroups,
       reasoning: suggestions.reasoning || "AI-powered intelligent grouping",
-      ungroupedTabs: tabs.filter(t => !usedTabIds.has(t.id))
+      ungroupedTabs: ungroupedTabs.length >= 2 ? [] : ungroupedTabs
     }
   }
 
@@ -182,7 +259,7 @@ Only create groups with 2 or more tabs. Tabs can only belong to one group.`
 
       if (domains.size > 0) {
         rules.push({
-          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `ai-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           name: group.name,
           domains: Array.from(domains),
           color: group.suggestedColor || "blue",

@@ -274,13 +274,39 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               for (const group of suggestions.groups) {
                 const tabIds = group.tabIds
                 if (tabIds.length > 0) {
-                  await browserAPI.tabs.group({
-                    tabIds: tabIds,
-                    createProperties: {
-                      title: group.name,
-                      color: group.suggestedColor || "blue"
+                  try {
+                    // Verify tabs still exist before grouping
+                    const validTabs = await Promise.all(
+                      tabIds.map(async id => {
+                        try {
+                          await browserAPI.tabs.get(id)
+                          return id
+                        } catch {
+                          return null
+                        }
+                      })
+                    )
+
+                    const validTabIds = validTabs.filter(id => id !== null)
+
+                    if (validTabIds.length > 0) {
+                      // First create the group
+                      const groupId = await browserAPI.tabs.group({
+                        tabIds: validTabIds
+                      })
+
+                      // Then update the group with title and color
+                      await browserAPI.tabGroups.update(groupId, {
+                        title: group.name,
+                        color: group.suggestedColor || "blue"
+                      })
+
+                      console.log(`AI grouped ${validTabIds.length} tabs into "${group.name}"`)
                     }
-                  })
+                  } catch (groupError) {
+                    console.warn(`Failed to group tabs for "${group.name}":`, groupError)
+                    // Continue with other groups
+                  }
                 }
               }
             }
