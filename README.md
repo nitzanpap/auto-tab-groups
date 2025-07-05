@@ -203,11 +203,6 @@ extension/
 │       └── icon128.png
 ├── package.json                  # Build scripts for both browsers
 └── README.md                     # Detailed development docs
-server/                           # Backend for AI-powered tab grouping (in development)
-├── cmd/api/                      # Server entry point and configuration
-├── internal/                     # Core server components
-│   ├── database/                 # Database access layer
-│   └── server/                   # HTTP server and route handlers
 └── docs/                         # Documentation for AI features and implementation plans
 ```
 
