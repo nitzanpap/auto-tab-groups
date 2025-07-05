@@ -98,11 +98,8 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 ## Planned Features
 
 - **AI-powered tab grouping (In Progress)**:
-  - Server-side AI grouping API with token-based usage tracking
-  - Free tier with limited trial tokens and premium tier with unlimited usage
+  - Utilizing [WebLLM](https://github.com/mlc-ai/web-llm/tree/main/examples/chrome-extension) for intelligent tab grouping in the client's browser (Awesome for privacy)
   - Smart grouping based on tab content, not just domain names
-  - Secure data handling with proper authentication and encryption
-  - Option to run locally with your own API key
   - Manually invoking AI for creating rules and grouping tabs based on them.
   - Letting the AI to autonomously decide to group tabs, and creating rules.
 - **Custom Rules UI Enhancements**:
