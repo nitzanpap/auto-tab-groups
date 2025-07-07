@@ -236,6 +236,53 @@ footer {
   font-weight: 600;
 }
 
+/* New Three-State Toggle Bar Styles */
+.group-by-toggle-bar {
+  display: flex;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-option {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.toggle-option:hover {
+  color: #374151;
+  background-color: #e5e7eb;
+}
+
+.toggle-option.active {
+  color: white;
+  background-color: var(--primary-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-option.active:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.toggle-option:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Legacy switch styles - keeping for other toggles */
 .switch {
   position: relative;
   display: inline-block;

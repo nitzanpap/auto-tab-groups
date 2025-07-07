@@ -5,7 +5,7 @@ const generateNewColorsButton = document.getElementById("generateNewColors")
 const collapseAllButton = document.getElementById("collapseAllButton")
 const expandAllButton = document.getElementById("expandAllButton")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
-const groupBySubDomainToggle = document.getElementById("groupBySubDomain")
+const groupByToggleOptions = document.querySelectorAll(".toggle-option")
 
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -84,9 +84,9 @@ sendMessage({ action: "getAutoGroupState" }).then(response => {
   autoGroupToggle.checked = response.enabled
 })
 
-sendMessage({ action: "getGroupBySubDomain" }).then(response => {
-  if (response && response.enabled !== undefined) {
-    groupBySubDomainToggle.checked = response.enabled
+sendMessage({ action: "getGroupByMode" }).then(response => {
+  if (response && response.mode) {
+    updateGroupByToggle(response.mode)
   }
 })
 
@@ -98,15 +98,28 @@ autoGroupToggle.addEventListener("change", event => {
   })
 })
 
-groupBySubDomainToggle.addEventListener("change", () => {
-  console.log("[Popup/Sidebar] groupBySubDomainToggle changed")
-  const enabled = groupBySubDomainToggle.checked
-  console.log("[Popup/Sidebar] Sending toggleGroupBySubDomain message with enabled:", enabled)
-  sendMessage({
-    action: "toggleGroupBySubDomain",
-    enabled: enabled
+// Group by toggle event listeners
+groupByToggleOptions.forEach(option => {
+  option.addEventListener("click", () => {
+    const mode = option.dataset.value
+    console.log("[Popup/Sidebar] Group by mode changed to:", mode)
+    updateGroupByToggle(mode)
+    sendMessage({
+      action: "setGroupByMode",
+      mode: mode
+    })
   })
 })
+
+// Update group by toggle UI
+function updateGroupByToggle(mode) {
+  groupByToggleOptions.forEach(option => {
+    option.classList.remove("active")
+    if (option.dataset.value === mode) {
+      option.classList.add("active")
+    }
+  })
+}
 
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle")
