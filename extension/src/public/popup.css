@@ -228,6 +228,7 @@ footer {
   align-items: center;
   width: 100%;
   margin-top: 8px;
+  gap: 10px;
 }
 
 .toggle-container span {
@@ -239,6 +240,7 @@ footer {
 /* New Three-State Toggle Bar Styles */
 .group-by-toggle-bar {
   display: flex;
+  justify-content: space-between;
   background-color: #f3f4f6;
   border-radius: 8px;
   padding: 2px;
@@ -247,7 +249,7 @@ footer {
 }
 
 .toggle-option {
-  padding: 6px 12px;
+  padding: 6px 8px;
   font-size: 12px;
   font-weight: 500;
   color: #6b7280;
@@ -258,8 +260,6 @@ footer {
   transition: all 0.2s ease;
   white-space: nowrap;
   min-width: 0;
-  flex: 1;
-  text-align: center;
 }
 
 .toggle-option:hover {
