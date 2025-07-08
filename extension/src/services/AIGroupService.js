@@ -1,5 +1,51 @@
 import { CreateMLCEngine } from "@mlc-ai/web-llm"
 
+// Add this to the top:
+const groupingSchema = {
+  type: "object",
+  properties: {
+    groups: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          tabIds: {
+            type: "array",
+            items: { type: "integer" },
+            minItems: 2
+          },
+          suggestedColor: { type: "string" },
+          description: { type: "string" }
+        },
+        required: ["name", "tabIds"]
+      }
+    },
+    reasoning: { type: "string" }
+  },
+  required: ["groups"]
+}
+
+const organizationInsightsSchema = {
+  type: "object",
+  properties: {
+    insights: {
+      type: "array",
+      items: { type: "string" }
+    },
+    suggestions: {
+      type: "array",
+      items: { type: "string" }
+    },
+    productivity_score: {
+      type: "integer",
+      minimum: 0,
+      maximum: 100
+    }
+  },
+  required: ["insights", "suggestions", "productivity_score"]
+}
+
 class AIGroupService {
   constructor() {
     this.engine = null
@@ -65,38 +111,19 @@ class AIGroupService {
       }
     }
 
-    console.log(`[AI] Starting analysis of ${tabs.length} total tabs`)
-    console.log(
-      `[AI] All tabs:`,
-      tabs.map(t => ({ id: t.id, title: t.title, url: t.url }))
-    )
-
-    // Filter out system tabs and prepare tab information for AI analysis
     const groupableTabs = tabs.filter(tab => {
       try {
         const url = new URL(tab.url)
-        // Exclude system URLs that can't be grouped
-        const isGroupable =
+        return (
           !url.protocol.startsWith("chrome") &&
           !url.protocol.startsWith("moz-extension") &&
           !url.protocol.startsWith("edge") &&
           !url.hostname.includes("extension")
-
-        if (!isGroupable) {
-          console.log(`[AI] Excluding tab ${tab.id}: ${tab.url} (system tab)`)
-        }
-        return isGroupable
+        )
       } catch {
-        console.log(`[AI] Excluding tab ${tab.id}: invalid URL`)
         return false
       }
     })
-
-    console.log(`[AI] Filtered to ${groupableTabs.length} groupable tabs`)
-    console.log(
-      `[AI] Groupable tabs:`,
-      groupableTabs.map(t => ({ id: t.id, title: t.title, url: t.url }))
-    )
 
     const tabInfo = groupableTabs.map(tab => ({
       id: tab.id,
@@ -105,17 +132,7 @@ class AIGroupService {
       domain: new URL(tab.url).hostname
     }))
 
-    const prompt = `Group these ${tabInfo.length} tabs by domain/content similarity:
-
-${tabInfo.map(tab => `${tab.id}: ${tab.domain}`).join("\n")}
-
-Rules:
-- Every tab ID in exactly ONE group
-- 2+ tabs per group
-- No duplicates across groups
-
-JSON:
-{"groups":[{"name":"Group Name","tabIds":[id1,id2],"suggestedColor":"blue"}]}`
+    const prompt = `Group these ${tabInfo.length} browser tabs into logical categories based on content or domain similarity. You must assign each tab ID to exactly one group. Provide a short group name and optional color. Group tabs meaningfully and avoid duplicates.`
 
     try {
       const response = await this.engine.chat.completions.create({
@@ -123,34 +140,21 @@ JSON:
           {
             role: "system",
             content:
-              "You are a helpful assistant that organizes browser tabs. Always respond with valid JSON."
+              "You are a helpful assistant that organizes browser tabs. Only respond with valid JSON."
           },
           { role: "user", content: prompt }
         ],
-        temperature: 0.7,
-        max_tokens: 500,
-        response_format: { type: "json_object" }
+        temperature: 0.4,
+        max_tokens: 600,
+        response_format: {
+          type: "json_object",
+          schema: groupingSchema
+        }
       })
 
       const aiResponse = response.choices[0].message.content
       console.log("AI grouping response:", aiResponse)
 
-      // Check if response is truncated
-      if (!aiResponse.trim().endsWith("}")) {
-        console.warn("[AI] Response appears truncated, attempting to fix...")
-        // Try to salvage what we can
-        const lastBraceIndex = aiResponse.lastIndexOf("}")
-        if (lastBraceIndex > 0) {
-          const fixedResponse = aiResponse.substring(0, lastBraceIndex + 1)
-          console.log("[AI] Using truncated response:", fixedResponse)
-          const suggestions = JSON.parse(fixedResponse)
-          return this.validateAndEnrichSuggestions(suggestions, groupableTabs)
-        } else {
-          throw new Error("AI response too truncated to parse")
-        }
-      }
-
-      // Parse and validate the response
       const suggestions = JSON.parse(aiResponse)
       return this.validateAndEnrichSuggestions(suggestions, groupableTabs)
     } catch (error) {
@@ -308,30 +312,21 @@ JSON:
       await this.initialize()
     }
 
-    const prompt = `Analyze the current browser tab organization and provide insights.
-
-Current setup:
-- Total tabs: ${tabs.length}
-- Total groups: ${groups.length}
-- Ungrouped tabs: ${tabs.filter(t => !t.groupId || t.groupId === -1).length}
-
-Groups:
-${JSON.stringify(
-  groups.map(g => ({ title: g.title, tabCount: g.tabs?.length || 0 })),
-  null,
-  2
-)}
-
-Provide insights in this JSON format:
-{
-  "insights": [
-    "Key observation about the organization"
-  ],
-  "suggestions": [
-    "Actionable suggestion for improvement"
-  ],
-  "productivity_score": 0-100
-}`
+    const ungroupedTabs = tabs.filter(t => !t.groupId || t.groupId === -1)
+    const prompt = `Analyze the current browser tab organization and provide helpful insights and improvement suggestions.
+  
+  - Total tabs: ${tabs.length}
+  - Total groups: ${groups.length}
+  - Ungrouped tabs: ${ungroupedTabs.length}
+  
+  Groups:
+  ${JSON.stringify(
+    groups.map(g => ({ title: g.title, tabCount: g.tabs?.length || 0 })),
+    null,
+    2
+  )}
+  
+  Use the schema to structure your response.`
 
     try {
       const response = await this.engine.chat.completions.create({
@@ -342,12 +337,16 @@ Provide insights in this JSON format:
           },
           { role: "user", content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 500,
-        response_format: { type: "json_object" }
+        response_format: {
+          type: "json_object",
+          schema: organizationInsightsSchema
+        }
       })
 
-      return JSON.parse(response.choices[0].message.content)
+      const result = JSON.parse(response.choices[0].message.content)
+      return result
     } catch (error) {
       console.error("Error getting organization insights:", error)
       return {
