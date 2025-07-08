@@ -119,6 +119,10 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { enabled: tabGroupState.autoGroupingEnabled }
           break
 
+        case "getFocusModeState":
+          result = { enabled: tabGroupState.focusModeEnabled }
+          break
+
         case "getOnlyApplyToNewTabs":
         case "toggleAutoGroup":
           tabGroupState.autoGroupingEnabled = msg.enabled
@@ -128,6 +132,16 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             await tabGroupService.groupAllTabs()
           }
           result = { enabled: tabGroupState.autoGroupingEnabled }
+          break
+
+        case "toggleFocusMode":
+          tabGroupState.focusModeEnabled = msg.enabled
+          await storageManager.saveState()
+
+          if (tabGroupState.focusModeEnabled) {
+            await tabGroupService.applyFocusMode()
+          }
+          result = { enabled: tabGroupState.focusModeEnabled }
           break
 
         case "getGroupByMode":
@@ -268,6 +282,11 @@ browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
       await tabGroupService.handleTabUpdate(tabId)
     }
+
+    // Handle focus mode on active tab changes
+    if (Object.prototype.hasOwnProperty.call(changeInfo, "active") && changeInfo.active) {
+      await applyFocusModeIfEnabled("tabs.onUpdated.active", tabId)
+    }
   } catch (error) {
     console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error)
   }
@@ -280,6 +299,9 @@ browserAPI.tabs.onCreated.addListener(async tab => {
       await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
       await tabGroupService.handleTabUpdate(tab.id)
     }
+
+    // Apply focus mode if enabled (new tab becomes active)
+    await applyFocusModeIfEnabled("tabs.onCreated", tab.id)
   } catch (error) {
     console.error(`[tabs.onCreated] Error handling tab ${tab.id} creation:`, error)
   }
@@ -297,14 +319,83 @@ browserAPI.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   }
 })
 
+// Debounced focus mode application with retry logic
+let focusModeTimeout = null
+
+// Helper function to apply focus mode with debouncing and retry
+async function applyFocusModeIfEnabled(eventName, tabId) {
+  try {
+    console.log(`[${eventName}] Tab ${tabId} - checking focus mode`)
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+
+    if (tabGroupState.focusModeEnabled) {
+      console.log(`[${eventName}] Focus mode enabled, scheduling application...`)
+
+      // Clear any existing timeout
+      if (focusModeTimeout) {
+        globalThis.clearTimeout(focusModeTimeout)
+      }
+
+      // Schedule focus mode application with longer delay to account for long presses
+      focusModeTimeout = globalThis.setTimeout(async () => {
+        console.log(`[${eventName}] Attempting to apply focus mode after debounce delay`)
+        await tryApplyFocusModeWithRetry()
+        focusModeTimeout = null
+      }, 600) // Increased to 600ms to handle longer interactions
+    } else {
+      console.log(`[${eventName}] Focus mode disabled, skipping`)
+    }
+  } catch (error) {
+    console.error(`[${eventName}] Error applying focus mode for tab ${tabId}:`, error)
+  }
+}
+
+// Retry logic for focus mode application
+async function tryApplyFocusModeWithRetry(retryCount = 0) {
+  const maxRetries = 20
+  const retryDelay = 200
+
+  try {
+    await tabGroupService.applyFocusMode()
+    console.log(`[Focus Mode] Applied successfully on attempt ${retryCount + 1}`)
+  } catch (error) {
+    if (
+      error.message &&
+      error.message.includes("user may be dragging") &&
+      retryCount < maxRetries
+    ) {
+      console.log(
+        `[Focus Mode] Retry ${retryCount + 1}/${maxRetries} - user still interacting, waiting ${retryDelay}ms`
+      )
+      globalThis.setTimeout(() => {
+        tryApplyFocusModeWithRetry(retryCount + 1)
+      }, retryDelay)
+    } else {
+      console.error(`[Focus Mode] Failed after ${retryCount + 1} attempts:`, error)
+    }
+  }
+}
+
 browserAPI.tabs.onMoved.addListener(async tabId => {
   try {
     console.log(`[tabs.onMoved] Tab ${tabId} moved`)
     await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
     await tabGroupService.moveTabToGroup(tabId)
+
+    // Cancel any pending focus mode application since user is actively moving tabs
+    if (focusModeTimeout) {
+      globalThis.clearTimeout(focusModeTimeout)
+      focusModeTimeout = null
+      console.log(`[tabs.onMoved] Cancelled pending focus mode application due to tab movement`)
+    }
   } catch (error) {
     console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
   }
+})
+
+// Listen for active tab changes to apply focus mode
+browserAPI.tabs.onActivated.addListener(async activeInfo => {
+  await applyFocusModeIfEnabled("tabs.onActivated", activeInfo.tabId)
 })
 
 // Listen for tab group updates (including color changes)

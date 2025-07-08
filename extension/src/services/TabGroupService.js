@@ -681,6 +681,97 @@ class TabGroupServiceSimplified {
     }
   }
 
+  /**
+   * Applies focus mode by collapsing all groups except the one containing the active tab
+   * @returns {Promise<boolean>} True if successful
+   */
+  async applyFocusMode() {
+    try {
+      console.log(`[TabGroupService] Applying focus mode`)
+
+      // Get the currently active tab
+      const [activeTab] = await browserAPI.tabs.query({
+        active: true,
+        currentWindow: true
+      })
+
+      if (!activeTab) {
+        console.log(`[TabGroupService] No active tab found`)
+        return false
+      }
+
+      // Get all tab groups in the current window
+      const groups = await browserAPI.tabGroups.query({
+        windowId: browserAPI.windows.WINDOW_ID_CURRENT
+      })
+
+      if (groups.length === 0) {
+        console.log(`[TabGroupService] No groups found to apply focus mode`)
+        return true
+      }
+
+      const activeTabGroupId =
+        activeTab.groupId !== browserAPI.tabGroups.TAB_GROUP_ID_NONE ? activeTab.groupId : null
+
+      let dragErrors = []
+      let otherErrors = []
+
+      for (const group of groups) {
+        try {
+          // Collapse all groups except the one containing the active tab
+          const shouldCollapse = group.id !== activeTabGroupId
+
+          await browserAPI.tabGroups.update(group.id, {
+            collapsed: shouldCollapse
+          })
+
+          console.log(
+            `[TabGroupService] Focus mode: ${shouldCollapse ? "Collapsed" : "Expanded"} group ${group.id} ("${group.title}")`
+          )
+        } catch (updateError) {
+          if (updateError.message && updateError.message.includes("user may be dragging")) {
+            dragErrors.push({ groupId: group.id, title: group.title, error: updateError })
+            console.log(
+              `[TabGroupService] Group ${group.id} ("${group.title}") failed due to drag detection`
+            )
+          } else {
+            otherErrors.push({ groupId: group.id, title: group.title, error: updateError })
+            console.warn(
+              `[TabGroupService] Failed to update group ${group.id} for focus mode:`,
+              updateError
+            )
+          }
+        }
+      }
+
+      // If we have drag errors, throw an error to trigger retry logic
+      if (dragErrors.length > 0) {
+        const errorMessage = `Tabs cannot be edited right now (user may be dragging a tab). ${dragErrors.length} groups affected.`
+        console.log(
+          `[TabGroupService] Focus mode blocked by drag detection: ${dragErrors.length} groups failed`
+        )
+        throw new Error(errorMessage)
+      }
+
+      // If we have other errors but no drag errors, log but don't throw
+      if (otherErrors.length > 0) {
+        console.warn(
+          `[TabGroupService] Focus mode had ${otherErrors.length} non-drag errors, but continuing`
+        )
+      }
+
+      console.log(`[TabGroupService] Focus mode applied successfully`)
+      return true
+    } catch (error) {
+      // Re-throw drag detection errors for retry logic
+      if (error.message && error.message.includes("user may be dragging")) {
+        throw error
+      }
+      console.error(`[TabGroupService] Error applying focus mode:`, error)
+      return false
+    }
+  }
+
   // Legacy method aliases for backward compatibility
   async groupTabsWithRules() {
     return await this.groupAllTabs()
