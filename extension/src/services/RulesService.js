@@ -100,7 +100,7 @@ class RulesService {
     const cleanDomain = domain.toLowerCase().trim()
     const cleanPattern = pattern.toLowerCase().trim()
 
-    // Handle ** wildcard for TLD (e.g., google.** matches google.com, google.co.il)
+    // Handle ** wildcard for TLD (e.g., google.** matches google.com)
     if (cleanPattern.includes("**")) {
       const parts = cleanPattern.split("**")
       if (parts.length !== 2) {

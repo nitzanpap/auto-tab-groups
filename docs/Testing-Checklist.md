@@ -82,16 +82,85 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Create another tab for the same domain
 - [ ] Verify it joins the existing group and maintains the custom color
 
+## URL Pattern Tests (v1.5.0+)
+
+### Test 10: Domain + Path Patterns
+
+- [ ] Create a custom rule with pattern: `docs.google.com/forms`
+- [ ] Navigate to `docs.google.com/forms`
+- [ ] Verify tab is grouped under the custom rule
+- [ ] Navigate to `docs.google.com/forms/create`
+- [ ] Verify tab is also grouped under the same rule (path prefix matching)
+- [ ] Navigate to `docs.google.com/sheets`
+- [ ] Verify tab is NOT grouped under the custom rule (different path)
+
+### Test 11: TLD Wildcard Patterns
+
+- [ ] Create a custom rule with pattern: `google.**/forms`
+- [ ] Navigate to `google.com/forms`
+- [ ] Verify tab is grouped under the custom rule
+- [ ] Navigate to `google.org/forms`
+- [ ] Verify tab is also grouped under the same rule
+- [ ] Navigate to `docs.google.com/forms`
+- [ ] Verify tab is NOT grouped under the custom rule (subdomain prefix doesn't match)
+
+### Test 12: Path Wildcard Patterns
+
+- [ ] Create a custom rule with pattern: `chrome.google.com/**/devconsole`
+- [ ] Navigate to `chrome.google.com/u/0/devconsole`
+- [ ] Verify tab is grouped under the custom rule
+- [ ] Navigate to `chrome.google.com/u/1/devconsole`
+- [ ] Verify tab is also grouped under the same rule
+- [ ] Navigate to `chrome.google.com/enterprise/admin/devconsole`
+- [ ] Verify tab is also grouped under the same rule
+- [ ] Navigate to `chrome.google.com/devconsole`
+- [ ] Verify tab is also grouped under the same rule (direct match)
+- [ ] Navigate to `chrome.google.com/something/else`
+- [ ] Verify tab is NOT grouped under the custom rule
+
+### Test 13: Combined Patterns (Subdomain + TLD + Path)
+
+- [ ] Create a custom rule with pattern: `*.google.**/forms`
+- [ ] Navigate to `docs.google.com/forms`
+- [ ] Verify tab is grouped under the custom rule
+- [ ] Navigate to `drive.google.org/forms`
+- [ ] Verify tab is also grouped under the same rule
+- [ ] Navigate to `google.com/forms`
+- [ ] Verify tab is also grouped under the same rule (base domain)
+- [ ] Navigate to `external.google.com/docs`
+- [ ] Verify tab is NOT grouped under the custom rule (wrong path)
+
+### Test 14: Pattern Validation
+
+- [ ] Try to create a rule with invalid pattern: `*.google.com/**/forms/**`
+- [ ] Verify validation error is shown: "Invalid pattern format"
+- [ ] Try to create a rule with invalid pattern: `google.**.**`
+- [ ] Verify validation error is shown
+- [ ] Try to create a rule with valid pattern: `github.com/**/issues`
+- [ ] Verify rule is accepted and can be saved
+- [ ] Try to create a rule with valid pattern: `*.stackoverflow.com/questions`
+- [ ] Verify rule is accepted and can be saved
+
+### Test 15: Pattern Priority and Backwards Compatibility
+
+- [ ] Create a rule with old-style domain: `github.com`
+- [ ] Create a rule with new-style pattern: `github.com/issues`
+- [ ] Navigate to `github.com/issues`
+- [ ] Verify more specific pattern takes priority (github.com/issues rule)
+- [ ] Navigate to `github.com/settings`
+- [ ] Verify falls back to domain rule (github.com rule)
+- [ ] Verify all existing wildcard rules (*.domain.com) continue to work
+
 ## Auto-Grouping Toggle Tests
 
-### Test 10: Disable Auto-Grouping
+### Test 16: Disable Auto-Grouping
 
 - [ ] Disable auto-grouping in settings
 - [ ] Create new tabs to various domains
 - [ ] Verify no new groups are created
 - [ ] Verify tabs remain ungrouped
 
-### Test 11: Re-enable Auto-Grouping
+### Test 17: Re-enable Auto-Grouping
 
 - [ ] Re-enable auto-grouping in settings
 - [ ] Create new tabs to various domains
@@ -101,7 +170,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Generate New Colors Tests
 
-### Test 12: Generate New Colors
+### Test 18: Generate New Colors
 
 - [ ] Create several tab groups for different domains
 - [ ] Note the current colors of the groups
@@ -111,7 +180,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Collapse All Groups Tests
 
-### Test 13: Toggle Collapse All Groups
+### Test 19: Toggle Collapse All Groups
 
 - [ ] Create several tab groups with tabs
 - [ ] Verify all groups are initially expanded (tabs visible)
@@ -120,7 +189,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Click "Expand all groups" button (button text should change)
 - [ ] Verify all groups are now expanded again
 
-### Test 14: Firefox Collapse Compatibility
+### Test 20: Firefox Collapse Compatibility
 
 - [ ] In Firefox, create several tab groups with tabs
 - [ ] Navigate to a tab that is inside one of the groups (make it the active tab)
@@ -132,7 +201,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Edge Cases and Error Handling
 
-### Test 15: Invalid URLs
+### Test 21: Invalid URLs
 
 - [ ] Navigate to `about:blank`
 - [ ] Navigate to `chrome://extensions`
@@ -140,13 +209,13 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify no groups are created for these URLs
 - [ ] Verify no errors occur
 
-### Test 16: Very Long Domain Names
+### Test 22: Very Long Domain Names
 
 - [ ] Navigate to a domain with a very long name
 - [ ] Verify group is created with appropriate truncation if needed
 - [ ] Verify extension remains functional
 
-### Test 17: Special Characters in Domains
+### Test 23: Special Characters in Domains
 
 - [ ] Navigate to domains with special characters (if possible)
 - [ ] Verify groups are created with sanitized names
@@ -154,7 +223,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Pinned Tab Handling Tests
 
-### Test 18: Pinned Tab Creation
+### Test 24: Pinned Tab Creation
 
 - [ ] Create a tab and navigate to `github.com`
 - [ ] Pin the tab (right-click → Pin tab)
@@ -162,7 +231,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify the pinned tab remains in its original position
 - [ ] Check console logs for: "Tab X is pinned, skipping grouping"
 
-### Test 19: Pinned Tab URL Update
+### Test 25: Pinned Tab URL Update
 
 - [ ] Create a tab, navigate to `github.com`, and pin it
 - [ ] Update the URL to `chatgpt.com` in the pinned tab
@@ -170,7 +239,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Verify the pinned tab remains pinned and in place
 - [ ] Check console logs for: "Tab X is pinned, skipping grouping"
 
-### Test 20: Unpin Previously Pinned Tab
+### Test 26: Unpin Previously Pinned Tab
 
 - [ ] Have a pinned tab with URL `github.com`
 - [ ] Unpin the tab (right-click → Unpin tab)
@@ -179,7 +248,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 - [ ] Create another tab to `github.com`
 - [ ] Verify both tabs are in the same GitHub group
 
-### Test 21: Mixed Pinned and Unpinned Tabs
+### Test 27: Mixed Pinned and Unpinned Tabs
 
 - [ ] Create tabs for `github.com` - one pinned, one unpinned
 - [ ] Verify only the unpinned tab is grouped
@@ -189,21 +258,21 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Performance and Stability Tests
 
-### Test 22: Rapid Tab Creation
+### Test 28: Rapid Tab Creation
 
 - [ ] Quickly create 10+ tabs to different domains
 - [ ] Verify all tabs are grouped correctly
 - [ ] Verify no duplicate groups are created
 - [ ] Verify extension remains responsive
 
-### Test 23: Rapid URL Changes
+### Test 29: Rapid URL Changes
 
 - [ ] In a single tab, rapidly change URLs between different domains
 - [ ] Verify tab moves between groups correctly
 - [ ] Verify no orphaned groups are left behind
 - [ ] Verify extension remains stable
 
-### Test 24: Multiple Windows
+### Test 30: Multiple Windows
 
 - [ ] Open multiple browser windows
 - [ ] Create tabs in different windows for the same domains
@@ -212,14 +281,14 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Browser Restart and Persistence Tests
 
-### Test 25: Settings Persistence
+### Test 31: Settings Persistence
 
 - [ ] Configure custom rules and settings
 - [ ] Restart the browser
 - [ ] Verify all settings are preserved
 - [ ] Verify custom rules still work
 
-### Test 26: Group State After Restart
+### Test 32: Group State After Restart
 
 - [ ] Create several grouped tabs
 - [ ] Restart the browser
@@ -229,7 +298,7 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Cross-Browser Testing (Firefox)
 
-### Test 27: Firefox Compatibility
+### Test 33: Firefox Compatibility
 
 - [ ] Install extension in Firefox
 - [ ] Run basic grouping tests (Tests 1-3)
@@ -238,9 +307,9 @@ This document provides a comprehensive checklist for testing the Auto Tab Groups
 
 ## Regression Testing
 
-### Test 28: Core Functionality Regression
+### Test 34: Core Functionality Regression
 
-- [ ] Run Tests 1, 2, 6, 11, and 16 after any code changes
+- [ ] Run Tests 1, 2, 6, 17, and 22 after any code changes
 - [ ] Verify no existing functionality is broken
 - [ ] Check console for new errors or warnings
 

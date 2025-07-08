@@ -8,6 +8,7 @@
 ## Roadmap
 
 - [x] Domain-based auto tab grouping (extension)
+- [x] **URL Pattern Enhancement v1.5.0** (extension) - Advanced URL patterns with domain+path, TLD wildcards, and path wildcards
 - [ ] AI-driven grouping (server + extension integration)
 - [ ] Token system and usage tracking
 - [ ] Payment and account system
