@@ -221,6 +221,26 @@ footer {
   width: 100%;
 }
 
+.collapse-all-button {
+  /* Reddish color */
+  background-color: #f94144;
+  color: white;
+}
+
+.collapse-all-button:hover {
+  background-color: #e23a3d;
+}
+
+.expand-all-button {
+  /* Greenish color */
+  background-color: #52b788;
+  color: white;
+}
+
+.expand-all-button:hover {
+  background-color: #3f8f6a;
+}
+
 /* Toggle Switch Styles */
 .toggle-container {
   display: flex;

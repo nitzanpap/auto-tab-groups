@@ -8,14 +8,6 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
 💻 **Developer Builds**: See [`extension/`](extension/) folder for latest builds
 
-## 🆕 What's New
-
-### Enhanced International Domain Support
-
-- ✨ **Country Code Second-Level Domain (ccSLD) Support**: Proper handling of international domains like `abc.net.au`, `.co.uk`, `.com.au`
-- 🌍 **Better Grouping for International Users**: Domains like `abc.net.au` now correctly group as "abc" instead of "net"
-- 🔧 **Improved Domain Extraction**: Supports 15+ countries with accurate domain name detection
-
 ## Example of tab groups in the navigation bar
 
 [![Example of the extension in Chrome](images/chrome-images/tab-groups-with-popup.png)](https://chrome.google.com/webstore/detail/auto-tab-groups/)
@@ -320,7 +312,7 @@ The extension provides convenient ways to manage your tab groups:
   - `shop.example.co.uk` → Groups as "example" (recognizes `co.uk` as single TLD)
   - `www.github.com` → Groups as "github" (standard domain handling)
 - Intelligently formats domain names for group titles:
-  - Removes TLD properly (e.g., ".com", ".org", ".co.il", ".co.uk")
+  - Removes TLD properly (e.g., ".com", ".org", ".co.uk")
   - Removes "www" subdomain when present
   - Special handling for IP addresses and local domains
 
