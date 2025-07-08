@@ -49,22 +49,13 @@ class TabGroupServiceSimplified {
           return false
         }
 
-        // Try subdomain first (more specific), then base domain
-        let customRule = null
+        // Try to find a matching rule for the full URL
+        let customRule = await rulesService.findMatchingRule(tab.url)
         let matchedDomain = null
 
-        if (subDomain) {
-          customRule = await rulesService.findMatchingRule(subDomain)
-          if (customRule) {
-            matchedDomain = subDomain
-          }
-        }
-
-        if (!customRule && baseDomain && baseDomain !== subDomain) {
-          customRule = await rulesService.findMatchingRule(baseDomain)
-          if (customRule) {
-            matchedDomain = baseDomain
-          }
+        if (customRule) {
+          // For display purposes, use the most specific domain that was extracted
+          matchedDomain = subDomain || baseDomain
         }
 
         if (!customRule) {
@@ -138,7 +129,7 @@ class TabGroupServiceSimplified {
       }
 
       // Step 3: Check for custom rules first
-      const customRule = await rulesService.findMatchingRule(domain)
+      const customRule = await rulesService.findMatchingRule(tab.url)
       const expectedTitle = customRule ? customRule.name : getDomainDisplayName(domain)
 
       console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
