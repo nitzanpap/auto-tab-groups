@@ -161,8 +161,50 @@ class RulesService {
     const cleanPath = urlPath.startsWith("/") ? urlPath.substring(1) : urlPath
     const cleanPattern = pathPattern.startsWith("/") ? pathPattern.substring(1) : pathPattern
 
-    // For now, exact prefix matching
-    // Future: could extend to support wildcards in paths
+    // Handle ** wildcard in path
+    if (cleanPattern.includes("**")) {
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) {
+        console.warn(`[RulesService] Invalid ** pattern in path: ${cleanPattern}`)
+        return false
+      }
+
+      const prefix = parts[0]
+      const suffix = parts[1]
+
+      // Path must start with prefix (if present)
+      if (prefix && !cleanPath.startsWith(prefix)) {
+        return false
+      }
+
+      // Path must end with suffix (if present)
+      if (suffix && !cleanPath.endsWith(suffix)) {
+        return false
+      }
+
+      // If both prefix and suffix are present, ensure there's something in between
+      // (or they overlap, which is fine)
+      if (prefix && suffix && cleanPath.length < prefix.length + suffix.length) {
+        // Check if prefix and suffix overlap
+        const minLength = Math.min(prefix.length, suffix.length)
+        let overlapFound = false
+
+        for (let i = 1; i <= minLength; i++) {
+          if (prefix.substring(prefix.length - i) === suffix.substring(0, i)) {
+            overlapFound = true
+            break
+          }
+        }
+
+        if (!overlapFound) {
+          return false
+        }
+      }
+
+      return true
+    }
+
+    // Exact prefix matching (existing behavior)
     return cleanPath.startsWith(cleanPattern)
   }
 
@@ -459,8 +501,31 @@ class RulesService {
       return { isValid: false, error: "Path pattern too long (max 100 characters)" }
     }
 
-    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, and slashes
-    if (!/^[a-zA-Z0-9._/-]+$/.test(cleanPattern)) {
+    // Check for ** wildcard in path
+    if (cleanPattern.includes("**")) {
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) {
+        return { isValid: false, error: "Invalid ** pattern in path. Use format: prefix/**/suffix" }
+      }
+
+      const prefix = parts[0]
+      const suffix = parts[1]
+
+      // Validate prefix (if present)
+      if (prefix && !this.isValidPathSegment(prefix)) {
+        return { isValid: false, error: "Invalid prefix in path ** pattern" }
+      }
+
+      // Validate suffix (if present)
+      if (suffix && !this.isValidPathSegment(suffix)) {
+        return { isValid: false, error: "Invalid suffix in path ** pattern" }
+      }
+
+      return { isValid: true }
+    }
+
+    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
+    if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
       return { isValid: false, error: "Path pattern contains invalid characters" }
     }
 
@@ -470,6 +535,23 @@ class RulesService {
     }
 
     return { isValid: true }
+  }
+
+  /**
+   * Validates a path segment (helper for path validation)
+   * @param {string} segment - Path segment to validate
+   * @returns {boolean} True if segment is valid
+   */
+  isValidPathSegment(segment) {
+    if (!segment) return true // Empty segments are allowed
+
+    // Remove leading/trailing slashes
+    const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
+
+    if (cleanSegment.length === 0) return true
+
+    // Allow alphanumeric, hyphens, underscores, dots, and slashes
+    return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
   }
 
   /**

@@ -482,8 +482,31 @@ class RulesModal {
       return false
     }
 
-    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, and slashes
-    if (!/^[a-zA-Z0-9._/-]+$/.test(cleanPattern)) {
+    // Check for ** wildcard in path
+    if (cleanPattern.includes("**")) {
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) {
+        return false
+      }
+
+      const prefix = parts[0]
+      const suffix = parts[1]
+
+      // Validate prefix (if present)
+      if (prefix && !this.isValidPathSegment(prefix)) {
+        return false
+      }
+
+      // Validate suffix (if present)
+      if (suffix && !this.isValidPathSegment(suffix)) {
+        return false
+      }
+
+      return true
+    }
+
+    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
+    if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
       return false
     }
 
@@ -493,6 +516,23 @@ class RulesModal {
     }
 
     return true
+  }
+
+  /**
+   * Validates a path segment (helper for path validation)
+   * @param {string} segment - Path segment to validate
+   * @returns {boolean} True if segment is valid
+   */
+  isValidPathSegment(segment) {
+    if (!segment) return true // Empty segments are allowed
+
+    // Remove leading/trailing slashes
+    const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
+
+    if (cleanSegment.length === 0) return true
+
+    // Allow alphanumeric, hyphens, underscores, dots, and slashes
+    return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
   }
 
   showError(message) {
