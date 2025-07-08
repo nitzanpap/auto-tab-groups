@@ -36,30 +36,66 @@ class TabGroupServiceSimplified {
       }
 
       // Step 2: Handle grouping mode
-      if (tabGroupState.groupByMode === "rules") {
+      if (tabGroupState.groupByMode === "rules-only") {
         // Rules-only mode: only group by custom rules
-        const customRule = await rulesService.findMatchingRule(tab.url)
-        if (!customRule) {
-          console.log(`[TabGroupService] Rules-only mode: No custom rule found for ${tab.url}, skipping`)
+        // Try both subdomain and base domain extraction to maximize rule matching
+        const subDomain = extractDomain(tab.url, true) // Include subdomain
+        const baseDomain = extractDomain(tab.url, false) // Base domain only
+
+        if (!subDomain && !baseDomain) {
+          console.log(
+            `[TabGroupService] Rules-only mode: No domain extracted from ${tab.url}, skipping`
+          )
           return false
         }
-        
+
+        // Try subdomain first (more specific), then base domain
+        let customRule = null
+        let matchedDomain = null
+
+        if (subDomain) {
+          customRule = await rulesService.findMatchingRule(subDomain)
+          if (customRule) {
+            matchedDomain = subDomain
+          }
+        }
+
+        if (!customRule && baseDomain && baseDomain !== subDomain) {
+          customRule = await rulesService.findMatchingRule(baseDomain)
+          if (customRule) {
+            matchedDomain = baseDomain
+          }
+        }
+
+        if (!customRule) {
+          console.log(
+            `[TabGroupService] Rules-only mode: No custom rule found for ${subDomain || baseDomain} (from ${tab.url}), skipping`
+          )
+          return false
+        }
+
+        console.log(
+          `[TabGroupService] Rules-only mode: Found rule "${customRule.name}" for domain ${matchedDomain}`
+        )
+
         const expectedTitle = customRule.name
-        
+
         // Find or create group based on custom rule
         const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
-        
+
         if (existingGroup) {
           if (tab.groupId === existingGroup.id) {
-            console.log(`[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`)
+            console.log(
+              `[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`
+            )
             return true
           }
-          
+
           await browserAPI.tabs.group({
             tabIds: [tabId],
             groupId: existingGroup.id
           })
-          
+
           if (customRule.color && existingGroup.color !== customRule.color) {
             try {
               await browserAPI.tabGroups.update(existingGroup.id, {
@@ -71,28 +107,28 @@ class TabGroupServiceSimplified {
           }
           return true
         }
-        
+
         // Create new group
         const groupId = await browserAPI.tabs.group({
           tabIds: [tabId]
         })
-        
+
         try {
           await browserAPI.tabGroups.update(groupId, {
             title: expectedTitle,
             color: customRule.color || "blue"
           })
-          
+
           if (customRule.color) {
             await storageManager.updateGroupColor(expectedTitle, customRule.color)
           }
         } catch (updateError) {
           console.warn(`[TabGroupService] Failed to update group ${groupId}:`, updateError)
         }
-        
+
         return true
       }
-      
+
       // Step 2: Extract domain for domain/subdomain modes
       const includeSubDomain = tabGroupState.groupByMode === "subdomain"
       const domain = extractDomain(tab.url, includeSubDomain)
