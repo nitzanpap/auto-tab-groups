@@ -78,7 +78,7 @@ function getEffectiveTldLength(hostname) {
   if (parts.length >= 2) {
     const lastTwoParts = parts.slice(-2).join(".")
     if (COUNTRY_CODE_SLDS.has(lastTwoParts)) {
-      return 2 // ccSLD takes 2 parts (e.g., "co.il")
+      return 2 // ccSLD takes 2 parts (e.g., "co.uk")
     }
   }
 

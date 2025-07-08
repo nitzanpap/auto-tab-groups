@@ -92,7 +92,7 @@ test("Core services load independently", async ({ page }) => {
         // Mock state and storage
         window.mockState = {
           autoGroupingEnabled: true,
-          groupBySubDomainEnabled: false,
+          groupByMode: "domain",
           getColor: () => 'blue',
           setColor: () => {},
           getGroupDomain: () => 'example.com',
@@ -171,7 +171,7 @@ test("TabGroupService handles pinned tabs correctly", async ({ page }) => {
         // Mock other required modules
         globalThis.tabGroupState = {
           autoGroupingEnabled: true,
-          groupBySubDomainEnabled: false,
+          groupByMode: "domain",
           customRules: new Map()
         }
 

@@ -290,26 +290,26 @@ class RulesModal {
     const domainsText = this.domainsInput.value.trim()
 
     if (!domainsText) {
-      this.showFieldError("domains", "At least one domain is required")
+      this.showFieldError("domains", "At least one pattern is required")
       return false
     }
 
     const domains = parseDomainsText(domainsText)
 
     if (domains.length === 0) {
-      this.showFieldError("domains", "No valid domains found")
+      this.showFieldError("domains", "No valid patterns found")
       return false
     }
 
     if (domains.length > 20) {
-      this.showFieldError("domains", "Maximum 20 domains per rule")
+      this.showFieldError("domains", "Maximum 20 patterns per rule")
       return false
     }
 
-    // Validate each domain format (support wildcards)
-    for (const domain of domains) {
-      if (!this.isValidRuleDomainFormat(domain)) {
-        this.showFieldError("domains", `Invalid domain format: ${domain}`)
+    // Validate each pattern format (support domain and URL patterns)
+    for (const pattern of domains) {
+      if (!this.isValidRuleDomainFormat(pattern)) {
+        this.showFieldError("domains", `Invalid pattern format: ${pattern}`)
         return false
       }
     }
@@ -336,51 +336,104 @@ class RulesModal {
   }
 
   /**
-   * Validates domain format for custom rules (supports wildcards)
-   * This is specifically for rule validation, not general domain validation
-   * @param {string} domain - Domain to validate (supports *.domain.com format)
-   * @returns {boolean} True if domain format is valid
+   * Validates pattern format for custom rules (supports domain and URL patterns)
+   * This is specifically for rule validation, supports various pattern formats
+   * @param {string} pattern - Pattern to validate (supports various formats)
+   * @returns {boolean} True if pattern format is valid
    */
-  isValidRuleDomainFormat(domain) {
-    if (!domain || typeof domain !== "string") {
+  isValidRuleDomainFormat(pattern) {
+    if (!pattern || typeof pattern !== "string") {
       return false
     }
 
-    const cleanDomain = domain.trim().toLowerCase()
+    const cleanPattern = pattern.trim().toLowerCase()
 
-    if (cleanDomain.length === 0) {
+    if (cleanPattern.length === 0) {
       return false
     }
 
-    if (cleanDomain.length > 253) {
+    if (cleanPattern.length > 300) {
       return false
     }
 
-    // Check for wildcard pattern (*.domain.com)
-    if (cleanDomain.startsWith("*.")) {
-      const baseDomain = cleanDomain.substring(2) // Remove "*."
+    // Check if it's a URL pattern or domain pattern
+    const hasPath = cleanPattern.includes("/")
+    const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
 
-      // Validate wildcard pattern
-      if (!baseDomain || baseDomain.includes("*")) {
+    // Validate domain part
+    if (!this.isValidDomainPattern(domainPattern)) {
+      return false
+    }
+
+    // Validate path part if present
+    if (hasPath) {
+      if (!this.isValidPathPattern(pathPattern)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  /**
+   * Validates a domain pattern
+   * @param {string} pattern - Domain pattern to validate
+   * @returns {boolean} True if domain pattern is valid
+   */
+  isValidDomainPattern(pattern) {
+    if (!pattern) {
+      return false
+    }
+
+    // Check for ** wildcard (TLD wildcard)
+    if (pattern.includes("**")) {
+      const parts = pattern.split("**")
+      if (parts.length !== 2) {
         return false
       }
 
-      // Validate the base domain part
-      const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-      if (!domainPattern.test(baseDomain)) {
+      const prefix = parts[0]
+      const suffix = parts[1]
+
+      // Validate prefix
+      if (!prefix || !prefix.endsWith(".")) {
         return false
       }
 
-      // Additional checks for base domain
-      if (baseDomain.startsWith(".") || baseDomain.endsWith(".")) {
+      // Check if prefix has subdomain wildcard
+      if (prefix.startsWith("*.")) {
+        const basePrefix = prefix.substring(2)
+        if (!basePrefix || !basePrefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
+          return false
+        }
+      } else {
+        // Validate prefix without subdomain wildcard
+        if (!prefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
+          return false
+        }
+      }
+
+      // Validate suffix (usually empty, but could be something like .co in future)
+      if (suffix && !suffix.match(/^[a-zA-Z0-9.-]*$/)) {
         return false
       }
 
-      if (baseDomain.includes("..")) {
+      return true
+    }
+
+    // Check for * wildcard (subdomain wildcard)
+    if (pattern.startsWith("*.")) {
+      const baseDomain = pattern.substring(2)
+
+      if (!baseDomain || !baseDomain.includes(".")) {
         return false
       }
 
-      if (baseDomain.startsWith("-") || baseDomain.endsWith("-")) {
+      if (baseDomain.includes("*")) {
+        return false
+      }
+
+      if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
         return false
       }
 
@@ -388,26 +441,98 @@ class RulesModal {
     }
 
     // Regular domain validation
-    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-
-    if (!domainPattern.test(cleanDomain)) {
+    if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pattern)) {
       return false
     }
 
     // Check for invalid patterns
-    if (cleanDomain.startsWith(".") || cleanDomain.endsWith(".")) {
+    if (pattern.startsWith(".") || pattern.endsWith(".")) {
       return false
     }
 
-    if (cleanDomain.includes("..")) {
+    if (pattern.includes("..")) {
       return false
     }
 
-    if (cleanDomain.startsWith("-") || cleanDomain.endsWith("-")) {
+    if (pattern.startsWith("-") || pattern.endsWith("-")) {
       return false
     }
 
     return true
+  }
+
+  /**
+   * Validates a path pattern
+   * @param {string} pattern - Path pattern to validate
+   * @returns {boolean} True if path pattern is valid
+   */
+  isValidPathPattern(pattern) {
+    if (!pattern) {
+      return false
+    }
+
+    // Remove leading slash if present
+    const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
+
+    if (cleanPattern.length === 0) {
+      return false
+    }
+
+    if (cleanPattern.length > 100) {
+      return false
+    }
+
+    // Check for ** wildcard in path
+    if (cleanPattern.includes("**")) {
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) {
+        return false
+      }
+
+      const prefix = parts[0]
+      const suffix = parts[1]
+
+      // Validate prefix (if present)
+      if (prefix && !this.isValidPathSegment(prefix)) {
+        return false
+      }
+
+      // Validate suffix (if present)
+      if (suffix && !this.isValidPathSegment(suffix)) {
+        return false
+      }
+
+      return true
+    }
+
+    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
+    if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
+      return false
+    }
+
+    // Check for invalid patterns
+    if (cleanPattern.includes("//")) {
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * Validates a path segment (helper for path validation)
+   * @param {string} segment - Path segment to validate
+   * @returns {boolean} True if segment is valid
+   */
+  isValidPathSegment(segment) {
+    if (!segment) return true // Empty segments are allowed
+
+    // Remove leading/trailing slashes
+    const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
+
+    if (cleanSegment.length === 0) return true
+
+    // Allow alphanumeric, hyphens, underscores, dots, and slashes
+    return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
   }
 
   showError(message) {
