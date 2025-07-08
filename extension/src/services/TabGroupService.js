@@ -58,6 +58,14 @@ class TabGroupServiceSimplified {
           matchedDomain = subDomain || baseDomain
         }
 
+        // Special handling for system URLs - always group them even without custom rules
+        if (!customRule && (subDomain === "system" || baseDomain === "system")) {
+          console.log(
+            `[TabGroupService] Rules-only mode: System URL detected (${tab.url}), grouping under System`
+          )
+          return await this.moveTabToTargetGroup(tabId, tab, "System", null, "grey")
+        }
+
         if (!customRule) {
           console.log(
             `[TabGroupService] Rules-only mode: No custom rule found for ${subDomain || baseDomain} (from ${tab.url}), skipping`
@@ -69,55 +77,7 @@ class TabGroupServiceSimplified {
           `[TabGroupService] Rules-only mode: Found rule "${customRule.name}" for domain ${matchedDomain}`
         )
 
-        const expectedTitle = customRule.name
-
-        // Find or create group based on custom rule
-        const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
-
-        if (existingGroup) {
-          if (tab.groupId === existingGroup.id) {
-            console.log(
-              `[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`
-            )
-            return true
-          }
-
-          await browserAPI.tabs.group({
-            tabIds: [tabId],
-            groupId: existingGroup.id
-          })
-
-          if (customRule.color && existingGroup.color !== customRule.color) {
-            try {
-              await browserAPI.tabGroups.update(existingGroup.id, {
-                color: customRule.color
-              })
-            } catch (colorError) {
-              console.warn(`[TabGroupService] Failed to update existing group color:`, colorError)
-            }
-          }
-          return true
-        }
-
-        // Create new group
-        const groupId = await browserAPI.tabs.group({
-          tabIds: [tabId]
-        })
-
-        try {
-          await browserAPI.tabGroups.update(groupId, {
-            title: expectedTitle,
-            color: customRule.color || "blue"
-          })
-
-          if (customRule.color) {
-            await storageManager.updateGroupColor(expectedTitle, customRule.color)
-          }
-        } catch (updateError) {
-          console.warn(`[TabGroupService] Failed to update group ${groupId}:`, updateError)
-        }
-
-        return true
+        return await this.moveTabToTargetGroup(tabId, tab, customRule.name, customRule)
       }
 
       // Step 2: Extract domain for domain/subdomain modes
@@ -134,97 +94,111 @@ class TabGroupServiceSimplified {
 
       console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
 
-      // Step 4: Find existing group by title (browser as SSOT)
-      const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
-
-      if (existingGroup) {
-        // Group exists - check if tab is already in it
-        if (tab.groupId === existingGroup.id) {
-          console.log(`[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`)
-          return true
-        }
-
-        // Move tab to existing group
-        console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
-        await browserAPI.tabs.group({
-          tabIds: [tabId],
-          groupId: existingGroup.id
-        })
-
-        // Update group color if this is from a custom rule
-        if (customRule && customRule.color && existingGroup.color !== customRule.color) {
-          try {
-            await browserAPI.tabGroups.update(existingGroup.id, {
-              color: customRule.color
-            })
-            console.log(
-              `[TabGroupService] Updated existing group ${existingGroup.id} color to "${customRule.color}" from rule "${customRule.name}"`
-            )
-          } catch (colorError) {
-            console.warn(`[TabGroupService] Failed to update existing group color:`, colorError)
-          }
-        }
-
-        return true
-      }
-
-      // Step 5: No group exists - create new one by grouping the tab first
-      console.log(`[TabGroupService] Creating new group "${expectedTitle}" for tab ${tabId}`)
-
-      // In Chrome, you create a group by grouping tabs, not by creating an empty group
-      const groupId = await browserAPI.tabs.group({
-        tabIds: [tabId]
-        // windowId: tab.windowId, // Not needed when grouping existing tabs
-      })
-
-      console.log(`[TabGroupService] Tab grouped, received group ID: ${groupId}`)
-
-      // Set the group title and color (with error handling)
-      try {
-        const updateOptions = {
-          title: expectedTitle
-        }
-
-        // If this is from a custom rule, apply the custom color
-        if (customRule && customRule.color) {
-          updateOptions.color = customRule.color
-          console.log(
-            `[TabGroupService] Applying custom color "${customRule.color}" from rule "${customRule.name}"`
-          )
-        } else {
-          // Check if we have a saved color for this group title
-          const savedColor = await storageManager.getGroupColor(expectedTitle)
-          if (savedColor) {
-            updateOptions.color = savedColor
-            console.log(
-              `[TabGroupService] Applying saved color "${savedColor}" for group "${expectedTitle}"`
-            )
-          }
-        }
-
-        await browserAPI.tabGroups.update(groupId, updateOptions)
-
-        // Save the color mapping if we applied a color
-        if (updateOptions.color) {
-          await storageManager.updateGroupColor(expectedTitle, updateOptions.color)
-        }
-
-        console.log(
-          `[TabGroupService] Successfully updated group ${groupId} with title "${expectedTitle}" and color "${
-            updateOptions.color || "default"
-          }"`
-        )
-      } catch (updateError) {
-        console.warn(`[TabGroupService] Failed to update group ${groupId}:`, updateError)
-        // Continue anyway - the group exists even if title/color update failed
-      }
-
-      console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
-      return true
+      // Step 4: Move tab to target group (find existing or create new)
+      return await this.moveTabToTargetGroup(tabId, tab, expectedTitle, customRule)
     } catch (error) {
       console.error(`[TabGroupService] Error processing tab ${tabId}:`, error)
       return false
     }
+  }
+
+  /**
+   * Moves a tab to the target group, creating the group if it doesn't exist
+   * @param {number} tabId - The tab ID to move
+   * @param {Object} tab - The tab object
+   * @param {string} expectedTitle - The expected group title
+   * @param {Object|null} customRule - The custom rule if applicable
+   * @param {string} defaultColor - Default color to use if no custom rule color
+   * @returns {Promise<boolean>} True if successful
+   */
+  async moveTabToTargetGroup(tabId, tab, expectedTitle, customRule = null, defaultColor = "blue") {
+    // Find existing group by title
+    const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
+
+    if (existingGroup) {
+      // Group exists - check if tab is already in it
+      if (tab.groupId === existingGroup.id) {
+        console.log(`[TabGroupService] Tab ${tabId} already in correct group ${existingGroup.id}`)
+        return true
+      }
+
+      // Move tab to existing group
+      console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
+      await browserAPI.tabs.group({
+        tabIds: [tabId],
+        groupId: existingGroup.id
+      })
+
+      // Update group color if this is from a custom rule
+      if (customRule && customRule.color && existingGroup.color !== customRule.color) {
+        try {
+          await browserAPI.tabGroups.update(existingGroup.id, {
+            color: customRule.color
+          })
+          console.log(
+            `[TabGroupService] Updated existing group ${existingGroup.id} color to "${customRule.color}" from rule "${customRule.name}"`
+          )
+        } catch (colorError) {
+          console.warn(`[TabGroupService] Failed to update existing group color:`, colorError)
+        }
+      }
+
+      return true
+    }
+
+    // No group exists - create new one by grouping the tab first
+    console.log(`[TabGroupService] Creating new group "${expectedTitle}" for tab ${tabId}`)
+
+    const groupId = await browserAPI.tabs.group({
+      tabIds: [tabId]
+    })
+
+    console.log(`[TabGroupService] Tab grouped, received group ID: ${groupId}`)
+
+    // Set the group title and color
+    try {
+      const updateOptions = {
+        title: expectedTitle
+      }
+
+      // If this is from a custom rule, apply the custom color
+      if (customRule && customRule.color) {
+        updateOptions.color = customRule.color
+        console.log(
+          `[TabGroupService] Applying custom color "${customRule.color}" from rule "${customRule.name}"`
+        )
+      } else {
+        // Check if we have a saved color for this group title
+        const savedColor = await storageManager.getGroupColor(expectedTitle)
+        if (savedColor) {
+          updateOptions.color = savedColor
+          console.log(
+            `[TabGroupService] Applying saved color "${savedColor}" for group "${expectedTitle}"`
+          )
+        } else {
+          updateOptions.color = defaultColor
+        }
+      }
+
+      await browserAPI.tabGroups.update(groupId, updateOptions)
+
+      // Save the color mapping if we applied a color
+      if (updateOptions.color) {
+        await storageManager.updateGroupColor(expectedTitle, updateOptions.color)
+      }
+
+      console.log(
+        `[TabGroupService] Successfully updated group ${groupId} with title "${expectedTitle}" and color "${
+          updateOptions.color || "default"
+        }"`
+      )
+    } catch (updateError) {
+      console.warn(`[TabGroupService] Failed to update group ${groupId}:`, updateError)
+      // Continue anyway - the group exists even if title/color update failed
+    }
+
+    console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
+    return true
   }
 
   /**
