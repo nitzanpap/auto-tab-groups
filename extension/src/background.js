@@ -130,19 +130,19 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { enabled: tabGroupState.autoGroupingEnabled }
           break
 
-        case "getGroupBySubDomain":
-          result = { enabled: tabGroupState.groupBySubDomainEnabled }
+        case "getGroupByMode":
+          result = { mode: tabGroupState.groupByMode }
           break
 
-        case "toggleGroupBySubDomain":
-          tabGroupState.groupBySubDomainEnabled = msg.enabled
+        case "setGroupByMode":
+          tabGroupState.groupByMode = msg.mode
           await storageManager.saveState()
 
           if (tabGroupState.autoGroupingEnabled) {
             await tabGroupService.ungroupAllTabs()
             await tabGroupService.groupTabsWithRules()
           }
-          result = { enabled: tabGroupState.groupBySubDomainEnabled }
+          result = { mode: tabGroupState.groupByMode }
           break
 
         // Custom Rules Management
