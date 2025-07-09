@@ -7,18 +7,44 @@ import { tabGroupState } from "../state/TabGroupState.js"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils.js"
 import { rulesService } from "./RulesService.js"
 import { storageManager } from "../config/StorageManager.js"
+import { getRandomTabGroupColor } from "../config/Constants.js"
 import "../utils/BrowserAPI.js"
 
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
 
 class TabGroupServiceSimplified {
   /**
+   * Checks if a URL is a new tab URL that should be treated as a "new tab"
+   * @param {string} url - The URL to check
+   * @returns {boolean} True if it's a new tab URL
+   */
+  isNewTabUrl(url) {
+    if (!url || typeof url !== "string") {
+      return false
+    }
+
+    // Common new tab URLs across browsers
+    const newTabUrls = [
+      "chrome://newtab/",
+      "chrome-extension://", // Chrome extension new tab pages
+      "moz-extension://", // Firefox extension new tab pages
+      "about:newtab", // Firefox new tab
+      "about:home", // Firefox home page
+      "edge://newtab/", // Edge new tab
+      "about:blank" // Blank new tab
+    ]
+
+    return newTabUrls.some(newTabUrl => url.startsWith(newTabUrl))
+  }
+
+  /**
    * Handles a tab update - moves tab to correct group based on its current URL
    * @param {number} tabId - The tab ID that changed
+   * @param {boolean} forceGrouping - If true, ignores auto-group setting (for manual operations)
    * @returns {Promise<boolean>} True if successful
    */
-  async handleTabUpdate(tabId) {
-    if (!tabGroupState.autoGroupingEnabled) {
+  async handleTabUpdate(tabId, forceGrouping = false) {
+    if (!forceGrouping && !tabGroupState.autoGroupingEnabled) {
       return false
     }
 
@@ -28,6 +54,14 @@ class TabGroupServiceSimplified {
       // Step 1: Get tab info from browser (SSOT)
       const tab = await browserAPI.tabs.get(tabId)
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
+
+      // Check if this is a new tab URL and user has disabled grouping new tabs
+      if (!forceGrouping && !tabGroupState.groupNewTabs && this.isNewTabUrl(tab.url)) {
+        console.log(
+          `[TabGroupService] Tab ${tabId} has a new tab URL and grouping new tabs is disabled, skipping`
+        )
+        return false
+      }
 
       // Step 1.5: Check if tab is pinned - pinned tabs should not be grouped
       if (tab.pinned) {
@@ -108,10 +142,10 @@ class TabGroupServiceSimplified {
    * @param {Object} tab - The tab object
    * @param {string} expectedTitle - The expected group title
    * @param {Object|null} customRule - The custom rule if applicable
-   * @param {string} defaultColor - Default color to use if no custom rule color
+   * @param {string} defaultColor - Default color to use if no custom rule color or saved color exists
    * @returns {Promise<boolean>} True if successful
    */
-  async moveTabToTargetGroup(tabId, tab, expectedTitle, customRule = null, defaultColor = "blue") {
+  async moveTabToTargetGroup(tabId, tab, expectedTitle, customRule = null, defaultColor = null) {
     // Find existing group by title
     const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
 
@@ -176,7 +210,11 @@ class TabGroupServiceSimplified {
             `[TabGroupService] Applying saved color "${savedColor}" for group "${expectedTitle}"`
           )
         } else {
-          updateOptions.color = defaultColor
+          // Use provided default color or generate a random one
+          updateOptions.color = defaultColor || getRandomTabGroupColor()
+          console.log(
+            `[TabGroupService] Applying ${defaultColor ? "default" : "random"} color "${updateOptions.color}" for group "${expectedTitle}"`
+          )
         }
       }
 
@@ -253,6 +291,33 @@ class TabGroupServiceSimplified {
       return true
     } catch (error) {
       console.error(`[TabGroupService] Error during bulk grouping:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Manually groups all tabs in the current window (ignores auto-group setting)
+   * This is used for the "Group Tabs" button functionality
+   * @returns {Promise<boolean>} True if successful
+   */
+  async groupAllTabsManually() {
+    try {
+      console.log(`[TabGroupService] Starting manual bulk grouping of all tabs`)
+
+      const tabs = await browserAPI.tabs.query({ currentWindow: true })
+
+      for (const tab of tabs) {
+        if (tab.url && !tab.url.startsWith("chrome-extension://")) {
+          await this.handleTabUpdate(tab.id, true) // forceGrouping = true
+          // Small delay to prevent overwhelming the browser
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+
+      console.log(`[TabGroupService] Manual bulk grouping completed`)
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error during manual bulk grouping:`, error)
       return false
     }
   }
@@ -347,9 +412,6 @@ class TabGroupServiceSimplified {
         }
       }
 
-      // Available colors in Chrome
-      const colors = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"]
-
       // Get current color mapping to update it
       const colorMapping = await storageManager.getGroupColorMapping()
 
@@ -363,7 +425,7 @@ class TabGroupServiceSimplified {
         }
 
         // Pick a random color
-        const randomColor = colors[Math.floor(Math.random() * colors.length)]
+        const randomColor = getRandomTabGroupColor()
 
         try {
           await browserAPI.tabGroups.update(group.id, {

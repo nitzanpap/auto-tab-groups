@@ -10,6 +10,7 @@ const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? br
 
 export const DEFAULT_STATE = {
   autoGroupingEnabled: true,
+  groupNewTabs: true, // New setting to control whether new tabs should be grouped
   groupByMode: "domain", // "rules", "domain", or "subdomain"
   customRules: {},
   ruleMatchingMode: "exact",
