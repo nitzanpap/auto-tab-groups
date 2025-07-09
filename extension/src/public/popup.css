@@ -728,3 +728,11 @@ input:checked + .slider:before {
   color: #6c757d;
   text-align: center;
 }
+
+.rules-toggle .up-arrow {
+  transition: transform 0.2s ease;
+}
+
+.rules-toggle.expanded .up-arrow {
+  transform: rotate(180deg);
+}
