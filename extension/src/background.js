@@ -74,7 +74,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       switch (msg.action) {
         case "group":
-          await tabGroupService.groupAllTabs()
+          await tabGroupService.groupAllTabsManually()
           result = { success: true }
           break
 

@@ -15,10 +15,11 @@ class TabGroupServiceSimplified {
   /**
    * Handles a tab update - moves tab to correct group based on its current URL
    * @param {number} tabId - The tab ID that changed
+   * @param {boolean} forceGrouping - If true, ignores auto-group setting (for manual operations)
    * @returns {Promise<boolean>} True if successful
    */
-  async handleTabUpdate(tabId) {
-    if (!tabGroupState.autoGroupingEnabled) {
+  async handleTabUpdate(tabId, forceGrouping = false) {
+    if (!forceGrouping && !tabGroupState.autoGroupingEnabled) {
       return false
     }
 
@@ -253,6 +254,33 @@ class TabGroupServiceSimplified {
       return true
     } catch (error) {
       console.error(`[TabGroupService] Error during bulk grouping:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Manually groups all tabs in the current window (ignores auto-group setting)
+   * This is used for the "Group Tabs" button functionality
+   * @returns {Promise<boolean>} True if successful
+   */
+  async groupAllTabsManually() {
+    try {
+      console.log(`[TabGroupService] Starting manual bulk grouping of all tabs`)
+
+      const tabs = await browserAPI.tabs.query({ currentWindow: true })
+
+      for (const tab of tabs) {
+        if (tab.url && !tab.url.startsWith("chrome-extension://")) {
+          await this.handleTabUpdate(tab.id, true) // forceGrouping = true
+          // Small delay to prevent overwhelming the browser
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+
+      console.log(`[TabGroupService] Manual bulk grouping completed`)
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error during manual bulk grouping:`, error)
       return false
     }
   }
