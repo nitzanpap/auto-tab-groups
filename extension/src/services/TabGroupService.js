@@ -7,6 +7,7 @@ import { tabGroupState } from "../state/TabGroupState.js"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils.js"
 import { rulesService } from "./RulesService.js"
 import { storageManager } from "../config/StorageManager.js"
+import { getRandomTabGroupColor } from "../config/Constants.js"
 import "../utils/BrowserAPI.js"
 
 const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? browser : chrome)
@@ -109,10 +110,10 @@ class TabGroupServiceSimplified {
    * @param {Object} tab - The tab object
    * @param {string} expectedTitle - The expected group title
    * @param {Object|null} customRule - The custom rule if applicable
-   * @param {string} defaultColor - Default color to use if no custom rule color
+   * @param {string} defaultColor - Default color to use if no custom rule color or saved color exists
    * @returns {Promise<boolean>} True if successful
    */
-  async moveTabToTargetGroup(tabId, tab, expectedTitle, customRule = null, defaultColor = "blue") {
+  async moveTabToTargetGroup(tabId, tab, expectedTitle, customRule = null, defaultColor = null) {
     // Find existing group by title
     const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId)
 
@@ -177,7 +178,11 @@ class TabGroupServiceSimplified {
             `[TabGroupService] Applying saved color "${savedColor}" for group "${expectedTitle}"`
           )
         } else {
-          updateOptions.color = defaultColor
+          // Use provided default color or generate a random one
+          updateOptions.color = defaultColor || getRandomTabGroupColor()
+          console.log(
+            `[TabGroupService] Applying ${defaultColor ? "default" : "random"} color "${updateOptions.color}" for group "${expectedTitle}"`
+          )
         }
       }
 
@@ -375,9 +380,6 @@ class TabGroupServiceSimplified {
         }
       }
 
-      // Available colors in Chrome
-      const colors = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"]
-
       // Get current color mapping to update it
       const colorMapping = await storageManager.getGroupColorMapping()
 
@@ -391,7 +393,7 @@ class TabGroupServiceSimplified {
         }
 
         // Pick a random color
-        const randomColor = colors[Math.floor(Math.random() * colors.length)]
+        const randomColor = getRandomTabGroupColor()
 
         try {
           await browserAPI.tabGroups.update(group.id, {
