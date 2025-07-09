@@ -14,6 +14,30 @@ const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? br
 
 class TabGroupServiceSimplified {
   /**
+   * Checks if a URL is a new tab URL that should be treated as a "new tab"
+   * @param {string} url - The URL to check
+   * @returns {boolean} True if it's a new tab URL
+   */
+  isNewTabUrl(url) {
+    if (!url || typeof url !== "string") {
+      return false
+    }
+
+    // Common new tab URLs across browsers
+    const newTabUrls = [
+      "chrome://newtab/",
+      "chrome-extension://", // Chrome extension new tab pages
+      "moz-extension://", // Firefox extension new tab pages
+      "about:newtab", // Firefox new tab
+      "about:home", // Firefox home page
+      "edge://newtab/", // Edge new tab
+      "about:blank" // Blank new tab
+    ]
+
+    return newTabUrls.some(newTabUrl => url.startsWith(newTabUrl))
+  }
+
+  /**
    * Handles a tab update - moves tab to correct group based on its current URL
    * @param {number} tabId - The tab ID that changed
    * @param {boolean} forceGrouping - If true, ignores auto-group setting (for manual operations)
@@ -30,6 +54,14 @@ class TabGroupServiceSimplified {
       // Step 1: Get tab info from browser (SSOT)
       const tab = await browserAPI.tabs.get(tabId)
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
+
+      // Check if this is a new tab URL and user has disabled grouping new tabs
+      if (!forceGrouping && !tabGroupState.groupNewTabs && this.isNewTabUrl(tab.url)) {
+        console.log(
+          `[TabGroupService] Tab ${tabId} has a new tab URL and grouping new tabs is disabled, skipping`
+        )
+        return false
+      }
 
       // Step 1.5: Check if tab is pinned - pinned tabs should not be grouped
       if (tab.pinned) {
