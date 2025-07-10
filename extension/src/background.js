@@ -127,7 +127,6 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { enabled: tabGroupState.groupNewTabs }
           break
 
-        case "getOnlyApplyToNewTabs":
         case "toggleAutoGroup":
           tabGroupState.autoGroupingEnabled = msg.enabled
           await storageManager.saveState()
