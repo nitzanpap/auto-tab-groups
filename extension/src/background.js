@@ -74,7 +74,7 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       switch (msg.action) {
         case "group":
-          await tabGroupService.groupAllTabs()
+          await tabGroupService.groupAllTabsManually()
           result = { success: true }
           break
 
@@ -123,6 +123,10 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { enabled: tabGroupState.focusModeEnabled }
           break
 
+        case "getGroupNewTabsState":
+          result = { enabled: tabGroupState.groupNewTabs }
+          break
+
         case "getOnlyApplyToNewTabs":
         case "toggleAutoGroup":
           tabGroupState.autoGroupingEnabled = msg.enabled
@@ -142,6 +146,12 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             await tabGroupService.applyFocusMode()
           }
           result = { enabled: tabGroupState.focusModeEnabled }
+          break
+
+        case "toggleGroupNewTabs":
+          tabGroupState.groupNewTabs = msg.enabled
+          await storageManager.saveState()
+          result = { enabled: tabGroupState.groupNewTabs }
           break
 
         case "getGroupByMode":

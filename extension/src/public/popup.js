@@ -6,6 +6,7 @@ const collapseAllButton = document.getElementById("collapseAllButton")
 const expandAllButton = document.getElementById("expandAllButton")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
 const focusModeToggle = document.getElementById("focusModeToggle")
+const groupNewTabsToggle = document.getElementById("groupNewTabsToggle")
 const groupByToggleOptions = document.querySelectorAll(".toggle-option")
 
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
@@ -89,6 +90,10 @@ sendMessage({ action: "getFocusModeState" }).then(response => {
   focusModeToggle.checked = response.enabled
 })
 
+sendMessage({ action: "getGroupNewTabsState" }).then(response => {
+  groupNewTabsToggle.checked = response.enabled
+})
+
 sendMessage({ action: "getGroupByMode" }).then(response => {
   if (response && response.mode) {
     updateGroupByToggle(response.mode)
@@ -106,6 +111,13 @@ autoGroupToggle.addEventListener("change", event => {
 focusModeToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleFocusMode",
+    enabled: event.target.checked
+  })
+})
+
+groupNewTabsToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleGroupNewTabs",
     enabled: event.target.checked
   })
 })
