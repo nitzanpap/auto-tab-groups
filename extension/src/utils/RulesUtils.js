@@ -118,8 +118,8 @@ export function matchIPv4(ip, pattern) {
 }
 
 /**
- * Validates a pattern string format for custom rules (supports domains and IP addresses)
- * @param {string} pattern - Pattern to validate (supports *.domain.com format and IPv4 addresses)
+ * Validates a pattern string format for custom rules (supports domains, IP addresses, and URL patterns)
+ * @param {string} pattern - Pattern to validate (supports *.domain.com format, IPv4 addresses, and URL patterns)
  * @returns {Object} Validation result with isValid and error message
  */
 export function validateRulePattern(pattern) {
@@ -133,54 +133,211 @@ export function validateRulePattern(pattern) {
     return { isValid: false, error: "Pattern cannot be empty" }
   }
 
-  if (cleanPattern.length > 253) {
-    return { isValid: false, error: "Pattern too long (max 253 characters)" }
+  if (cleanPattern.length > 300) {
+    return { isValid: false, error: "Pattern too long (max 300 characters)" }
+  }
+
+  // Check if it's a URL pattern or host pattern
+  const hasPath = cleanPattern.includes("/")
+  const [hostPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
+
+  // Validate host part (domain or IP)
+  const hostValidation = validateHostPattern(hostPattern)
+  if (!hostValidation.isValid) {
+    return hostValidation
+  }
+
+  // Validate path part if present
+  if (hasPath) {
+    const pathValidation = validatePathPattern(pathPattern)
+    if (!pathValidation.isValid) {
+      return pathValidation
+    }
+  }
+
+  return { isValid: true }
+}
+
+/**
+ * Validates a host pattern (domain or IP)
+ * @param {string} pattern - Host pattern to validate
+ * @returns {Object} Validation result with isValid and error
+ */
+export function validateHostPattern(pattern) {
+  if (!pattern) {
+    return { isValid: false, error: "Host pattern cannot be empty" }
   }
 
   // Check if it's an IPv4 pattern
-  if (isIPv4Pattern(cleanPattern)) {
-    return validateIPv4Pattern(cleanPattern)
+  if (isIPv4Pattern(pattern)) {
+    return validateIPv4Pattern(pattern)
   }
 
-  // Check for wildcard pattern (*.domain.com)
-  if (cleanPattern.startsWith("*.")) {
-    const baseDomain = cleanPattern.substring(2) // Remove "*."
+  // Fall back to domain validation
+  return validateDomainPattern(pattern)
+}
 
-    // Validate wildcard pattern
-    if (!baseDomain || baseDomain.includes("*")) {
-      return { isValid: false, error: "Invalid wildcard pattern. Use format: *.domain.com" }
+/**
+ * Validates a domain pattern (supports wildcards and TLD patterns)
+ * @param {string} pattern - Domain pattern to validate
+ * @returns {Object} Validation result with isValid and error
+ */
+export function validateDomainPattern(pattern) {
+  if (!pattern) {
+    return { isValid: false, error: "Domain pattern cannot be empty" }
+  }
+
+  // Check for ** wildcard (TLD wildcard)
+  if (pattern.includes("**")) {
+    const parts = pattern.split("**")
+    if (parts.length !== 2) {
+      return { isValid: false, error: "Invalid ** pattern. Use format: domain.** or *.domain.**" }
     }
 
-    // Validate the base domain part
-    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    if (!domainPattern.test(baseDomain)) {
-      return { isValid: false, error: "Invalid base domain in wildcard pattern" }
+    const prefix = parts[0]
+    const suffix = parts[1]
+
+    // Validate prefix
+    if (!prefix || !prefix.endsWith(".")) {
+      return {
+        isValid: false,
+        error: "** pattern must have domain prefix ending with dot (e.g., google.)"
+      }
+    }
+
+    // Check if prefix has subdomain wildcard
+    if (prefix.startsWith("*.")) {
+      const basePrefix = prefix.substring(2)
+      if (!basePrefix || !basePrefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
+        return { isValid: false, error: "Invalid subdomain wildcard with ** pattern" }
+      }
+    } else {
+      // Validate prefix without subdomain wildcard
+      if (!prefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
+        return { isValid: false, error: "Invalid domain prefix in ** pattern" }
+      }
+    }
+
+    // Validate suffix (usually empty, but could be something like .co in future)
+    if (suffix && !suffix.match(/^[a-zA-Z0-9.-]*$/)) {
+      return { isValid: false, error: "Invalid suffix in ** pattern" }
+    }
+
+    return { isValid: true }
+  }
+
+  // Check for * wildcard (subdomain wildcard)
+  if (pattern.startsWith("*.")) {
+    const baseDomain = pattern.substring(2)
+
+    if (!baseDomain || !baseDomain.includes(".")) {
+      return { isValid: false, error: "Invalid * pattern. Use format: *.domain.com" }
+    }
+
+    if (baseDomain.includes("*")) {
+      return { isValid: false, error: "Multiple wildcards not allowed in domain pattern" }
+    }
+
+    if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
+      return { isValid: false, error: "Invalid base domain in * pattern" }
     }
 
     return { isValid: true }
   }
 
   // Regular domain validation
-  const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-
-  if (!domainPattern.test(cleanPattern)) {
+  if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pattern)) {
     return { isValid: false, error: "Invalid domain format" }
   }
 
   // Check for invalid patterns
-  if (cleanPattern.startsWith(".") || cleanPattern.endsWith(".")) {
+  if (pattern.startsWith(".") || pattern.endsWith(".")) {
     return { isValid: false, error: "Domain cannot start or end with a dot" }
   }
 
-  if (cleanPattern.includes("..")) {
+  if (pattern.includes("..")) {
     return { isValid: false, error: "Domain cannot contain consecutive dots" }
   }
 
-  if (cleanPattern.startsWith("-") || cleanPattern.endsWith("-")) {
+  if (pattern.startsWith("-") || pattern.endsWith("-")) {
     return { isValid: false, error: "Domain cannot start or end with a hyphen" }
   }
 
-  return { isValid: true, error: null }
+  return { isValid: true }
+}
+
+/**
+ * Validates a path pattern
+ * @param {string} pattern - Path pattern to validate
+ * @returns {Object} Validation result with isValid and error
+ */
+export function validatePathPattern(pattern) {
+  if (!pattern) {
+    return { isValid: false, error: "Path pattern cannot be empty" }
+  }
+
+  // Remove leading slash if present
+  const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
+
+  if (cleanPattern.length === 0) {
+    return { isValid: false, error: "Path pattern cannot be empty" }
+  }
+
+  if (cleanPattern.length > 100) {
+    return { isValid: false, error: "Path pattern too long (max 100 characters)" }
+  }
+
+  // Check for ** wildcard in path
+  if (cleanPattern.includes("**")) {
+    const parts = cleanPattern.split("**")
+    if (parts.length !== 2) {
+      return { isValid: false, error: "Invalid ** pattern in path. Use format: prefix/**/suffix" }
+    }
+
+    const prefix = parts[0]
+    const suffix = parts[1]
+
+    // Validate prefix (if present)
+    if (prefix && !isValidPathSegment(prefix)) {
+      return { isValid: false, error: "Invalid prefix in path ** pattern" }
+    }
+
+    // Validate suffix (if present)
+    if (suffix && !isValidPathSegment(suffix)) {
+      return { isValid: false, error: "Invalid suffix in path ** pattern" }
+    }
+
+    return { isValid: true }
+  }
+
+  // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
+  if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
+    return { isValid: false, error: "Path pattern contains invalid characters" }
+  }
+
+  // Check for invalid patterns
+  if (cleanPattern.includes("//")) {
+    return { isValid: false, error: "Path pattern cannot contain consecutive slashes" }
+  }
+
+  return { isValid: true }
+}
+
+/**
+ * Validates a path segment (helper for path validation)
+ * @param {string} segment - Path segment to validate
+ * @returns {boolean} True if segment is valid
+ */
+export function isValidPathSegment(segment) {
+  if (!segment) return true // Empty segments are allowed
+
+  // Remove leading/trailing slashes
+  const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
+
+  if (cleanSegment.length === 0) return true
+
+  // Allow alphanumeric, hyphens, underscores, dots, and slashes
+  return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
 }
 
 /**
