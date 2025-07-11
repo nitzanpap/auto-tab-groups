@@ -3,28 +3,148 @@
  */
 
 /**
- * Validates a domain string format for custom rules (supports wildcards)
- * @param {string} domain - Domain to validate (supports *.domain.com format for rules)
+ * Checks if a string is an IPv4 address
+ * @param {string} str - String to check
+ * @returns {boolean} True if string is a valid IPv4 address
+ */
+export function isIPv4Address(str) {
+  if (!str || typeof str !== "string") return false
+
+  const parts = str.split(".")
+  if (parts.length !== 4) return false
+
+  return parts.every(part => {
+    if (!/^\d+$/.test(part)) return false
+    const num = parseInt(part, 10)
+    return num >= 0 && num <= 255 && part === num.toString() // No leading zeros
+  })
+}
+
+/**
+ * Checks if a string is an IPv4 pattern with wildcards
+ * @param {string} str - String to check
+ * @returns {boolean} True if string is a valid IPv4 pattern
+ */
+export function isIPv4Pattern(str) {
+  if (!str || typeof str !== "string") return false
+
+  const parts = str.split(".")
+  if (parts.length !== 4) return false
+
+  return parts.every(part => {
+    if (part === "*") return true
+    if (!/^\d+$/.test(part)) return false
+    const num = parseInt(part, 10)
+    return num >= 0 && num <= 255 && part === num.toString() // No leading zeros
+  })
+}
+
+/**
+ * Validates an IPv4 pattern (exact IP or with wildcards)
+ * @param {string} pattern - IPv4 pattern to validate
  * @returns {Object} Validation result with isValid and error message
  */
-export function validateRuleDomain(domain) {
-  if (!domain || typeof domain !== "string") {
-    return { isValid: false, error: "Domain must be a string" }
+export function validateIPv4Pattern(pattern) {
+  if (!pattern || typeof pattern !== "string") {
+    return { isValid: false, error: "IPv4 pattern must be a string" }
   }
 
-  const cleanDomain = domain.trim().toLowerCase()
+  const cleanPattern = pattern.trim()
 
-  if (cleanDomain.length === 0) {
-    return { isValid: false, error: "Domain cannot be empty" }
+  if (cleanPattern.length === 0) {
+    return { isValid: false, error: "IPv4 pattern cannot be empty" }
   }
 
-  if (cleanDomain.length > 253) {
-    return { isValid: false, error: "Domain too long (max 253 characters)" }
+  const parts = cleanPattern.split(".")
+
+  if (parts.length !== 4) {
+    return { isValid: false, error: "IPv4 address must have exactly 4 octets" }
+  }
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+
+    if (part === "*") {
+      continue // Wildcard is valid
+    }
+
+    if (!/^\d+$/.test(part)) {
+      return { isValid: false, error: `Invalid IPv4 octet "${part}". Must be 0-255 or *` }
+    }
+
+    const num = parseInt(part, 10)
+
+    if (num < 0 || num > 255) {
+      return { isValid: false, error: `IPv4 octet "${part}" must be between 0 and 255` }
+    }
+
+    if (part !== num.toString()) {
+      return { isValid: false, error: `IPv4 octet "${part}" cannot have leading zeros` }
+    }
+  }
+
+  return { isValid: true }
+}
+
+/**
+ * Matches an IPv4 address against an IPv4 pattern
+ * @param {string} ip - IPv4 address to match
+ * @param {string} pattern - IPv4 pattern (may contain wildcards)
+ * @returns {boolean} True if IP matches pattern
+ */
+export function matchIPv4(ip, pattern) {
+  if (!isIPv4Address(ip) || !isIPv4Pattern(pattern)) {
+    return false
+  }
+
+  const ipParts = ip.split(".")
+  const patternParts = pattern.split(".")
+
+  if (ipParts.length !== 4 || patternParts.length !== 4) {
+    return false
+  }
+
+  for (let i = 0; i < 4; i++) {
+    if (patternParts[i] === "*") {
+      continue // Wildcard matches anything
+    }
+
+    if (ipParts[i] !== patternParts[i]) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Validates a pattern string format for custom rules (supports domains and IP addresses)
+ * @param {string} pattern - Pattern to validate (supports *.domain.com format and IPv4 addresses)
+ * @returns {Object} Validation result with isValid and error message
+ */
+export function validateRulePattern(pattern) {
+  if (!pattern || typeof pattern !== "string") {
+    return { isValid: false, error: "Pattern must be a string" }
+  }
+
+  const cleanPattern = pattern.trim().toLowerCase()
+
+  if (cleanPattern.length === 0) {
+    return { isValid: false, error: "Pattern cannot be empty" }
+  }
+
+  if (cleanPattern.length > 253) {
+    return { isValid: false, error: "Pattern too long (max 253 characters)" }
+  }
+
+  // Check if it's an IPv4 pattern
+  if (isIPv4Pattern(cleanPattern)) {
+    return validateIPv4Pattern(cleanPattern)
   }
 
   // Check for wildcard pattern (*.domain.com)
-  if (cleanDomain.startsWith("*.")) {
-    const baseDomain = cleanDomain.substring(2) // Remove "*."
+  if (cleanPattern.startsWith("*.")) {
+    const baseDomain = cleanPattern.substring(2) // Remove "*."
 
     // Validate wildcard pattern
     if (!baseDomain || baseDomain.includes("*")) {
@@ -43,24 +163,34 @@ export function validateRuleDomain(domain) {
   // Regular domain validation
   const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
-  if (!domainPattern.test(cleanDomain)) {
+  if (!domainPattern.test(cleanPattern)) {
     return { isValid: false, error: "Invalid domain format" }
   }
 
   // Check for invalid patterns
-  if (cleanDomain.startsWith(".") || cleanDomain.endsWith(".")) {
+  if (cleanPattern.startsWith(".") || cleanPattern.endsWith(".")) {
     return { isValid: false, error: "Domain cannot start or end with a dot" }
   }
 
-  if (cleanDomain.includes("..")) {
+  if (cleanPattern.includes("..")) {
     return { isValid: false, error: "Domain cannot contain consecutive dots" }
   }
 
-  if (cleanDomain.startsWith("-") || cleanDomain.endsWith("-")) {
+  if (cleanPattern.startsWith("-") || cleanPattern.endsWith("-")) {
     return { isValid: false, error: "Domain cannot start or end with a hyphen" }
   }
 
   return { isValid: true, error: null }
+}
+
+/**
+ * Validates a domain string format for custom rules (supports wildcards)
+ * @deprecated Use validateRulePattern instead
+ * @param {string} domain - Domain to validate (supports *.domain.com format for rules)
+ * @returns {Object} Validation result with isValid and error message
+ */
+export function validateRuleDomain(domain) {
+  return validateRulePattern(domain)
 }
 
 /**
@@ -111,30 +241,40 @@ export function validateRuleName(name) {
 }
 
 /**
- * Sanitizes domains array by removing invalid entries and duplicates
- * @param {Array} domains - Array of domain strings
- * @returns {Array} Cleaned array of valid domains
+ * Sanitizes patterns array by removing invalid entries and duplicates
+ * @param {Array} patterns - Array of pattern strings (domains or IP addresses)
+ * @returns {Array} Cleaned array of valid patterns
  */
-export function sanitizeDomains(domains) {
-  if (!Array.isArray(domains)) {
+export function sanitizePatterns(patterns) {
+  if (!Array.isArray(patterns)) {
     return []
   }
 
-  const validDomains = []
+  const validPatterns = []
   const seen = new Set()
 
-  for (const domain of domains) {
-    const validation = validateRuleDomain(domain)
+  for (const pattern of patterns) {
+    const validation = validateRulePattern(pattern)
     if (validation.isValid) {
-      const cleanDomain = domain.trim().toLowerCase()
-      if (!seen.has(cleanDomain)) {
-        validDomains.push(cleanDomain)
-        seen.add(cleanDomain)
+      const cleanPattern = pattern.trim().toLowerCase()
+      if (!seen.has(cleanPattern)) {
+        validPatterns.push(cleanPattern)
+        seen.add(cleanPattern)
       }
     }
   }
 
-  return validDomains
+  return validPatterns
+}
+
+/**
+ * Sanitizes domains array by removing invalid entries and duplicates
+ * @deprecated Use sanitizePatterns instead
+ * @param {Array} domains - Array of domain strings
+ * @returns {Array} Cleaned array of valid domains
+ */
+export function sanitizeDomains(domains) {
+  return sanitizePatterns(domains)
 }
 
 /**
@@ -234,26 +374,26 @@ export function validateRuleData(ruleData, existingRules = []) {
   } else if (ruleData.domains.length > 20) {
     errors.push("Maximum 20 domains per rule")
   } else {
-    // Validate each domain
-    const validDomains = []
-    for (const domain of ruleData.domains) {
-      const validation = validateRuleDomain(domain)
+    // Validate each pattern (domain or IP)
+    const validPatterns = []
+    for (const pattern of ruleData.domains) {
+      const validation = validateRulePattern(pattern)
       if (!validation.isValid) {
-        errors.push(`Invalid domain "${domain}": ${validation.error}`)
+        errors.push(`Invalid pattern "${pattern}": ${validation.error}`)
       } else {
-        validDomains.push(domain.trim().toLowerCase())
+        validPatterns.push(pattern.trim().toLowerCase())
       }
     }
 
-    // Check for domain conflicts with other rules
+    // Check for pattern conflicts with other rules
     for (const existingRule of existingRules) {
       if (existingRule.id === ruleData.id) continue
 
-      const conflicts = validDomains.filter(domain => existingRule.domains.includes(domain))
+      const conflicts = validPatterns.filter(pattern => existingRule.domains.includes(pattern))
 
       if (conflicts.length > 0) {
         warnings.push(
-          `Domain(s) ${conflicts.join(", ")} already exist in rule "${existingRule.name}"`
+          `Pattern(s) ${conflicts.join(", ")} already exist in rule "${existingRule.name}"`
         )
       }
     }
@@ -288,7 +428,7 @@ export function createSafeRule(ruleData) {
   return {
     id: ruleData.id || `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name: (ruleData.name || "").trim() || "Unnamed Rule",
-    domains: sanitizeDomains(ruleData.domains || []),
+    domains: sanitizePatterns(ruleData.domains || []),
     color: getColorInfo(ruleData.color) ? ruleData.color : "blue",
     enabled: ruleData.enabled !== false,
     priority:

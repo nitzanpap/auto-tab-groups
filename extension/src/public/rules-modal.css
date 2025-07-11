@@ -64,7 +64,7 @@ body {
 }
 
 .form-textarea {
-  min-height: 150px;
+  min-height: 175px;
   resize: vertical;
   font-family: inherit;
 }

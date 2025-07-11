@@ -2,8 +2,14 @@
  * Rules Modal JavaScript for managing custom tab grouping rules
  */
 
-// Import utilities from DomainUtils
+// Import utilities from DomainUtils and RulesUtils
 import { extractDomain, validateStrictDomain } from "../utils/DomainUtils.js"
+import {
+  isIPv4Address,
+  validateRulePattern,
+  RULE_COLORS,
+  parseDomainsText
+} from "../utils/RulesUtils.js"
 
 // Browser API compatibility
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -12,31 +18,6 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome
 function isValidStrictDomain(domain) {
   const result = validateStrictDomain(domain)
   return result.isValid
-}
-
-// Color definitions (copied from RulesUtils to avoid import issues)
-const RULE_COLORS = [
-  { name: "Blue", value: "blue", hex: "#4285f4" },
-  { name: "Red", value: "red", hex: "#ea4335" },
-  { name: "Yellow", value: "yellow", hex: "#fbbc04" },
-  { name: "Green", value: "green", hex: "#34a853" },
-  { name: "Pink", value: "pink", hex: "#ff6d9d" },
-  { name: "Purple", value: "purple", hex: "#9c27b0" },
-  { name: "Cyan", value: "cyan", hex: "#00acc1" },
-  { name: "Orange", value: "orange", hex: "#ff9800" }
-]
-
-// Utility functions
-function parseDomainsText(domainsText) {
-  if (!domainsText || typeof domainsText !== "string") {
-    return []
-  }
-
-  return domainsText
-    .split("\n")
-    .map(line => line.trim().toLowerCase())
-    .filter(line => line.length > 0)
-    .filter((domain, index, arr) => arr.indexOf(domain) === index) // Remove duplicates
 }
 
 class RulesModal {
@@ -306,10 +287,11 @@ class RulesModal {
       return false
     }
 
-    // Validate each pattern format (support domain and URL patterns)
+    // Validate each pattern format (support domain, IP, and URL patterns)
     for (const pattern of domains) {
-      if (!this.isValidRuleDomainFormat(pattern)) {
-        this.showFieldError("domains", `Invalid pattern format: ${pattern}`)
+      const validation = validateRulePattern(pattern)
+      if (!validation.isValid) {
+        this.showFieldError("domains", `Invalid pattern: ${pattern} - ${validation.error}`)
         return false
       }
     }
@@ -333,206 +315,6 @@ class RulesModal {
 
     const inputElement = fieldName === "name" ? this.nameInput : this.domainsInput
     inputElement.style.borderColor = "#e2e8f0"
-  }
-
-  /**
-   * Validates pattern format for custom rules (supports domain and URL patterns)
-   * This is specifically for rule validation, supports various pattern formats
-   * @param {string} pattern - Pattern to validate (supports various formats)
-   * @returns {boolean} True if pattern format is valid
-   */
-  isValidRuleDomainFormat(pattern) {
-    if (!pattern || typeof pattern !== "string") {
-      return false
-    }
-
-    const cleanPattern = pattern.trim().toLowerCase()
-
-    if (cleanPattern.length === 0) {
-      return false
-    }
-
-    if (cleanPattern.length > 300) {
-      return false
-    }
-
-    // Check if it's a URL pattern or domain pattern
-    const hasPath = cleanPattern.includes("/")
-    const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
-
-    // Validate domain part
-    if (!this.isValidDomainPattern(domainPattern)) {
-      return false
-    }
-
-    // Validate path part if present
-    if (hasPath) {
-      if (!this.isValidPathPattern(pathPattern)) {
-        return false
-      }
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a domain pattern
-   * @param {string} pattern - Domain pattern to validate
-   * @returns {boolean} True if domain pattern is valid
-   */
-  isValidDomainPattern(pattern) {
-    if (!pattern) {
-      return false
-    }
-
-    // Check for ** wildcard (TLD wildcard)
-    if (pattern.includes("**")) {
-      const parts = pattern.split("**")
-      if (parts.length !== 2) {
-        return false
-      }
-
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      // Validate prefix
-      if (!prefix || !prefix.endsWith(".")) {
-        return false
-      }
-
-      // Check if prefix has subdomain wildcard
-      if (prefix.startsWith("*.")) {
-        const basePrefix = prefix.substring(2)
-        if (!basePrefix || !basePrefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-          return false
-        }
-      } else {
-        // Validate prefix without subdomain wildcard
-        if (!prefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-          return false
-        }
-      }
-
-      // Validate suffix (usually empty, but could be something like .co in future)
-      if (suffix && !suffix.match(/^[a-zA-Z0-9.-]*$/)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Check for * wildcard (subdomain wildcard)
-    if (pattern.startsWith("*.")) {
-      const baseDomain = pattern.substring(2)
-
-      if (!baseDomain || !baseDomain.includes(".")) {
-        return false
-      }
-
-      if (baseDomain.includes("*")) {
-        return false
-      }
-
-      if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Regular domain validation
-    if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pattern)) {
-      return false
-    }
-
-    // Check for invalid patterns
-    if (pattern.startsWith(".") || pattern.endsWith(".")) {
-      return false
-    }
-
-    if (pattern.includes("..")) {
-      return false
-    }
-
-    if (pattern.startsWith("-") || pattern.endsWith("-")) {
-      return false
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a path pattern
-   * @param {string} pattern - Path pattern to validate
-   * @returns {boolean} True if path pattern is valid
-   */
-  isValidPathPattern(pattern) {
-    if (!pattern) {
-      return false
-    }
-
-    // Remove leading slash if present
-    const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
-
-    if (cleanPattern.length === 0) {
-      return false
-    }
-
-    if (cleanPattern.length > 100) {
-      return false
-    }
-
-    // Check for ** wildcard in path
-    if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**")
-      if (parts.length !== 2) {
-        return false
-      }
-
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      // Validate prefix (if present)
-      if (prefix && !this.isValidPathSegment(prefix)) {
-        return false
-      }
-
-      // Validate suffix (if present)
-      if (suffix && !this.isValidPathSegment(suffix)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
-    if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
-      return false
-    }
-
-    // Check for invalid patterns
-    if (cleanPattern.includes("//")) {
-      return false
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a path segment (helper for path validation)
-   * @param {string} segment - Path segment to validate
-   * @returns {boolean} True if segment is valid
-   */
-  isValidPathSegment(segment) {
-    if (!segment) return true // Empty segments are allowed
-
-    // Remove leading/trailing slashes
-    const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
-
-    if (cleanSegment.length === 0) return true
-
-    // Allow alphanumeric, hyphens, underscores, dots, and slashes
-    return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
   }
 
   showError(message) {
@@ -588,8 +370,12 @@ class RulesModal {
         // Include subdomains for better domain suggestions (e.g., "addons.mozilla.org" not just "mozilla.org")
         const domain = extractDomain(tab.url, true)
 
-        // Skip invalid domains, system domains, and domains that don't pass strict validation
-        if (!domain || domain === "system" || !isValidStrictDomain(domain)) {
+        // Skip invalid domains, system domains, and domains/IPs that don't pass validation
+        if (
+          !domain ||
+          domain === "system" ||
+          (!isValidStrictDomain(domain) && !isIPv4Address(domain))
+        ) {
           return
         }
 

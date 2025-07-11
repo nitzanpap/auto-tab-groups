@@ -5,6 +5,7 @@
 
 import { storageManager } from "../config/StorageManager.js"
 import { tabGroupState } from "../state/TabGroupState.js"
+import { isIPv4Pattern, matchIPv4 } from "../utils/RulesUtils.js"
 
 class RulesService {
   /**
@@ -69,9 +70,9 @@ class RulesService {
         ? cleanRulePattern.split("/", 2)
         : [cleanRulePattern, ""]
 
-      // Match domain part first
-      const domainMatch = this.matchDomain(domain, domainPattern)
-      if (!domainMatch) return false
+      // Match host part first (domain or IP)
+      const hostMatch = this.matchHost(domain, domainPattern)
+      if (!hostMatch) return false
 
       // Match path part if specified
       if (hasPath) {
@@ -86,6 +87,27 @@ class RulesService {
       )
       return false
     }
+  }
+
+  /**
+   * Matches a host against a host pattern (supports wildcards for domains and IPs)
+   * @param {string} host - Host to match (domain or IP)
+   * @param {string} pattern - Host pattern (supports *.domain.com, domain.**, and IP patterns)
+   * @returns {boolean} True if host matches pattern
+   */
+  matchHost(host, pattern) {
+    if (!host || !pattern) return false
+
+    const cleanHost = host.toLowerCase().trim()
+    const cleanPattern = pattern.toLowerCase().trim()
+
+    // Check if pattern is IPv4
+    if (isIPv4Pattern(cleanPattern)) {
+      return matchIPv4(cleanHost, cleanPattern)
+    }
+
+    // Fall back to domain matching
+    return this.matchDomain(cleanHost, cleanPattern)
   }
 
   /**
@@ -351,7 +373,7 @@ class RulesService {
   }
 
   /**
-   * Validates a rule pattern (domain or URL)
+   * Validates a rule pattern (domain, IP, or URL)
    * @param {string} pattern - Pattern to validate
    * @returns {Object} Validation result with isValid and error
    */
@@ -370,14 +392,14 @@ class RulesService {
       return { isValid: false, error: "Pattern too long (max 300 characters)" }
     }
 
-    // Check if it's a URL pattern or domain pattern
+    // Check if it's a URL pattern or host pattern
     const hasPath = cleanPattern.includes("/")
-    const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
+    const [hostPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
 
-    // Validate domain part
-    const domainValidation = this.validateDomainPattern(domainPattern)
-    if (!domainValidation.isValid) {
-      return domainValidation
+    // Validate host part (domain or IP)
+    const hostValidation = this.validateHostPattern(hostPattern)
+    if (!hostValidation.isValid) {
+      return hostValidation
     }
 
     // Validate path part if present
@@ -385,6 +407,66 @@ class RulesService {
       const pathValidation = this.validatePathPattern(pathPattern)
       if (!pathValidation.isValid) {
         return pathValidation
+      }
+    }
+
+    return { isValid: true }
+  }
+
+  /**
+   * Validates a host pattern (domain or IP)
+   * @param {string} pattern - Host pattern to validate
+   * @returns {Object} Validation result with isValid and error
+   */
+  validateHostPattern(pattern) {
+    if (!pattern) {
+      return { isValid: false, error: "Host pattern cannot be empty" }
+    }
+
+    // Check if it's an IPv4 pattern
+    if (isIPv4Pattern(pattern)) {
+      return this.validateIPv4Pattern(pattern)
+    }
+
+    // Fall back to domain validation
+    return this.validateDomainPattern(pattern)
+  }
+
+  /**
+   * Validates an IPv4 pattern
+   * @param {string} pattern - IPv4 pattern to validate
+   * @returns {Object} Validation result with isValid and error
+   */
+  validateIPv4Pattern(pattern) {
+    if (!pattern) {
+      return { isValid: false, error: "IPv4 pattern cannot be empty" }
+    }
+
+    const parts = pattern.split(".")
+
+    if (parts.length !== 4) {
+      return { isValid: false, error: "IPv4 address must have exactly 4 octets" }
+    }
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]
+
+      if (part === "*") {
+        continue // Wildcard is valid
+      }
+
+      if (!/^\d+$/.test(part)) {
+        return { isValid: false, error: `Invalid IPv4 octet "${part}". Must be 0-255 or *` }
+      }
+
+      const num = parseInt(part, 10)
+
+      if (num < 0 || num > 255) {
+        return { isValid: false, error: `IPv4 octet "${part}" must be between 0 and 255` }
+      }
+
+      if (part !== num.toString()) {
+        return { isValid: false, error: `IPv4 octet "${part}" cannot have leading zeros` }
       }
     }
 
