@@ -27,16 +27,17 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="ruleDomains">Domains</label>
+          <label class="form-label" for="ruleDomains">Patterns</label>
           <textarea
             id="ruleDomains"
             class="form-input form-textarea"
-            placeholder="Enter one domain per line&#10;discord.com&#10;teams.microsoft.com&#10;*.google.com&#10;docs.google.com/forms&#10;dashboard.my-cool-site.com/**/special-page"
+            placeholder="Enter one pattern per line&#10;discord.com&#10;teams.microsoft.com&#10;*.google.com&#10;192.168.0.30&#10;192.168.0.*&#10;docs.google.com/forms&#10;dashboard.my-cool-site.com/**/special-page"
             required
           ></textarea>
           <div class="error-message" id="domainsError"></div>
           <div class="help-text">
-            Enter one domain per line. Supports wildcards: *.domain.com (max 20 domains per rule)
+            Enter one pattern per line. Supports domains, IP addresses, and wildcards (max 20
+            patterns per rule)
           </div>
 
           <!-- Current Tabs Selection -->
