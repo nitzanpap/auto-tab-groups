@@ -137,6 +137,47 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Counts tabs that would belong to the same group
+   * @param {string} expectedTitle - The group title to check
+   * @param {number} windowId - The window ID
+   * @param {Object|null} customRule - The custom rule if applicable
+   * @returns {Promise<number>} Count of tabs that match this group
+   */
+  async countTabsForGroup(expectedTitle, windowId, customRule) {
+    try {
+      const tabs = await browserAPI.tabs.query({ windowId })
+      let count = 0
+
+      for (const tab of tabs) {
+        // Skip pinned tabs
+        if (tab.pinned) continue
+
+        // For rules-based grouping
+        if (customRule) {
+          const matchingRule = await rulesService.findMatchingRule(tab.url)
+          if (matchingRule && matchingRule.name === customRule.name) {
+            count++
+          }
+        } else {
+          // For domain-based grouping
+          const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+          const domain = extractDomain(tab.url, includeSubDomain)
+          const displayName = getDomainDisplayName(domain)
+
+          if (displayName === expectedTitle) {
+            count++
+          }
+        }
+      }
+
+      return count
+    } catch (error) {
+      console.error(`[TabGroupService] Error counting tabs for group:`, error)
+      return 0
+    }
+  }
+
+  /**
    * Moves a tab to the target group, creating the group if it doesn't exist
    * @param {number} tabId - The tab ID to move
    * @param {Object} tab - The tab object
@@ -180,7 +221,29 @@ class TabGroupServiceSimplified {
       return true
     }
 
-    // No group exists - create new one by grouping the tab first
+    // No group exists - check if we meet the minimum threshold before creating
+    const tabCount = await this.countTabsForGroup(expectedTitle, tab.windowId, customRule)
+    const minimumTabs = tabGroupState.minimumTabsForGroup || 1
+
+    console.log(
+      `[TabGroupService] Tab count for "${expectedTitle}": ${tabCount}, minimum required: ${minimumTabs}`
+    )
+
+    if (tabCount < minimumTabs) {
+      console.log(
+        `[TabGroupService] Not enough tabs (${tabCount} < ${minimumTabs}) to create group "${expectedTitle}", keeping tab ungrouped`
+      )
+
+      // If tab is currently in a group, ungroup it since it doesn't meet threshold
+      if (tab.groupId && tab.groupId !== -1) {
+        await browserAPI.tabs.ungroup([tabId])
+        console.log(`[TabGroupService] Ungrouped tab ${tabId} as it doesn't meet minimum threshold`)
+      }
+
+      return false
+    }
+
+    // Threshold is met - use standard grouping logic but group all matching tabs at once
     console.log(`[TabGroupService] Creating new group "${expectedTitle}" for tab ${tabId}`)
 
     const groupId = await browserAPI.tabs.group({
@@ -236,7 +299,69 @@ class TabGroupServiceSimplified {
     }
 
     console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
+
+    // After creating the group, check if any other ungrouped tabs should join it
+    await this.groupMatchingUngroupedTabs(expectedTitle, tab.windowId, customRule)
+
     return true
+  }
+
+  /**
+   * Groups any ungrouped tabs that match the given group criteria
+   * @param {string} expectedTitle - The group title to match
+   * @param {number} windowId - The window ID
+   * @param {Object|null} customRule - The custom rule if applicable
+   * @returns {Promise<void>}
+   */
+  async groupMatchingUngroupedTabs(expectedTitle, windowId, customRule) {
+    try {
+      // Find the existing group by title (fresh from browser)
+      const existingGroup = await this.findGroupByTitle(expectedTitle, windowId)
+      if (!existingGroup) {
+        console.log(`[TabGroupService] No group found with title "${expectedTitle}" to add tabs to`)
+        return
+      }
+
+      // Get all tabs in this window (fresh from browser)
+      const allTabs = await browserAPI.tabs.query({ windowId })
+      const tabsToGroup = []
+
+      for (const otherTab of allTabs) {
+        // Skip if pinned, already in a group, or doesn't match
+        if (otherTab.pinned || (otherTab.groupId && otherTab.groupId !== -1)) {
+          continue
+        }
+
+        // Check if this tab matches the same group using existing logic
+        let shouldGroup = false
+        if (customRule) {
+          const matchingRule = await rulesService.findMatchingRule(otherTab.url)
+          shouldGroup = matchingRule && matchingRule.name === customRule.name
+        } else {
+          const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+          const domain = extractDomain(otherTab.url, includeSubDomain)
+          const displayName = getDomainDisplayName(domain)
+          shouldGroup = displayName === expectedTitle
+        }
+
+        if (shouldGroup) {
+          tabsToGroup.push(otherTab.id)
+        }
+      }
+
+      // Group any matching ungrouped tabs
+      if (tabsToGroup.length > 0) {
+        await browserAPI.tabs.group({
+          tabIds: tabsToGroup,
+          groupId: existingGroup.id
+        })
+        console.log(
+          `[TabGroupService] Added ${tabsToGroup.length} ungrouped tabs to group "${expectedTitle}"`
+        )
+      }
+    } catch (error) {
+      console.error(`[TabGroupService] Error grouping matching ungrouped tabs:`, error)
+    }
   }
 
   /**
@@ -345,12 +470,66 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Checks if a group should be ungrouped based on minimum threshold
+   * Uses browser-fetched state to handle Chrome's memory optimizations
+   * @param {number} groupId - The group ID to check
+   * @returns {Promise<boolean>} True if group was ungrouped
+   */
+  async checkGroupThreshold(groupId) {
+    try {
+      const minimumTabs = tabGroupState.minimumTabsForGroup || 1
+
+      // If minimum is 1, no need to check
+      if (minimumTabs <= 1) return false
+
+      // Get fresh group details from browser (following established pattern to avoid stale state)
+      const groups = await browserAPI.tabGroups.query({ groupId })
+      if (groups.length === 0) return false
+
+      const group = groups[0]
+
+      // Get fresh tab count from browser
+      const tabs = await browserAPI.tabs.query({ groupId })
+      const tabCount = tabs.filter(tab => !tab.pinned).length
+
+      console.log(
+        `[TabGroupService] Group "${group.title}" has ${tabCount} tabs, minimum required: ${minimumTabs}`
+      )
+
+      if (tabCount < minimumTabs) {
+        console.log(
+          `[TabGroupService] Group "${group.title}" no longer meets minimum threshold, ungrouping all tabs`
+        )
+
+        // Ungroup all tabs - let browser handle the rest
+        const tabIds = tabs.map(tab => tab.id)
+        if (tabIds.length > 0) {
+          await browserAPI.tabs.ungroup(tabIds)
+          console.log(
+            `[TabGroupService] Ungrouped ${tabIds.length} tabs from group "${group.title}"`
+          )
+        }
+
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error(`[TabGroupService] Error checking group threshold:`, error)
+      return false
+    }
+  }
+
+  /**
    * Removes an empty group (no-op in simplified version, browser handles this)
    * @param {number} groupId - The group ID to check and remove if empty
    * @returns {Promise<boolean>} True if successful
    */
   async removeEmptyGroup(groupId) {
-    // In the simplified version, we let the browser handle empty group cleanup
+    // Check if group should be ungrouped based on threshold
+    await this.checkGroupThreshold(groupId)
+
+    // Let the browser handle empty group cleanup
     console.log(`[TabGroupService] Group ${groupId} cleanup handled by browser`)
     return true
   }

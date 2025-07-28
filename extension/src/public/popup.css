@@ -375,6 +375,49 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
+/* Number input styles */
+.number-input-container {
+  display: flex;
+  align-items: center;
+}
+
+.number-input {
+  width: 60px;
+  height: 32px;
+  padding: 4px 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background-color: #ffffff;
+  color: #111827;
+  transition: border-color 0.2s;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+.number-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.number-input:hover {
+  border-color: #d1d5db;
+}
+
+/* Chrome, Safari, Edge, Opera */
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.number-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .settings-container {
   display: flex;
   flex-direction: column;

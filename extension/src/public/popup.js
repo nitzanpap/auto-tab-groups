@@ -7,6 +7,7 @@ const expandAllButton = document.getElementById("expandAllButton")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle")
 const groupByToggleOptions = document.querySelectorAll(".toggle-option")
+const minimumTabsInput = document.getElementById("minimumTabsInput")
 
 // Browser API compatibility - use chrome for Chrome, browser for Firefox
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -95,6 +96,10 @@ sendMessage({ action: "getGroupByMode" }).then(response => {
   }
 })
 
+sendMessage({ action: "getMinimumTabsForGroup" }).then(response => {
+  minimumTabsInput.value = response.minimumTabs || 1
+})
+
 // Listen for toggle changes.
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -120,6 +125,19 @@ groupByToggleOptions.forEach(option => {
       action: "setGroupByMode",
       mode: mode
     })
+  })
+})
+
+// Minimum tabs input event listener
+minimumTabsInput.addEventListener("change", event => {
+  const value = parseInt(event.target.value) || 1
+  // Ensure value is within bounds
+  const clampedValue = Math.max(1, Math.min(10, value))
+  event.target.value = clampedValue
+
+  sendMessage({
+    action: "setMinimumTabsForGroup",
+    minimumTabs: clampedValue
   })
 })
 
