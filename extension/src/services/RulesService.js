@@ -257,6 +257,7 @@ class RulesService {
       color: ruleData.color || "blue",
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
+      minimumTabs: ruleData.minimumTabs ? parseInt(ruleData.minimumTabs) : null, // null means use global setting
       createdAt: new Date().toISOString()
     }
 
@@ -293,7 +294,13 @@ class RulesService {
       domains: ruleData.domains.map(d => d.toLowerCase().trim()).filter(d => d),
       color: ruleData.color || customRules[ruleId].color,
       enabled: ruleData.enabled !== false,
-      priority: ruleData.priority || customRules[ruleId].priority
+      priority: ruleData.priority || customRules[ruleId].priority,
+      minimumTabs:
+        ruleData.minimumTabs !== undefined
+          ? ruleData.minimumTabs
+            ? parseInt(ruleData.minimumTabs)
+            : null
+          : customRules[ruleId].minimumTabs
     }
 
     // Update rule in state
@@ -363,6 +370,16 @@ class RulesService {
         if (!validation.isValid) {
           errors.push(`Invalid pattern "${pattern}": ${validation.error}`)
         }
+      }
+    }
+
+    // Validate minimumTabs (optional field)
+    if (ruleData.minimumTabs !== null && ruleData.minimumTabs !== undefined) {
+      const minTabs = parseInt(ruleData.minimumTabs)
+      if (isNaN(minTabs) || minTabs < 1 || minTabs > 10) {
+        errors.push(
+          "Minimum tabs must be a number between 1 and 10, or empty to use global setting"
+        )
       }
     }
 

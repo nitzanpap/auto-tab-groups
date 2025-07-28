@@ -137,6 +137,42 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Gets the effective minimum tabs required for a group
+   * Rule-specific minimum takes precedence over global minimum
+   * @param {Object|null} customRule - The custom rule if applicable
+   * @returns {number} The minimum tabs required
+   */
+  getEffectiveMinimumTabs(customRule) {
+    // Debug logging to see what's in the rule
+    if (customRule) {
+      console.log(
+        `[TabGroupService] Rule "${customRule.name}" full object:`,
+        JSON.stringify(customRule, null, 2)
+      )
+      console.log(
+        `[TabGroupService] Rule "${customRule.name}" minimumTabs field:`,
+        customRule.minimumTabs,
+        typeof customRule.minimumTabs
+      )
+    }
+
+    // If custom rule has minimumTabs set, use that
+    if (customRule && customRule.minimumTabs !== null && customRule.minimumTabs !== undefined) {
+      console.log(
+        `[TabGroupService] Using rule-specific minimum: ${customRule.minimumTabs} for rule "${customRule.name}"`
+      )
+      return customRule.minimumTabs
+    }
+
+    // Otherwise use global setting
+    const globalMinimum = tabGroupState.minimumTabsForGroup || 1
+    console.log(
+      `[TabGroupService] Using global minimum: ${globalMinimum}${customRule ? ` for rule "${customRule.name}"` : ""}`
+    )
+    return globalMinimum
+  }
+
+  /**
    * Counts tabs that would belong to the same group
    * @param {string} expectedTitle - The group title to check
    * @param {number} windowId - The window ID
@@ -223,7 +259,7 @@ class TabGroupServiceSimplified {
 
     // No group exists - check if we meet the minimum threshold before creating
     const tabCount = await this.countTabsForGroup(expectedTitle, tab.windowId, customRule)
-    const minimumTabs = tabGroupState.minimumTabsForGroup || 1
+    const minimumTabs = this.getEffectiveMinimumTabs(customRule)
 
     console.log(
       `[TabGroupService] Tab count for "${expectedTitle}": ${tabCount}, minimum required: ${minimumTabs}`
@@ -477,23 +513,33 @@ class TabGroupServiceSimplified {
    */
   async checkGroupThreshold(groupId) {
     try {
-      const minimumTabs = tabGroupState.minimumTabsForGroup || 1
-
-      // If minimum is 1, no need to check
-      if (minimumTabs <= 1) return false
-
       // Get fresh group details from browser (following established pattern to avoid stale state)
       const groups = await browserAPI.tabGroups.query({ groupId })
       if (groups.length === 0) return false
 
       const group = groups[0]
 
+      // Check if this group matches a custom rule to get the correct minimum
+      let customRule = null
+      const customRules = tabGroupState.getCustomRulesObject()
+      for (const rule of Object.values(customRules)) {
+        if (rule.enabled && rule.name === group.title) {
+          customRule = rule
+          break
+        }
+      }
+
+      const minimumTabs = this.getEffectiveMinimumTabs(customRule)
+
+      // If minimum is 1, no need to check
+      if (minimumTabs <= 1) return false
+
       // Get fresh tab count from browser
       const tabs = await browserAPI.tabs.query({ groupId })
       const tabCount = tabs.filter(tab => !tab.pinned).length
 
       console.log(
-        `[TabGroupService] Group "${group.title}" has ${tabCount} tabs, minimum required: ${minimumTabs}`
+        `[TabGroupService] Group "${group.title}" has ${tabCount} tabs, minimum required: ${minimumTabs}${customRule ? ` (rule-specific)` : ` (global)`}`
       )
 
       if (tabCount < minimumTabs) {

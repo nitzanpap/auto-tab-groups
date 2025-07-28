@@ -33,6 +33,7 @@ class RulesModal {
     this.initializeEventListeners()
     this.populateColorSelector()
     this.loadCurrentTabs()
+    this.loadGlobalMinimumTabs()
     this.loadRuleData()
   }
 
@@ -43,6 +44,8 @@ class RulesModal {
     this.domainsInput = document.getElementById("ruleDomains")
     this.enabledCheckbox = document.getElementById("ruleEnabled")
     this.colorSelector = document.getElementById("colorSelector")
+    this.minimumTabsInput = document.getElementById("minimumTabsInput")
+    this.minimumTabsHelp = document.getElementById("minimumTabsHelp")
     this.saveButton = document.getElementById("saveButton")
     this.cancelButton = document.getElementById("cancelButton")
     this.nameError = document.getElementById("nameError")
@@ -132,6 +135,20 @@ class RulesModal {
     }
   }
 
+  async loadGlobalMinimumTabs() {
+    try {
+      const response = await this.sendMessage({
+        action: "getMinimumTabsForGroup"
+      })
+
+      const globalMinimum = response.minimumTabs || 1
+      this.minimumTabsHelp.textContent = `Leave empty to use global setting (currently: ${globalMinimum} tab${globalMinimum === 1 ? "" : "s"})`
+    } catch (error) {
+      console.error("Error loading global minimum tabs:", error)
+      // Keep default text if loading fails
+    }
+  }
+
   async loadExistingRule() {
     try {
       const response = await this.sendMessage({
@@ -155,6 +172,9 @@ class RulesModal {
     this.domainsInput.value = (rule.domains || []).join("\n")
     this.enabledCheckbox.checked = rule.enabled !== false
     this.selectedColor = rule.color || "blue"
+    // Handle minimumTabs properly - don't use || operator since 0 is falsy
+    this.minimumTabsInput.value =
+      rule.minimumTabs !== null && rule.minimumTabs !== undefined ? rule.minimumTabs : ""
     this.populateColorSelector()
   }
 
@@ -206,13 +226,15 @@ class RulesModal {
 
   collectFormData() {
     const domains = parseDomainsText(this.domainsInput.value)
+    const minimumTabsValue = this.minimumTabsInput.value.trim()
 
     return {
       name: this.nameInput.value.trim(),
       domains: domains,
       color: this.selectedColor,
       enabled: this.enabledCheckbox.checked,
-      priority: 1 // Default priority
+      priority: 1, // Default priority
+      minimumTabs: minimumTabsValue ? parseInt(minimumTabsValue) : null
     }
   }
 
