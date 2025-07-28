@@ -1,6 +1,6 @@
 # Auto Tab Groups - Universal Extension
 
-A cross-browser extension that automatically groups tabs by domain, supporting both Chrome and Firefox.
+A cross-browser extension that automatically groups tabs by domain & custom rules, supporting both Chrome and Firefox.
 
 ## Bugs / Issues / Feature Requests
 
