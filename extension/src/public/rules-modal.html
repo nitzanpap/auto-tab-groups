@@ -74,6 +74,23 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label" for="minimumTabsInput">Minimum tabs to form group</label>
+          <div class="number-input-container">
+            <input
+              type="number"
+              id="minimumTabsInput"
+              min="1"
+              max="10"
+              placeholder="Ex: 3"
+              class="form-input number-input-small"
+            />
+          </div>
+          <div class="help-text" id="minimumTabsHelp">
+            Leave empty to use global setting (currently: 1 tab)
+          </div>
+        </div>
+
+        <div class="form-group">
           <div class="checkbox-container">
             <input type="checkbox" id="ruleEnabled" checked />
             <label for="ruleEnabled" class="form-label" style="margin: 0">Enable this rule</label>

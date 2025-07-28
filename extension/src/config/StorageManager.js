@@ -14,7 +14,8 @@ export const DEFAULT_STATE = {
   groupByMode: "domain", // "rules", "domain", or "subdomain"
   customRules: {},
   ruleMatchingMode: "exact",
-  groupColorMapping: {}
+  groupColorMapping: {},
+  minimumTabsForGroup: 1 // Minimum number of tabs required to form a group
 }
 
 class StorageManager {

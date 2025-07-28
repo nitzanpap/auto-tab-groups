@@ -13,6 +13,7 @@ If you like this extension, please consider rating it 5 stars ⭐ :)
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
 - ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain/subdomain
 - ✅ **Custom rules** - Create named groups that combine multiple domains
+- ✅ **Minimum tabs threshold** - Set how many tabs are needed before creating a group (global and per-rule)
 - ✅ **Export/Import rules** - Backup and restore your custom tab grouping rules
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
@@ -182,6 +183,45 @@ Custom rules allow you to create named tab groups that combine multiple domains 
 - **Performance**: Rules are cached for fast matching
 - **Validation**: Comprehensive validation for rule names and domains
 - **Limits**: Maximum 20 domains per rule, 50 character rule names
+
+## 🔢 Minimum Tabs Threshold
+
+The minimum tabs threshold feature allows you to control when tab groups are created. Instead of grouping tabs immediately, you can require a minimum number of tabs from the same domain before a group is formed. This helps reduce clutter from single-tab groups.
+
+### How Minimum Tabs Works
+
+1. **Global Setting**: Set a default minimum (e.g., 2 tabs) that applies to all domains
+2. **Per-Rule Override**: Each custom rule can have its own minimum that overrides the global setting
+3. **Automatic Management**: Groups are automatically created when the threshold is met and disbanded when tabs drop below the minimum
+
+### Configuration (Global and Per-Rule)
+
+#### Global Minimum
+
+1. Open the extension popup
+2. Find "Minimum tabs to form group" setting
+3. Set your preferred minimum (1-10 tabs)
+4. All domains without custom rules will use this setting
+
+#### Per-Rule Minimum
+
+1. When creating or editing a custom rule
+2. Set "Minimum tabs to form group" for that specific rule
+3. Leave empty to use the global setting
+4. Example: Set "Extensions" rule to 1 tab, but keep global at 3 tabs
+
+### Example Scenarios (Global and Per-Rule)
+
+- **Global = 3, No custom rules**: Need 3 github.com tabs before they group
+- **Global = 2, "Work" rule = 1**: Work sites group immediately, others need 2 tabs
+- **Global = 1, "Social Media" rule = 5**: Most sites group immediately, but social media sites need 5 tabs to reduce distractions
+
+### Technical Details (Global and Per-Rule)
+
+- **Range**: 1-10 tabs (1 effectively disables the feature)
+- **Auto-ungroup**: When a group falls below its minimum, tabs are automatically ungrouped
+- **Storage**: Settings persist across browser sessions
+- **Import/Export**: Minimum values are included when exporting/importing rules
 
 ## 📖 Documentation
 

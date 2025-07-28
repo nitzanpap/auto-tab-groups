@@ -155,6 +155,21 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { mode: tabGroupState.groupByMode }
           break
 
+        case "getMinimumTabsForGroup":
+          result = { minimumTabs: tabGroupState.minimumTabsForGroup || 1 }
+          break
+
+        case "setMinimumTabsForGroup":
+          tabGroupState.minimumTabsForGroup = msg.minimumTabs || 1
+          await storageManager.saveState()
+
+          // Re-evaluate all existing groups
+          if (tabGroupState.autoGroupingEnabled) {
+            await tabGroupService.groupAllTabs()
+          }
+          result = { minimumTabs: tabGroupState.minimumTabsForGroup }
+          break
+
         // Custom Rules Management
         case "getCustomRules": {
           const rules = await rulesService.getCustomRules()
