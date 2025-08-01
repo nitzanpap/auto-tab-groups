@@ -62,7 +62,7 @@ class RulesService {
       // Parse URL to get components
       const url = new URL(tabUrl)
       const domain = url.hostname.toLowerCase()
-      const path = url.pathname
+      const path = url.pathname.toLowerCase()
 
       // Check if pattern includes a path
       const hasPath = cleanRulePattern.includes("/")
