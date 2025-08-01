@@ -1,6 +1,6 @@
 {
   "name": "auto-tab-groups",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "author": "Nitzan Papini",
