@@ -10,6 +10,7 @@ import {
   RULE_COLORS,
   parseDomainsText
 } from "../utils/RulesUtils.js"
+import { urlPatternMatcher } from "../utils/UrlPatternMatcher.js"
 
 // Browser API compatibility
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -53,17 +54,35 @@ class RulesModal {
     this.refreshTabsBtn = document.getElementById("refreshTabsBtn")
     this.currentTabsContainer = document.getElementById("currentTabsContainer")
     this.tabsActionsContainer = document.getElementById("tabsActionsContainer")
+
+    // New elements for pattern types
+    this.patternTypeSelect = document.getElementById("patternType")
+    this.patternHelp = document.getElementById("patternHelp")
+    this.groupNameTemplateContainer = document.getElementById("groupNameTemplateContainer")
+    this.groupNameTemplateInput = document.getElementById("groupNameTemplate")
+    this.variableSuggestions = document.getElementById("variableSuggestions")
+    this.templatePreview = document.getElementById("templatePreview")
+    this.previewExamples = document.getElementById("previewExamples")
   }
 
   initializeEventListeners() {
     this.form.addEventListener("submit", e => this.handleSubmit(e))
     this.cancelButton.addEventListener("click", () => this.handleCancel())
     this.nameInput.addEventListener("input", () => this.clearFieldError("name"))
-    this.domainsInput.addEventListener("input", () => this.clearFieldError("domains"))
+    this.domainsInput.addEventListener("input", () => {
+      this.clearFieldError("domains")
+      this.detectPatternType()
+    })
 
     // Real-time validation
     this.nameInput.addEventListener("blur", () => this.validateField("name"))
     this.domainsInput.addEventListener("blur", () => this.validateField("domains"))
+
+    // Pattern type change
+    this.patternTypeSelect.addEventListener("change", () => this.onPatternTypeChange())
+
+    // Template input change for real-time preview
+    this.groupNameTemplateInput.addEventListener("input", () => this.updateTemplatePreview())
 
     // Current tabs events
     this.refreshTabsBtn.addEventListener("click", () => this.loadCurrentTabs())
@@ -175,7 +194,14 @@ class RulesModal {
     // Handle minimumTabs properly - don't use || operator since 0 is falsy
     this.minimumTabsInput.value =
       rule.minimumTabs !== null && rule.minimumTabs !== undefined ? rule.minimumTabs : ""
+    // Handle group name template
+    if (rule.groupNameTemplate) {
+      this.groupNameTemplateInput.value = rule.groupNameTemplate
+      this.groupNameTemplateContainer.style.display = "block"
+    }
     this.populateColorSelector()
+    this.detectPatternType()
+    this.updateTemplatePreview()
   }
 
   async handleSubmit(e) {
@@ -228,7 +254,7 @@ class RulesModal {
     const domains = parseDomainsText(this.domainsInput.value)
     const minimumTabsValue = this.minimumTabsInput.value.trim()
 
-    return {
+    const data = {
       name: this.nameInput.value.trim(),
       domains: domains,
       color: this.selectedColor,
@@ -236,6 +262,16 @@ class RulesModal {
       priority: 1, // Default priority
       minimumTabs: minimumTabsValue ? parseInt(minimumTabsValue) : null
     }
+
+    // Add group name template if using segment extraction
+    if (
+      this.groupNameTemplateContainer.style.display !== "none" &&
+      this.groupNameTemplateInput.value.trim()
+    ) {
+      data.groupNameTemplate = this.groupNameTemplateInput.value.trim()
+    }
+
+    return data
   }
 
   validateForm() {
@@ -653,6 +689,277 @@ class RulesModal {
         this.nameInput.style.backgroundColor = ""
       }, 3000)
     }
+  }
+
+  /**
+   * Detects pattern type from user input
+   */
+  detectPatternType() {
+    if (this.patternTypeSelect.value !== "auto") {
+      return // User has manually selected a type
+    }
+
+    const patterns = parseDomainsText(this.domainsInput.value)
+    if (patterns.length === 0) return
+
+    // Check the first pattern to detect type
+    const firstPattern = patterns[0]
+    const detectedType = urlPatternMatcher.detectPatternType(firstPattern)
+
+    // Update help text based on detected type
+    this.updatePatternHelp(detectedType)
+
+    // Show/hide group name template for segment extraction
+    if (detectedType === urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION) {
+      this.groupNameTemplateContainer.style.display = "block"
+      this.showVariableSuggestions(firstPattern)
+
+      // Suggest a template if empty
+      if (!this.groupNameTemplateInput.value) {
+        const variableMatch = firstPattern.match(/\{([^}]+)\}/)
+        if (variableMatch) {
+          const variableName = variableMatch[1].split(":")[0]
+          const ruleName = this.nameInput.value || "Group"
+          this.groupNameTemplateInput.value = `${ruleName} {${variableName}}`
+        }
+      }
+
+      this.updateTemplatePreview()
+    } else {
+      this.groupNameTemplateContainer.style.display = "none"
+      this.variableSuggestions.style.display = "none"
+      this.templatePreview.style.display = "none"
+    }
+  }
+
+  /**
+   * Handles pattern type change
+   */
+  onPatternTypeChange() {
+    const selectedType = this.patternTypeSelect.value
+
+    if (selectedType === "auto") {
+      this.detectPatternType()
+    } else {
+      // Map select values to pattern types
+      const typeMap = {
+        wildcard: urlPatternMatcher.PATTERN_TYPES.SIMPLE_WILDCARD,
+        extraction: urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION,
+        regex: urlPatternMatcher.PATTERN_TYPES.REGEX
+      }
+
+      const patternType = typeMap[selectedType]
+      if (patternType) {
+        this.updatePatternHelp(patternType)
+
+        // Show/hide group name template
+        if (patternType === urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION) {
+          this.groupNameTemplateContainer.style.display = "block"
+          // Show suggestions for the current patterns if available
+          const patterns = parseDomainsText(this.domainsInput.value)
+          if (patterns.length > 0) {
+            this.showVariableSuggestions(patterns[0])
+          }
+          this.updateTemplatePreview()
+        } else {
+          this.groupNameTemplateContainer.style.display = "none"
+          this.variableSuggestions.style.display = "none"
+          this.templatePreview.style.display = "none"
+        }
+      }
+    }
+  }
+
+  /**
+   * Updates pattern help text based on type
+   */
+  updatePatternHelp(patternType) {
+    const helpText = urlPatternMatcher.getPatternHelp(patternType)
+    this.patternHelp.textContent = helpText
+
+    // Update placeholder based on type
+    const placeholders = {
+      [urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION]:
+        "Example patterns:\n{accountId}-*.*.console.aws.amazon.com\n{project}-*.github.io\n{env}.{app}.mycompany.com",
+      [urlPatternMatcher.PATTERN_TYPES.REGEX]:
+        "Example patterns:\n/^(\\d+)-.*\\.console\\.aws\\.amazon\\.com$/\n/^dev-(.+)\\.example\\.com$/",
+      [urlPatternMatcher.PATTERN_TYPES.SIMPLE_WILDCARD]:
+        "Example patterns:\ndiscord.com\n*.google.com\ngoogle.**\n192.168.1.*"
+    }
+
+    if (placeholders[patternType]) {
+      this.domainsInput.placeholder = placeholders[patternType]
+    }
+  }
+
+  /**
+   * Shows variable suggestion chips for a segment extraction pattern
+   */
+  showVariableSuggestions(pattern) {
+    const variables = this.extractVariablesFromPattern(pattern)
+
+    if (variables.length === 0) {
+      this.variableSuggestions.style.display = "none"
+      return
+    }
+
+    this.variableSuggestions.innerHTML = ""
+    this.variableSuggestions.style.display = "flex"
+
+    variables.forEach(variable => {
+      const chip = document.createElement("button")
+      chip.type = "button"
+      chip.className = "variable-chip"
+      chip.textContent = `{${variable}}`
+      chip.title = `Click to add {${variable}} to template`
+
+      chip.addEventListener("click", () => {
+        this.insertVariableIntoTemplate(variable)
+      })
+
+      this.variableSuggestions.appendChild(chip)
+    })
+  }
+
+  /**
+   * Extracts variable names from a pattern
+   */
+  extractVariablesFromPattern(pattern) {
+    const variables = []
+    const regex = /\{([^}]+)\}/g
+    let match
+
+    while ((match = regex.exec(pattern)) !== null) {
+      const variableName = match[1].split(":")[0] // Remove type specifiers
+      if (!variables.includes(variableName)) {
+        variables.push(variableName)
+      }
+    }
+
+    return variables
+  }
+
+  /**
+   * Inserts a variable into the template at cursor position
+   */
+  insertVariableIntoTemplate(variableName) {
+    const input = this.groupNameTemplateInput
+    const cursorPos = input.selectionStart
+    const currentValue = input.value
+    const variableText = `{${variableName}}`
+
+    // Insert the variable at cursor position
+    const newValue = currentValue.slice(0, cursorPos) + variableText + currentValue.slice(cursorPos)
+    input.value = newValue
+
+    // Move cursor to after the inserted variable
+    const newCursorPos = cursorPos + variableText.length
+    input.setSelectionRange(newCursorPos, newCursorPos)
+    input.focus()
+
+    // Update preview
+    this.updateTemplatePreview()
+  }
+
+  /**
+   * Updates the real-time preview of group names
+   */
+  updateTemplatePreview() {
+    if (this.groupNameTemplateContainer.style.display === "none") {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    const template = this.groupNameTemplateInput.value.trim()
+    if (!template) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    const patterns = parseDomainsText(this.domainsInput.value)
+    if (patterns.length === 0) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    // Get example URLs from current tabs that would match the pattern
+    const exampleGroups = this.generatePreviewExamples(patterns[0], template)
+
+    if (exampleGroups.length === 0) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    this.previewExamples.innerHTML = ""
+    this.templatePreview.style.display = "block"
+
+    if (exampleGroups.length === 0) {
+      const placeholder = document.createElement("div")
+      placeholder.className = "preview-example placeholder"
+      placeholder.textContent = "No matching tabs found for preview"
+      this.previewExamples.appendChild(placeholder)
+    } else {
+      exampleGroups.forEach(groupName => {
+        const example = document.createElement("div")
+        example.className = "preview-example"
+        example.textContent = `📁 ${groupName}`
+        this.previewExamples.appendChild(example)
+      })
+    }
+  }
+
+  /**
+   * Generates preview examples based on current tabs
+   */
+  generatePreviewExamples(pattern, template) {
+    const examples = new Set()
+
+    // Get some example values for common variables
+    const commonExamples = {
+      accountId: ["556677889900", "123456789012"],
+      region: ["us-east-1", "eu-west-1", "us-west-2"],
+      env: ["dev", "staging", "prod"],
+      project: ["myapp", "webapp", "api"]
+    }
+
+    // Try to match the pattern against current tabs
+    if (this.currentTabs && this.currentTabs.length > 0) {
+      for (const tab of this.currentTabs) {
+        try {
+          const matchResult = urlPatternMatcher.match(tab.url, pattern, {
+            groupNameTemplate: template
+          })
+
+          if (matchResult.matched && matchResult.groupName) {
+            examples.add(matchResult.groupName)
+          }
+        } catch {
+          // Ignore invalid patterns during preview
+        }
+      }
+    }
+
+    // If no real examples, generate some mock examples
+    if (examples.size === 0) {
+      const variables = this.extractVariablesFromPattern(pattern)
+
+      if (variables.length > 0) {
+        // Generate 2-3 example group names
+        for (let i = 0; i < Math.min(3, variables.length); i++) {
+          let exampleTemplate = template
+
+          variables.forEach(variable => {
+            const exampleValues = commonExamples[variable] || [`example${i + 1}`]
+            const exampleValue = exampleValues[i % exampleValues.length]
+            exampleTemplate = exampleTemplate.replace(`{${variable}}`, exampleValue)
+          })
+
+          examples.add(exampleTemplate)
+        }
+      }
+    }
+
+    return Array.from(examples).slice(0, 4) // Limit to 4 examples
   }
 }
 

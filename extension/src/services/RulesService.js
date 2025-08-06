@@ -5,13 +5,13 @@
 
 import { storageManager } from "../config/StorageManager.js"
 import { tabGroupState } from "../state/TabGroupState.js"
-import { isIPv4Pattern, matchIPv4, validateRulePattern } from "../utils/RulesUtils.js"
+import { urlPatternMatcher } from "../utils/UrlPatternMatcher.js"
 
 class RulesService {
   /**
    * Finds a matching custom rule for a given URL
    * @param {string} url - The URL to match against rules
-   * @returns {Object|null} The matching rule or null if no match
+   * @returns {Object|null} The matching rule with additional match info or null if no match
    */
   async findMatchingRule(url) {
     if (!url) return null
@@ -34,11 +34,23 @@ class RulesService {
       console.log(`[RulesService] Checking rule "${rule.name}" with patterns:`, rule.domains)
 
       for (const rulePattern of rule.domains) {
-        if (this.urlMatches(url, rulePattern)) {
+        // Use the new UrlPatternMatcher for matching
+        const matchResult = urlPatternMatcher.match(url, rulePattern, {
+          ruleName: rule.name,
+          groupNameTemplate: rule.groupNameTemplate
+        })
+
+        if (matchResult.matched) {
           console.log(
             `[RulesService] ✅ URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`
           )
-          return rule
+
+          // Return enhanced rule object with match information
+          return {
+            ...rule,
+            matchInfo: matchResult,
+            effectiveGroupName: matchResult.groupName || rule.name
+          }
         }
       }
     }
@@ -48,7 +60,7 @@ class RulesService {
   }
 
   /**
-   * Checks if a URL matches a rule pattern (supports domain and URL patterns)
+   * Checks if a URL matches a rule pattern (delegates to UrlPatternMatcher)
    * @param {string} tabUrl - Full URL from the tab
    * @param {string} rulePattern - Pattern from the rule (supports various formats)
    * @returns {boolean} True if URL matches pattern
@@ -56,178 +68,9 @@ class RulesService {
   urlMatches(tabUrl, rulePattern) {
     if (!tabUrl || !rulePattern) return false
 
-    const cleanRulePattern = rulePattern.toLowerCase().trim()
-
-    try {
-      // Parse URL to get components
-      const url = new URL(tabUrl)
-      const domain = url.hostname.toLowerCase()
-      const path = url.pathname.toLowerCase()
-
-      // Check if pattern includes a path
-      const hasPath = cleanRulePattern.includes("/")
-      const [domainPattern, pathPattern] = hasPath
-        ? cleanRulePattern.split("/", 2)
-        : [cleanRulePattern, ""]
-
-      // Match host part first (domain or IP)
-      const hostMatch = this.matchHost(domain, domainPattern)
-      if (!hostMatch) return false
-
-      // Match path part if specified
-      if (hasPath) {
-        return this.matchPath(path, pathPattern)
-      }
-
-      return true
-    } catch (error) {
-      console.warn(
-        `[RulesService] Error matching URL "${tabUrl}" against pattern "${rulePattern}":`,
-        error
-      )
-      return false
-    }
-  }
-
-  /**
-   * Matches a host against a host pattern (supports wildcards for domains and IPs)
-   * @param {string} host - Host to match (domain or IP)
-   * @param {string} pattern - Host pattern (supports *.domain.com, domain.**, and IP patterns)
-   * @returns {boolean} True if host matches pattern
-   */
-  matchHost(host, pattern) {
-    if (!host || !pattern) return false
-
-    const cleanHost = host.toLowerCase().trim()
-    const cleanPattern = pattern.toLowerCase().trim()
-
-    // Check if pattern is IPv4
-    if (isIPv4Pattern(cleanPattern)) {
-      return matchIPv4(cleanHost, cleanPattern)
-    }
-
-    // Fall back to domain matching
-    return this.matchDomain(cleanHost, cleanPattern)
-  }
-
-  /**
-   * Matches a domain against a domain pattern (supports wildcards)
-   * @param {string} domain - Domain to match
-   * @param {string} pattern - Domain pattern (supports *.domain.com and domain.** formats)
-   * @returns {boolean} True if domain matches pattern
-   */
-  matchDomain(domain, pattern) {
-    if (!domain || !pattern) return false
-
-    const cleanDomain = domain.toLowerCase().trim()
-    const cleanPattern = pattern.toLowerCase().trim()
-
-    // Handle ** wildcard for TLD (e.g., google.** matches google.com)
-    if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**")
-      if (parts.length !== 2) {
-        console.warn(`[RulesService] Invalid ** pattern: ${cleanPattern}`)
-        return false
-      }
-
-      const prefix = parts[0] // e.g., "google."
-      const suffix = parts[1] // e.g., "" (usually empty)
-
-      // Domain must start with prefix and end with suffix
-      if (!cleanDomain.startsWith(prefix)) return false
-      if (suffix && !cleanDomain.endsWith(suffix)) return false
-
-      // Ensure we have a valid TLD after the prefix
-      const remainder = cleanDomain.substring(prefix.length)
-      if (suffix) {
-        const beforeSuffix = remainder.substring(0, remainder.length - suffix.length)
-        return beforeSuffix.length > 0 && beforeSuffix.match(/^[a-zA-Z0-9.-]+$/)
-      } else {
-        return remainder.length > 0 && remainder.match(/^[a-zA-Z0-9.-]+$/)
-      }
-    }
-
-    // Handle * wildcard for subdomains (*.domain.com)
-    if (cleanPattern.startsWith("*.")) {
-      const baseDomain = cleanPattern.substring(2) // Remove "*."
-
-      // Validate that baseDomain is not empty and contains at least one dot
-      if (!baseDomain || !baseDomain.includes(".")) {
-        console.warn(`[RulesService] Invalid * pattern: ${cleanPattern}`)
-        return false
-      }
-
-      // Check for exact match with base domain (mozilla.org matches *.mozilla.org)
-      if (cleanDomain === baseDomain) {
-        return true
-      }
-
-      // Check for subdomain match (developer.mozilla.org matches *.mozilla.org)
-      // Must end with .baseDomain to ensure it's actually a subdomain
-      return cleanDomain.endsWith("." + baseDomain)
-    }
-
-    // Exact match (backward compatibility)
-    return cleanDomain === cleanPattern
-  }
-
-  /**
-   * Matches a URL path against a path pattern
-   * @param {string} urlPath - URL path to match
-   * @param {string} pathPattern - Path pattern to match against
-   * @returns {boolean} True if path matches pattern
-   */
-  matchPath(urlPath, pathPattern) {
-    if (!pathPattern) return true // Empty pattern matches any path
-
-    const cleanPath = urlPath.startsWith("/") ? urlPath.substring(1) : urlPath
-    const cleanPattern = pathPattern.startsWith("/") ? pathPattern.substring(1) : pathPattern
-
-    // Handle ** wildcard in path
-    if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**")
-      if (parts.length !== 2) {
-        console.warn(`[RulesService] Invalid ** pattern in path: ${cleanPattern}`)
-        return false
-      }
-
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      // Path must start with prefix (if present)
-      if (prefix && !cleanPath.startsWith(prefix)) {
-        return false
-      }
-
-      // Path must end with suffix (if present)
-      if (suffix && !cleanPath.endsWith(suffix)) {
-        return false
-      }
-
-      // If both prefix and suffix are present, ensure there's something in between
-      // (or they overlap, which is fine)
-      if (prefix && suffix && cleanPath.length < prefix.length + suffix.length) {
-        // Check if prefix and suffix overlap
-        const minLength = Math.min(prefix.length, suffix.length)
-        let overlapFound = false
-
-        for (let i = 1; i <= minLength; i++) {
-          if (prefix.substring(prefix.length - i) === suffix.substring(0, i)) {
-            overlapFound = true
-            break
-          }
-        }
-
-        if (!overlapFound) {
-          return false
-        }
-      }
-
-      return true
-    }
-
-    // Exact prefix matching (existing behavior)
-    return cleanPath.startsWith(cleanPattern)
+    // Delegate to UrlPatternMatcher for consistency
+    const matchResult = urlPatternMatcher.match(tabUrl, rulePattern)
+    return matchResult.matched
   }
 
   /**
@@ -258,6 +101,7 @@ class RulesService {
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
       minimumTabs: ruleData.minimumTabs ? parseInt(ruleData.minimumTabs) : null, // null means use global setting
+      groupNameTemplate: ruleData.groupNameTemplate || null, // Template for dynamic group names
       createdAt: new Date().toISOString()
     }
 
@@ -300,7 +144,11 @@ class RulesService {
           ? ruleData.minimumTabs
             ? parseInt(ruleData.minimumTabs)
             : null
-          : customRules[ruleId].minimumTabs
+          : customRules[ruleId].minimumTabs,
+      groupNameTemplate:
+        ruleData.groupNameTemplate !== undefined
+          ? ruleData.groupNameTemplate
+          : customRules[ruleId].groupNameTemplate
     }
 
     // Update rule in state
@@ -359,14 +207,14 @@ class RulesService {
     } else if (ruleData.domains.length > 20) {
       errors.push("Maximum 20 patterns per rule")
     } else {
-      // Validate each pattern
+      // Validate each pattern using UrlPatternMatcher
       for (const pattern of ruleData.domains) {
         if (typeof pattern !== "string" || !pattern.trim()) {
           errors.push("All patterns must be non-empty strings")
           break
         }
 
-        const validation = validateRulePattern(pattern.trim())
+        const validation = urlPatternMatcher.validatePattern(pattern.trim())
         if (!validation.isValid) {
           errors.push(`Invalid pattern "${pattern}": ${validation.error}`)
         }

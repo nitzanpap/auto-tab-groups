@@ -111,7 +111,9 @@ class TabGroupServiceSimplified {
           `[TabGroupService] Rules-only mode: Found rule "${customRule.name}" for domain ${matchedDomain}`
         )
 
-        return await this.moveTabToTargetGroup(tabId, tab, customRule.name, customRule)
+        // Use effective group name from rule (may be dynamically generated)
+        const groupName = customRule.effectiveGroupName || customRule.name
+        return await this.moveTabToTargetGroup(tabId, tab, groupName, customRule)
       }
 
       // Step 2: Extract domain for domain/subdomain modes
@@ -124,7 +126,10 @@ class TabGroupServiceSimplified {
 
       // Step 3: Check for custom rules first
       const customRule = await rulesService.findMatchingRule(tab.url)
-      const expectedTitle = customRule ? customRule.name : getDomainDisplayName(domain)
+      // Use effective group name from rule (may be dynamically generated from pattern extraction)
+      const expectedTitle = customRule
+        ? customRule.effectiveGroupName || customRule.name
+        : getDomainDisplayName(domain)
 
       console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
 
@@ -191,7 +196,12 @@ class TabGroupServiceSimplified {
         // For rules-based grouping
         if (customRule) {
           const matchingRule = await rulesService.findMatchingRule(tab.url)
-          if (matchingRule && matchingRule.name === customRule.name) {
+          // Compare effective group names (handles dynamic extraction)
+          const expectedGroupName = customRule.effectiveGroupName || customRule.name
+          const matchGroupName = matchingRule
+            ? matchingRule.effectiveGroupName || matchingRule.name
+            : null
+          if (matchingRule && matchGroupName === expectedGroupName) {
             count++
           }
         } else {

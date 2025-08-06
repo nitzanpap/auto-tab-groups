@@ -2,6 +2,8 @@
  * Utility functions for custom rules validation and processing
  */
 
+import { urlPatternMatcher } from "./UrlPatternMatcher.js"
+
 /**
  * Checks if a string is an IPv4 address
  * @param {string} str - String to check
@@ -118,44 +120,13 @@ export function matchIPv4(ip, pattern) {
 }
 
 /**
- * Validates a pattern string format for custom rules (supports domains, IP addresses, and URL patterns)
- * @param {string} pattern - Pattern to validate (supports *.domain.com format, IPv4 addresses, and URL patterns)
+ * Validates a pattern string format for custom rules (delegates to UrlPatternMatcher)
+ * @param {string} pattern - Pattern to validate (supports various formats)
  * @returns {Object} Validation result with isValid and error message
  */
 export function validateRulePattern(pattern) {
-  if (!pattern || typeof pattern !== "string") {
-    return { isValid: false, error: "Pattern must be a string" }
-  }
-
-  const cleanPattern = pattern.trim().toLowerCase()
-
-  if (cleanPattern.length === 0) {
-    return { isValid: false, error: "Pattern cannot be empty" }
-  }
-
-  if (cleanPattern.length > 300) {
-    return { isValid: false, error: "Pattern too long (max 300 characters)" }
-  }
-
-  // Check if it's a URL pattern or host pattern
-  const hasPath = cleanPattern.includes("/")
-  const [hostPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
-
-  // Validate host part (domain or IP)
-  const hostValidation = validateHostPattern(hostPattern)
-  if (!hostValidation.isValid) {
-    return hostValidation
-  }
-
-  // Validate path part if present
-  if (hasPath) {
-    const pathValidation = validatePathPattern(pathPattern)
-    if (!pathValidation.isValid) {
-      return pathValidation
-    }
-  }
-
-  return { isValid: true }
+  // Delegate to UrlPatternMatcher for consistent validation
+  return urlPatternMatcher.validatePattern(pattern)
 }
 
 /**
