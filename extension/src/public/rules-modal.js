@@ -194,6 +194,10 @@ class RulesModal {
     // Handle minimumTabs properly - don't use || operator since 0 is falsy
     this.minimumTabsInput.value =
       rule.minimumTabs !== null && rule.minimumTabs !== undefined ? rule.minimumTabs : ""
+
+    // Restore the saved pattern type, default to "auto" if not saved
+    this.patternTypeSelect.value = rule.patternType || "auto"
+
     // Handle group name template
     if (rule.groupNameTemplate) {
       this.groupNameTemplateInput.value = rule.groupNameTemplate
@@ -260,7 +264,8 @@ class RulesModal {
       color: this.selectedColor,
       enabled: this.enabledCheckbox.checked,
       priority: 1, // Default priority
-      minimumTabs: minimumTabsValue ? parseInt(minimumTabsValue) : null
+      minimumTabs: minimumTabsValue ? parseInt(minimumTabsValue) : null,
+      patternType: this.patternTypeSelect.value // Save the selected pattern type
     }
 
     // Add group name template if using segment extraction
@@ -780,7 +785,7 @@ class RulesModal {
     // Update placeholder based on type
     const placeholders = {
       [urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION]:
-        "Example patterns:\n{accountId}-*.*.console.aws.amazon.com\n{project}-*.github.io\n{env}.{app}.mycompany.com",
+        "Example patterns:\n{accountId}-*.*.console.aws.amazon.com\n{project}-*.github.io\n{env}.{app}.my-company.com",
       [urlPatternMatcher.PATTERN_TYPES.REGEX]:
         "Example patterns:\n/^(\\d+)-.*\\.console\\.aws\\.amazon\\.com$/\n/^dev-(.+)\\.example\\.com$/",
       [urlPatternMatcher.PATTERN_TYPES.SIMPLE_WILDCARD]:

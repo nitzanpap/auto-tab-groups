@@ -102,6 +102,7 @@ class RulesService {
       priority: ruleData.priority || 1,
       minimumTabs: ruleData.minimumTabs ? parseInt(ruleData.minimumTabs) : null, // null means use global setting
       groupNameTemplate: ruleData.groupNameTemplate || null, // Template for dynamic group names
+      patternType: ruleData.patternType || "auto", // Save the pattern type selection
       createdAt: new Date().toISOString()
     }
 
@@ -148,7 +149,11 @@ class RulesService {
       groupNameTemplate:
         ruleData.groupNameTemplate !== undefined
           ? ruleData.groupNameTemplate
-          : customRules[ruleId].groupNameTemplate
+          : customRules[ruleId].groupNameTemplate,
+      patternType:
+        ruleData.patternType !== undefined
+          ? ruleData.patternType
+          : customRules[ruleId].patternType || "auto" // Preserve pattern type, default to "auto"
     }
 
     // Update rule in state

@@ -9,6 +9,7 @@
       "color": "blue",
       "enabled": true,
       "priority": 1,
+      "patternType": "auto",
       "createdAt": "2025-06-15T12:00:00.000Z"
     },
     "rule-sample-002": {
@@ -24,6 +25,7 @@
       "color": "green",
       "enabled": true,
       "priority": 1,
+      "patternType": "auto",
       "createdAt": "2025-06-15T12:01:00.000Z"
     },
     "rule-sample-003": {
@@ -33,6 +35,7 @@
       "color": "purple",
       "enabled": true,
       "priority": 1,
+      "patternType": "wildcard",
       "createdAt": "2025-06-15T12:02:00.000Z"
     },
     "rule-sample-004": {
@@ -42,6 +45,7 @@
       "color": "pink",
       "enabled": false,
       "priority": 2,
+      "patternType": "auto",
       "createdAt": "2025-06-15T12:03:00.000Z"
     },
     "rule-sample-005": {
@@ -51,6 +55,7 @@
       "color": "orange",
       "enabled": true,
       "priority": 3,
+      "patternType": "auto",
       "createdAt": "2025-06-15T12:04:00.000Z"
     }
   },
