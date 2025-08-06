@@ -28,6 +28,14 @@
 
         <div class="form-group">
           <label class="form-label" for="ruleDomains">Patterns</label>
+          <div class="pattern-type-selector">
+            <select id="patternType" class="form-input">
+              <option value="auto">Auto-detect pattern type</option>
+              <option value="wildcard">Simple Wildcards (*.example.com)</option>
+              <option value="extraction">Segment Extraction ({variable})</option>
+              <option value="regex">Regular Expression (advanced)</option>
+            </select>
+          </div>
           <textarea
             id="ruleDomains"
             class="form-input form-textarea"
@@ -35,7 +43,7 @@
             required
           ></textarea>
           <div class="error-message" id="domainsError"></div>
-          <div class="help-text">
+          <div class="help-text" id="patternHelp">
             Enter one pattern per line. Supports domains, IP addresses, and wildcards (max 20
             patterns per rule)
           </div>
@@ -63,6 +71,27 @@
                 Add Selected
               </button>
             </div>
+          </div>
+        </div>
+
+        <div class="form-group" id="groupNameTemplateContainer" style="display: none">
+          <label class="form-label" for="groupNameTemplate">Group Name Template</label>
+          <div class="template-input-container">
+            <input
+              type="text"
+              id="groupNameTemplate"
+              class="form-input"
+              placeholder="e.g., AWS Account {accountId}, Region {region}, {variable} Group"
+            />
+            <div class="variable-suggestions" id="variableSuggestions" style="display: none"></div>
+          </div>
+          <div class="help-text">
+            Use {variable} placeholders to include extracted values in the group name.
+            <strong>Click the variable buttons below to insert them.</strong>
+          </div>
+          <div class="template-preview" id="templatePreview" style="display: none">
+            <div class="preview-label">Preview with current tabs:</div>
+            <div class="preview-examples" id="previewExamples"></div>
           </div>
         </div>
 
