@@ -93,7 +93,7 @@ class UrlPatternMatcher {
         extractedValues: {},
         groupName: options.ruleName || null
       }
-    } catch (_error) {
+    } catch {
       return { matched: false, extractedValues: {}, groupName: null }
     }
   }
@@ -242,7 +242,7 @@ class UrlPatternMatcher {
         extractedValues,
         groupName
       }
-    } catch (_error) {
+    } catch {
       return { matched: false, extractedValues: {}, groupName: null }
     }
   }
@@ -406,7 +406,7 @@ class UrlPatternMatcher {
         extractedValues,
         groupName
       }
-    } catch (_error) {
+    } catch {
       return { matched: false, extractedValues: {}, groupName: null }
     }
   }

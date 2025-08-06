@@ -933,7 +933,7 @@ class RulesModal {
           if (matchResult.matched && matchResult.groupName) {
             examples.add(matchResult.groupName)
           }
-        } catch (_error) {
+        } catch {
           // Ignore invalid patterns during preview
         }
       }
