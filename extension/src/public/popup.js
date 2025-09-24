@@ -6,6 +6,7 @@ const collapseAllButton = document.getElementById("collapseAllButton")
 const expandAllButton = document.getElementById("expandAllButton")
 const autoGroupToggle = document.getElementById("autoGroupToggle")
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle")
+const collapseInactiveGroupsToggle = document.getElementById("collapseInactiveGroupsToggle")
 const groupByToggleOptions = document.querySelectorAll(".toggle-option")
 const minimumTabsInput = document.getElementById("minimumTabsInput")
 
@@ -90,6 +91,10 @@ sendMessage({ action: "getGroupNewTabsState" }).then(response => {
   groupNewTabsToggle.checked = response.enabled
 })
 
+sendMessage({ action: "getCollapseInactiveGroupsState" }).then(response => {
+  collapseInactiveGroupsToggle.checked = response.enabled
+})
+
 sendMessage({ action: "getGroupByMode" }).then(response => {
   if (response && response.mode) {
     updateGroupByToggle(response.mode)
@@ -111,6 +116,13 @@ autoGroupToggle.addEventListener("change", event => {
 groupNewTabsToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleGroupNewTabs",
+    enabled: event.target.checked
+  })
+})
+
+collapseInactiveGroupsToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleCollapseInactiveGroups",
     enabled: event.target.checked
   })
 })

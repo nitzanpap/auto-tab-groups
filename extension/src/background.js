@@ -140,6 +140,16 @@ browserAPI.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result = { enabled: tabGroupState.groupNewTabs }
           break
 
+        case "getCollapseInactiveGroupsState":
+          result = { enabled: tabGroupState.collapseInactiveGroups }
+          break
+
+        case "toggleCollapseInactiveGroups":
+          tabGroupState.collapseInactiveGroups = msg.enabled
+          await storageManager.saveState()
+          result = { enabled: tabGroupState.collapseInactiveGroups }
+          break
+
         case "getGroupByMode":
           result = { mode: tabGroupState.groupByMode }
           break
@@ -360,3 +370,19 @@ if (browserAPI.tabGroups && browserAPI.tabGroups.onRemoved) {
     }
   })
 }
+
+// Listen for tab activation (when user switches tabs)
+browserAPI.tabs.onActivated.addListener(async activeInfo => {
+  try {
+    console.log(
+      `[tabs.onActivated] Tab ${activeInfo.tabId} activated in window ${activeInfo.windowId}`
+    )
+    await ensureStateLoaded() // Ensure state is loaded from storage (SSOT)
+
+    if (tabGroupState.collapseInactiveGroups) {
+      await tabGroupService.collapseInactiveGroups(activeInfo.tabId)
+    }
+  } catch (error) {
+    console.error(`[tabs.onActivated] Error handling tab ${activeInfo.tabId} activation:`, error)
+  }
+})

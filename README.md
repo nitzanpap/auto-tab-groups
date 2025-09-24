@@ -36,7 +36,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
 - ✅ **Collapse/expand controls** - Manage tab group visibility
-- ✅ **Configuration options** - Auto-grouping, subdomain handling, etc.
+- ✅ **Configuration options** - Auto-grouping, auto-collapse, subdomain handling, etc.
 - ✅ **Side panel support** - Chrome side panel and Firefox sidebar
 - ✅ **Modern UI** - Clean, responsive interface
 
@@ -79,6 +79,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - Toggle grouping by subdomain (on/off)
 - Toggle only applying to new tabs (on/off)
 - Toggle preservation of manual color choices (on/off)
+- Toggle auto-collapse of inactive groups (on/off)
 
 ### 📱 Side Panel & Sidebar Support
 
