@@ -11,6 +11,7 @@ const browserAPI = globalThis.browserAPI || (typeof browser !== "undefined" ? br
 export const DEFAULT_STATE = {
   autoGroupingEnabled: true,
   groupNewTabs: true, // New setting to control whether new tabs should be grouped
+  collapseInactiveGroups: false, // New setting to auto-collapse groups when current tab becomes inactive
   groupByMode: "domain", // "rules", "domain", or "subdomain"
   customRules: {},
   ruleMatchingMode: "exact",
