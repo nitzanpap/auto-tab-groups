@@ -2,8 +2,15 @@
  * Rules Modal JavaScript for managing custom tab grouping rules
  */
 
-// Import utilities from DomainUtils
+// Import utilities from DomainUtils and RulesUtils
 import { extractDomain, validateStrictDomain } from "../utils/DomainUtils.js"
+import {
+  isIPv4Address,
+  validateRulePattern,
+  RULE_COLORS,
+  parseDomainsText
+} from "../utils/RulesUtils.js"
+import { urlPatternMatcher } from "../utils/UrlPatternMatcher.js"
 
 // Browser API compatibility
 const browserAPI = typeof browser !== "undefined" ? browser : chrome
@@ -12,31 +19,6 @@ const browserAPI = typeof browser !== "undefined" ? browser : chrome
 function isValidStrictDomain(domain) {
   const result = validateStrictDomain(domain)
   return result.isValid
-}
-
-// Color definitions (copied from RulesUtils to avoid import issues)
-const RULE_COLORS = [
-  { name: "Blue", value: "blue", hex: "#4285f4" },
-  { name: "Red", value: "red", hex: "#ea4335" },
-  { name: "Yellow", value: "yellow", hex: "#fbbc04" },
-  { name: "Green", value: "green", hex: "#34a853" },
-  { name: "Pink", value: "pink", hex: "#ff6d9d" },
-  { name: "Purple", value: "purple", hex: "#9c27b0" },
-  { name: "Cyan", value: "cyan", hex: "#00acc1" },
-  { name: "Orange", value: "orange", hex: "#ff9800" }
-]
-
-// Utility functions
-function parseDomainsText(domainsText) {
-  if (!domainsText || typeof domainsText !== "string") {
-    return []
-  }
-
-  return domainsText
-    .split("\n")
-    .map(line => line.trim().toLowerCase())
-    .filter(line => line.length > 0)
-    .filter((domain, index, arr) => arr.indexOf(domain) === index) // Remove duplicates
 }
 
 class RulesModal {
@@ -52,6 +34,7 @@ class RulesModal {
     this.initializeEventListeners()
     this.populateColorSelector()
     this.loadCurrentTabs()
+    this.loadGlobalMinimumTabs()
     this.loadRuleData()
   }
 
@@ -62,6 +45,8 @@ class RulesModal {
     this.domainsInput = document.getElementById("ruleDomains")
     this.enabledCheckbox = document.getElementById("ruleEnabled")
     this.colorSelector = document.getElementById("colorSelector")
+    this.minimumTabsInput = document.getElementById("minimumTabsInput")
+    this.minimumTabsHelp = document.getElementById("minimumTabsHelp")
     this.saveButton = document.getElementById("saveButton")
     this.cancelButton = document.getElementById("cancelButton")
     this.nameError = document.getElementById("nameError")
@@ -69,17 +54,35 @@ class RulesModal {
     this.refreshTabsBtn = document.getElementById("refreshTabsBtn")
     this.currentTabsContainer = document.getElementById("currentTabsContainer")
     this.tabsActionsContainer = document.getElementById("tabsActionsContainer")
+
+    // New elements for pattern types
+    this.patternTypeSelect = document.getElementById("patternType")
+    this.patternHelp = document.getElementById("patternHelp")
+    this.groupNameTemplateContainer = document.getElementById("groupNameTemplateContainer")
+    this.groupNameTemplateInput = document.getElementById("groupNameTemplate")
+    this.variableSuggestions = document.getElementById("variableSuggestions")
+    this.templatePreview = document.getElementById("templatePreview")
+    this.previewExamples = document.getElementById("previewExamples")
   }
 
   initializeEventListeners() {
     this.form.addEventListener("submit", e => this.handleSubmit(e))
     this.cancelButton.addEventListener("click", () => this.handleCancel())
     this.nameInput.addEventListener("input", () => this.clearFieldError("name"))
-    this.domainsInput.addEventListener("input", () => this.clearFieldError("domains"))
+    this.domainsInput.addEventListener("input", () => {
+      this.clearFieldError("domains")
+      this.detectPatternType()
+    })
 
     // Real-time validation
     this.nameInput.addEventListener("blur", () => this.validateField("name"))
     this.domainsInput.addEventListener("blur", () => this.validateField("domains"))
+
+    // Pattern type change
+    this.patternTypeSelect.addEventListener("change", () => this.onPatternTypeChange())
+
+    // Template input change for real-time preview
+    this.groupNameTemplateInput.addEventListener("input", () => this.updateTemplatePreview())
 
     // Current tabs events
     this.refreshTabsBtn.addEventListener("click", () => this.loadCurrentTabs())
@@ -151,6 +154,20 @@ class RulesModal {
     }
   }
 
+  async loadGlobalMinimumTabs() {
+    try {
+      const response = await this.sendMessage({
+        action: "getMinimumTabsForGroup"
+      })
+
+      const globalMinimum = response.minimumTabs || 1
+      this.minimumTabsHelp.textContent = `Leave empty to use global setting (currently: ${globalMinimum} tab${globalMinimum === 1 ? "" : "s"})`
+    } catch (error) {
+      console.error("Error loading global minimum tabs:", error)
+      // Keep default text if loading fails
+    }
+  }
+
   async loadExistingRule() {
     try {
       const response = await this.sendMessage({
@@ -174,7 +191,21 @@ class RulesModal {
     this.domainsInput.value = (rule.domains || []).join("\n")
     this.enabledCheckbox.checked = rule.enabled !== false
     this.selectedColor = rule.color || "blue"
+    // Handle minimumTabs properly - don't use || operator since 0 is falsy
+    this.minimumTabsInput.value =
+      rule.minimumTabs !== null && rule.minimumTabs !== undefined ? rule.minimumTabs : ""
+
+    // Restore the saved pattern type, default to "auto" if not saved
+    this.patternTypeSelect.value = rule.patternType || "auto"
+
+    // Handle group name template
+    if (rule.groupNameTemplate) {
+      this.groupNameTemplateInput.value = rule.groupNameTemplate
+      this.groupNameTemplateContainer.style.display = "block"
+    }
     this.populateColorSelector()
+    this.detectPatternType()
+    this.updateTemplatePreview()
   }
 
   async handleSubmit(e) {
@@ -225,14 +256,27 @@ class RulesModal {
 
   collectFormData() {
     const domains = parseDomainsText(this.domainsInput.value)
+    const minimumTabsValue = this.minimumTabsInput.value.trim()
 
-    return {
+    const data = {
       name: this.nameInput.value.trim(),
       domains: domains,
       color: this.selectedColor,
       enabled: this.enabledCheckbox.checked,
-      priority: 1 // Default priority
+      priority: 1, // Default priority
+      minimumTabs: minimumTabsValue ? parseInt(minimumTabsValue) : null,
+      patternType: this.patternTypeSelect.value // Save the selected pattern type
     }
+
+    // Add group name template if using segment extraction
+    if (
+      this.groupNameTemplateContainer.style.display !== "none" &&
+      this.groupNameTemplateInput.value.trim()
+    ) {
+      data.groupNameTemplate = this.groupNameTemplateInput.value.trim()
+    }
+
+    return data
   }
 
   validateForm() {
@@ -306,10 +350,11 @@ class RulesModal {
       return false
     }
 
-    // Validate each pattern format (support domain and URL patterns)
+    // Validate each pattern format (support domain, IP, and URL patterns)
     for (const pattern of domains) {
-      if (!this.isValidRuleDomainFormat(pattern)) {
-        this.showFieldError("domains", `Invalid pattern format: ${pattern}`)
+      const validation = validateRulePattern(pattern)
+      if (!validation.isValid) {
+        this.showFieldError("domains", `Invalid pattern: ${pattern} - ${validation.error}`)
         return false
       }
     }
@@ -333,206 +378,6 @@ class RulesModal {
 
     const inputElement = fieldName === "name" ? this.nameInput : this.domainsInput
     inputElement.style.borderColor = "#e2e8f0"
-  }
-
-  /**
-   * Validates pattern format for custom rules (supports domain and URL patterns)
-   * This is specifically for rule validation, supports various pattern formats
-   * @param {string} pattern - Pattern to validate (supports various formats)
-   * @returns {boolean} True if pattern format is valid
-   */
-  isValidRuleDomainFormat(pattern) {
-    if (!pattern || typeof pattern !== "string") {
-      return false
-    }
-
-    const cleanPattern = pattern.trim().toLowerCase()
-
-    if (cleanPattern.length === 0) {
-      return false
-    }
-
-    if (cleanPattern.length > 300) {
-      return false
-    }
-
-    // Check if it's a URL pattern or domain pattern
-    const hasPath = cleanPattern.includes("/")
-    const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
-
-    // Validate domain part
-    if (!this.isValidDomainPattern(domainPattern)) {
-      return false
-    }
-
-    // Validate path part if present
-    if (hasPath) {
-      if (!this.isValidPathPattern(pathPattern)) {
-        return false
-      }
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a domain pattern
-   * @param {string} pattern - Domain pattern to validate
-   * @returns {boolean} True if domain pattern is valid
-   */
-  isValidDomainPattern(pattern) {
-    if (!pattern) {
-      return false
-    }
-
-    // Check for ** wildcard (TLD wildcard)
-    if (pattern.includes("**")) {
-      const parts = pattern.split("**")
-      if (parts.length !== 2) {
-        return false
-      }
-
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      // Validate prefix
-      if (!prefix || !prefix.endsWith(".")) {
-        return false
-      }
-
-      // Check if prefix has subdomain wildcard
-      if (prefix.startsWith("*.")) {
-        const basePrefix = prefix.substring(2)
-        if (!basePrefix || !basePrefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-          return false
-        }
-      } else {
-        // Validate prefix without subdomain wildcard
-        if (!prefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-          return false
-        }
-      }
-
-      // Validate suffix (usually empty, but could be something like .co in future)
-      if (suffix && !suffix.match(/^[a-zA-Z0-9.-]*$/)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Check for * wildcard (subdomain wildcard)
-    if (pattern.startsWith("*.")) {
-      const baseDomain = pattern.substring(2)
-
-      if (!baseDomain || !baseDomain.includes(".")) {
-        return false
-      }
-
-      if (baseDomain.includes("*")) {
-        return false
-      }
-
-      if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Regular domain validation
-    if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pattern)) {
-      return false
-    }
-
-    // Check for invalid patterns
-    if (pattern.startsWith(".") || pattern.endsWith(".")) {
-      return false
-    }
-
-    if (pattern.includes("..")) {
-      return false
-    }
-
-    if (pattern.startsWith("-") || pattern.endsWith("-")) {
-      return false
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a path pattern
-   * @param {string} pattern - Path pattern to validate
-   * @returns {boolean} True if path pattern is valid
-   */
-  isValidPathPattern(pattern) {
-    if (!pattern) {
-      return false
-    }
-
-    // Remove leading slash if present
-    const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
-
-    if (cleanPattern.length === 0) {
-      return false
-    }
-
-    if (cleanPattern.length > 100) {
-      return false
-    }
-
-    // Check for ** wildcard in path
-    if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**")
-      if (parts.length !== 2) {
-        return false
-      }
-
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      // Validate prefix (if present)
-      if (prefix && !this.isValidPathSegment(prefix)) {
-        return false
-      }
-
-      // Validate suffix (if present)
-      if (suffix && !this.isValidPathSegment(suffix)) {
-        return false
-      }
-
-      return true
-    }
-
-    // Basic path validation - allow alphanumeric, hyphens, underscores, dots, slashes, and asterisks
-    if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
-      return false
-    }
-
-    // Check for invalid patterns
-    if (cleanPattern.includes("//")) {
-      return false
-    }
-
-    return true
-  }
-
-  /**
-   * Validates a path segment (helper for path validation)
-   * @param {string} segment - Path segment to validate
-   * @returns {boolean} True if segment is valid
-   */
-  isValidPathSegment(segment) {
-    if (!segment) return true // Empty segments are allowed
-
-    // Remove leading/trailing slashes
-    const cleanSegment = segment.replace(/^\/+|\/+$/g, "")
-
-    if (cleanSegment.length === 0) return true
-
-    // Allow alphanumeric, hyphens, underscores, dots, and slashes
-    return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
   }
 
   showError(message) {
@@ -588,8 +433,12 @@ class RulesModal {
         // Include subdomains for better domain suggestions (e.g., "addons.mozilla.org" not just "mozilla.org")
         const domain = extractDomain(tab.url, true)
 
-        // Skip invalid domains, system domains, and domains that don't pass strict validation
-        if (!domain || domain === "system" || !isValidStrictDomain(domain)) {
+        // Skip invalid domains, system domains, and domains/IPs that don't pass validation
+        if (
+          !domain ||
+          domain === "system" ||
+          (!isValidStrictDomain(domain) && !isIPv4Address(domain))
+        ) {
           return
         }
 
@@ -845,6 +694,277 @@ class RulesModal {
         this.nameInput.style.backgroundColor = ""
       }, 3000)
     }
+  }
+
+  /**
+   * Detects pattern type from user input
+   */
+  detectPatternType() {
+    if (this.patternTypeSelect.value !== "auto") {
+      return // User has manually selected a type
+    }
+
+    const patterns = parseDomainsText(this.domainsInput.value)
+    if (patterns.length === 0) return
+
+    // Check the first pattern to detect type
+    const firstPattern = patterns[0]
+    const detectedType = urlPatternMatcher.detectPatternType(firstPattern)
+
+    // Update help text based on detected type
+    this.updatePatternHelp(detectedType)
+
+    // Show/hide group name template for segment extraction
+    if (detectedType === urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION) {
+      this.groupNameTemplateContainer.style.display = "block"
+      this.showVariableSuggestions(firstPattern)
+
+      // Suggest a template if empty
+      if (!this.groupNameTemplateInput.value) {
+        const variableMatch = firstPattern.match(/\{([^}]+)\}/)
+        if (variableMatch) {
+          const variableName = variableMatch[1].split(":")[0]
+          const ruleName = this.nameInput.value || "Group"
+          this.groupNameTemplateInput.value = `${ruleName} {${variableName}}`
+        }
+      }
+
+      this.updateTemplatePreview()
+    } else {
+      this.groupNameTemplateContainer.style.display = "none"
+      this.variableSuggestions.style.display = "none"
+      this.templatePreview.style.display = "none"
+    }
+  }
+
+  /**
+   * Handles pattern type change
+   */
+  onPatternTypeChange() {
+    const selectedType = this.patternTypeSelect.value
+
+    if (selectedType === "auto") {
+      this.detectPatternType()
+    } else {
+      // Map select values to pattern types
+      const typeMap = {
+        wildcard: urlPatternMatcher.PATTERN_TYPES.SIMPLE_WILDCARD,
+        extraction: urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION,
+        regex: urlPatternMatcher.PATTERN_TYPES.REGEX
+      }
+
+      const patternType = typeMap[selectedType]
+      if (patternType) {
+        this.updatePatternHelp(patternType)
+
+        // Show/hide group name template
+        if (patternType === urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION) {
+          this.groupNameTemplateContainer.style.display = "block"
+          // Show suggestions for the current patterns if available
+          const patterns = parseDomainsText(this.domainsInput.value)
+          if (patterns.length > 0) {
+            this.showVariableSuggestions(patterns[0])
+          }
+          this.updateTemplatePreview()
+        } else {
+          this.groupNameTemplateContainer.style.display = "none"
+          this.variableSuggestions.style.display = "none"
+          this.templatePreview.style.display = "none"
+        }
+      }
+    }
+  }
+
+  /**
+   * Updates pattern help text based on type
+   */
+  updatePatternHelp(patternType) {
+    const helpText = urlPatternMatcher.getPatternHelp(patternType)
+    this.patternHelp.textContent = helpText
+
+    // Update placeholder based on type
+    const placeholders = {
+      [urlPatternMatcher.PATTERN_TYPES.SEGMENT_EXTRACTION]:
+        "Example patterns:\n{accountId}-*.*.console.aws.amazon.com\n{project}-*.github.io\n{env}.{app}.my-company.com",
+      [urlPatternMatcher.PATTERN_TYPES.REGEX]:
+        "Example patterns:\n/^(\\d+)-.*\\.console\\.aws\\.amazon\\.com$/\n/^dev-(.+)\\.example\\.com$/",
+      [urlPatternMatcher.PATTERN_TYPES.SIMPLE_WILDCARD]:
+        "Example patterns:\ndiscord.com\n*.google.com\ngoogle.**\n192.168.1.*"
+    }
+
+    if (placeholders[patternType]) {
+      this.domainsInput.placeholder = placeholders[patternType]
+    }
+  }
+
+  /**
+   * Shows variable suggestion chips for a segment extraction pattern
+   */
+  showVariableSuggestions(pattern) {
+    const variables = this.extractVariablesFromPattern(pattern)
+
+    if (variables.length === 0) {
+      this.variableSuggestions.style.display = "none"
+      return
+    }
+
+    this.variableSuggestions.innerHTML = ""
+    this.variableSuggestions.style.display = "flex"
+
+    variables.forEach(variable => {
+      const chip = document.createElement("button")
+      chip.type = "button"
+      chip.className = "variable-chip"
+      chip.textContent = `{${variable}}`
+      chip.title = `Click to add {${variable}} to template`
+
+      chip.addEventListener("click", () => {
+        this.insertVariableIntoTemplate(variable)
+      })
+
+      this.variableSuggestions.appendChild(chip)
+    })
+  }
+
+  /**
+   * Extracts variable names from a pattern
+   */
+  extractVariablesFromPattern(pattern) {
+    const variables = []
+    const regex = /\{([^}]+)\}/g
+    let match
+
+    while ((match = regex.exec(pattern)) !== null) {
+      const variableName = match[1].split(":")[0] // Remove type specifiers
+      if (!variables.includes(variableName)) {
+        variables.push(variableName)
+      }
+    }
+
+    return variables
+  }
+
+  /**
+   * Inserts a variable into the template at cursor position
+   */
+  insertVariableIntoTemplate(variableName) {
+    const input = this.groupNameTemplateInput
+    const cursorPos = input.selectionStart
+    const currentValue = input.value
+    const variableText = `{${variableName}}`
+
+    // Insert the variable at cursor position
+    const newValue = currentValue.slice(0, cursorPos) + variableText + currentValue.slice(cursorPos)
+    input.value = newValue
+
+    // Move cursor to after the inserted variable
+    const newCursorPos = cursorPos + variableText.length
+    input.setSelectionRange(newCursorPos, newCursorPos)
+    input.focus()
+
+    // Update preview
+    this.updateTemplatePreview()
+  }
+
+  /**
+   * Updates the real-time preview of group names
+   */
+  updateTemplatePreview() {
+    if (this.groupNameTemplateContainer.style.display === "none") {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    const template = this.groupNameTemplateInput.value.trim()
+    if (!template) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    const patterns = parseDomainsText(this.domainsInput.value)
+    if (patterns.length === 0) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    // Get example URLs from current tabs that would match the pattern
+    const exampleGroups = this.generatePreviewExamples(patterns[0], template)
+
+    if (exampleGroups.length === 0) {
+      this.templatePreview.style.display = "none"
+      return
+    }
+
+    this.previewExamples.innerHTML = ""
+    this.templatePreview.style.display = "block"
+
+    if (exampleGroups.length === 0) {
+      const placeholder = document.createElement("div")
+      placeholder.className = "preview-example placeholder"
+      placeholder.textContent = "No matching tabs found for preview"
+      this.previewExamples.appendChild(placeholder)
+    } else {
+      exampleGroups.forEach(groupName => {
+        const example = document.createElement("div")
+        example.className = "preview-example"
+        example.textContent = `📁 ${groupName}`
+        this.previewExamples.appendChild(example)
+      })
+    }
+  }
+
+  /**
+   * Generates preview examples based on current tabs
+   */
+  generatePreviewExamples(pattern, template) {
+    const examples = new Set()
+
+    // Get some example values for common variables
+    const commonExamples = {
+      accountId: ["556677889900", "123456789012"],
+      region: ["us-east-1", "eu-west-1", "us-west-2"],
+      env: ["dev", "staging", "prod"],
+      project: ["myapp", "webapp", "api"]
+    }
+
+    // Try to match the pattern against current tabs
+    if (this.currentTabs && this.currentTabs.length > 0) {
+      for (const tab of this.currentTabs) {
+        try {
+          const matchResult = urlPatternMatcher.match(tab.url, pattern, {
+            groupNameTemplate: template
+          })
+
+          if (matchResult.matched && matchResult.groupName) {
+            examples.add(matchResult.groupName)
+          }
+        } catch {
+          // Ignore invalid patterns during preview
+        }
+      }
+    }
+
+    // If no real examples, generate some mock examples
+    if (examples.size === 0) {
+      const variables = this.extractVariablesFromPattern(pattern)
+
+      if (variables.length > 0) {
+        // Generate 2-3 example group names
+        for (let i = 0; i < Math.min(3, variables.length); i++) {
+          let exampleTemplate = template
+
+          variables.forEach(variable => {
+            const exampleValues = commonExamples[variable] || [`example${i + 1}`]
+            const exampleValue = exampleValues[i % exampleValues.length]
+            exampleTemplate = exampleTemplate.replace(`{${variable}}`, exampleValue)
+          })
+
+          examples.add(exampleTemplate)
+        }
+      }
+    }
+
+    return Array.from(examples).slice(0, 4) // Limit to 4 examples
   }
 }
 

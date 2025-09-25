@@ -14,6 +14,7 @@ class TabGroupState {
     this.groupByMode = DEFAULT_STATE.groupByMode
     this.customRules = new Map() // Maps ruleId -> rule object
     this.ruleMatchingMode = DEFAULT_STATE.ruleMatchingMode
+    this.minimumTabsForGroup = DEFAULT_STATE.minimumTabsForGroup
   }
 
   /**
@@ -26,6 +27,7 @@ class TabGroupState {
     this.groupNewTabs = data.groupNewTabs ?? DEFAULT_STATE.groupNewTabs
     this.groupByMode = data.groupByMode || DEFAULT_STATE.groupByMode
     this.ruleMatchingMode = data.ruleMatchingMode || DEFAULT_STATE.ruleMatchingMode
+    this.minimumTabsForGroup = data.minimumTabsForGroup ?? DEFAULT_STATE.minimumTabsForGroup
 
     this.customRules.clear()
 
@@ -47,7 +49,8 @@ class TabGroupState {
       groupNewTabs: this.groupNewTabs,
       groupByMode: this.groupByMode,
       ruleMatchingMode: this.ruleMatchingMode,
-      customRules: this.getCustomRulesObject()
+      customRules: this.getCustomRulesObject(),
+      minimumTabsForGroup: this.minimumTabsForGroup
     }
   }
 

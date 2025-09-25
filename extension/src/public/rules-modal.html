@@ -27,16 +27,25 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="ruleDomains">Domains</label>
+          <label class="form-label" for="ruleDomains">Patterns</label>
+          <div class="pattern-type-selector">
+            <select id="patternType" class="form-input">
+              <option value="auto">Auto-detect pattern type</option>
+              <option value="wildcard">Simple Wildcards (*.example.com)</option>
+              <option value="extraction">Segment Extraction ({variable})</option>
+              <option value="regex">Regular Expression (advanced)</option>
+            </select>
+          </div>
           <textarea
             id="ruleDomains"
             class="form-input form-textarea"
-            placeholder="Enter one domain per line&#10;discord.com&#10;teams.microsoft.com&#10;*.google.com&#10;docs.google.com/forms&#10;dashboard.my-cool-site.com/**/special-page"
+            placeholder="Enter one pattern per line&#10;discord.com&#10;teams.microsoft.com&#10;*.google.com&#10;192.168.0.30&#10;192.168.0.*&#10;docs.google.com/forms&#10;dashboard.my-cool-site.com/**/special-page"
             required
           ></textarea>
           <div class="error-message" id="domainsError"></div>
-          <div class="help-text">
-            Enter one domain per line. Supports wildcards: *.domain.com (max 20 domains per rule)
+          <div class="help-text" id="patternHelp">
+            Enter one pattern per line. Supports domains, IP addresses, and wildcards (max 20
+            patterns per rule)
           </div>
 
           <!-- Current Tabs Selection -->
@@ -65,10 +74,48 @@
           </div>
         </div>
 
+        <div class="form-group" id="groupNameTemplateContainer" style="display: none">
+          <label class="form-label" for="groupNameTemplate">Group Name Template</label>
+          <div class="template-input-container">
+            <input
+              type="text"
+              id="groupNameTemplate"
+              class="form-input"
+              placeholder="e.g., AWS Account {accountId}, Region {region}, {variable} Group"
+            />
+            <div class="variable-suggestions" id="variableSuggestions" style="display: none"></div>
+          </div>
+          <div class="help-text">
+            Use {variable} placeholders to include extracted values in the group name.
+            <strong>Click the variable buttons below to insert them.</strong>
+          </div>
+          <div class="template-preview" id="templatePreview" style="display: none">
+            <div class="preview-label">Preview with current tabs:</div>
+            <div class="preview-examples" id="previewExamples"></div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Group Color</label>
           <div class="color-selector" id="colorSelector">
             <!-- Colors will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="minimumTabsInput">Minimum tabs to form group</label>
+          <div class="number-input-container">
+            <input
+              type="number"
+              id="minimumTabsInput"
+              min="1"
+              max="10"
+              placeholder="Ex: 3"
+              class="form-input number-input-small"
+            />
+          </div>
+          <div class="help-text" id="minimumTabsHelp">
+            Leave empty to use global setting (currently: 1 tab)
           </div>
         </div>
 
