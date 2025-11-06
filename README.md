@@ -106,10 +106,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 The AI grouping feature is currently under active development with:
 
-- API contract defined for client-server communication
-- Server infrastructure being built with Go
-- Planned integration with AI providers for intelligent grouping
-- Premium model designed with free trial tokens and unlimited premium usage
+- A form of web-native LLM.
 
 **Since this is open source, to run the AI grouping feature locally, users will need to provide their own API key.**
 
@@ -213,27 +210,6 @@ extension/
 - `npm run build`: Build the extension and generate .xpi file
 - `npm run format`: Format code using Prettier
 - `npm run lint`: Run ESLint checks
-
-### Server (TBD, for AI features)
-
-1. Set up Go development environment
-2. Navigate to the server directory:
-
-    ```bash
-    cd server
-    ```
-
-3. Build and run the server:
-
-    ```bash
-    make run
-    ```
-
-4. For development with hot reload:
-
-    ```bash
-    make dev
-    ```
 
 ### Loading Extension for Development
 
