@@ -157,6 +157,84 @@ npm run dev        # Start development server
 
 ---
 
+## 🧪 Testing
+
+The project follows Test-Driven Development (TDD) principles with comprehensive test coverage across unit and end-to-end tests.
+
+### Test Stack
+
+| Tool       | Purpose                        |
+| ---------- | ------------------------------ |
+| Vitest     | Unit tests (fast, Vite-native) |
+| Playwright | E2E browser extension testing  |
+
+### Running Tests
+
+```bash
+npm test              # Run unit tests (72+ tests)
+npm run test:e2e      # Build extension and run E2E tests
+```
+
+### Unit Tests
+
+Located in `tests/`, these test core utilities and business logic:
+
+- **`DomainUtils.test.ts`** (45 tests) - Domain extraction, ccSLD handling, edge cases
+- **`UrlPatternMatcher.test.ts`** (27 tests) - URL pattern matching, wildcards, validation
+
+```bash
+npm test                    # Run all unit tests
+npm test -- --watch         # Watch mode during development
+npm test -- --coverage      # Generate coverage report
+```
+
+### E2E Tests
+
+Located in `tests/e2e/`, these test the extension in a real browser:
+
+- **`extension.spec.ts`** - Extension loading, popup UI, toggle functionality, sidebar
+
+E2E tests require building the extension first:
+
+```bash
+npm run test:e2e            # Builds Chrome extension, then runs Playwright
+```
+
+**Note:** E2E tests run in headed mode (visible browser) since Chrome extension testing requires it.
+
+### Test Coverage Goals
+
+- **Unit tests**: Core utilities at 80%+ coverage
+- **E2E tests**: Critical user flows (popup, toggle, rules)
+
+### Writing New Tests
+
+Follow TDD workflow:
+
+1. **Write test first** (RED) - Define expected behavior
+2. **Run test** - Verify it fails
+3. **Implement code** (GREEN) - Minimal code to pass
+4. **Refactor** (IMPROVE) - Clean up while keeping tests green
+
+Example unit test pattern:
+
+```typescript
+import { describe, it, expect } from "vitest"
+import { extractDomain } from "../utils/DomainUtils"
+
+describe("extractDomain", () => {
+  it("extracts domain from standard URL", () => {
+    expect(extractDomain("https://github.com/user/repo")).toBe("github")
+  })
+
+  it("handles ccSLD domains correctly", () => {
+    expect(extractDomain("https://example.co.uk/page")).toBe("example")
+  })
+})
+```
+
+---
+
 ## 📦 Project Structure
 
 ```text
