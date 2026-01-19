@@ -193,7 +193,9 @@ test.describe("Auto-Grouping Toggle", () => {
 
     // Verify tabs are ungrouped
     const tabs = await getTabs(popupPage)
-    const httpTabs = tabs.filter(t => t.url.startsWith("http") && !t.url.includes("chrome-extension"))
+    const httpTabs = tabs.filter(
+      t => t.url.startsWith("http") && !t.url.includes("chrome-extension")
+    )
     expect(httpTabs.every(t => t.groupId === -1)).toBe(true)
 
     // Cleanup

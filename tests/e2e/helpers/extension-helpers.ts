@@ -430,7 +430,9 @@ export async function toggleCollapseGroups(popupPage: Page): Promise<boolean> {
  * Get collapse state of groups
  */
 export async function getCollapseState(popupPage: Page): Promise<boolean> {
-  const result = (await sendMessage(popupPage, "getGroupsCollapseState")) as { isCollapsed: boolean }
+  const result = (await sendMessage(popupPage, "getGroupsCollapseState")) as {
+    isCollapsed: boolean
+  }
   return result.isCollapsed
 }
 
@@ -488,10 +490,7 @@ export async function closeTestTabs(context: BrowserContext): Promise<void> {
   const pages = context.pages()
   for (const page of pages) {
     const url = page.url()
-    if (
-      url.startsWith("http") &&
-      !url.includes("chrome-extension://")
-    ) {
+    if (url.startsWith("http") && !url.includes("chrome-extension://")) {
       await page.close()
     }
   }
@@ -516,10 +515,7 @@ export async function resetExtensionState(popupPage: Page): Promise<void> {
 /**
  * Setup test with clean state
  */
-export async function setupCleanState(
-  context: BrowserContext,
-  extensionId: string
-): Promise<Page> {
+export async function setupCleanState(context: BrowserContext, extensionId: string): Promise<Page> {
   await closeTestTabs(context)
   const popupPage = await openPopup(context, extensionId)
   await resetExtensionState(popupPage)
