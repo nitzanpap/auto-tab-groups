@@ -43,7 +43,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 - Automatically groups tabs by their domain/subdomain
 - Smart domain name display (e.g., "github" instead of "www.github.com")
-- **Country code second-level domain (ccSLD) support** - Properly handles domains like `dailymail.co.uk`, `example.co.uk`, `abc.net.au`, etc.
+- **Country code second-level domain (ccSLD) support** - Properly handles domains like `calendar-uk.co.uk`, `example.co.uk`, `abc.net.au`, etc.
 - Special handling for IP addresses, localhost, and .local domains
 - Real-time group updates as you browse
 
