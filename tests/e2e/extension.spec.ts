@@ -7,12 +7,36 @@ const __dirname = dirname(__filename)
 const extensionPath = join(__dirname, "../../.output/chrome-mv3")
 
 let context: BrowserContext
+let extensionId: string
+
+/**
+ * Wait for and retrieve the extension ID from service workers
+ */
+async function getExtensionId(ctx: BrowserContext): Promise<string> {
+  return new Promise<string>(resolve => {
+    const checkServiceWorker = () => {
+      const workers = ctx.serviceWorkers()
+      for (const worker of workers) {
+        const url = worker.url()
+        if (url.includes("chrome-extension://")) {
+          resolve(url.split("/")[2])
+          return
+        }
+      }
+      setTimeout(checkServiceWorker, 100)
+    }
+    checkServiceWorker()
+  })
+}
 
 test.beforeAll(async () => {
   context = await chromium.launchPersistentContext("", {
     headless: false,
     args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
   })
+
+  // Get extension ID once and reuse across all tests
+  extensionId = await getExtensionId(context)
 })
 
 test.afterAll(async () => {
@@ -21,26 +45,6 @@ test.afterAll(async () => {
 
 test.describe("Auto Tab Groups Extension", () => {
   test("extension loads and popup opens", async () => {
-    // Get the extension ID from the service worker
-    let extensionId = ""
-
-    // Wait for the service worker to register and get extension ID
-    await new Promise<void>(resolve => {
-      const checkServiceWorker = async () => {
-        const workers = context.serviceWorkers()
-        for (const worker of workers) {
-          const url = worker.url()
-          if (url.includes("chrome-extension://")) {
-            extensionId = url.split("/")[2]
-            resolve()
-            return
-          }
-        }
-        setTimeout(checkServiceWorker, 100)
-      }
-      checkServiceWorker()
-    })
-
     expect(extensionId).toBeTruthy()
 
     // Open the popup
@@ -51,7 +55,11 @@ test.describe("Auto Tab Groups Extension", () => {
     // Verify popup elements are present
     await expect(page.locator("#group")).toBeVisible()
     await expect(page.locator("#ungroup")).toBeVisible()
-    await expect(page.locator("#autoGroupToggle")).toBeVisible()
+
+    // Check the toggle switch label is visible (checkbox input is hidden, styled as toggle)
+    await expect(page.locator("label.switch")).toBeVisible()
+    // Verify the checkbox exists in DOM
+    await expect(page.locator("#autoGroupToggle")).toBeAttached()
 
     // Check version is displayed
     const versionElement = page.locator("#versionNumber")
@@ -63,17 +71,6 @@ test.describe("Auto Tab Groups Extension", () => {
   })
 
   test("auto-group toggle works", async () => {
-    let extensionId = ""
-
-    const workers = context.serviceWorkers()
-    for (const worker of workers) {
-      const url = worker.url()
-      if (url.includes("chrome-extension://")) {
-        extensionId = url.split("/")[2]
-        break
-      }
-    }
-
     const popupUrl = `chrome-extension://${extensionId}/popup.html`
     const page = await context.newPage()
     await page.goto(popupUrl)
@@ -81,8 +78,8 @@ test.describe("Auto Tab Groups Extension", () => {
     const toggle = page.locator("#autoGroupToggle")
     const initialState = await toggle.isChecked()
 
-    // Toggle the state
-    await toggle.click()
+    // Click the label (visible toggle) to change checkbox state
+    await page.locator("label.switch").first().click()
     await page.waitForTimeout(500)
 
     // Verify state changed
@@ -90,7 +87,7 @@ test.describe("Auto Tab Groups Extension", () => {
     expect(newState).toBe(!initialState)
 
     // Toggle back
-    await toggle.click()
+    await page.locator("label.switch").first().click()
     await page.waitForTimeout(500)
 
     // Verify state restored
@@ -101,17 +98,6 @@ test.describe("Auto Tab Groups Extension", () => {
   })
 
   test("rules section expands", async () => {
-    let extensionId = ""
-
-    const workers = context.serviceWorkers()
-    for (const worker of workers) {
-      const url = worker.url()
-      if (url.includes("chrome-extension://")) {
-        extensionId = url.split("/")[2]
-        break
-      }
-    }
-
     const popupUrl = `chrome-extension://${extensionId}/popup.html`
     const page = await context.newPage()
     await page.goto(popupUrl)
@@ -135,17 +121,6 @@ test.describe("Auto Tab Groups Extension", () => {
   })
 
   test("sidebar loads correctly", async () => {
-    let extensionId = ""
-
-    const workers = context.serviceWorkers()
-    for (const worker of workers) {
-      const url = worker.url()
-      if (url.includes("chrome-extension://")) {
-        extensionId = url.split("/")[2]
-        break
-      }
-    }
-
     const sidebarUrl = `chrome-extension://${extensionId}/sidebar.html`
     const page = await context.newPage()
     await page.goto(sidebarUrl)
@@ -153,7 +128,10 @@ test.describe("Auto Tab Groups Extension", () => {
     // Verify sidebar elements are present (same as popup)
     await expect(page.locator("#group")).toBeVisible()
     await expect(page.locator("#ungroup")).toBeVisible()
-    await expect(page.locator("#autoGroupToggle")).toBeVisible()
+
+    // Check the toggle switch label is visible
+    await expect(page.locator("label.switch")).toBeVisible()
+    await expect(page.locator("#autoGroupToggle")).toBeAttached()
 
     await page.close()
   })
