@@ -3,23 +3,19 @@
  * Uses browser state as the single source of truth, no complex state management
  */
 
-import type { Browser } from "wxt/browser";
-import { tabGroupState } from "./TabGroupState";
-import { rulesService, type MatchedRule } from "./RulesService";
-import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils";
-import { getRandomTabGroupColor } from "../utils/Constants";
-import {
-  getGroupColor,
-  updateGroupColor,
-  groupColorMapping,
-} from "../utils/storage";
-import type { CustomRule, TabGroupColor } from "../types";
+import type { Browser } from "wxt/browser"
+import { tabGroupState } from "./TabGroupState"
+import { rulesService, type MatchedRule } from "./RulesService"
+import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
+import { getRandomTabGroupColor } from "../utils/Constants"
+import { getGroupColor, updateGroupColor, groupColorMapping } from "../utils/storage"
+import type { CustomRule, TabGroupColor } from "../types"
 
 /**
  * Collapse state result
  */
 interface CollapseState {
-  isCollapsed: boolean;
+  isCollapsed: boolean
 }
 
 class TabGroupServiceSimplified {
@@ -28,7 +24,7 @@ class TabGroupServiceSimplified {
    */
   isNewTabUrl(url: string): boolean {
     if (!url || typeof url !== "string") {
-      return false;
+      return false
     }
 
     const newTabUrls = [
@@ -38,105 +34,79 @@ class TabGroupServiceSimplified {
       "about:newtab",
       "about:home",
       "edge://newtab/",
-      "about:blank",
-    ];
+      "about:blank"
+    ]
 
-    return newTabUrls.some((newTabUrl) => url.startsWith(newTabUrl));
+    return newTabUrls.some(newTabUrl => url.startsWith(newTabUrl))
   }
 
   /**
    * Handles a tab update - moves tab to correct group based on its current URL
    */
-  async handleTabUpdate(
-    tabId: number,
-    forceGrouping = false,
-  ): Promise<boolean> {
+  async handleTabUpdate(tabId: number, forceGrouping = false): Promise<boolean> {
     if (!forceGrouping && !tabGroupState.autoGroupingEnabled) {
-      return false;
+      return false
     }
 
     try {
-      console.log(`[TabGroupService] Processing tab ${tabId}`);
+      console.log(`[TabGroupService] Processing tab ${tabId}`)
 
-      const tab = await browser.tabs.get(tabId);
-      console.log(`[TabGroupService] Tab URL: ${tab.url}`);
+      const tab = await browser.tabs.get(tabId)
+      console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
       // Check if this is a new tab URL and user has disabled grouping new tabs
-      if (
-        !forceGrouping &&
-        !tabGroupState.groupNewTabs &&
-        tab.url &&
-        this.isNewTabUrl(tab.url)
-      ) {
+      if (!forceGrouping && !tabGroupState.groupNewTabs && tab.url && this.isNewTabUrl(tab.url)) {
         console.log(
-          `[TabGroupService] Tab ${tabId} has a new tab URL and grouping new tabs is disabled`,
-        );
-        return false;
+          `[TabGroupService] Tab ${tabId} has a new tab URL and grouping new tabs is disabled`
+        )
+        return false
       }
 
       // Skip pinned tabs
       if (tab.pinned) {
-        console.log(`[TabGroupService] Tab ${tabId} is pinned, skipping`);
-        return false;
+        console.log(`[TabGroupService] Tab ${tabId} is pinned, skipping`)
+        return false
       }
 
       // Handle rules-only mode
       if (tabGroupState.groupByMode === "rules-only") {
-        const customRule = await rulesService.findMatchingRule(tab.url || "");
+        const customRule = await rulesService.findMatchingRule(tab.url || "")
 
         // Handle system URLs
-        const domain = extractDomain(tab.url || "", false);
+        const domain = extractDomain(tab.url || "", false)
         if (!customRule && domain === "system") {
-          return await this.moveTabToTargetGroup(
-            tabId,
-            tab,
-            "System",
-            null,
-            "grey",
-          );
+          return await this.moveTabToTargetGroup(tabId, tab, "System", null, "grey")
         }
 
         if (!customRule) {
-          console.log(
-            `[TabGroupService] Rules-only mode: No rule found for ${tab.url}`,
-          );
-          return false;
+          console.log(`[TabGroupService] Rules-only mode: No rule found for ${tab.url}`)
+          return false
         }
 
-        const groupName = customRule.effectiveGroupName || customRule.name;
-        return await this.moveTabToTargetGroup(
-          tabId,
-          tab,
-          groupName,
-          customRule,
-        );
+        const groupName = customRule.effectiveGroupName || customRule.name
+        return await this.moveTabToTargetGroup(tabId, tab, groupName, customRule)
       }
 
       // Domain/subdomain mode
-      const includeSubDomain = tabGroupState.groupByMode === "subdomain";
-      const domain = extractDomain(tab.url || "", includeSubDomain);
+      const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+      const domain = extractDomain(tab.url || "", includeSubDomain)
       if (!domain) {
-        console.log(`[TabGroupService] No domain extracted, skipping`);
-        return false;
+        console.log(`[TabGroupService] No domain extracted, skipping`)
+        return false
       }
 
       // Check for custom rules first
-      const customRule = await rulesService.findMatchingRule(tab.url || "");
+      const customRule = await rulesService.findMatchingRule(tab.url || "")
       const expectedTitle = customRule
         ? customRule.effectiveGroupName || customRule.name
-        : getDomainDisplayName(domain);
+        : getDomainDisplayName(domain)
 
-      console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`);
+      console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
 
-      return await this.moveTabToTargetGroup(
-        tabId,
-        tab,
-        expectedTitle,
-        customRule,
-      );
+      return await this.moveTabToTargetGroup(tabId, tab, expectedTitle, customRule)
     } catch (error) {
-      console.error(`[TabGroupService] Error processing tab ${tabId}:`, error);
-      return false;
+      console.error(`[TabGroupService] Error processing tab ${tabId}:`, error)
+      return false
     }
   }
 
@@ -144,14 +114,10 @@ class TabGroupServiceSimplified {
    * Gets the effective minimum tabs required for a group
    */
   getEffectiveMinimumTabs(customRule: MatchedRule | CustomRule | null): number {
-    if (
-      customRule &&
-      customRule.minimumTabs !== null &&
-      customRule.minimumTabs !== undefined
-    ) {
-      return customRule.minimumTabs;
+    if (customRule && customRule.minimumTabs !== null && customRule.minimumTabs !== undefined) {
+      return customRule.minimumTabs
     }
-    return tabGroupState.minimumTabsForGroup || 1;
+    return tabGroupState.minimumTabsForGroup || 1
   }
 
   /**
@@ -160,43 +126,39 @@ class TabGroupServiceSimplified {
   async countTabsForGroup(
     expectedTitle: string,
     windowId: number,
-    customRule: MatchedRule | CustomRule | null,
+    customRule: MatchedRule | CustomRule | null
   ): Promise<number> {
     try {
-      const tabs = await browser.tabs.query({ windowId });
-      let count = 0;
+      const tabs = await browser.tabs.query({ windowId })
+      let count = 0
 
       for (const tab of tabs) {
-        if (tab.pinned) continue;
+        if (tab.pinned) continue
 
         if (customRule) {
-          const matchingRule = await rulesService.findMatchingRule(
-            tab.url || "",
-          );
+          const matchingRule = await rulesService.findMatchingRule(tab.url || "")
           const expectedGroupName =
-            "effectiveGroupName" in customRule
-              ? customRule.effectiveGroupName
-              : customRule.name;
+            "effectiveGroupName" in customRule ? customRule.effectiveGroupName : customRule.name
           const matchGroupName = matchingRule
             ? matchingRule.effectiveGroupName || matchingRule.name
-            : null;
+            : null
           if (matchingRule && matchGroupName === expectedGroupName) {
-            count++;
+            count++
           }
         } else {
-          const includeSubDomain = tabGroupState.groupByMode === "subdomain";
-          const domain = extractDomain(tab.url || "", includeSubDomain);
-          const displayName = getDomainDisplayName(domain || "");
+          const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+          const domain = extractDomain(tab.url || "", includeSubDomain)
+          const displayName = getDomainDisplayName(domain || "")
           if (displayName === expectedTitle) {
-            count++;
+            count++
           }
         }
       }
 
-      return count;
+      return count
     } catch (error) {
-      console.error(`[TabGroupService] Error counting tabs:`, error);
-      return 0;
+      console.error(`[TabGroupService] Error counting tabs:`, error)
+      return 0
     }
   }
 
@@ -208,120 +170,97 @@ class TabGroupServiceSimplified {
     tab: Browser.tabs.Tab,
     expectedTitle: string,
     customRule: MatchedRule | CustomRule | null = null,
-    defaultColor: TabGroupColor | null = null,
+    defaultColor: TabGroupColor | null = null
   ): Promise<boolean> {
     // Check for tabGroups API availability
     if (!browser.tabGroups) {
-      console.warn("[TabGroupService] tabGroups API not available");
-      return false;
+      console.warn("[TabGroupService] tabGroups API not available")
+      return false
     }
 
-    const existingGroup = await this.findGroupByTitle(
-      expectedTitle,
-      tab.windowId!,
-    );
+    const existingGroup = await this.findGroupByTitle(expectedTitle, tab.windowId!)
 
     if (existingGroup) {
       if (tab.groupId === existingGroup.id) {
-        console.log(`[TabGroupService] Tab ${tabId} already in correct group`);
-        return true;
+        console.log(`[TabGroupService] Tab ${tabId} already in correct group`)
+        return true
       }
 
-      console.log(
-        `[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`,
-      );
+      console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
       await browser.tabs.group({
         tabIds: [tabId],
-        groupId: existingGroup.id,
-      });
+        groupId: existingGroup.id
+      })
 
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {
         try {
           await browser.tabGroups.update(existingGroup.id, {
-            color: customRule.color,
-          });
+            color: customRule.color
+          })
         } catch (error) {
-          console.warn(
-            `[TabGroupService] Failed to update group color:`,
-            error,
-          );
+          console.warn(`[TabGroupService] Failed to update group color:`, error)
         }
       }
 
-      return true;
+      return true
     }
 
     // Check minimum threshold before creating new group
-    const tabCount = await this.countTabsForGroup(
-      expectedTitle,
-      tab.windowId!,
-      customRule,
-    );
-    const minimumTabs = this.getEffectiveMinimumTabs(customRule);
+    const tabCount = await this.countTabsForGroup(expectedTitle, tab.windowId!, customRule)
+    const minimumTabs = this.getEffectiveMinimumTabs(customRule)
 
     console.log(
-      `[TabGroupService] Tab count for "${expectedTitle}": ${tabCount}, minimum: ${minimumTabs}`,
-    );
+      `[TabGroupService] Tab count for "${expectedTitle}": ${tabCount}, minimum: ${minimumTabs}`
+    )
 
     if (tabCount < minimumTabs) {
-      console.log(
-        `[TabGroupService] Not enough tabs to create group "${expectedTitle}"`,
-      );
+      console.log(`[TabGroupService] Not enough tabs to create group "${expectedTitle}"`)
 
       if (tab.groupId && tab.groupId !== -1) {
-        await browser.tabs.ungroup([tabId]);
+        await browser.tabs.ungroup([tabId])
       }
 
-      return false;
+      return false
     }
 
     // Create new group
-    console.log(`[TabGroupService] Creating new group "${expectedTitle}"`);
+    console.log(`[TabGroupService] Creating new group "${expectedTitle}"`)
 
-    const groupId = await browser.tabs.group({ tabIds: [tabId] });
+    const groupId = await browser.tabs.group({ tabIds: [tabId] })
 
     try {
       const updateOptions: Browser.tabGroups.UpdateProperties = {
-        title: expectedTitle,
-      };
+        title: expectedTitle
+      }
 
       if (customRule?.color) {
-        updateOptions.color = customRule.color as Browser.tabGroups.Color;
+        updateOptions.color = customRule.color as Browser.tabGroups.Color
       } else {
-        const savedColor = await getGroupColor(expectedTitle);
+        const savedColor = await getGroupColor(expectedTitle)
         if (savedColor) {
-          updateOptions.color = savedColor as Browser.tabGroups.Color;
+          updateOptions.color = savedColor as Browser.tabGroups.Color
         } else {
           updateOptions.color = (defaultColor ||
-            getRandomTabGroupColor()) as Browser.tabGroups.Color;
+            getRandomTabGroupColor()) as Browser.tabGroups.Color
         }
       }
 
-      await browser.tabGroups.update(groupId, updateOptions);
+      await browser.tabGroups.update(groupId, updateOptions)
 
       if (updateOptions.color) {
-        await updateGroupColor(expectedTitle, updateOptions.color);
+        await updateGroupColor(expectedTitle, updateOptions.color)
       }
 
-      console.log(
-        `[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`,
-      );
+      console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
     } catch (error) {
-      console.warn(
-        `[TabGroupService] Failed to update group ${groupId}:`,
-        error,
-      );
+      console.warn(`[TabGroupService] Failed to update group ${groupId}:`, error)
     }
 
     // Group matching ungrouped tabs
-    await this.groupMatchingUngroupedTabs(
-      expectedTitle,
-      tab.windowId!,
-      customRule,
-    );
+    await this.groupMatchingUngroupedTabs(expectedTitle, tab.windowId!, customRule)
 
-    return true;
+    return true
   }
 
   /**
@@ -330,52 +269,47 @@ class TabGroupServiceSimplified {
   async groupMatchingUngroupedTabs(
     expectedTitle: string,
     windowId: number,
-    customRule: MatchedRule | CustomRule | null,
+    customRule: MatchedRule | CustomRule | null
   ): Promise<void> {
     try {
-      const existingGroup = await this.findGroupByTitle(
-        expectedTitle,
-        windowId,
-      );
-      if (!existingGroup) return;
+      const existingGroup = await this.findGroupByTitle(expectedTitle, windowId)
+      if (!existingGroup) return
 
-      const allTabs = await browser.tabs.query({ windowId });
-      const tabsToGroup: number[] = [];
+      const allTabs = await browser.tabs.query({ windowId })
+      const tabsToGroup: number[] = []
 
       for (const otherTab of allTabs) {
         if (otherTab.pinned || (otherTab.groupId && otherTab.groupId !== -1)) {
-          continue;
+          continue
         }
 
-        let shouldGroup = false;
+        let shouldGroup = false
         if (customRule) {
-          const matchingRule = await rulesService.findMatchingRule(
-            otherTab.url || "",
-          );
-          shouldGroup = !!matchingRule && matchingRule.name === customRule.name;
+          const matchingRule = await rulesService.findMatchingRule(otherTab.url || "")
+          shouldGroup = !!matchingRule && matchingRule.name === customRule.name
         } else {
-          const includeSubDomain = tabGroupState.groupByMode === "subdomain";
-          const domain = extractDomain(otherTab.url || "", includeSubDomain);
-          const displayName = getDomainDisplayName(domain || "");
-          shouldGroup = displayName === expectedTitle;
+          const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+          const domain = extractDomain(otherTab.url || "", includeSubDomain)
+          const displayName = getDomainDisplayName(domain || "")
+          shouldGroup = displayName === expectedTitle
         }
 
         if (shouldGroup && otherTab.id) {
-          tabsToGroup.push(otherTab.id);
+          tabsToGroup.push(otherTab.id)
         }
       }
 
       if (tabsToGroup.length > 0) {
         await browser.tabs.group({
           tabIds: tabsToGroup as [number, ...number[]],
-          groupId: existingGroup.id,
-        });
+          groupId: existingGroup.id
+        })
         console.log(
-          `[TabGroupService] Added ${tabsToGroup.length} tabs to group "${expectedTitle}"`,
-        );
+          `[TabGroupService] Added ${tabsToGroup.length} tabs to group "${expectedTitle}"`
+        )
       }
     } catch (error) {
-      console.error(`[TabGroupService] Error grouping matching tabs:`, error);
+      console.error(`[TabGroupService] Error grouping matching tabs:`, error)
     }
   }
 
@@ -384,16 +318,16 @@ class TabGroupServiceSimplified {
    */
   async findGroupByTitle(
     title: string,
-    windowId: number,
+    windowId: number
   ): Promise<Browser.tabGroups.TabGroup | null> {
     try {
-      if (!browser.tabGroups) return null;
+      if (!browser.tabGroups) return null
 
-      const groups = await browser.tabGroups.query({ windowId });
-      return groups.find((group) => group.title === title) || null;
+      const groups = await browser.tabGroups.query({ windowId })
+      return groups.find(group => group.title === title) || null
     } catch (error) {
-      console.error(`[TabGroupService] Error finding group:`, error);
-      return null;
+      console.error(`[TabGroupService] Error finding group:`, error)
+      return null
     }
   }
 
@@ -402,26 +336,26 @@ class TabGroupServiceSimplified {
    */
   async groupAllTabs(): Promise<boolean> {
     if (!tabGroupState.autoGroupingEnabled) {
-      return false;
+      return false
     }
 
     try {
-      console.log(`[TabGroupService] Starting bulk grouping`);
+      console.log(`[TabGroupService] Starting bulk grouping`)
 
-      const tabs = await browser.tabs.query({ currentWindow: true });
+      const tabs = await browser.tabs.query({ currentWindow: true })
 
       for (const tab of tabs) {
         if (tab.url && !tab.url.startsWith("chrome-extension://") && tab.id) {
-          await this.handleTabUpdate(tab.id);
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await this.handleTabUpdate(tab.id)
+          await new Promise(resolve => setTimeout(resolve, 10))
         }
       }
 
-      console.log(`[TabGroupService] Bulk grouping completed`);
-      return true;
+      console.log(`[TabGroupService] Bulk grouping completed`)
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error during bulk grouping:`, error);
-      return false;
+      console.error(`[TabGroupService] Error during bulk grouping:`, error)
+      return false
     }
   }
 
@@ -430,25 +364,22 @@ class TabGroupServiceSimplified {
    */
   async groupAllTabsManually(): Promise<boolean> {
     try {
-      console.log(`[TabGroupService] Starting manual bulk grouping`);
+      console.log(`[TabGroupService] Starting manual bulk grouping`)
 
-      const tabs = await browser.tabs.query({ currentWindow: true });
+      const tabs = await browser.tabs.query({ currentWindow: true })
 
       for (const tab of tabs) {
         if (tab.url && !tab.url.startsWith("chrome-extension://") && tab.id) {
-          await this.handleTabUpdate(tab.id, true);
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await this.handleTabUpdate(tab.id, true)
+          await new Promise(resolve => setTimeout(resolve, 10))
         }
       }
 
-      console.log(`[TabGroupService] Manual bulk grouping completed`);
-      return true;
+      console.log(`[TabGroupService] Manual bulk grouping completed`)
+      return true
     } catch (error) {
-      console.error(
-        `[TabGroupService] Error during manual bulk grouping:`,
-        error,
-      );
-      return false;
+      console.error(`[TabGroupService] Error during manual bulk grouping:`, error)
+      return false
     }
   }
 
@@ -457,26 +388,22 @@ class TabGroupServiceSimplified {
    */
   async ungroupAllTabs(): Promise<boolean> {
     try {
-      console.log(`[TabGroupService] Ungrouping all tabs`);
-      const tabs = await browser.tabs.query({ currentWindow: true });
-      const groupedTabs = tabs.filter(
-        (tab) => tab.groupId && tab.groupId !== -1,
-      );
+      console.log(`[TabGroupService] Ungrouping all tabs`)
+      const tabs = await browser.tabs.query({ currentWindow: true })
+      const groupedTabs = tabs.filter(tab => tab.groupId && tab.groupId !== -1)
 
       if (groupedTabs.length > 0) {
-        const tabIds = groupedTabs
-          .map((tab) => tab.id!)
-          .filter((id) => id !== undefined);
+        const tabIds = groupedTabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await browser.tabs.ungroup(tabIds as [number, ...number[]]);
+          await browser.tabs.ungroup(tabIds as [number, ...number[]])
         }
-        console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`);
+        console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`)
       }
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error ungrouping tabs:`, error);
-      return false;
+      console.error(`[TabGroupService] Error ungrouping tabs:`, error)
+      return false
     }
   }
 
@@ -484,8 +411,8 @@ class TabGroupServiceSimplified {
    * Removes an empty group
    */
   async removeEmptyGroup(groupId: number): Promise<boolean> {
-    await this.checkGroupThreshold(groupId);
-    return true;
+    await this.checkGroupThreshold(groupId)
+    return true
   }
 
   /**
@@ -493,44 +420,40 @@ class TabGroupServiceSimplified {
    */
   async checkGroupThreshold(groupId: number): Promise<boolean> {
     try {
-      if (!browser.tabGroups) return false;
+      if (!browser.tabGroups) return false
 
-      const groups = await browser.tabGroups.query({});
-      const group = groups.find((g) => g.id === groupId);
-      if (!group) return false;
+      const groups = await browser.tabGroups.query({})
+      const group = groups.find(g => g.id === groupId)
+      if (!group) return false
 
-      let customRule: CustomRule | null = null;
-      const customRules = tabGroupState.getCustomRulesObject();
+      let customRule: CustomRule | null = null
+      const customRules = tabGroupState.getCustomRulesObject()
       for (const rule of Object.values(customRules)) {
         if (rule.enabled && rule.name === group.title) {
-          customRule = rule;
-          break;
+          customRule = rule
+          break
         }
       }
 
-      const minimumTabs = this.getEffectiveMinimumTabs(customRule);
-      if (minimumTabs <= 1) return false;
+      const minimumTabs = this.getEffectiveMinimumTabs(customRule)
+      if (minimumTabs <= 1) return false
 
-      const tabs = await browser.tabs.query({ groupId });
-      const tabCount = tabs.filter((tab) => !tab.pinned).length;
+      const tabs = await browser.tabs.query({ groupId })
+      const tabCount = tabs.filter(tab => !tab.pinned).length
 
       if (tabCount < minimumTabs) {
-        console.log(
-          `[TabGroupService] Group "${group.title}" below threshold, ungrouping`,
-        );
-        const tabIds = tabs
-          .map((tab) => tab.id!)
-          .filter((id) => id !== undefined);
+        console.log(`[TabGroupService] Group "${group.title}" below threshold, ungrouping`)
+        const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await browser.tabs.ungroup(tabIds as [number, ...number[]]);
+          await browser.tabs.ungroup(tabIds as [number, ...number[]])
         }
-        return true;
+        return true
       }
 
-      return false;
+      return false
     } catch (error) {
-      console.error(`[TabGroupService] Error checking threshold:`, error);
-      return false;
+      console.error(`[TabGroupService] Error checking threshold:`, error)
+      return false
     }
   }
 
@@ -538,7 +461,7 @@ class TabGroupServiceSimplified {
    * Moves a tab to the correct group
    */
   async moveTabToGroup(tabId: number): Promise<boolean> {
-    return await this.handleTabUpdate(tabId);
+    return await this.handleTabUpdate(tabId)
   }
 
   /**
@@ -546,14 +469,14 @@ class TabGroupServiceSimplified {
    */
   async getGroupDomain(groupId: number): Promise<string | null> {
     try {
-      const tabs = await browser.tabs.query({ groupId });
-      if (tabs.length === 0) return null;
+      const tabs = await browser.tabs.query({ groupId })
+      if (tabs.length === 0) return null
 
-      const includeSubDomain = tabGroupState.groupByMode === "subdomain";
-      return extractDomain(tabs[0].url || "", includeSubDomain);
+      const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+      return extractDomain(tabs[0].url || "", includeSubDomain)
     } catch (error) {
-      console.error(`[TabGroupService] Error getting group domain:`, error);
-      return null;
+      console.error(`[TabGroupService] Error getting group domain:`, error)
+      return null
     }
   }
 
@@ -562,46 +485,46 @@ class TabGroupServiceSimplified {
    */
   async generateNewColors(): Promise<boolean> {
     try {
-      if (!browser.tabGroups) return false;
+      if (!browser.tabGroups) return false
 
-      console.log(`[TabGroupService] Generating new colors`);
+      console.log(`[TabGroupService] Generating new colors`)
 
-      const groups = await browser.tabGroups.query({});
-      const customRules = await rulesService.getCustomRules();
-      const customRuleNames = new Set<string>();
+      const groups = await browser.tabGroups.query({})
+      const customRules = await rulesService.getCustomRules()
+      const customRuleNames = new Set<string>()
 
       for (const rule of Object.values(customRules)) {
         if (rule.color && rule.name) {
-          customRuleNames.add(rule.name);
+          customRuleNames.add(rule.name)
         }
       }
 
-      const colorMappingValue = await groupColorMapping.getValue();
-      const newColorMapping = { ...colorMappingValue };
+      const colorMappingValue = await groupColorMapping.getValue()
+      const newColorMapping = { ...colorMappingValue }
 
       for (const group of groups) {
         if (customRuleNames.has(group.title || "")) {
-          continue;
+          continue
         }
 
-        const randomColor = getRandomTabGroupColor();
+        const randomColor = getRandomTabGroupColor()
 
         try {
           await browser.tabGroups.update(group.id, {
-            color: randomColor as Browser.tabGroups.Color,
-          });
-          newColorMapping[group.title || ""] = randomColor;
+            color: randomColor as Browser.tabGroups.Color
+          })
+          newColorMapping[group.title || ""] = randomColor
         } catch (error) {
-          console.warn(`[TabGroupService] Failed to update color:`, error);
+          console.warn(`[TabGroupService] Failed to update color:`, error)
         }
       }
 
-      await groupColorMapping.setValue(newColorMapping);
-      console.log(`[TabGroupService] Finished generating colors`);
-      return true;
+      await groupColorMapping.setValue(newColorMapping)
+      console.log(`[TabGroupService] Finished generating colors`)
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error generating colors:`, error);
-      return false;
+      console.error(`[TabGroupService] Error generating colors:`, error)
+      return false
     }
   }
 
@@ -610,35 +533,34 @@ class TabGroupServiceSimplified {
    */
   async toggleAllGroupsCollapse(): Promise<CollapseState> {
     try {
-      if (!browser.tabGroups) return { isCollapsed: false };
+      if (!browser.tabGroups) return { isCollapsed: false }
 
-      const groups = await browser.tabGroups.query({});
-      if (groups.length === 0) return { isCollapsed: false };
+      const groups = await browser.tabGroups.query({})
+      if (groups.length === 0) return { isCollapsed: false }
 
       const [activeTab] = await browser.tabs.query({
         active: true,
-        currentWindow: true,
-      });
-      const activeTabGroupId =
-        activeTab?.groupId !== -1 ? activeTab?.groupId : null;
+        currentWindow: true
+      })
+      const activeTabGroupId = activeTab?.groupId !== -1 ? activeTab?.groupId : null
 
-      const hasExpanded = groups.some((group) => !group.collapsed);
-      const newState = hasExpanded;
+      const hasExpanded = groups.some(group => !group.collapsed)
+      const newState = hasExpanded
 
       for (const group of groups) {
-        if (newState && group.id === activeTabGroupId) continue;
+        if (newState && group.id === activeTabGroupId) continue
 
         try {
-          await browser.tabGroups.update(group.id, { collapsed: newState });
+          await browser.tabGroups.update(group.id, { collapsed: newState })
         } catch (error) {
-          console.warn(`[TabGroupService] Failed to toggle group:`, error);
+          console.warn(`[TabGroupService] Failed to toggle group:`, error)
         }
       }
 
-      return { isCollapsed: newState };
+      return { isCollapsed: newState }
     } catch (error) {
-      console.error(`[TabGroupService] Error toggling collapse:`, error);
-      return { isCollapsed: false };
+      console.error(`[TabGroupService] Error toggling collapse:`, error)
+      return { isCollapsed: false }
     }
   }
 
@@ -647,28 +569,25 @@ class TabGroupServiceSimplified {
    */
   async getGroupsCollapseState(): Promise<CollapseState> {
     try {
-      if (!browser.tabGroups) return { isCollapsed: false };
+      if (!browser.tabGroups) return { isCollapsed: false }
 
-      const groups = await browser.tabGroups.query({});
-      if (groups.length === 0) return { isCollapsed: false };
+      const groups = await browser.tabGroups.query({})
+      if (groups.length === 0) return { isCollapsed: false }
 
       const [activeTab] = await browser.tabs.query({
         active: true,
-        currentWindow: true,
-      });
-      const activeTabGroupId =
-        activeTab?.groupId !== -1 ? activeTab?.groupId : null;
+        currentWindow: true
+      })
+      const activeTabGroupId = activeTab?.groupId !== -1 ? activeTab?.groupId : null
 
-      const nonActiveGroups = groups.filter(
-        (group) => group.id !== activeTabGroupId,
-      );
-      if (nonActiveGroups.length === 0) return { isCollapsed: false };
+      const nonActiveGroups = groups.filter(group => group.id !== activeTabGroupId)
+      if (nonActiveGroups.length === 0) return { isCollapsed: false }
 
-      const allCollapsed = nonActiveGroups.every((group) => group.collapsed);
-      return { isCollapsed: allCollapsed };
+      const allCollapsed = nonActiveGroups.every(group => group.collapsed)
+      return { isCollapsed: allCollapsed }
     } catch (error) {
-      console.error(`[TabGroupService] Error getting collapse state:`, error);
-      return { isCollapsed: false };
+      console.error(`[TabGroupService] Error getting collapse state:`, error)
+      return { isCollapsed: false }
     }
   }
 
@@ -677,33 +596,31 @@ class TabGroupServiceSimplified {
    */
   async restoreSavedColors(): Promise<boolean> {
     try {
-      if (!browser.tabGroups) return false;
+      if (!browser.tabGroups) return false
 
-      const groups = await browser.tabGroups.query({});
-      const colorMappingValue = await groupColorMapping.getValue();
-      let restoredCount = 0;
+      const groups = await browser.tabGroups.query({})
+      const colorMappingValue = await groupColorMapping.getValue()
+      let restoredCount = 0
 
       for (const group of groups) {
-        const savedColor = colorMappingValue[group.title || ""];
+        const savedColor = colorMappingValue[group.title || ""]
         if (savedColor && savedColor !== group.color) {
           try {
             await browser.tabGroups.update(group.id, {
-              color: savedColor as Browser.tabGroups.Color,
-            });
-            restoredCount++;
+              color: savedColor as Browser.tabGroups.Color
+            })
+            restoredCount++
           } catch (error) {
-            console.warn(`[TabGroupService] Failed to restore color:`, error);
+            console.warn(`[TabGroupService] Failed to restore color:`, error)
           }
         }
       }
 
-      console.log(
-        `[TabGroupService] Restored colors for ${restoredCount} groups`,
-      );
-      return true;
+      console.log(`[TabGroupService] Restored colors for ${restoredCount} groups`)
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error restoring colors:`, error);
-      return false;
+      console.error(`[TabGroupService] Error restoring colors:`, error)
+      return false
     }
   }
 
@@ -712,30 +629,29 @@ class TabGroupServiceSimplified {
    */
   async collapseAllGroups(): Promise<boolean> {
     try {
-      if (!browser.tabGroups) return false;
+      if (!browser.tabGroups) return false
 
-      const groups = await browser.tabGroups.query({});
+      const groups = await browser.tabGroups.query({})
       const [activeTab] = await browser.tabs.query({
         active: true,
-        currentWindow: true,
-      });
-      const activeTabGroupId =
-        activeTab?.groupId !== -1 ? activeTab?.groupId : null;
+        currentWindow: true
+      })
+      const activeTabGroupId = activeTab?.groupId !== -1 ? activeTab?.groupId : null
 
       for (const group of groups) {
-        if (group.id === activeTabGroupId) continue;
+        if (group.id === activeTabGroupId) continue
 
         try {
-          await browser.tabGroups.update(group.id, { collapsed: true });
+          await browser.tabGroups.update(group.id, { collapsed: true })
         } catch (error) {
-          console.warn(`[TabGroupService] Failed to collapse group:`, error);
+          console.warn(`[TabGroupService] Failed to collapse group:`, error)
         }
       }
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error collapsing groups:`, error);
-      return false;
+      console.error(`[TabGroupService] Error collapsing groups:`, error)
+      return false
     }
   }
 
@@ -744,33 +660,33 @@ class TabGroupServiceSimplified {
    */
   async expandAllGroups(): Promise<boolean> {
     try {
-      if (!browser.tabGroups) return false;
+      if (!browser.tabGroups) return false
 
-      const groups = await browser.tabGroups.query({});
+      const groups = await browser.tabGroups.query({})
 
       for (const group of groups) {
         try {
-          await browser.tabGroups.update(group.id, { collapsed: false });
+          await browser.tabGroups.update(group.id, { collapsed: false })
         } catch (error) {
-          console.warn(`[TabGroupService] Failed to expand group:`, error);
+          console.warn(`[TabGroupService] Failed to expand group:`, error)
         }
       }
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`[TabGroupService] Error expanding groups:`, error);
-      return false;
+      console.error(`[TabGroupService] Error expanding groups:`, error)
+      return false
     }
   }
 
   // Legacy aliases
   async groupTabsWithRules(): Promise<boolean> {
-    return await this.groupAllTabs();
+    return await this.groupAllTabs()
   }
 
   async preserveExistingGroupColors(): Promise<boolean> {
-    return true;
+    return true
   }
 }
 
-export const tabGroupService = new TabGroupServiceSimplified();
+export const tabGroupService = new TabGroupServiceSimplified()

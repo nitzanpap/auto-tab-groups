@@ -1,4 +1,4 @@
-import { defineConfig } from "wxt";
+import { defineConfig } from "wxt"
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -12,17 +12,17 @@ export default defineConfig({
       icons: {
         16: "icon/16.png",
         48: "icon/48.png",
-        128: "icon/128.png",
-      },
-    };
+        128: "icon/128.png"
+      }
+    }
 
     if (browser === "chrome") {
       return {
         ...baseManifest,
         side_panel: {
-          default_path: "sidebar.html",
-        },
-      };
+          default_path: "sidebar.html"
+        }
+      }
     }
 
     if (browser === "firefox") {
@@ -31,21 +31,21 @@ export default defineConfig({
         browser_specific_settings: {
           gecko: {
             id: "{442789cf-4ff6-4a85-bf5b-53aa3282f1a2}",
-            strict_min_version: "139.0",
-          },
+            strict_min_version: "139.0"
+          }
         },
         sidebar_action: {
           default_panel: "sidebar.html",
           default_icon: {
             16: "icon/16.png",
             48: "icon/48.png",
-            128: "icon/128.png",
+            128: "icon/128.png"
           },
-          default_title: "Auto Tab Groups",
-        },
-      };
+          default_title: "Auto Tab Groups"
+        }
+      }
     }
 
-    return baseManifest;
-  },
-});
+    return baseManifest
+  }
+})

@@ -3,7 +3,7 @@
  * Handles all URL pattern matching logic for the extension
  */
 
-import type { PatternValidationResult } from "../types";
+import type { PatternValidationResult } from "../types"
 
 /**
  * Pattern type identifiers
@@ -11,60 +11,60 @@ import type { PatternValidationResult } from "../types";
 export const PATTERN_TYPES = {
   SIMPLE_WILDCARD: "simple_wildcard",
   SEGMENT_EXTRACTION: "segment_extraction",
-  REGEX: "regex",
-} as const;
+  REGEX: "regex"
+} as const
 
-export type PatternType = (typeof PATTERN_TYPES)[keyof typeof PATTERN_TYPES];
+export type PatternType = (typeof PATTERN_TYPES)[keyof typeof PATTERN_TYPES]
 
 /**
  * Match result from pattern matching
  */
 export interface MatchResult {
-  matched: boolean;
-  extractedValues: Record<string, string>;
-  groupName: string | null;
+  matched: boolean
+  extractedValues: Record<string, string>
+  groupName: string | null
 }
 
 /**
  * Matching options
  */
 export interface MatchOptions {
-  ruleName?: string;
-  groupNameTemplate?: string;
+  ruleName?: string
+  groupNameTemplate?: string
 }
 
 /**
  * Pattern validation result with type
  */
 export interface PatternValidationResultWithType extends PatternValidationResult {
-  type: PatternType | null;
+  type: PatternType | null
 }
 
 /**
  * Variable specification from segment extraction patterns
  */
 interface VariableSpec {
-  name: string;
-  type: string;
-  delimiter: string | null;
+  name: string
+  type: string
+  delimiter: string | null
 }
 
 /**
  * Pattern part (literal or variable)
  */
 interface PatternPart {
-  type: "literal" | "variable";
-  value: string | VariableSpec;
+  type: "literal" | "variable"
+  value: string | VariableSpec
 }
 
 /**
  * Parsed segment pattern info
  */
 interface SegmentPatternInfo {
-  valid: boolean;
-  variables: VariableSpec[];
-  parts: PatternPart[];
-  originalPattern: string;
+  valid: boolean
+  variables: VariableSpec[]
+  parts: PatternPart[]
+  originalPattern: string
 }
 
 class UrlPatternMatcher {
@@ -73,18 +73,18 @@ class UrlPatternMatcher {
    */
   match(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
     if (!url || !pattern) {
-      return { matched: false, extractedValues: {}, groupName: null };
+      return { matched: false, extractedValues: {}, groupName: null }
     }
 
-    const patternType = this.detectPatternType(pattern);
+    const patternType = this.detectPatternType(pattern)
 
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return this.matchSegmentExtraction(url, pattern, options);
+        return this.matchSegmentExtraction(url, pattern, options)
       case PATTERN_TYPES.REGEX:
-        return this.matchRegex(url, pattern, options);
+        return this.matchRegex(url, pattern, options)
       default:
-        return this.matchSimpleWildcard(url, pattern, options);
+        return this.matchSimpleWildcard(url, pattern, options)
     }
   }
 
@@ -94,56 +94,50 @@ class UrlPatternMatcher {
   detectPatternType(pattern: string): PatternType {
     // Check for segment extraction patterns (contains {variable})
     if (/\{[^}]+\}/.test(pattern)) {
-      return PATTERN_TYPES.SEGMENT_EXTRACTION;
+      return PATTERN_TYPES.SEGMENT_EXTRACTION
     }
 
     // Check for regex patterns (starts and ends with /)
     if (pattern.startsWith("/") && pattern.endsWith("/")) {
-      return PATTERN_TYPES.REGEX;
+      return PATTERN_TYPES.REGEX
     }
 
     // Default to simple wildcard
-    return PATTERN_TYPES.SIMPLE_WILDCARD;
+    return PATTERN_TYPES.SIMPLE_WILDCARD
   }
 
   /**
    * Matches using simple wildcard patterns
    */
-  matchSimpleWildcard(
-    url: string,
-    pattern: string,
-    options: MatchOptions = {},
-  ): MatchResult {
+  matchSimpleWildcard(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
     try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      const pathname = urlObj.pathname.toLowerCase();
-      const cleanPattern = pattern.toLowerCase().trim();
+      const urlObj = new URL(url)
+      const hostname = urlObj.hostname.toLowerCase()
+      const pathname = urlObj.pathname.toLowerCase()
+      const cleanPattern = pattern.toLowerCase().trim()
 
       // Check if pattern includes a path
-      const hasPath = cleanPattern.includes("/");
-      const [domainPattern, pathPattern] = hasPath
-        ? cleanPattern.split("/", 2)
-        : [cleanPattern, ""];
+      const hasPath = cleanPattern.includes("/")
+      const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
 
       // Match domain part
-      const domainMatch = this.matchDomainWildcard(hostname, domainPattern);
+      const domainMatch = this.matchDomainWildcard(hostname, domainPattern)
       if (!domainMatch) {
-        return { matched: false, extractedValues: {}, groupName: null };
+        return { matched: false, extractedValues: {}, groupName: null }
       }
 
       // Match path part if specified
       if (hasPath && !this.matchPathWildcard(pathname, pathPattern)) {
-        return { matched: false, extractedValues: {}, groupName: null };
+        return { matched: false, extractedValues: {}, groupName: null }
       }
 
       return {
         matched: true,
         extractedValues: {},
-        groupName: options.ruleName || null,
-      };
+        groupName: options.ruleName || null
+      }
     } catch {
-      return { matched: false, extractedValues: {}, groupName: null };
+      return { matched: false, extractedValues: {}, groupName: null }
     }
   }
 
@@ -151,52 +145,47 @@ class UrlPatternMatcher {
    * Matches domain with wildcard support
    */
   matchDomainWildcard(domain: string, pattern: string): boolean {
-    if (!domain || !pattern) return false;
+    if (!domain || !pattern) return false
 
-    const cleanDomain = domain.toLowerCase().trim();
-    const cleanPattern = pattern.toLowerCase().trim();
+    const cleanDomain = domain.toLowerCase().trim()
+    const cleanPattern = pattern.toLowerCase().trim()
 
     // Handle ** wildcard for TLD (e.g., google.** matches google.com)
     if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**");
-      if (parts.length !== 2) return false;
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) return false
 
-      const prefix = parts[0];
-      const suffix = parts[1];
+      const prefix = parts[0]
+      const suffix = parts[1]
 
-      if (!cleanDomain.startsWith(prefix)) return false;
-      if (suffix && !cleanDomain.endsWith(suffix)) return false;
+      if (!cleanDomain.startsWith(prefix)) return false
+      if (suffix && !cleanDomain.endsWith(suffix)) return false
 
-      const remainder = cleanDomain.substring(prefix.length);
+      const remainder = cleanDomain.substring(prefix.length)
       if (suffix) {
-        const beforeSuffix = remainder.substring(
-          0,
-          remainder.length - suffix.length,
-        );
-        return beforeSuffix.length > 0 && /^[a-zA-Z0-9.-]+$/.test(beforeSuffix);
+        const beforeSuffix = remainder.substring(0, remainder.length - suffix.length)
+        return beforeSuffix.length > 0 && /^[a-zA-Z0-9.-]+$/.test(beforeSuffix)
       }
-      return remainder.length > 0 && /^[a-zA-Z0-9.-]+$/.test(remainder);
+      return remainder.length > 0 && /^[a-zA-Z0-9.-]+$/.test(remainder)
     }
 
     // Handle * wildcard for subdomains (*.domain.com)
     if (cleanPattern.startsWith("*.")) {
-      const baseDomain = cleanPattern.substring(2);
+      const baseDomain = cleanPattern.substring(2)
 
-      if (!baseDomain || !baseDomain.includes(".")) return false;
+      if (!baseDomain || !baseDomain.includes(".")) return false
 
       // Check for exact match or subdomain match
-      return (
-        cleanDomain === baseDomain || cleanDomain.endsWith("." + baseDomain)
-      );
+      return cleanDomain === baseDomain || cleanDomain.endsWith("." + baseDomain)
     }
 
     // Handle middle wildcards
     if (cleanPattern.includes("*") && !cleanPattern.startsWith("*")) {
-      return this.matchMiddleWildcard(cleanDomain, cleanPattern);
+      return this.matchMiddleWildcard(cleanDomain, cleanPattern)
     }
 
     // Exact match
-    return cleanDomain === cleanPattern;
+    return cleanDomain === cleanPattern
   }
 
   /**
@@ -206,90 +195,80 @@ class UrlPatternMatcher {
     // Convert pattern to regex, escaping special chars except *
     const regexPattern = pattern
       .split("*")
-      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("[^.]*");
+      .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("[^.]*")
 
-    const regex = new RegExp(`^${regexPattern}$`);
-    return regex.test(domain);
+    const regex = new RegExp(`^${regexPattern}$`)
+    return regex.test(domain)
   }
 
   /**
    * Matches path with wildcard support
    */
   matchPathWildcard(path: string, pattern: string): boolean {
-    if (!pattern) return true;
+    if (!pattern) return true
 
-    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
-    const cleanPattern = pattern.startsWith("/")
-      ? pattern.substring(1)
-      : pattern;
+    const cleanPath = path.startsWith("/") ? path.substring(1) : path
+    const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
 
     // Handle ** wildcard in path
     if (cleanPattern.includes("**")) {
-      const parts = cleanPattern.split("**");
-      if (parts.length !== 2) return false;
+      const parts = cleanPattern.split("**")
+      if (parts.length !== 2) return false
 
-      const prefix = parts[0];
-      const suffix = parts[1];
+      const prefix = parts[0]
+      const suffix = parts[1]
 
-      if (prefix && !cleanPath.startsWith(prefix)) return false;
-      if (suffix && !cleanPath.endsWith(suffix)) return false;
+      if (prefix && !cleanPath.startsWith(prefix)) return false
+      if (suffix && !cleanPath.endsWith(suffix)) return false
 
-      return true;
+      return true
     }
 
     // Exact prefix matching
-    return cleanPath.startsWith(cleanPattern);
+    return cleanPath.startsWith(cleanPattern)
   }
 
   /**
    * Matches using segment extraction patterns
    */
-  matchSegmentExtraction(
-    url: string,
-    pattern: string,
-    options: MatchOptions = {},
-  ): MatchResult {
+  matchSegmentExtraction(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
     try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      const pathname = urlObj.pathname;
+      const urlObj = new URL(url)
+      const hostname = urlObj.hostname.toLowerCase()
+      const pathname = urlObj.pathname
 
-      const patternInfo = this.parseSegmentPattern(pattern);
+      const patternInfo = this.parseSegmentPattern(pattern)
       if (!patternInfo.valid) {
-        return { matched: false, extractedValues: {}, groupName: null };
+        return { matched: false, extractedValues: {}, groupName: null }
       }
 
-      let targetString = hostname;
+      let targetString = hostname
       if (pattern.includes("/")) {
-        targetString = hostname + pathname;
+        targetString = hostname + pathname
       }
 
-      const regex = this.buildSegmentRegex(patternInfo);
-      const match = targetString.match(regex);
+      const regex = this.buildSegmentRegex(patternInfo)
+      const match = targetString.match(regex)
 
       if (!match) {
-        return { matched: false, extractedValues: {}, groupName: null };
+        return { matched: false, extractedValues: {}, groupName: null }
       }
 
-      const extractedValues: Record<string, string> = {};
+      const extractedValues: Record<string, string> = {}
       patternInfo.variables.forEach((variable, index) => {
-        extractedValues[variable.name] = match[index + 1];
-      });
+        extractedValues[variable.name] = match[index + 1]
+      })
 
-      const groupName = this.generateGroupName(
-        patternInfo,
-        extractedValues,
-        options,
-      );
+      const groupName = this.generateGroupName(patternInfo, extractedValues, options)
 
       return {
         matched: true,
         extractedValues,
-        groupName,
-      };
+        groupName
+      }
     } catch {
-      return { matched: false, extractedValues: {}, groupName: null };
+      return { matched: false, extractedValues: {}, groupName: null }
     }
   }
 
@@ -297,88 +276,85 @@ class UrlPatternMatcher {
    * Parses a segment extraction pattern
    */
   parseSegmentPattern(pattern: string): SegmentPatternInfo {
-    const variables: VariableSpec[] = [];
-    const parts: PatternPart[] = [];
-    let currentPart = "";
-    let inVariable = false;
-    let variableName = "";
+    const variables: VariableSpec[] = []
+    const parts: PatternPart[] = []
+    let currentPart = ""
+    let inVariable = false
+    let variableName = ""
 
     for (let i = 0; i < pattern.length; i++) {
-      const char = pattern[i];
+      const char = pattern[i]
 
       if (char === "{" && !inVariable) {
         if (currentPart) {
-          parts.push({ type: "literal", value: currentPart });
-          currentPart = "";
+          parts.push({ type: "literal", value: currentPart })
+          currentPart = ""
         }
-        inVariable = true;
-        variableName = "";
+        inVariable = true
+        variableName = ""
       } else if (char === "}" && inVariable) {
         if (variableName) {
-          const variable = this.parseVariableSpec(variableName);
-          variables.push(variable);
-          parts.push({ type: "variable", value: variable });
+          const variable = this.parseVariableSpec(variableName)
+          variables.push(variable)
+          parts.push({ type: "variable", value: variable })
         }
-        inVariable = false;
+        inVariable = false
       } else if (inVariable) {
-        variableName += char;
+        variableName += char
       } else {
-        currentPart += char;
+        currentPart += char
       }
     }
 
     if (currentPart) {
-      parts.push({ type: "literal", value: currentPart });
+      parts.push({ type: "literal", value: currentPart })
     }
 
     return {
       valid: !inVariable && variables.length > 0,
       variables,
       parts,
-      originalPattern: pattern,
-    };
+      originalPattern: pattern
+    }
   }
 
   /**
    * Parses a variable specification
    */
   parseVariableSpec(spec: string): VariableSpec {
-    const parts = spec.split(":");
-    const name = parts[0];
-    const type = parts[1] || "segment";
-    const delimiter = parts[2] || null;
+    const parts = spec.split(":")
+    const name = parts[0]
+    const type = parts[1] || "segment"
+    const delimiter = parts[2] || null
 
-    return { name, type, delimiter };
+    return { name, type, delimiter }
   }
 
   /**
    * Builds a regex from a parsed segment pattern
    */
   buildSegmentRegex(patternInfo: SegmentPatternInfo): RegExp {
-    let regexStr = "^";
+    let regexStr = "^"
 
     for (const part of patternInfo.parts) {
       if (part.type === "literal") {
-        let literal = (part.value as string).replace(
-          /[.*+?^${}()|[\]\\]/g,
-          "\\$&",
-        );
-        literal = literal.replace(/\\\*/g, "[^.]*");
-        regexStr += literal;
+        let literal = (part.value as string).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        literal = literal.replace(/\\\*/g, "[^.]*")
+        regexStr += literal
       } else if (part.type === "variable") {
-        const variable = part.value as VariableSpec;
+        const variable = part.value as VariableSpec
         if (variable.delimiter === "dash") {
-          regexStr += "([^-]+)";
+          regexStr += "([^-]+)"
         } else if (variable.delimiter === "dot") {
-          regexStr += "([^.]+)";
+          regexStr += "([^.]+)"
         } else {
-          regexStr += "([^.]+)";
+          regexStr += "([^.]+)"
         }
       }
     }
 
-    regexStr += "$";
-    return new RegExp(regexStr, "i");
+    regexStr += "$"
+    return new RegExp(regexStr, "i")
   }
 
   /**
@@ -387,60 +363,56 @@ class UrlPatternMatcher {
   generateGroupName(
     patternInfo: SegmentPatternInfo,
     extractedValues: Record<string, string>,
-    options: MatchOptions,
+    options: MatchOptions
   ): string {
     if (options.groupNameTemplate) {
-      let groupName = options.groupNameTemplate;
+      let groupName = options.groupNameTemplate
       for (const [key, value] of Object.entries(extractedValues)) {
-        groupName = groupName.replace(`{${key}}`, value);
+        groupName = groupName.replace(`{${key}}`, value)
       }
-      return groupName;
+      return groupName
     }
 
-    const firstVariable = patternInfo.variables[0];
+    const firstVariable = patternInfo.variables[0]
     if (firstVariable && extractedValues[firstVariable.name]) {
-      return extractedValues[firstVariable.name];
+      return extractedValues[firstVariable.name]
     }
 
-    return options.ruleName || "Extracted Group";
+    return options.ruleName || "Extracted Group"
   }
 
   /**
    * Matches using regex patterns
    */
-  matchRegex(
-    url: string,
-    pattern: string,
-    options: MatchOptions = {},
-  ): MatchResult {
+  matchRegex(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
     try {
-      const regexStr = pattern.slice(1, -1);
-      const regex = new RegExp(regexStr, "i");
+      const regexStr = pattern.slice(1, -1)
+      const regex = new RegExp(regexStr, "i")
 
-      const urlObj = new URL(url);
-      const fullUrl = urlObj.hostname + urlObj.pathname;
+      const urlObj = new URL(url)
+      const fullUrl = urlObj.hostname + urlObj.pathname
 
-      const match = fullUrl.match(regex);
+      const match = fullUrl.match(regex)
       if (!match) {
-        return { matched: false, extractedValues: {}, groupName: null };
+        return { matched: false, extractedValues: {}, groupName: null }
       }
 
-      const extractedValues: Record<string, string> = {};
+      const extractedValues: Record<string, string> = {}
       if (match.length > 1) {
         for (let i = 1; i < match.length; i++) {
-          extractedValues[`group${i}`] = match[i];
+          extractedValues[`group${i}`] = match[i]
         }
       }
 
-      const groupName = match[1] || options.ruleName || null;
+      const groupName = match[1] || options.ruleName || null
 
       return {
         matched: true,
         extractedValues,
-        groupName,
-      };
+        groupName
+      }
     } catch {
-      return { matched: false, extractedValues: {}, groupName: null };
+      return { matched: false, extractedValues: {}, groupName: null }
     }
   }
 
@@ -452,110 +424,106 @@ class UrlPatternMatcher {
       return {
         isValid: false,
         error: "Pattern must be a non-empty string",
-        type: null,
-      };
+        type: null
+      }
     }
 
-    const cleanPattern = pattern.trim();
+    const cleanPattern = pattern.trim()
     if (cleanPattern.length === 0) {
-      return { isValid: false, error: "Pattern cannot be empty", type: null };
+      return { isValid: false, error: "Pattern cannot be empty", type: null }
     }
 
     if (cleanPattern.length > 500) {
       return {
         isValid: false,
         error: "Pattern too long (max 500 characters)",
-        type: null,
-      };
+        type: null
+      }
     }
 
-    const patternType = this.detectPatternType(cleanPattern);
+    const patternType = this.detectPatternType(cleanPattern)
 
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return this.validateSegmentPattern(cleanPattern);
+        return this.validateSegmentPattern(cleanPattern)
       case PATTERN_TYPES.REGEX:
-        return this.validateRegexPattern(cleanPattern);
+        return this.validateRegexPattern(cleanPattern)
       default:
-        return this.validateSimpleWildcardPattern(cleanPattern);
+        return this.validateSimpleWildcardPattern(cleanPattern)
     }
   }
 
   /**
    * Validates a simple wildcard pattern
    */
-  validateSimpleWildcardPattern(
-    pattern: string,
-  ): PatternValidationResultWithType {
-    const hasPath = pattern.includes("/");
-    const [domainPattern, pathPattern] = hasPath
-      ? pattern.split("/", 2)
-      : [pattern, ""];
+  validateSimpleWildcardPattern(pattern: string): PatternValidationResultWithType {
+    const hasPath = pattern.includes("/")
+    const [domainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
 
     if (!domainPattern) {
       return {
         isValid: false,
         error: "Domain pattern cannot be empty",
-        type: PATTERN_TYPES.SIMPLE_WILDCARD,
-      };
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
     }
 
     if (domainPattern.includes("***")) {
       return {
         isValid: false,
         error: "Invalid wildcard pattern (too many asterisks)",
-        type: PATTERN_TYPES.SIMPLE_WILDCARD,
-      };
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
     }
 
     if (!/^[a-zA-Z0-9.*-]+$/.test(domainPattern)) {
       return {
         isValid: false,
         error: "Domain pattern contains invalid characters",
-        type: PATTERN_TYPES.SIMPLE_WILDCARD,
-      };
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
     }
 
     if (hasPath && pathPattern && !/^[a-zA-Z0-9._/*-]*$/.test(pathPattern)) {
       return {
         isValid: false,
         error: "Path pattern contains invalid characters",
-        type: PATTERN_TYPES.SIMPLE_WILDCARD,
-      };
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
     }
 
-    return { isValid: true, error: null, type: PATTERN_TYPES.SIMPLE_WILDCARD };
+    return { isValid: true, error: null, type: PATTERN_TYPES.SIMPLE_WILDCARD }
   }
 
   /**
    * Validates a segment extraction pattern
    */
   validateSegmentPattern(pattern: string): PatternValidationResultWithType {
-    const info = this.parseSegmentPattern(pattern);
+    const info = this.parseSegmentPattern(pattern)
 
     if (!info.valid) {
       return {
         isValid: false,
         error: "Invalid segment pattern syntax",
-        type: PATTERN_TYPES.SEGMENT_EXTRACTION,
-      };
+        type: PATTERN_TYPES.SEGMENT_EXTRACTION
+      }
     }
 
     if (info.variables.length === 0) {
       return {
         isValid: false,
         error: "Pattern must contain at least one {variable}",
-        type: PATTERN_TYPES.SEGMENT_EXTRACTION,
-      };
+        type: PATTERN_TYPES.SEGMENT_EXTRACTION
+      }
     }
 
-    const names = info.variables.map((v) => v.name);
+    const names = info.variables.map(v => v.name)
     if (new Set(names).size !== names.length) {
       return {
         isValid: false,
         error: "Duplicate variable names in pattern",
-        type: PATTERN_TYPES.SEGMENT_EXTRACTION,
-      };
+        type: PATTERN_TYPES.SEGMENT_EXTRACTION
+      }
     }
 
     for (const variable of info.variables) {
@@ -563,16 +531,16 @@ class UrlPatternMatcher {
         return {
           isValid: false,
           error: `Invalid variable name: ${variable.name}`,
-          type: PATTERN_TYPES.SEGMENT_EXTRACTION,
-        };
+          type: PATTERN_TYPES.SEGMENT_EXTRACTION
+        }
       }
     }
 
     return {
       isValid: true,
       error: null,
-      type: PATTERN_TYPES.SEGMENT_EXTRACTION,
-    };
+      type: PATTERN_TYPES.SEGMENT_EXTRACTION
+    }
   }
 
   /**
@@ -583,28 +551,28 @@ class UrlPatternMatcher {
       return {
         isValid: false,
         error: "Regex pattern must start and end with /",
-        type: PATTERN_TYPES.REGEX,
-      };
+        type: PATTERN_TYPES.REGEX
+      }
     }
 
-    const regexStr = pattern.slice(1, -1);
+    const regexStr = pattern.slice(1, -1)
     if (regexStr.length === 0) {
       return {
         isValid: false,
         error: "Regex pattern cannot be empty",
-        type: PATTERN_TYPES.REGEX,
-      };
+        type: PATTERN_TYPES.REGEX
+      }
     }
 
     try {
-      new RegExp(regexStr);
-      return { isValid: true, error: null, type: PATTERN_TYPES.REGEX };
+      new RegExp(regexStr)
+      return { isValid: true, error: null, type: PATTERN_TYPES.REGEX }
     } catch (error) {
       return {
         isValid: false,
         error: `Invalid regex: ${error instanceof Error ? error.message : "Unknown error"}`,
-        type: PATTERN_TYPES.REGEX,
-      };
+        type: PATTERN_TYPES.REGEX
+      }
     }
   }
 
@@ -614,11 +582,11 @@ class UrlPatternMatcher {
   getPatternTypeDisplayName(patternType: PatternType): string {
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return "Segment Extraction";
+        return "Segment Extraction"
       case PATTERN_TYPES.REGEX:
-        return "Regular Expression";
+        return "Regular Expression"
       default:
-        return "Simple Wildcard";
+        return "Simple Wildcard"
     }
   }
 
@@ -628,14 +596,14 @@ class UrlPatternMatcher {
   getPatternHelp(patternType: PatternType): string {
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return "Use {variable} to extract segments. Example: {accountId}-*.{region}.console.aws.amazon.com";
+        return "Use {variable} to extract segments. Example: {accountId}-*.{region}.console.aws.amazon.com"
       case PATTERN_TYPES.REGEX:
-        return "Advanced regex patterns. Example: /^(\\d+)-.*\\.(\\w+)\\.console\\.aws\\.amazon\\.com$/";
+        return "Advanced regex patterns. Example: /^(\\d+)-.*\\.(\\w+)\\.console\\.aws\\.amazon\\.com$/"
       default:
-        return "Use * for single segment, ** for multiple segments. Examples: *.example.com, domain.**, prefix-*.suffix.com";
+        return "Use * for single segment, ** for multiple segments. Examples: *.example.com, domain.**, prefix-*.suffix.com"
     }
   }
 }
 
 // Export singleton instance
-export const urlPatternMatcher = new UrlPatternMatcher();
+export const urlPatternMatcher = new UrlPatternMatcher()

@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -13,6 +13,6 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     actionTimeout: 10000,
     trace: "on-first-retry",
-    screenshot: "only-on-failure",
-  },
-});
+    screenshot: "only-on-failure"
+  }
+})

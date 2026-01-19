@@ -2,46 +2,46 @@
  * Type definitions for browser storage
  */
 
-import type { CustomRule, TabGroupColor } from "./rules";
+import type { CustomRule, TabGroupColor } from "./rules"
 
 /**
  * Group-by mode options
  */
-export type GroupByMode = "rules-only" | "domain" | "subdomain";
+export type GroupByMode = "rules-only" | "domain" | "subdomain"
 
 /**
  * Rule matching mode options
  */
-export type RuleMatchingMode = "exact" | "contains" | "regex";
+export type RuleMatchingMode = "exact" | "contains" | "regex"
 
 /**
  * Mapping of group titles to their colors
  */
-export type GroupColorMapping = Record<string, TabGroupColor>;
+export type GroupColorMapping = Record<string, TabGroupColor>
 
 /**
  * Mapping of rule IDs to CustomRule objects
  */
-export type CustomRulesMapping = Record<string, CustomRule>;
+export type CustomRulesMapping = Record<string, CustomRule>
 
 /**
  * Storage schema - matches browser.storage.local structure
  */
 export interface StorageSchema {
   /** Whether automatic tab grouping is enabled */
-  autoGroupingEnabled: boolean;
+  autoGroupingEnabled: boolean
   /** Whether to group new empty tabs under "System" */
-  groupNewTabs: boolean;
+  groupNewTabs: boolean
   /** How to group tabs: by rules only, domain, or subdomain */
-  groupByMode: GroupByMode;
+  groupByMode: GroupByMode
   /** Custom rules for grouping specific domains */
-  customRules: CustomRulesMapping;
+  customRules: CustomRulesMapping
   /** How to match rules against URLs */
-  ruleMatchingMode: RuleMatchingMode;
+  ruleMatchingMode: RuleMatchingMode
   /** Saved colors for group titles */
-  groupColorMapping: GroupColorMapping;
+  groupColorMapping: GroupColorMapping
   /** Global minimum tabs required to form a group */
-  minimumTabsForGroup: number;
+  minimumTabsForGroup: number
 }
 
 /**
@@ -54,10 +54,10 @@ export const DEFAULT_STATE: StorageSchema = {
   customRules: {},
   ruleMatchingMode: "exact",
   groupColorMapping: {},
-  minimumTabsForGroup: 1,
-};
+  minimumTabsForGroup: 1
+}
 
 /**
  * Partial storage data for updates
  */
-export type StorageUpdate = Partial<StorageSchema>;
+export type StorageUpdate = Partial<StorageSchema>
