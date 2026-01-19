@@ -124,23 +124,24 @@ npm run dev        # Start development server
 
 ### Build Commands
 
-| Command              | Description                           |
-| -------------------- | ------------------------------------- |
-| `npm run dev`        | Start WXT development server          |
-| `npm run dev:chrome` | Development server for Chrome         |
-| `npm run dev:firefox`| Development server for Firefox        |
-| `npm run build`      | Build production extension (Chrome)   |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start WXT development server         |
+| `npm run dev:chrome`    | Development server for Chrome        |
+| `npm run dev:firefox`   | Development server for Firefox       |
+| `npm run build`         | Build production extension (Chrome)  |
 | `npm run build:firefox` | Build production extension (Firefox) |
-| `npm run zip`        | Create release zip (Chrome)           |
-| `npm run zip:firefox`| Create release zip (Firefox)          |
-| `npm run typecheck`  | Run TypeScript type checking          |
-| `npm run test`       | Run unit tests (72+ tests)            |
-| `npm run lint`       | Run ESLint                            |
-| `npm run format`     | Format with Prettier                  |
+| `npm run zip`           | Create release zip (Chrome)          |
+| `npm run zip:firefox`   | Create release zip (Firefox)         |
+| `npm run typecheck`     | Run TypeScript type checking         |
+| `npm run test`          | Run unit tests (72+ tests)           |
+| `npm run lint`          | Run ESLint                           |
+| `npm run format`        | Format with Prettier                 |
 
 ### Loading for Development
 
 **Chrome:**
+
 1. Run `npm run dev:chrome`
 2. Go to `chrome://extensions/`
 3. Enable "Developer mode"
@@ -148,6 +149,7 @@ npm run dev        # Start development server
 5. Select `.output/chrome-mv3-dev/`
 
 **Firefox:**
+
 1. Run `npm run dev:firefox`
 2. Go to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on"
@@ -324,10 +326,12 @@ This ensures that international users get proper domain grouping regardless of t
 ### Publishing
 
 **Chrome Web Store:**
+
 1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 2. Upload the Chrome zip file
 
 **Firefox Add-ons:**
+
 1. Go to [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/)
 2. Upload the Firefox zip file
 
