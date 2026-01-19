@@ -57,7 +57,7 @@ test.describe("Auto Tab Groups Extension", () => {
     await expect(page.locator("#ungroup")).toBeVisible()
 
     // Check the toggle switch label is visible (checkbox input is hidden, styled as toggle)
-    await expect(page.locator("label.switch")).toBeVisible()
+    await expect(page.locator("label.switch").first()).toBeVisible()
     // Verify the checkbox exists in DOM
     await expect(page.locator("#autoGroupToggle")).toBeAttached()
 
@@ -130,7 +130,7 @@ test.describe("Auto Tab Groups Extension", () => {
     await expect(page.locator("#ungroup")).toBeVisible()
 
     // Check the toggle switch label is visible
-    await expect(page.locator("label.switch")).toBeVisible()
+    await expect(page.locator("label.switch").first()).toBeVisible()
     await expect(page.locator("#autoGroupToggle")).toBeAttached()
 
     await page.close()
