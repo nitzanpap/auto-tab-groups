@@ -2,17 +2,17 @@
  * Type definitions for browser storage
  */
 
-import type { CustomRule, TabGroupColor } from './rules';
+import type { CustomRule, TabGroupColor } from "./rules";
 
 /**
  * Group-by mode options
  */
-export type GroupByMode = 'rules-only' | 'domain' | 'subdomain';
+export type GroupByMode = "rules-only" | "domain" | "subdomain";
 
 /**
  * Rule matching mode options
  */
-export type RuleMatchingMode = 'exact' | 'contains' | 'regex';
+export type RuleMatchingMode = "exact" | "contains" | "regex";
 
 /**
  * Mapping of group titles to their colors
@@ -50,9 +50,9 @@ export interface StorageSchema {
 export const DEFAULT_STATE: StorageSchema = {
   autoGroupingEnabled: true,
   groupNewTabs: true,
-  groupByMode: 'domain',
+  groupByMode: "domain",
   customRules: {},
-  ruleMatchingMode: 'exact',
+  ruleMatchingMode: "exact",
   groupColorMapping: {},
   minimumTabsForGroup: 1,
 };

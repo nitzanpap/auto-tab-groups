@@ -2,38 +2,43 @@
  * Type definitions for background script messages
  */
 
-import type { GroupByMode, RuleMatchingMode } from './storage';
-import type { CustomRule, RuleData, RulesStats, RulesExportData } from './rules';
+import type { GroupByMode, RuleMatchingMode } from "./storage";
+import type {
+  CustomRule,
+  RuleData,
+  RulesStats,
+  RulesExportData,
+} from "./rules";
 
 /**
  * All possible message actions
  */
 export type MessageAction =
-  | 'group'
-  | 'ungroup'
-  | 'generateNewColors'
-  | 'restoreSavedColors'
-  | 'collapseAll'
-  | 'expandAll'
-  | 'toggleCollapse'
-  | 'getGroupsCollapseState'
-  | 'getAutoGroupState'
-  | 'getGroupNewTabsState'
-  | 'getOnlyApplyToNewTabs'
-  | 'toggleAutoGroup'
-  | 'toggleGroupNewTabs'
-  | 'getGroupByMode'
-  | 'setGroupByMode'
-  | 'getMinimumTabsForGroup'
-  | 'setMinimumTabsForGroup'
-  | 'getCustomRules'
-  | 'addCustomRule'
-  | 'updateCustomRule'
-  | 'deleteCustomRule'
-  | 'getRulesStats'
-  | 'exportRules'
-  | 'importRules'
-  | 'getExportStats';
+  | "group"
+  | "ungroup"
+  | "generateNewColors"
+  | "restoreSavedColors"
+  | "collapseAll"
+  | "expandAll"
+  | "toggleCollapse"
+  | "getGroupsCollapseState"
+  | "getAutoGroupState"
+  | "getGroupNewTabsState"
+  | "getOnlyApplyToNewTabs"
+  | "toggleAutoGroup"
+  | "toggleGroupNewTabs"
+  | "getGroupByMode"
+  | "setGroupByMode"
+  | "getMinimumTabsForGroup"
+  | "setMinimumTabsForGroup"
+  | "getCustomRules"
+  | "addCustomRule"
+  | "updateCustomRule"
+  | "deleteCustomRule"
+  | "getRulesStats"
+  | "exportRules"
+  | "importRules"
+  | "getExportStats";
 
 /**
  * Base message structure
@@ -47,30 +52,30 @@ interface BaseMessage {
  */
 export interface SimpleMessage extends BaseMessage {
   action:
-    | 'group'
-    | 'ungroup'
-    | 'generateNewColors'
-    | 'restoreSavedColors'
-    | 'collapseAll'
-    | 'expandAll'
-    | 'toggleCollapse'
-    | 'getGroupsCollapseState'
-    | 'getAutoGroupState'
-    | 'getGroupNewTabsState'
-    | 'getOnlyApplyToNewTabs'
-    | 'getGroupByMode'
-    | 'getMinimumTabsForGroup'
-    | 'getCustomRules'
-    | 'getRulesStats'
-    | 'exportRules'
-    | 'getExportStats';
+    | "group"
+    | "ungroup"
+    | "generateNewColors"
+    | "restoreSavedColors"
+    | "collapseAll"
+    | "expandAll"
+    | "toggleCollapse"
+    | "getGroupsCollapseState"
+    | "getAutoGroupState"
+    | "getGroupNewTabsState"
+    | "getOnlyApplyToNewTabs"
+    | "getGroupByMode"
+    | "getMinimumTabsForGroup"
+    | "getCustomRules"
+    | "getRulesStats"
+    | "exportRules"
+    | "getExportStats";
 }
 
 /**
  * Toggle auto-group message
  */
 export interface ToggleAutoGroupMessage extends BaseMessage {
-  action: 'toggleAutoGroup';
+  action: "toggleAutoGroup";
   enabled: boolean;
 }
 
@@ -78,7 +83,7 @@ export interface ToggleAutoGroupMessage extends BaseMessage {
  * Toggle group new tabs message
  */
 export interface ToggleGroupNewTabsMessage extends BaseMessage {
-  action: 'toggleGroupNewTabs';
+  action: "toggleGroupNewTabs";
   enabled: boolean;
 }
 
@@ -86,7 +91,7 @@ export interface ToggleGroupNewTabsMessage extends BaseMessage {
  * Set group-by mode message
  */
 export interface SetGroupByModeMessage extends BaseMessage {
-  action: 'setGroupByMode';
+  action: "setGroupByMode";
   mode: GroupByMode;
 }
 
@@ -94,7 +99,7 @@ export interface SetGroupByModeMessage extends BaseMessage {
  * Set minimum tabs for group message
  */
 export interface SetMinimumTabsMessage extends BaseMessage {
-  action: 'setMinimumTabsForGroup';
+  action: "setMinimumTabsForGroup";
   minimumTabs: number;
 }
 
@@ -102,7 +107,7 @@ export interface SetMinimumTabsMessage extends BaseMessage {
  * Add custom rule message
  */
 export interface AddCustomRuleMessage extends BaseMessage {
-  action: 'addCustomRule';
+  action: "addCustomRule";
   ruleData: RuleData;
 }
 
@@ -110,7 +115,7 @@ export interface AddCustomRuleMessage extends BaseMessage {
  * Update custom rule message
  */
 export interface UpdateCustomRuleMessage extends BaseMessage {
-  action: 'updateCustomRule';
+  action: "updateCustomRule";
   ruleId: string;
   ruleData: RuleData;
 }
@@ -119,7 +124,7 @@ export interface UpdateCustomRuleMessage extends BaseMessage {
  * Delete custom rule message
  */
 export interface DeleteCustomRuleMessage extends BaseMessage {
-  action: 'deleteCustomRule';
+  action: "deleteCustomRule";
   ruleId: string;
 }
 
@@ -127,7 +132,7 @@ export interface DeleteCustomRuleMessage extends BaseMessage {
  * Import rules message
  */
 export interface ImportRulesMessage extends BaseMessage {
-  action: 'importRules';
+  action: "importRules";
   jsonData: string;
   replaceExisting: boolean;
 }

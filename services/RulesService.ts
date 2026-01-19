@@ -3,11 +3,17 @@
  * Manages custom tab grouping rules with stateless operations
  */
 
-import type { CustomRule, RuleData, RulesStats, TabGroupColor, PatternValidationResult } from '../types';
-import { tabGroupState } from './TabGroupState';
-import { urlPatternMatcher } from '../utils/UrlPatternMatcher';
-import { saveAllStorage } from '../utils/storage';
-import { isValidColor } from '../utils/Constants';
+import type {
+  CustomRule,
+  RuleData,
+  RulesStats,
+  TabGroupColor,
+  PatternValidationResult,
+} from "../types";
+import { tabGroupState } from "./TabGroupState";
+import { urlPatternMatcher } from "../utils/UrlPatternMatcher";
+import { saveAllStorage } from "../utils/storage";
+import { isValidColor } from "../utils/Constants";
 
 /**
  * Extended rule with match information
@@ -66,7 +72,7 @@ class RulesService {
 
         if (matchResult.matched) {
           console.log(
-            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`
+            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`,
           );
 
           return {
@@ -103,15 +109,19 @@ class RulesService {
   async addRule(ruleData: RuleData): Promise<string> {
     const validation = this.validateRule(ruleData);
     if (!validation.isValid) {
-      throw new Error(`Invalid rule: ${validation.errors.join(', ')}`);
+      throw new Error(`Invalid rule: ${validation.errors.join(", ")}`);
     }
 
     const ruleId = this.generateRuleId();
     const rule: CustomRule = {
       id: ruleId,
       name: ruleData.name.trim(),
-      domains: ruleData.domains.map((d) => d.toLowerCase().trim()).filter((d) => d),
-      color: (ruleData.color && isValidColor(ruleData.color) ? ruleData.color : 'blue') as TabGroupColor,
+      domains: ruleData.domains
+        .map((d) => d.toLowerCase().trim())
+        .filter((d) => d),
+      color: (ruleData.color && isValidColor(ruleData.color)
+        ? ruleData.color
+        : "blue") as TabGroupColor,
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
       minimumTabs: ruleData.minimumTabs,
@@ -131,7 +141,7 @@ class RulesService {
   async updateRule(ruleId: string, ruleData: RuleData): Promise<boolean> {
     const validation = this.validateRule(ruleData);
     if (!validation.isValid) {
-      throw new Error(`Invalid rule: ${validation.errors.join(', ')}`);
+      throw new Error(`Invalid rule: ${validation.errors.join(", ")}`);
     }
 
     const customRules = await this.getCustomRules();
@@ -143,8 +153,12 @@ class RulesService {
     const updatedRule: CustomRule = {
       ...existingRule,
       name: ruleData.name.trim(),
-      domains: ruleData.domains.map((d) => d.toLowerCase().trim()).filter((d) => d),
-      color: (ruleData.color && isValidColor(ruleData.color) ? ruleData.color : existingRule.color) as TabGroupColor,
+      domains: ruleData.domains
+        .map((d) => d.toLowerCase().trim())
+        .filter((d) => d),
+      color: (ruleData.color && isValidColor(ruleData.color)
+        ? ruleData.color
+        : existingRule.color) as TabGroupColor,
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || existingRule.priority,
       minimumTabs: ruleData.minimumTabs ?? existingRule.minimumTabs,
@@ -180,25 +194,25 @@ class RulesService {
     const errors: string[] = [];
 
     // Validate name
-    if (!ruleData.name || typeof ruleData.name !== 'string') {
-      errors.push('Rule name is required');
+    if (!ruleData.name || typeof ruleData.name !== "string") {
+      errors.push("Rule name is required");
     } else if (ruleData.name.trim().length < 1) {
-      errors.push('Rule name cannot be empty');
+      errors.push("Rule name cannot be empty");
     } else if (ruleData.name.trim().length > 50) {
-      errors.push('Rule name cannot exceed 50 characters');
+      errors.push("Rule name cannot exceed 50 characters");
     }
 
     // Validate patterns
     if (!ruleData.domains || !Array.isArray(ruleData.domains)) {
-      errors.push('Patterns must be an array');
+      errors.push("Patterns must be an array");
     } else if (ruleData.domains.length === 0) {
-      errors.push('At least one pattern is required');
+      errors.push("At least one pattern is required");
     } else if (ruleData.domains.length > 20) {
-      errors.push('Maximum 20 patterns per rule');
+      errors.push("Maximum 20 patterns per rule");
     } else {
       for (const pattern of ruleData.domains) {
-        if (typeof pattern !== 'string' || !pattern.trim()) {
-          errors.push('All patterns must be non-empty strings');
+        if (typeof pattern !== "string" || !pattern.trim()) {
+          errors.push("All patterns must be non-empty strings");
           break;
         }
 
@@ -213,7 +227,7 @@ class RulesService {
     if (ruleData.minimumTabs !== null && ruleData.minimumTabs !== undefined) {
       const minTabs = Number(ruleData.minimumTabs);
       if (isNaN(minTabs) || minTabs < 1 || minTabs > 10) {
-        errors.push('Minimum tabs must be a number between 1 and 10');
+        errors.push("Minimum tabs must be a number between 1 and 10");
       }
     }
 
@@ -238,7 +252,10 @@ class RulesService {
     const rulesArray = Object.values(customRules);
     const totalRules = rulesArray.length;
     const enabledRules = rulesArray.filter((r) => r.enabled).length;
-    const totalPatterns = rulesArray.reduce((sum, rule) => sum + rule.domains.length, 0);
+    const totalPatterns = rulesArray.reduce(
+      (sum, rule) => sum + rule.domains.length,
+      0,
+    );
 
     return {
       totalRules,
@@ -254,36 +271,41 @@ class RulesService {
   async exportRules(): Promise<string> {
     const customRules = await this.getCustomRules();
     const exportData = {
-      version: '1.0',
+      version: "1.0",
       exportDate: new Date().toISOString(),
       rules: customRules,
       totalRules: Object.keys(customRules).length,
     };
 
-    console.log(`[RulesService] Exporting ${exportData.totalRules} custom rules`);
+    console.log(
+      `[RulesService] Exporting ${exportData.totalRules} custom rules`,
+    );
     return JSON.stringify(exportData, null, 2);
   }
 
   /**
    * Imports custom rules from JSON data
    */
-  async importRules(jsonData: string, replaceExisting = false): Promise<ImportResult> {
+  async importRules(
+    jsonData: string,
+    replaceExisting = false,
+  ): Promise<ImportResult> {
     try {
       const importData = JSON.parse(jsonData);
 
-      if (!importData.rules || typeof importData.rules !== 'object') {
-        throw new Error('Invalid import file: Missing or invalid rules data');
+      if (!importData.rules || typeof importData.rules !== "object") {
+        throw new Error("Invalid import file: Missing or invalid rules data");
       }
 
       const importRules = importData.rules as Record<string, RuleData>;
       const importCount = Object.keys(importRules).length;
 
       if (importCount === 0) {
-        throw new Error('No rules found in import file');
+        throw new Error("No rules found in import file");
       }
 
       console.log(
-        `[RulesService] Importing ${importCount} rules, replaceExisting: ${replaceExisting}`
+        `[RulesService] Importing ${importCount} rules, replaceExisting: ${replaceExisting}`,
       );
 
       const validationErrors: string[] = [];
@@ -299,23 +321,30 @@ class RulesService {
 
           validRules[finalRuleId] = {
             id: finalRuleId,
-            name: ruleData.name?.trim() || 'Unnamed Rule',
-            domains: ruleData.domains?.map((d) => d.toLowerCase().trim()).filter((d) => d) || [],
-            color: (ruleData.color && isValidColor(ruleData.color) ? ruleData.color : 'blue') as TabGroupColor,
+            name: ruleData.name?.trim() || "Unnamed Rule",
+            domains:
+              ruleData.domains
+                ?.map((d) => d.toLowerCase().trim())
+                .filter((d) => d) || [],
+            color: (ruleData.color && isValidColor(ruleData.color)
+              ? ruleData.color
+              : "blue") as TabGroupColor,
             enabled: ruleData.enabled !== false,
             priority: ruleData.priority || 1,
             createdAt: ruleData.createdAt || new Date().toISOString(),
           };
         } else {
           validationErrors.push(
-            `Rule "${ruleData.name || ruleId}": ${validation.errors.join(', ')}`
+            `Rule "${ruleData.name || ruleId}": ${validation.errors.join(", ")}`,
           );
         }
       }
 
       const validCount = Object.keys(validRules).length;
       if (validCount === 0) {
-        throw new Error(`No valid rules found. Errors: ${validationErrors.join('; ')}`);
+        throw new Error(
+          `No valid rules found. Errors: ${validationErrors.join("; ")}`,
+        );
       }
 
       if (replaceExisting) {
@@ -323,7 +352,9 @@ class RulesService {
         existingRules.forEach((ruleId) => {
           tabGroupState.deleteCustomRule(ruleId);
         });
-        console.log(`[RulesService] Cleared ${existingRules.length} existing rules`);
+        console.log(
+          `[RulesService] Cleared ${existingRules.length} existing rules`,
+        );
       }
 
       for (const [ruleId, rule] of Object.entries(validRules)) {
@@ -347,7 +378,7 @@ class RulesService {
       console.error(`[RulesService] Import failed:`, error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         imported: 0,
         total: 0,
         skipped: 0,

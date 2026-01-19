@@ -2,17 +2,22 @@
  * Utility functions for custom rules validation and processing
  */
 
-import type { PatternValidationResult, RuleData, CustomRule, RuleValidationResult } from '../types';
-import { urlPatternMatcher } from './UrlPatternMatcher';
-import { getColorInfo, isValidColor } from './Constants';
+import type {
+  PatternValidationResult,
+  RuleData,
+  CustomRule,
+  RuleValidationResult,
+} from "../types";
+import { urlPatternMatcher } from "./UrlPatternMatcher";
+import { getColorInfo, isValidColor } from "./Constants";
 
 /**
  * Checks if a string is an IPv4 address
  */
 export function isIPv4Address(str: string): boolean {
-  if (!str || typeof str !== 'string') return false;
+  if (!str || typeof str !== "string") return false;
 
-  const parts = str.split('.');
+  const parts = str.split(".");
   if (parts.length !== 4) return false;
 
   return parts.every((part) => {
@@ -26,13 +31,13 @@ export function isIPv4Address(str: string): boolean {
  * Checks if a string is an IPv4 pattern with wildcards
  */
 export function isIPv4Pattern(str: string): boolean {
-  if (!str || typeof str !== 'string') return false;
+  if (!str || typeof str !== "string") return false;
 
-  const parts = str.split('.');
+  const parts = str.split(".");
   if (parts.length !== 4) return false;
 
   return parts.every((part) => {
-    if (part === '*') return true;
+    if (part === "*") return true;
     if (!/^\d+$/.test(part)) return false;
     const num = parseInt(part, 10);
     return num >= 0 && num <= 255 && part === num.toString();
@@ -43,39 +48,48 @@ export function isIPv4Pattern(str: string): boolean {
  * Validates an IPv4 pattern (exact IP or with wildcards)
  */
 export function validateIPv4Pattern(pattern: string): PatternValidationResult {
-  if (!pattern || typeof pattern !== 'string') {
-    return { isValid: false, error: 'IPv4 pattern must be a string' };
+  if (!pattern || typeof pattern !== "string") {
+    return { isValid: false, error: "IPv4 pattern must be a string" };
   }
 
   const cleanPattern = pattern.trim();
 
   if (cleanPattern.length === 0) {
-    return { isValid: false, error: 'IPv4 pattern cannot be empty' };
+    return { isValid: false, error: "IPv4 pattern cannot be empty" };
   }
 
-  const parts = cleanPattern.split('.');
+  const parts = cleanPattern.split(".");
 
   if (parts.length !== 4) {
-    return { isValid: false, error: 'IPv4 address must have exactly 4 octets' };
+    return { isValid: false, error: "IPv4 address must have exactly 4 octets" };
   }
 
   for (const part of parts) {
-    if (part === '*') {
+    if (part === "*") {
       continue;
     }
 
     if (!/^\d+$/.test(part)) {
-      return { isValid: false, error: `Invalid IPv4 octet "${part}". Must be 0-255 or *` };
+      return {
+        isValid: false,
+        error: `Invalid IPv4 octet "${part}". Must be 0-255 or *`,
+      };
     }
 
     const num = parseInt(part, 10);
 
     if (num < 0 || num > 255) {
-      return { isValid: false, error: `IPv4 octet "${part}" must be between 0 and 255` };
+      return {
+        isValid: false,
+        error: `IPv4 octet "${part}" must be between 0 and 255`,
+      };
     }
 
     if (part !== num.toString()) {
-      return { isValid: false, error: `IPv4 octet "${part}" cannot have leading zeros` };
+      return {
+        isValid: false,
+        error: `IPv4 octet "${part}" cannot have leading zeros`,
+      };
     }
   }
 
@@ -90,15 +104,15 @@ export function matchIPv4(ip: string, pattern: string): boolean {
     return false;
   }
 
-  const ipParts = ip.split('.');
-  const patternParts = pattern.split('.');
+  const ipParts = ip.split(".");
+  const patternParts = pattern.split(".");
 
   if (ipParts.length !== 4 || patternParts.length !== 4) {
     return false;
   }
 
   for (let i = 0; i < 4; i++) {
-    if (patternParts[i] === '*') {
+    if (patternParts[i] === "*") {
       continue;
     }
 
@@ -122,7 +136,7 @@ export function validateRulePattern(pattern: string): PatternValidationResult {
  */
 export function validateHostPattern(pattern: string): PatternValidationResult {
   if (!pattern) {
-    return { isValid: false, error: 'Host pattern cannot be empty' };
+    return { isValid: false, error: "Host pattern cannot be empty" };
   }
 
   if (isIPv4Pattern(pattern)) {
@@ -135,60 +149,75 @@ export function validateHostPattern(pattern: string): PatternValidationResult {
 /**
  * Validates a domain pattern (supports wildcards and TLD patterns)
  */
-export function validateDomainPattern(pattern: string): PatternValidationResult {
+export function validateDomainPattern(
+  pattern: string,
+): PatternValidationResult {
   if (!pattern) {
-    return { isValid: false, error: 'Domain pattern cannot be empty' };
+    return { isValid: false, error: "Domain pattern cannot be empty" };
   }
 
   // Check for ** wildcard (TLD wildcard)
-  if (pattern.includes('**')) {
-    const parts = pattern.split('**');
+  if (pattern.includes("**")) {
+    const parts = pattern.split("**");
     if (parts.length !== 2) {
-      return { isValid: false, error: 'Invalid ** pattern. Use format: domain.** or *.domain.**' };
+      return {
+        isValid: false,
+        error: "Invalid ** pattern. Use format: domain.** or *.domain.**",
+      };
     }
 
     const prefix = parts[0];
     const suffix = parts[1];
 
-    if (!prefix || !prefix.endsWith('.')) {
+    if (!prefix || !prefix.endsWith(".")) {
       return {
         isValid: false,
-        error: '** pattern must have domain prefix ending with dot (e.g., google.)',
+        error:
+          "** pattern must have domain prefix ending with dot (e.g., google.)",
       };
     }
 
-    if (prefix.startsWith('*.')) {
+    if (prefix.startsWith("*.")) {
       const basePrefix = prefix.substring(2);
       if (!basePrefix || !basePrefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-        return { isValid: false, error: 'Invalid subdomain wildcard with ** pattern' };
+        return {
+          isValid: false,
+          error: "Invalid subdomain wildcard with ** pattern",
+        };
       }
     } else {
       if (!prefix.match(/^[a-zA-Z0-9.-]+\.$/)) {
-        return { isValid: false, error: 'Invalid domain prefix in ** pattern' };
+        return { isValid: false, error: "Invalid domain prefix in ** pattern" };
       }
     }
 
     if (suffix && !suffix.match(/^[a-zA-Z0-9.-]*$/)) {
-      return { isValid: false, error: 'Invalid suffix in ** pattern' };
+      return { isValid: false, error: "Invalid suffix in ** pattern" };
     }
 
     return { isValid: true };
   }
 
   // Check for * wildcard (subdomain wildcard)
-  if (pattern.startsWith('*.')) {
+  if (pattern.startsWith("*.")) {
     const baseDomain = pattern.substring(2);
 
-    if (!baseDomain || !baseDomain.includes('.')) {
-      return { isValid: false, error: 'Invalid * pattern. Use format: *.domain.com' };
+    if (!baseDomain || !baseDomain.includes(".")) {
+      return {
+        isValid: false,
+        error: "Invalid * pattern. Use format: *.domain.com",
+      };
     }
 
-    if (baseDomain.includes('*')) {
-      return { isValid: false, error: 'Multiple wildcards not allowed in domain pattern' };
+    if (baseDomain.includes("*")) {
+      return {
+        isValid: false,
+        error: "Multiple wildcards not allowed in domain pattern",
+      };
     }
 
     if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain)) {
-      return { isValid: false, error: 'Invalid base domain in * pattern' };
+      return { isValid: false, error: "Invalid base domain in * pattern" };
     }
 
     return { isValid: true };
@@ -196,19 +225,22 @@ export function validateDomainPattern(pattern: string): PatternValidationResult 
 
   // Regular domain validation
   if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(pattern)) {
-    return { isValid: false, error: 'Invalid domain format' };
+    return { isValid: false, error: "Invalid domain format" };
   }
 
-  if (pattern.startsWith('.') || pattern.endsWith('.')) {
-    return { isValid: false, error: 'Domain cannot start or end with a dot' };
+  if (pattern.startsWith(".") || pattern.endsWith(".")) {
+    return { isValid: false, error: "Domain cannot start or end with a dot" };
   }
 
-  if (pattern.includes('..')) {
-    return { isValid: false, error: 'Domain cannot contain consecutive dots' };
+  if (pattern.includes("..")) {
+    return { isValid: false, error: "Domain cannot contain consecutive dots" };
   }
 
-  if (pattern.startsWith('-') || pattern.endsWith('-')) {
-    return { isValid: false, error: 'Domain cannot start or end with a hyphen' };
+  if (pattern.startsWith("-") || pattern.endsWith("-")) {
+    return {
+      isValid: false,
+      error: "Domain cannot start or end with a hyphen",
+    };
   }
 
   return { isValid: true };
@@ -219,35 +251,41 @@ export function validateDomainPattern(pattern: string): PatternValidationResult 
  */
 export function validatePathPattern(pattern: string): PatternValidationResult {
   if (!pattern) {
-    return { isValid: false, error: 'Path pattern cannot be empty' };
+    return { isValid: false, error: "Path pattern cannot be empty" };
   }
 
-  const cleanPattern = pattern.startsWith('/') ? pattern.substring(1) : pattern;
+  const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern;
 
   if (cleanPattern.length === 0) {
-    return { isValid: false, error: 'Path pattern cannot be empty' };
+    return { isValid: false, error: "Path pattern cannot be empty" };
   }
 
   if (cleanPattern.length > 100) {
-    return { isValid: false, error: 'Path pattern too long (max 100 characters)' };
+    return {
+      isValid: false,
+      error: "Path pattern too long (max 100 characters)",
+    };
   }
 
   // Check for ** wildcard in path
-  if (cleanPattern.includes('**')) {
-    const parts = cleanPattern.split('**');
+  if (cleanPattern.includes("**")) {
+    const parts = cleanPattern.split("**");
     if (parts.length !== 2) {
-      return { isValid: false, error: 'Invalid ** pattern in path. Use format: prefix/**/suffix' };
+      return {
+        isValid: false,
+        error: "Invalid ** pattern in path. Use format: prefix/**/suffix",
+      };
     }
 
     const prefix = parts[0];
     const suffix = parts[1];
 
     if (prefix && !isValidPathSegment(prefix)) {
-      return { isValid: false, error: 'Invalid prefix in path ** pattern' };
+      return { isValid: false, error: "Invalid prefix in path ** pattern" };
     }
 
     if (suffix && !isValidPathSegment(suffix)) {
-      return { isValid: false, error: 'Invalid suffix in path ** pattern' };
+      return { isValid: false, error: "Invalid suffix in path ** pattern" };
     }
 
     return { isValid: true };
@@ -255,11 +293,17 @@ export function validatePathPattern(pattern: string): PatternValidationResult {
 
   // Basic path validation
   if (!/^[a-zA-Z0-9._/*-]+$/.test(cleanPattern)) {
-    return { isValid: false, error: 'Path pattern contains invalid characters' };
+    return {
+      isValid: false,
+      error: "Path pattern contains invalid characters",
+    };
   }
 
-  if (cleanPattern.includes('//')) {
-    return { isValid: false, error: 'Path pattern cannot contain consecutive slashes' };
+  if (cleanPattern.includes("//")) {
+    return {
+      isValid: false,
+      error: "Path pattern cannot contain consecutive slashes",
+    };
   }
 
   return { isValid: true };
@@ -271,35 +315,37 @@ export function validatePathPattern(pattern: string): PatternValidationResult {
 export function isValidPathSegment(segment: string): boolean {
   if (!segment) return true;
 
-  const cleanSegment = segment.replace(/^\/+|\/+$/g, '');
+  const cleanSegment = segment.replace(/^\/+|\/+$/g, "");
 
   if (cleanSegment.length === 0) return true;
 
-  return /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes('//');
+  return (
+    /^[a-zA-Z0-9._/-]+$/.test(cleanSegment) && !cleanSegment.includes("//")
+  );
 }
 
 /**
  * Validates a rule name
  */
 export function validateRuleName(name: string): PatternValidationResult {
-  if (!name || typeof name !== 'string') {
-    return { isValid: false, error: 'Rule name must be a string' };
+  if (!name || typeof name !== "string") {
+    return { isValid: false, error: "Rule name must be a string" };
   }
 
   const cleanName = name.trim();
 
   if (cleanName.length === 0) {
-    return { isValid: false, error: 'Rule name cannot be empty' };
+    return { isValid: false, error: "Rule name cannot be empty" };
   }
 
   if (cleanName.length > 50) {
-    return { isValid: false, error: 'Rule name cannot exceed 50 characters' };
+    return { isValid: false, error: "Rule name cannot exceed 50 characters" };
   }
 
   const namePattern = /^[a-zA-Z0-9\s\-_()&.!?]+$/;
 
   if (!namePattern.test(cleanName)) {
-    return { isValid: false, error: 'Rule name contains invalid characters' };
+    return { isValid: false, error: "Rule name contains invalid characters" };
   }
 
   return { isValid: true, error: null };
@@ -309,12 +355,12 @@ export function validateRuleName(name: string): PatternValidationResult {
  * Parses a multi-line string of domains into an array
  */
 export function parseDomainsText(domainsText: string): string[] {
-  if (!domainsText || typeof domainsText !== 'string') {
+  if (!domainsText || typeof domainsText !== "string") {
     return [];
   }
 
   return domainsText
-    .split('\n')
+    .split("\n")
     .map((line) => line.trim().toLowerCase())
     .filter((line) => line.length > 0)
     .filter((domain, index, arr) => arr.indexOf(domain) === index);
@@ -348,27 +394,30 @@ export function sanitizePatterns(patterns: string[]): string[] {
 /**
  * Generates a formatted display string for domains
  */
-export function formatDomainsDisplay(domains: string[], maxLength = 40): string {
+export function formatDomainsDisplay(
+  domains: string[],
+  maxLength = 40,
+): string {
   if (!Array.isArray(domains) || domains.length === 0) {
-    return 'No domains';
+    return "No domains";
   }
 
   if (domains.length === 1) {
     return domains[0];
   }
 
-  const domainsText = domains.join(', ');
+  const domainsText = domains.join(", ");
 
   if (domainsText.length <= maxLength) {
     return domainsText;
   }
 
-  let truncated = '';
+  let truncated = "";
   let count = 0;
 
   for (const domain of domains) {
     if (truncated.length + domain.length + 2 <= maxLength - 10) {
-      if (truncated) truncated += ', ';
+      if (truncated) truncated += ", ";
       truncated += domain;
       count++;
     } else {
@@ -377,13 +426,16 @@ export function formatDomainsDisplay(domains: string[], maxLength = 40): string 
   }
 
   const remaining = domains.length - count;
-  return `${truncated}${remaining > 0 ? ` and ${remaining} more` : ''}`;
+  return `${truncated}${remaining > 0 ? ` and ${remaining} more` : ""}`;
 }
 
 /**
  * Validates rule data comprehensively
  */
-export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[] = []): RuleValidationResult {
+export function validateRuleData(
+  ruleData: RuleData,
+  existingRules: CustomRule[] = [],
+): RuleValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -397,7 +449,7 @@ export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[]
   const duplicateName = existingRules.find(
     (rule) =>
       rule.id !== ruleData.id &&
-      rule.name.toLowerCase().trim() === ruleData.name?.toLowerCase().trim()
+      rule.name.toLowerCase().trim() === ruleData.name?.toLowerCase().trim(),
   );
   if (duplicateName) {
     errors.push(`A rule with the name "${ruleData.name}" already exists`);
@@ -405,11 +457,11 @@ export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[]
 
   // Validate domains
   if (!ruleData.domains || !Array.isArray(ruleData.domains)) {
-    errors.push('Domains must be an array');
+    errors.push("Domains must be an array");
   } else if (ruleData.domains.length === 0) {
-    errors.push('At least one domain is required');
+    errors.push("At least one domain is required");
   } else if (ruleData.domains.length > 20) {
-    errors.push('Maximum 20 domains per rule');
+    errors.push("Maximum 20 domains per rule");
   } else {
     const validPatterns: string[] = [];
     for (const pattern of ruleData.domains) {
@@ -425,11 +477,13 @@ export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[]
     for (const existingRule of existingRules) {
       if (existingRule.id === ruleData.id) continue;
 
-      const conflicts = validPatterns.filter((pattern) => existingRule.domains.includes(pattern));
+      const conflicts = validPatterns.filter((pattern) =>
+        existingRule.domains.includes(pattern),
+      );
 
       if (conflicts.length > 0) {
         warnings.push(
-          `Pattern(s) ${conflicts.join(', ')} already exist in rule "${existingRule.name}"`
+          `Pattern(s) ${conflicts.join(", ")} already exist in rule "${existingRule.name}"`,
         );
       }
     }
@@ -443,9 +497,9 @@ export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[]
   // Validate priority
   if (
     ruleData.priority !== undefined &&
-    (typeof ruleData.priority !== 'number' || ruleData.priority < 1)
+    (typeof ruleData.priority !== "number" || ruleData.priority < 1)
   ) {
-    errors.push('Priority must be a positive number');
+    errors.push("Priority must be a positive number");
   }
 
   return {
@@ -460,13 +514,18 @@ export function validateRuleData(ruleData: RuleData, existingRules: CustomRule[]
  */
 export function createSafeRule(ruleData: RuleData): CustomRule {
   return {
-    id: ruleData.id || `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    name: (ruleData.name || '').trim() || 'Unnamed Rule',
+    id:
+      ruleData.id ||
+      `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    name: (ruleData.name || "").trim() || "Unnamed Rule",
     domains: sanitizePatterns(ruleData.domains || []),
-    color: ruleData.color && isValidColor(ruleData.color) ? ruleData.color : 'blue',
+    color:
+      ruleData.color && isValidColor(ruleData.color) ? ruleData.color : "blue",
     enabled: ruleData.enabled !== false,
     priority:
-      typeof ruleData.priority === 'number' && ruleData.priority > 0 ? ruleData.priority : 1,
+      typeof ruleData.priority === "number" && ruleData.priority > 0
+        ? ruleData.priority
+        : 1,
     createdAt: ruleData.createdAt || new Date().toISOString(),
   };
 }

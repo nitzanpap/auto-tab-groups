@@ -8,8 +8,8 @@
  * - All operations must ensure state is loaded from storage before proceeding
  */
 
-import { tabGroupState, tabGroupService, rulesService } from '../services';
-import { loadAllStorage, saveAllStorage } from '../utils/storage';
+import { tabGroupState, tabGroupService, rulesService } from "../services";
+import { loadAllStorage, saveAllStorage } from "../utils/storage";
 
 export default defineBackground(() => {
   // State initialization flag to ensure it only happens once per service worker instance
@@ -21,18 +21,21 @@ export default defineBackground(() => {
   async function ensureStateLoaded(): Promise<void> {
     if (!stateInitialized) {
       try {
-        console.log('Service worker starting - loading state from storage...');
+        console.log("Service worker starting - loading state from storage...");
         const storageData = await loadAllStorage();
         tabGroupState.updateFromStorage(storageData);
         stateInitialized = true;
-        console.log('State loaded successfully from storage');
-        console.log('Auto-grouping enabled:', tabGroupState.autoGroupingEnabled);
-        console.log('Custom rules count:', tabGroupState.customRules.size);
+        console.log("State loaded successfully from storage");
+        console.log(
+          "Auto-grouping enabled:",
+          tabGroupState.autoGroupingEnabled,
+        );
+        console.log("Custom rules count:", tabGroupState.customRules.size);
 
         // Restore saved colors for existing groups
         await tabGroupService.restoreSavedColors();
       } catch (error) {
-        console.error('Error loading state from storage:', error);
+        console.error("Error loading state from storage:", error);
         throw error;
       }
     }
@@ -50,17 +53,20 @@ export default defineBackground(() => {
     .then(async () => {
       try {
         if (tabGroupState.autoGroupingEnabled) {
-          console.log('Auto-grouping is enabled, grouping existing tabs...');
+          console.log("Auto-grouping is enabled, grouping existing tabs...");
           await tabGroupService.groupAllTabs();
         } else {
-          console.log('Auto-grouping is disabled');
+          console.log("Auto-grouping is disabled");
         }
       } catch (error) {
-        console.error('Error during initial auto-grouping:', error);
+        console.error("Error during initial auto-grouping:", error);
       }
     })
     .catch((error) => {
-      console.error('Critical error: Failed to load state on service worker start:', error);
+      console.error(
+        "Critical error: Failed to load state on service worker start:",
+        error,
+      );
     });
 
   // Message handler for popup communication
@@ -72,58 +78,60 @@ export default defineBackground(() => {
         let result: Record<string, unknown>;
 
         switch (msg.action) {
-          case 'group':
+          case "group":
             await tabGroupService.groupAllTabsManually();
             result = { success: true };
             break;
 
-          case 'ungroup':
+          case "ungroup":
             await tabGroupService.ungroupAllTabs();
             result = { success: true };
             break;
 
-          case 'generateNewColors':
+          case "generateNewColors":
             await tabGroupService.generateNewColors();
             result = { success: true };
             break;
 
-          case 'restoreSavedColors':
+          case "restoreSavedColors":
             await tabGroupService.restoreSavedColors();
             result = { success: true };
             break;
 
-          case 'collapseAll':
+          case "collapseAll":
             await tabGroupService.collapseAllGroups();
             result = { success: true };
             break;
 
-          case 'expandAll':
+          case "expandAll":
             await tabGroupService.expandAllGroups();
             result = { success: true };
             break;
 
-          case 'toggleCollapse': {
-            const collapseResult = await tabGroupService.toggleAllGroupsCollapse();
+          case "toggleCollapse": {
+            const collapseResult =
+              await tabGroupService.toggleAllGroupsCollapse();
             result = { success: true, isCollapsed: collapseResult.isCollapsed };
             break;
           }
 
-          case 'getGroupsCollapseState': {
-            const collapseState = await tabGroupService.getGroupsCollapseState();
+          case "getGroupsCollapseState": {
+            const collapseState =
+              await tabGroupService.getGroupsCollapseState();
             result = { isCollapsed: collapseState.isCollapsed };
             break;
           }
 
-          case 'getAutoGroupState':
+          case "getAutoGroupState":
             result = { enabled: tabGroupState.autoGroupingEnabled };
             break;
 
-          case 'getGroupNewTabsState':
+          case "getGroupNewTabsState":
             result = { enabled: tabGroupState.groupNewTabs };
             break;
 
-          case 'getOnlyApplyToNewTabs':
-          case 'toggleAutoGroup':
+          case "getOnlyApplyToNewTabs":
+          case "toggleAutoGroup":
             tabGroupState.autoGroupingEnabled = msg.enabled;
             await saveState();
 
@@ -133,17 +141,17 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.autoGroupingEnabled };
             break;
 
-          case 'toggleGroupNewTabs':
+          case "toggleGroupNewTabs":
             tabGroupState.groupNewTabs = msg.enabled;
             await saveState();
             result = { enabled: tabGroupState.groupNewTabs };
             break;
 
-          case 'getGroupByMode':
+          case "getGroupByMode":
             result = { mode: tabGroupState.groupByMode };
             break;
 
-          case 'setGroupByMode':
+          case "setGroupByMode":
             tabGroupState.groupByMode = msg.mode;
             await saveState();
 
@@ -154,11 +162,11 @@ export default defineBackground(() => {
             result = { mode: tabGroupState.groupByMode };
             break;
 
-          case 'getMinimumTabsForGroup':
+          case "getMinimumTabsForGroup":
             result = { minimumTabs: tabGroupState.minimumTabsForGroup || 1 };
             break;
 
-          case 'setMinimumTabsForGroup':
+          case "setMinimumTabsForGroup":
             tabGroupState.minimumTabsForGroup = msg.minimumTabs || 1;
             await saveState();
 
@@ -169,17 +177,23 @@ export default defineBackground(() => {
             break;
 
           // Custom Rules Management
-          case 'getCustomRules': {
+          case "getCustomRules": {
             const rules = await rulesService.getCustomRules();
             result = { customRules: rules };
             break;
           }
 
-          case 'addCustomRule':
-            console.log('[Background] Received addCustomRule message:', msg.ruleData);
+          case "addCustomRule":
+            console.log(
+              "[Background] Received addCustomRule message:",
+              msg.ruleData,
+            );
             try {
               const ruleId = await rulesService.addRule(msg.ruleData);
-              console.log('[Background] Rule added successfully with ID:', ruleId);
+              console.log(
+                "[Background] Rule added successfully with ID:",
+                ruleId,
+              );
               result = { success: true, ruleId };
 
               if (tabGroupState.autoGroupingEnabled) {
@@ -190,7 +204,7 @@ export default defineBackground(() => {
             }
             break;
 
-          case 'updateCustomRule':
+          case "updateCustomRule":
             try {
               await rulesService.updateRule(msg.ruleId, msg.ruleData);
               result = { success: true };
@@ -204,7 +218,7 @@ export default defineBackground(() => {
             }
             break;
 
-          case 'deleteCustomRule':
+          case "deleteCustomRule":
             try {
               await rulesService.deleteRule(msg.ruleId);
               result = { success: true };
@@ -218,13 +232,13 @@ export default defineBackground(() => {
             }
             break;
 
-          case 'getRulesStats': {
+          case "getRulesStats": {
             const stats = await rulesService.getRulesStats();
             result = { stats };
             break;
           }
 
-          case 'exportRules':
+          case "exportRules":
             try {
               const exportData = await rulesService.exportRules();
               result = { success: true, data: exportData };
@@ -233,9 +247,12 @@ export default defineBackground(() => {
             }
             break;
 
-          case 'importRules':
+          case "importRules":
             try {
-              const importResult = await rulesService.importRules(msg.jsonData, msg.replaceExisting);
+              const importResult = await rulesService.importRules(
+                msg.jsonData,
+                msg.replaceExisting,
+              );
               result = { ...importResult };
 
               if (importResult.success && tabGroupState.autoGroupingEnabled) {
@@ -247,7 +264,7 @@ export default defineBackground(() => {
             }
             break;
 
-          case 'getExportStats':
+          case "getExportStats":
             try {
               const exportStats = await rulesService.getExportStats();
               result = { success: true, stats: exportStats };
@@ -257,12 +274,12 @@ export default defineBackground(() => {
             break;
 
           default:
-            result = { error: 'Unknown action' };
+            result = { error: "Unknown action" };
         }
 
         sendResponse(result);
       } catch (error) {
-        console.error('Background script error:', error);
+        console.error("Background script error:", error);
         sendResponse({ error: (error as Error).message });
       }
     })();
@@ -280,21 +297,28 @@ export default defineBackground(() => {
         await ensureStateLoaded();
         await tabGroupService.handleTabUpdate(tabId);
       } else if (
-        Object.prototype.hasOwnProperty.call(changeInfo, 'pinned') &&
+        Object.prototype.hasOwnProperty.call(changeInfo, "pinned") &&
         changeInfo.pinned === false
       ) {
-        console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`);
+        console.log(
+          `[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`,
+        );
         await ensureStateLoaded();
         await tabGroupService.handleTabUpdate(tabId);
       }
     } catch (error) {
-      console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error);
+      console.error(
+        `[tabs.onUpdated] Error handling tab ${tabId} update:`,
+        error,
+      );
     }
   });
 
   browser.tabs.onCreated.addListener(async (tab) => {
     try {
-      console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`);
+      console.log(
+        `[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`,
+      );
       if (tab.url && tab.id) {
         await ensureStateLoaded();
         await tabGroupService.handleTabUpdate(tab.id);
@@ -309,7 +333,10 @@ export default defineBackground(() => {
       console.log(`[tabs.onRemoved] Tab ${tabId} removed`);
       await ensureStateLoaded();
     } catch (error) {
-      console.error(`[tabs.onRemoved] Error handling tab ${tabId} removal:`, error);
+      console.error(
+        `[tabs.onRemoved] Error handling tab ${tabId} removal:`,
+        error,
+      );
     }
   });
 
@@ -332,9 +359,14 @@ export default defineBackground(() => {
         const domain = await tabGroupService.getGroupDomain(group.id);
         if (!domain) return;
 
-        console.log(`[tabGroups.onUpdated] Group ${group.id} updated for domain "${domain}"`);
+        console.log(
+          `[tabGroups.onUpdated] Group ${group.id} updated for domain "${domain}"`,
+        );
       } catch (error) {
-        console.error('[tabGroups.onUpdated] Error handling group update:', error);
+        console.error(
+          "[tabGroups.onUpdated] Error handling group update:",
+          error,
+        );
       }
     });
   }
@@ -345,7 +377,10 @@ export default defineBackground(() => {
       try {
         console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`);
       } catch (error) {
-        console.error('[tabGroups.onRemoved] Error handling group removal:', error);
+        console.error(
+          "[tabGroups.onRemoved] Error handling group removal:",
+          error,
+        );
       }
     });
   }

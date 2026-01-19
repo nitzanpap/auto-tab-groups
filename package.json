@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "wxt",
     "dev:chrome": "wxt -b chrome",
-    "dev:firefox": "wxt -b firefox",
+    "dev:firefox": "wxt -b firefox --mv2",
     "build": "wxt build",
     "build:chrome": "wxt build -b chrome",
     "build:firefox": "wxt build -b firefox",
@@ -17,11 +17,13 @@
     "zip:firefox": "wxt zip -b firefox",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build:chrome && playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,html,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,html,css}\"",
+    "code:check": "npm run lint && npm run format:check && npm run typecheck",
+    "code:fix": "npm run lint:fix && npm run format",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {
@@ -31,8 +33,10 @@
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
+    "globals": "^17.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.53.1",
     "vitest": "^3.0.0",
     "wxt": "^0.20.6"
   },

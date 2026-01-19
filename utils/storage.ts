@@ -3,46 +3,52 @@
  * Provides type-safe access to browser.storage.local
  */
 
-import { storage } from 'wxt/utils/storage';
-import type { StorageSchema, CustomRulesMapping, GroupColorMapping, GroupByMode, RuleMatchingMode, TabGroupColor } from '../types';
-import { DEFAULT_STATE } from '../types/storage';
+import { storage } from "wxt/utils/storage";
+import type {
+  StorageSchema,
+  CustomRulesMapping,
+  GroupColorMapping,
+  GroupByMode,
+  RuleMatchingMode,
+  TabGroupColor,
+} from "../types";
+import { DEFAULT_STATE } from "../types/storage";
 
 /**
  * Storage items with default values
  */
 export const autoGroupingEnabled = storage.defineItem<boolean>(
-  'local:autoGroupingEnabled',
-  { fallback: DEFAULT_STATE.autoGroupingEnabled }
+  "local:autoGroupingEnabled",
+  { fallback: DEFAULT_STATE.autoGroupingEnabled },
 );
 
-export const groupNewTabs = storage.defineItem<boolean>(
-  'local:groupNewTabs',
-  { fallback: DEFAULT_STATE.groupNewTabs }
-);
+export const groupNewTabs = storage.defineItem<boolean>("local:groupNewTabs", {
+  fallback: DEFAULT_STATE.groupNewTabs,
+});
 
 export const groupByMode = storage.defineItem<GroupByMode>(
-  'local:groupByMode',
-  { fallback: DEFAULT_STATE.groupByMode }
+  "local:groupByMode",
+  { fallback: DEFAULT_STATE.groupByMode },
 );
 
 export const customRules = storage.defineItem<CustomRulesMapping>(
-  'local:customRules',
-  { fallback: DEFAULT_STATE.customRules }
+  "local:customRules",
+  { fallback: DEFAULT_STATE.customRules },
 );
 
 export const ruleMatchingMode = storage.defineItem<RuleMatchingMode>(
-  'local:ruleMatchingMode',
-  { fallback: DEFAULT_STATE.ruleMatchingMode }
+  "local:ruleMatchingMode",
+  { fallback: DEFAULT_STATE.ruleMatchingMode },
 );
 
 export const groupColorMapping = storage.defineItem<GroupColorMapping>(
-  'local:groupColorMapping',
-  { fallback: DEFAULT_STATE.groupColorMapping }
+  "local:groupColorMapping",
+  { fallback: DEFAULT_STATE.groupColorMapping },
 );
 
 export const minimumTabsForGroup = storage.defineItem<number>(
-  'local:minimumTabsForGroup',
-  { fallback: DEFAULT_STATE.minimumTabsForGroup }
+  "local:minimumTabsForGroup",
+  { fallback: DEFAULT_STATE.minimumTabsForGroup },
 );
 
 /**
@@ -81,7 +87,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
 /**
  * Save all storage values at once
  */
-export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void> {
+export async function saveAllStorage(
+  data: Partial<StorageSchema>,
+): Promise<void> {
   const promises: Promise<void>[] = [];
 
   if (data.autoGroupingEnabled !== undefined) {
@@ -112,7 +120,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
 /**
  * Get a specific group's saved color
  */
-export async function getGroupColor(groupTitle: string): Promise<string | null> {
+export async function getGroupColor(
+  groupTitle: string,
+): Promise<string | null> {
   const mapping = await groupColorMapping.getValue();
   return mapping[groupTitle] || null;
 }
@@ -120,7 +130,10 @@ export async function getGroupColor(groupTitle: string): Promise<string | null> 
 /**
  * Update a specific group's color
  */
-export async function updateGroupColor(groupTitle: string, color: TabGroupColor): Promise<void> {
+export async function updateGroupColor(
+  groupTitle: string,
+  color: TabGroupColor,
+): Promise<void> {
   const mapping = await groupColorMapping.getValue();
   const updatedMapping = { ...mapping, [groupTitle]: color };
   await groupColorMapping.setValue(updatedMapping);

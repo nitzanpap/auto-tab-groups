@@ -3,8 +3,14 @@
  * Simplified to only handle user settings, browser is SSOT for tab groups
  */
 
-import type { CustomRule, CustomRulesMapping, GroupByMode, RuleMatchingMode, StorageSchema } from '../types';
-import { DEFAULT_STATE } from '../types/storage';
+import type {
+  CustomRule,
+  CustomRulesMapping,
+  GroupByMode,
+  RuleMatchingMode,
+  StorageSchema,
+} from "../types";
+import { DEFAULT_STATE } from "../types/storage";
 
 class TabGroupState {
   autoGroupingEnabled: boolean;
@@ -27,11 +33,13 @@ class TabGroupState {
    * Updates state from storage data (settings only)
    */
   updateFromStorage(data: Partial<StorageSchema>): void {
-    this.autoGroupingEnabled = data.autoGroupingEnabled ?? this.autoGroupingEnabled;
+    this.autoGroupingEnabled =
+      data.autoGroupingEnabled ?? this.autoGroupingEnabled;
     this.groupNewTabs = data.groupNewTabs ?? this.groupNewTabs;
     this.groupByMode = data.groupByMode ?? this.groupByMode;
     this.ruleMatchingMode = data.ruleMatchingMode ?? this.ruleMatchingMode;
-    this.minimumTabsForGroup = data.minimumTabsForGroup ?? this.minimumTabsForGroup;
+    this.minimumTabsForGroup =
+      data.minimumTabsForGroup ?? this.minimumTabsForGroup;
 
     this.customRules.clear();
 
