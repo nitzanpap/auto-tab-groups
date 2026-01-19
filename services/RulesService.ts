@@ -231,7 +231,7 @@ class RulesService {
    * Generates a unique rule ID
    */
   generateRuleId(): string {
-    return `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `rule-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
   }
 
   /**
