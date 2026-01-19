@@ -9,5 +9,6 @@
     "tabgroup",
     "techcrunch",
     "tiktok"
-  ]
+  ],
+  "snyk.advanced.autoSelectOrganization": true
 }
