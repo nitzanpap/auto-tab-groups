@@ -1,17 +1,34 @@
+# WXT build output
+.output/
+.wxt/
+
+# Dependencies
+node_modules/
+
+# Build artifacts
 dist/
 web-ext-artifacts/
-node_modules/
 *.zip
 *.xpi
 *.tar.gz
 *.tgz
 *.log
 
-# Ignore test results and reports
+# Test results and reports
 test-report/
 playwright-report/
 test-results/
 TEST_REPORT.md
 
-# Ignore generated manifest file.
+# Generated manifest file
 manifest.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

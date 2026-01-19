@@ -1,0 +1,47 @@
+{
+  "name": "auto-tab-groups",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Cross-browser extension that automatically groups tabs by domain",
+  "author": "Nitzan Papini",
+  "private": true,
+  "scripts": {
+    "dev": "wxt",
+    "dev:chrome": "wxt -b chrome",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:chrome": "wxt build -b chrome",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:chrome": "wxt zip -b chrome",
+    "zip:firefox": "wxt zip -b firefox",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,html,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,html,css}\"",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.56.1",
+    "@types/chrome": "^0.0.287",
+    "eslint": "^9.30.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0",
+    "wxt": "^0.20.6"
+  },
+  "keywords": [
+    "chrome-extension",
+    "firefox-addon",
+    "tab-management",
+    "productivity",
+    "wxt",
+    "typescript"
+  ]
+}

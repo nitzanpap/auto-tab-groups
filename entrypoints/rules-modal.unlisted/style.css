@@ -1,0 +1,124 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  --primary-color: #2a6cfb;
+  --primary-color-dark: #1d4ed8;
+  --secondary-color: #ccc;
+  --secondary-color-dark: #e5e7eb;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f3f4f6;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #111827;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group input[type="text"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.button {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button.primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.button.primary:hover {
+  background: var(--primary-color-dark);
+}
+
+.button.secondary {
+  background: var(--secondary-color);
+  color: #374151;
+}
+
+.button.secondary:hover {
+  background: var(--secondary-color-dark);
+}
