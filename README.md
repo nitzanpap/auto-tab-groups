@@ -18,10 +18,10 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 🌐 Browser Compatibility
 
-| Browser | Version | Status |
-|---------|---------|--------|
-| Firefox | 139+ | ✅ Fully supported (Manifest V3, Tab Groups API) |
-| Chrome | Latest | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Browser | Version | Status                                           |
+| ------- | ------- | ------------------------------------------------ |
+| Firefox | 139+    | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Chrome  | Latest  | ✅ Fully supported (Manifest V3, Tab Groups API) |
 
 **Note**: Firefox 139+ required for full Tab Groups API support and enhanced features.
 
@@ -129,7 +129,7 @@ npm install
 # Build for Chrome
 npm run build:chrome
 
-# Build for Firefox  
+# Build for Firefox
 npm run build:firefox
 
 # Build for both browsers
@@ -200,9 +200,9 @@ extension/
 
 1. Install dependencies:
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 2. Available scripts:
 
@@ -335,9 +335,9 @@ This ensures that international users get proper domain grouping regardless of t
 1. Update version in `manifest.json`
 2. Build the extension:
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   npm run build
+   ```
 
 3. The built extension will be available as an .xpi file
 
