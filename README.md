@@ -4,9 +4,8 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 📦 Downloads
 
-🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**  
+🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**
 🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
-💻 **Developer Builds**: See [`extension/`](extension/) folder for latest builds
 
 ## Example of tab groups in the navigation bar
 
@@ -114,108 +113,85 @@ The AI grouping feature is currently under active development with:
 
 ## 🛠️ Development
 
-The extension is built with a unified codebase supporting both Chrome and Firefox:
+The extension is built with [WXT](https://wxt.dev/) and TypeScript, supporting both Chrome and Firefox from a unified codebase.
 
 ### Quick Start
 
 ```bash
-cd extension/
 npm install
+npm run dev        # Start development server
 ```
 
 ### Build Commands
 
-```bash
-# Build for Chrome
-npm run build:chrome
+| Command              | Description                           |
+| -------------------- | ------------------------------------- |
+| `npm run dev`        | Start WXT development server          |
+| `npm run dev:chrome` | Development server for Chrome         |
+| `npm run dev:firefox`| Development server for Firefox        |
+| `npm run build`      | Build production extension (Chrome)   |
+| `npm run build:firefox` | Build production extension (Firefox) |
+| `npm run zip`        | Create release zip (Chrome)           |
+| `npm run zip:firefox`| Create release zip (Firefox)          |
+| `npm run typecheck`  | Run TypeScript type checking          |
+| `npm run test`       | Run unit tests (72+ tests)            |
+| `npm run lint`       | Run ESLint                            |
+| `npm run format`     | Format with Prettier                  |
 
-# Build for Firefox
-npm run build:firefox
+### Loading for Development
 
-# Build for both browsers
-npm run build
+**Chrome:**
+1. Run `npm run dev:chrome`
+2. Go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked"
+5. Select `.output/chrome-mv3-dev/`
 
-# Development mode
-npm run dev:chrome    # Sets up for Chrome development
-npm run dev:firefox   # Sets up for Firefox development
-```
-
-### Project Structure
-
-```sh
-extension/
-├── src/                          # Single source code base
-│   ├── manifest.chrome.json     # Chrome Manifest V3
-│   ├── manifest.firefox.json    # Firefox Manifest V3
-│   ├── utils/BrowserAPI.js       # Cross-browser compatibility layer
-│   └── ...                      # Shared components
-├── package.json                  # Build scripts for both browsers
-└── README.md                     # Detailed development docs
-```
-
-For detailed development information, see [`extension/README.md`](extension/README.md).
+**Firefox:**
+1. Run `npm run dev:firefox`
+2. Go to `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on"
+4. Select any file in `.output/firefox-mv3-dev/`
 
 ---
 
 ## 📦 Project Structure
 
 ```text
-extension/
-├── src/                          # Single source code base
-│   ├── manifest.chrome.json     # Chrome Manifest V3
-│   ├── manifest.firefox.json    # Firefox Manifest V3
-│   ├── background.js             # Service worker (both browsers)
-│   ├── utils/
-│   │   ├── BrowserAPI.js        # Cross-browser compatibility layer
-│   │   ├── DomainUtils.js       # Domain processing utilities
-│   │   └── RulesUtils.js        # Custom rules utilities
-│   ├── config/
-│   │   └── StorageManager.js    # Cross-browser storage handling
-│   ├── services/
-│   │   ├── TabGroupService.js   # Tab grouping logic
-│   │   └── RulesService.js      # Custom rules management
-│   ├── state/
-│   │   └── TabGroupState.js     # State management
-│   ├── public/
-│   │   ├── popup.html           # Extension popup
-│   │   ├── popup.js             # Popup logic
-│   │   ├── popup.css            # Styling
-│   │   ├── rules-modal.html     # Custom rules modal
-│   │   ├── rules-modal.js       # Rules modal logic
-│   │   └── sidebar.html         # Side panel/sidebar
-│   └── assets/
-│       ├── icon16.png           # Icons (PNG for compatibility)
-│       ├── icon48.png
-│       └── icon128.png
-├── package.json                  # Build scripts for both browsers
-└── README.md                     # Detailed development docs
-└── docs/                         # Documentation for AI features and implementation plans
+auto-tab-groups/
+├── entrypoints/              # Extension entry points (WXT)
+│   ├── background.ts         # Service worker
+│   ├── popup/                # Popup UI
+│   │   ├── index.html
+│   │   ├── main.ts
+│   │   └── style.css
+│   ├── sidebar/              # Sidebar UI (Chrome side panel / Firefox sidebar)
+│   │   ├── index.html
+│   │   └── main.ts
+│   └── rules-modal.unlisted/ # Rule creation/editing modal
+│       ├── index.html
+│       ├── main.ts
+│       └── style.css
+├── services/                 # Business logic
+│   ├── TabGroupService.ts    # Tab grouping logic
+│   ├── RulesService.ts       # Custom rules management
+│   ├── TabGroupState.ts      # State management
+│   └── index.ts
+├── utils/                    # Utilities
+│   ├── DomainUtils.ts        # Domain processing with ccSLD support
+│   ├── UrlPatternMatcher.ts  # URL pattern matching
+│   ├── Constants.ts          # Tab group colors
+│   ├── RulesUtils.ts         # Rule validation helpers
+│   └── storage.ts            # WXT storage utilities
+├── types/                    # TypeScript type definitions
+├── tests/                    # Unit tests (72+ tests)
+├── public/                   # Static assets (icons)
+├── docs/                     # Documentation
+├── wxt.config.ts             # WXT configuration
+├── vitest.config.ts          # Vitest configuration
+├── tsconfig.json             # TypeScript configuration
+└── package.json
 ```
-
----
-
-## 🛠 Development Setup
-
-### Extension
-
-1. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-2. Available scripts:
-
-- `npm start`: Run the extension in Firefox for development
-- `npm run build`: Build the extension and generate .xpi file
-- `npm run format`: Format code using Prettier
-- `npm run lint`: Run ESLint checks
-
-### Loading Extension for Development
-
-1. Open Firefox and go to: `about:debugging`
-2. Click **"This Firefox"** → **"Load Temporary Add-on..."**
-3. Select the `manifest.json` file from the `src` directory
 
 ---
 
@@ -238,8 +214,8 @@ The extension works automatically in the background, grouping tabs by domain wit
 Create named tab groups that combine multiple domains under a single group:
 
 1. Open the extension popup
-2. Click "🔧 Custom Rules" to expand the section
-3. Click "➕ Add New Rule" to create your first rule
+2. Click "Custom Rules" to expand the section
+3. Click "Add New Rule" to create your first rule
 4. Enter a group name (or let the system suggest one)
 5. **Quick add from current tabs**: Select domains from your currently open tabs instead of typing them manually
 6. Choose a color and save
@@ -325,6 +301,7 @@ This ensures that international users get proper domain grouping regardless of t
 
 - [MDN WebExtensions API Docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 - [tabs.group() API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/group)
+- [WXT Framework](https://wxt.dev/)
 
 ---
 
@@ -332,20 +309,27 @@ This ensures that international users get proper domain grouping regardless of t
 
 ### Building for Production
 
-1. Update version in `manifest.json`
+1. Update version in `package.json`
 2. Build the extension:
 
    ```bash
-   npm run build
+   npm run zip          # Chrome
+   npm run zip:firefox  # Firefox
    ```
 
-3. The built extension will be available as an .xpi file
+3. Output files:
+   - `.output/auto-tab-groups-{version}-chrome.zip`
+   - `.output/auto-tab-groups-{version}-firefox.zip`
 
-### Publishing to Firefox Add-ons
+### Publishing
 
-1. Update the version in `manifest.json`
-2. Build using `npm run build`
-3. Upload the .xpi file to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/)
+**Chrome Web Store:**
+1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+2. Upload the Chrome zip file
+
+**Firefox Add-ons:**
+1. Go to [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/)
+2. Upload the Firefox zip file
 
 ---
 
