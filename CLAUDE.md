@@ -60,7 +60,7 @@ The extension uses a stateless architecture where the browser's tab groups API i
 
 ### Project Structure (WXT)
 
-```
+```tree
 /
 ├── wxt.config.ts           # WXT configuration with browser-specific manifests
 ├── entrypoints/            # Extension entry points
