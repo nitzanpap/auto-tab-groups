@@ -18,6 +18,7 @@ web-ext-artifacts/
 test-report/
 playwright-report/
 test-results/
+coverage/
 TEST_REPORT.md
 
 # Generated manifest file
