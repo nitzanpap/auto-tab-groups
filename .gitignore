@@ -33,3 +33,4 @@ manifest.json
 # OS
 .DS_Store
 Thumbs.db
+users-feedback.csv
