@@ -521,3 +521,86 @@ export async function setupCleanState(context: BrowserContext, extensionId: stri
   await resetExtensionState(popupPage)
   return popupPage
 }
+
+/**
+ * Enable auto-collapse feature
+ */
+export async function enableAutoCollapse(
+  popupPage: Page,
+  delayMs = 0
+): Promise<void> {
+  await sendMessage(popupPage, "updateAutoCollapse", {
+    autoCollapseEnabled: true,
+    autoCollapseDelayMs: delayMs
+  })
+}
+
+/**
+ * Disable auto-collapse feature
+ */
+export async function disableAutoCollapse(popupPage: Page): Promise<void> {
+  await sendMessage(popupPage, "updateAutoCollapse", {
+    autoCollapseEnabled: false,
+    autoCollapseDelayMs: 0
+  })
+}
+
+/**
+ * Get auto-collapse state
+ */
+export async function getAutoCollapseState(
+  popupPage: Page
+): Promise<{ enabled: boolean; delayMs: number }> {
+  const result = (await sendMessage(popupPage, "getAutoCollapseState")) as {
+    enabled: boolean
+    delayMs: number
+  }
+  return result
+}
+
+/**
+ * Activate a tab (switch to it)
+ */
+export async function activateTab(popupPage: Page, tabUrl: string): Promise<void> {
+  await popupPage.evaluate(async url => {
+    const tabs = await chrome.tabs.query({ currentWindow: true })
+    const tab = tabs.find(t => t.url?.includes(url))
+    if (tab?.id) {
+      await chrome.tabs.update(tab.id, { active: true })
+    }
+  }, tabUrl)
+}
+
+/**
+ * Get the currently active tab
+ */
+export async function getActiveTab(popupPage: Page): Promise<TabInfo | null> {
+  return await popupPage.evaluate(async () => {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (tabs.length === 0) return null
+    const t = tabs[0]
+    return {
+      id: t.id!,
+      url: t.url || "",
+      groupId: t.groupId || -1,
+      pinned: t.pinned || false,
+      windowId: t.windowId!
+    }
+  })
+}
+
+/**
+ * Wait for other groups to be collapsed (except active tab's group)
+ */
+export async function waitForOtherGroupsCollapsed(
+  popupPage: Page,
+  activeGroupId: number,
+  timeout = 5000
+): Promise<void> {
+  await expect(async () => {
+    const groups = await getTabGroups(popupPage)
+    const otherGroups = groups.filter(g => g.id !== activeGroupId)
+    // All other groups should be collapsed
+    expect(otherGroups.every(g => g.collapsed)).toBe(true)
+  }).toPass({ timeout })
+}
