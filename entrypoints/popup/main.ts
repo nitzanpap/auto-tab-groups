@@ -20,7 +20,6 @@ const rulesList = document.getElementById("rulesList") as HTMLDivElement
 const addRuleButton = document.getElementById("addRuleButton") as HTMLButtonElement
 const exportRulesButton = document.getElementById("exportRulesButton") as HTMLButtonElement
 const importRulesButton = document.getElementById("importRulesButton") as HTMLButtonElement
-const importFileInput = document.getElementById("importFileInput") as HTMLInputElement
 
 // State
 let customRulesExpanded = false
@@ -333,56 +332,14 @@ async function exportRules(): Promise<void> {
   }
 }
 
-// Import rules
+// Import rules - open dedicated import page in new tab
+// This avoids Firefox's popup-close-on-focus-loss issue with file dialogs
 async function importRules(): Promise<void> {
-  importFileInput.click()
-}
-
-// Handle file import
-async function handleFileImport(event: Event): Promise<void> {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  target.value = ""
-
   try {
-    const text = await file.text()
-
-    const replaceExisting = confirm(
-      "Do you want to replace all existing rules?\n\n" +
-        "Click OK to REPLACE all existing rules with imported ones\n" +
-        "Click Cancel to MERGE imported rules with existing ones"
-    )
-
-    const response = await sendMessage<{
-      success?: boolean
-      imported?: number
-      skipped?: number
-      validationErrors?: string[]
-      error?: string
-    }>({
-      action: "importRules",
-      jsonData: text,
-      replaceExisting
-    })
-
-    if (response?.success) {
-      await loadCustomRules()
-
-      const message =
-        `Import successful!\n` +
-        `Imported: ${response.imported} rules\n` +
-        `Skipped: ${response.skipped} rules`
-
-      showRulesMessage("Rules imported successfully!", "success")
-      alert(message)
-    } else {
-      alert(response?.error || "Failed to import rules")
-    }
+    const url = browser.runtime.getURL("/import-rules.html")
+    await browser.tabs.create({ url, active: true })
   } catch (error) {
-    console.error("Error importing rules:", error)
-    alert(`Failed to import rules: ${(error as Error).message}`)
+    console.error("Error opening import page:", error)
   }
 }
 
@@ -463,7 +420,6 @@ rulesToggle?.addEventListener("click", toggleRulesSection)
 addRuleButton?.addEventListener("click", addRule)
 exportRulesButton?.addEventListener("click", exportRules)
 importRulesButton?.addEventListener("click", importRules)
-importFileInput?.addEventListener("change", handleFileImport)
 
 // Load custom rules on popup open
 loadCustomRules()
