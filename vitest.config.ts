@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/extension/**", "legacy-extension/**", "tests/e2e/**"],
     coverage: {
@@ -11,6 +12,7 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: [
         "services/TabGroupState.ts",
+        "services/TabGroupService.ts",
         "utils/Constants.ts",
         "utils/DomainUtils.ts",
         "utils/RulesUtils.ts",
@@ -28,7 +30,6 @@ export default defineConfig({
         "tests/**",
         // Services requiring browser API mocking (tested via E2E)
         "services/RulesService.ts",
-        "services/TabGroupService.ts",
         // WXT storage wrapper (requires runtime)
         "utils/storage.ts",
         // Type-only files

@@ -146,6 +146,14 @@ class TabGroupServiceSimplified {
             count++
           }
         } else {
+          // Handle empty/undefined URLs and new tab URLs as System tabs
+          if (expectedTitle === "System") {
+            if (!tab.url || tab.url === "" || this.isNewTabUrl(tab.url)) {
+              count++
+              continue
+            }
+          }
+
           const includeSubDomain = tabGroupState.groupByMode === "subdomain"
           const domain = extractDomain(tab.url || "", includeSubDomain)
           const displayName = getDomainDisplayName(domain || "")
@@ -345,7 +353,20 @@ class TabGroupServiceSimplified {
       const tabs = await browser.tabs.query({ currentWindow: true })
 
       for (const tab of tabs) {
-        if (tab.url && !tab.url.startsWith("chrome-extension://") && tab.id) {
+        if (tab.id) {
+          // Skip extension pages but process all other tabs including empty URLs
+          if (tab.url?.startsWith("chrome-extension://")) {
+            continue
+          }
+
+          // Handle tabs with empty/undefined URLs as potential new tabs
+          if (!tab.url || tab.url === "") {
+            if (tabGroupState.groupNewTabs) {
+              await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
+            }
+            continue
+          }
+
           await this.handleTabUpdate(tab.id)
           await new Promise(resolve => setTimeout(resolve, 10))
         }
@@ -360,7 +381,7 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Manually groups all tabs (ignores auto-group setting)
+   * Manually groups all tabs (ignores auto-group setting but respects groupNewTabs)
    */
   async groupAllTabsManually(): Promise<boolean> {
     try {
@@ -369,7 +390,26 @@ class TabGroupServiceSimplified {
       const tabs = await browser.tabs.query({ currentWindow: true })
 
       for (const tab of tabs) {
-        if (tab.url && !tab.url.startsWith("chrome-extension://") && tab.id) {
+        if (tab.id) {
+          // Skip extension pages but process all other tabs including empty URLs
+          if (tab.url?.startsWith("chrome-extension://")) {
+            continue
+          }
+
+          // Handle tabs with empty/undefined URLs as potential new tabs
+          if (!tab.url || tab.url === "") {
+            if (tabGroupState.groupNewTabs) {
+              await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
+            }
+            continue
+          }
+
+          // For new tab URLs, respect the groupNewTabs setting
+          if (this.isNewTabUrl(tab.url) && !tabGroupState.groupNewTabs) {
+            console.log(`[TabGroupService] Skipping new tab ${tab.id} - groupNewTabs disabled`)
+            continue
+          }
+
           await this.handleTabUpdate(tab.id, true)
           await new Promise(resolve => setTimeout(resolve, 10))
         }
@@ -453,6 +493,55 @@ class TabGroupServiceSimplified {
       return false
     } catch (error) {
       console.error(`[TabGroupService] Error checking threshold:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Check all groups against threshold and disband those below minimum
+   */
+  async checkAllGroupsThreshold(): Promise<void> {
+    try {
+      if (!browser.tabGroups) return
+
+      const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
+      console.log(`[TabGroupService] Checking ${groups.length} groups against threshold`)
+
+      for (const group of groups) {
+        await this.checkGroupThreshold(group.id)
+      }
+    } catch (error) {
+      console.error(`[TabGroupService] Error checking all groups threshold:`, error)
+    }
+  }
+
+  /**
+   * Ungroups all tabs from the System group (used when groupNewTabs is disabled)
+   */
+  async ungroupSystemTabs(): Promise<boolean> {
+    try {
+      if (!browser.tabGroups) return false
+
+      const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
+      const systemGroup = groups.find(group => group.title === "System")
+
+      if (!systemGroup) {
+        console.log(`[TabGroupService] No System group found`)
+        return true
+      }
+
+      const tabs = await browser.tabs.query({ groupId: systemGroup.id })
+      if (tabs.length > 0) {
+        const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
+        if (tabIds.length > 0) {
+          await browser.tabs.ungroup(tabIds as [number, ...number[]])
+          console.log(`[TabGroupService] Ungrouped ${tabIds.length} tabs from System group`)
+        }
+      }
+
+      return true
+    } catch (error) {
+      console.error(`[TabGroupService] Error ungrouping System tabs:`, error)
       return false
     }
   }

@@ -136,6 +136,16 @@ export default defineBackground(() => {
           case "toggleGroupNewTabs":
             tabGroupState.groupNewTabs = msg.enabled
             await saveState()
+
+            if (tabGroupState.autoGroupingEnabled) {
+              if (msg.enabled) {
+                // When enabled, group new/empty tabs into System
+                await tabGroupService.groupAllTabs()
+              } else {
+                // When disabled, ungroup tabs from System group
+                await tabGroupService.ungroupSystemTabs()
+              }
+            }
             result = { enabled: tabGroupState.groupNewTabs }
             break
 
@@ -163,6 +173,9 @@ export default defineBackground(() => {
             await saveState()
 
             if (tabGroupState.autoGroupingEnabled) {
+              // First check existing groups against new threshold and disband if needed
+              await tabGroupService.checkAllGroupsThreshold()
+              // Then re-group tabs with the new threshold
               await tabGroupService.groupAllTabs()
             }
             result = { minimumTabs: tabGroupState.minimumTabsForGroup }
