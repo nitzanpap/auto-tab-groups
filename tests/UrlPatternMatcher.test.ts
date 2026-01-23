@@ -300,6 +300,132 @@ describe("UrlPatternMatcher", () => {
     })
   })
 
+  describe("match - comprehensive path patterns", () => {
+    // Basic path patterns
+    it("should match URL with exact path prefix", () => {
+      const result = urlPatternMatcher.match("https://example.com/api/users", "example.com/api")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match URL with path and query string", () => {
+      const result = urlPatternMatcher.match("https://example.com/api?key=123", "example.com/api")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should NOT match URL with different path", () => {
+      const result = urlPatternMatcher.match("https://example.com/admin", "example.com/api")
+      expect(result.matched).toBe(false)
+    })
+
+    // Deep path patterns
+    it("should match deep path patterns", () => {
+      const result = urlPatternMatcher.match(
+        "https://example.com/api/v2/users/123",
+        "example.com/api/v2"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match exact deep path", () => {
+      const result = urlPatternMatcher.match(
+        "https://example.com/admin/settings/profile",
+        "example.com/admin/settings"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    // Wildcard in path
+    it("should match path with single wildcard segment", () => {
+      const result = urlPatternMatcher.match(
+        "https://example.com/users/john/profile",
+        "example.com/users/*/profile"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match path with multiple segments after wildcard", () => {
+      const result = urlPatternMatcher.match(
+        "https://example.com/a/b/c/d/target",
+        "example.com/**/target"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    // Real-world examples from user feedback
+    it("should match google.com/ai path (user feedback row 284)", () => {
+      const result = urlPatternMatcher.match("https://google.com/ai/studio", "google.com/ai")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match google.com/ai with deep path", () => {
+      const result = urlPatternMatcher.match("https://google.com/ai/gemini/app", "google.com/ai")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match reddit.com/r/subreddit path with wildcard (user feedback row 284)", () => {
+      // Note: Use *.reddit.com to match www.reddit.com
+      const result = urlPatternMatcher.match(
+        "https://www.reddit.com/r/runescape/comments/123",
+        "*.reddit.com/r/runescape"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match reddit.com path without www", () => {
+      const result = urlPatternMatcher.match(
+        "https://reddit.com/r/runescape/comments/123",
+        "reddit.com/r/runescape"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    it("should NOT match reddit.com with different subreddit", () => {
+      const result = urlPatternMatcher.match(
+        "https://www.reddit.com/r/gaming/comments/123",
+        "*.reddit.com/r/runescape"
+      )
+      expect(result.matched).toBe(false)
+    })
+
+    // GitHub paths
+    it("should match github.com/user/repo path", () => {
+      const result = urlPatternMatcher.match(
+        "https://github.com/nitzanpap/auto-tab-groups/issues",
+        "github.com/nitzanpap/auto-tab-groups"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    // AWS Console paths
+    it("should match AWS console paths", () => {
+      const result = urlPatternMatcher.match(
+        "https://console.aws.amazon.com/ec2/home?region=us-east-1",
+        "console.aws.amazon.com/ec2"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    // Path with hash/fragment
+    it("should match URL with hash fragment", () => {
+      const result = urlPatternMatcher.match(
+        "https://example.com/docs/api#section",
+        "example.com/docs"
+      )
+      expect(result.matched).toBe(true)
+    })
+
+    // Edge cases
+    it("should handle trailing slash in URL", () => {
+      const result = urlPatternMatcher.match("https://example.com/api/", "example.com/api")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should handle trailing slash in pattern", () => {
+      const result = urlPatternMatcher.match("https://example.com/api/users", "example.com/api/")
+      expect(result.matched).toBe(true)
+    })
+  })
+
   describe("match - segment extraction with path", () => {
     it("should extract from URL with path", () => {
       const result = urlPatternMatcher.match(

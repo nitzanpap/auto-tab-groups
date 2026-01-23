@@ -1,5 +1,6 @@
 import "./style.css"
 import type { RuleData, TabGroupColor } from "../../types"
+import { urlPatternMatcher } from "../../utils/UrlPatternMatcher"
 
 // Get URL parameters
 const urlParams = new URLSearchParams(window.location.search)
@@ -15,6 +16,37 @@ const ruleColorSelect = document.getElementById("ruleColor") as HTMLSelectElemen
 const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputElement
 const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
+const patternFeedback = document.getElementById("patternFeedback") as HTMLDivElement
+
+// Validate patterns in real-time
+function validatePatterns(): void {
+  const patterns = rulePatternsInput.value
+    .split("\n")
+    .map(p => p.trim())
+    .filter(p => p)
+
+  if (patterns.length === 0) {
+    patternFeedback.textContent = ""
+    patternFeedback.className = "pattern-feedback"
+    return
+  }
+
+  const errors: string[] = []
+  for (const pattern of patterns) {
+    const validation = urlPatternMatcher.validatePattern(pattern)
+    if (!validation.isValid) {
+      errors.push(`"${pattern}": ${validation.error}`)
+    }
+  }
+
+  if (errors.length > 0) {
+    patternFeedback.textContent = errors.join("; ")
+    patternFeedback.className = "pattern-feedback error"
+  } else {
+    patternFeedback.textContent = `${patterns.length} valid pattern(s)`
+    patternFeedback.className = "pattern-feedback success"
+  }
+}
 
 // Helper function for sending messages
 function sendMessage<T = Record<string, unknown>>(message: Record<string, unknown>): Promise<T> {
@@ -118,3 +150,4 @@ loadExistingRule()
 // Event listeners
 ruleForm.addEventListener("submit", saveRule)
 cancelButton.addEventListener("click", cancel)
+rulePatternsInput.addEventListener("input", validatePatterns)

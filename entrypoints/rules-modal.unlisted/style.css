@@ -122,3 +122,27 @@ h1 {
 .button.secondary:hover {
   background: var(--secondary-color-dark);
 }
+
+.help-text {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6c757d;
+}
+
+.pattern-help {
+  margin-bottom: 4px;
+}
+
+.pattern-feedback {
+  margin-top: 4px;
+  font-size: 11px;
+  min-height: 16px;
+}
+
+.pattern-feedback.error {
+  color: #dc3545;
+}
+
+.pattern-feedback.success {
+  color: #28a745;
+}

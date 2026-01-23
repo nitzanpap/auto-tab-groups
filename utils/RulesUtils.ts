@@ -316,6 +316,8 @@ export function isValidPathSegment(segment: string): boolean {
 
 /**
  * Validates a rule name
+ * Supports Unicode characters (Chinese, Japanese, Korean, Arabic, Russian, emojis, etc.)
+ * while blocking potentially dangerous characters for XSS prevention
  */
 export function validateRuleName(name: string): PatternValidationResult {
   if (!name || typeof name !== "string") {
@@ -332,9 +334,11 @@ export function validateRuleName(name: string): PatternValidationResult {
     return { isValid: false, error: "Rule name cannot exceed 50 characters" }
   }
 
-  const namePattern = /^[a-zA-Z0-9\s\-_()&.!?]+$/
+  // Block dangerous characters that could be used for XSS or injection attacks
+  // Allow all other characters including Unicode (Chinese, Japanese, Korean, emojis, etc.)
+  const dangerousPattern = /[<>'"\\`${}[\]]/
 
-  if (!namePattern.test(cleanName)) {
+  if (dangerousPattern.test(cleanName)) {
     return { isValid: false, error: "Rule name contains invalid characters" }
   }
 

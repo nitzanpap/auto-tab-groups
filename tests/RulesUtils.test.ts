@@ -345,6 +345,54 @@ describe("RulesUtils", () => {
       expect(result.isValid).toBe(true)
     })
 
+    // Unicode and international character support tests
+    it("should accept Chinese characters in rule name", () => {
+      const result = validateRuleName("工作")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept Japanese characters in rule name", () => {
+      const result = validateRuleName("日本語テスト")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept Korean characters in rule name", () => {
+      const result = validateRuleName("한국어")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept Arabic characters in rule name", () => {
+      const result = validateRuleName("العربية")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept Russian characters in rule name", () => {
+      const result = validateRuleName("Тест на русском")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept emojis in rule name", () => {
+      const result = validateRuleName("🎉 Fun Sites")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should accept mixed unicode and ASCII in rule name", () => {
+      const result = validateRuleName("Work 工作 Apps")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should enforce 50 character limit regardless of unicode", () => {
+      const longName = "中".repeat(51)
+      const result = validateRuleName(longName)
+      expect(result.isValid).toBe(false)
+      expect(result.error).toBe("Rule name cannot exceed 50 characters")
+    })
+
+    it("should still reject dangerous characters like angle brackets", () => {
+      const result = validateRuleName("<script>alert('xss')</script>")
+      expect(result.isValid).toBe(false)
+    })
+
     it("should reject empty name", () => {
       const result = validateRuleName("")
       expect(result.isValid).toBe(false)

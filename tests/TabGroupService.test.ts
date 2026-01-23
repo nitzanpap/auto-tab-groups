@@ -410,4 +410,146 @@ describe("TabGroupService", () => {
       expect(mockBrowser.tabs.ungroup).not.toHaveBeenCalled()
     })
   })
+
+  describe("pinned tabs handling - comprehensive", () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      tabGroupState.updateFromStorage({ ...DEFAULT_STATE, autoGroupingEnabled: true })
+    })
+
+    describe("handleTabUpdate with pinned tabs", () => {
+      it("should skip pinned tabs in handleTabUpdate", async () => {
+        mockBrowser.tabs.get.mockResolvedValue({
+          id: 1,
+          url: "https://example.com",
+          pinned: true,
+          windowId: 1
+        })
+
+        const result = await tabGroupService.handleTabUpdate(1)
+
+        expect(result).toBe(false)
+        expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+      })
+
+      it("should group non-pinned tabs normally", async () => {
+        mockBrowser.tabs.get.mockResolvedValue({
+          id: 1,
+          url: "https://example.com",
+          pinned: false,
+          windowId: 1,
+          groupId: -1
+        })
+        mockBrowser.tabGroups.query.mockResolvedValue([])
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "https://example.com", pinned: false }
+        ])
+        mockBrowser.tabs.group.mockResolvedValue(100)
+        mockBrowser.tabGroups.update.mockResolvedValue({})
+
+        const result = await tabGroupService.handleTabUpdate(1)
+
+        expect(mockBrowser.tabs.group).toHaveBeenCalled()
+        expect(result).toBe(true)
+      })
+
+      it("should return false for pinned tabs even when forceGrouping is true", async () => {
+        mockBrowser.tabs.get.mockResolvedValue({
+          id: 1,
+          url: "https://example.com",
+          pinned: true,
+          windowId: 1
+        })
+
+        const result = await tabGroupService.handleTabUpdate(1, true)
+
+        expect(result).toBe(false)
+        expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("countTabsForGroup with pinned tabs", () => {
+      it("should exclude pinned tabs from group tab count", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "https://example.com", pinned: true },
+          { id: 2, url: "https://example.com", pinned: false },
+          { id: 3, url: "https://example.com", pinned: false }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("example", 1, null)
+
+        // Should be 2 (excludes pinned tab)
+        expect(count).toBe(2)
+      })
+
+      it("should count zero when all tabs are pinned", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "https://example.com", pinned: true },
+          { id: 2, url: "https://example.com", pinned: true }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("example", 1, null)
+
+        expect(count).toBe(0)
+      })
+    })
+
+    describe("checkGroupThreshold with pinned tabs", () => {
+      it("should exclude pinned tabs when checking group threshold", async () => {
+        tabGroupState.minimumTabsForGroup = 2
+        mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Test" }])
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 101, groupId: 1, pinned: true }, // Pinned - excluded from count
+          { id: 102, groupId: 1, pinned: false } // Only 1 unpinned
+        ])
+
+        const result = await tabGroupService.checkGroupThreshold(1)
+
+        // Should ungroup because only 1 unpinned tab (below threshold of 2)
+        expect(result).toBe(true)
+        expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([101, 102])
+      })
+
+      it("should not ungroup when unpinned tabs meet threshold", async () => {
+        tabGroupState.minimumTabsForGroup = 2
+        mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Test" }])
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 101, groupId: 1, pinned: true },
+          { id: 102, groupId: 1, pinned: false },
+          { id: 103, groupId: 1, pinned: false }
+        ])
+
+        const result = await tabGroupService.checkGroupThreshold(1)
+
+        // Should NOT ungroup because 2 unpinned tabs meet threshold
+        expect(result).toBe(false)
+        expect(mockBrowser.tabs.ungroup).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("groupAllTabs with pinned tabs", () => {
+      it("should skip pinned tabs during bulk grouping", async () => {
+        tabGroupState.autoGroupingEnabled = true
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "https://example.com", pinned: true, groupId: -1 },
+          { id: 2, url: "https://example.com", pinned: false, groupId: -1 }
+        ])
+        mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+          if (tabId === 1) {
+            return { id: 1, url: "https://example.com", pinned: true, windowId: 1, groupId: -1 }
+          }
+          return { id: 2, url: "https://example.com", pinned: false, windowId: 1, groupId: -1 }
+        })
+        mockBrowser.tabGroups.query.mockResolvedValue([])
+        mockBrowser.tabs.group.mockResolvedValue(100)
+        mockBrowser.tabGroups.update.mockResolvedValue({})
+
+        await tabGroupService.groupAllTabs()
+
+        // Should have been called for tab 2 but not attempt to group pinned tab 1
+        // Tab 1 is pinned so handleTabUpdate returns false early
+        expect(mockBrowser.tabs.get).toHaveBeenCalledWith(2)
+      })
+    })
+  })
 })

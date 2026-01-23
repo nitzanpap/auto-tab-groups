@@ -677,3 +677,25 @@ input:checked + .slider:before {
 .rules-toggle.expanded .up-arrow {
   transform: rotate(180deg);
 }
+
+.settings-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.settings-info .info-icon {
+  font-size: 12px;
+}
+
+.help-text {
+  font-size: 11px;
+  color: #6c757d;
+}

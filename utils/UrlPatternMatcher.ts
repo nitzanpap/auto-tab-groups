@@ -118,7 +118,10 @@ class UrlPatternMatcher {
 
       // Check if pattern includes a path
       const hasPath = cleanPattern.includes("/")
-      const [domainPattern, pathPattern] = hasPath ? cleanPattern.split("/", 2) : [cleanPattern, ""]
+      // Split only on first "/" to separate domain from full path
+      const firstSlashIndex = cleanPattern.indexOf("/")
+      const domainPattern = hasPath ? cleanPattern.substring(0, firstSlashIndex) : cleanPattern
+      const pathPattern = hasPath ? cleanPattern.substring(firstSlashIndex + 1) : ""
 
       // Match domain part
       const domainMatch = this.matchDomainWildcard(hostname, domainPattern)
@@ -211,7 +214,7 @@ class UrlPatternMatcher {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path
     const cleanPattern = pattern.startsWith("/") ? pattern.substring(1) : pattern
 
-    // Handle ** wildcard in path
+    // Handle ** wildcard in path (match any number of segments)
     if (cleanPattern.includes("**")) {
       const parts = cleanPattern.split("**")
       if (parts.length !== 2) return false
@@ -223,6 +226,18 @@ class UrlPatternMatcher {
       if (suffix && !cleanPath.endsWith(suffix)) return false
 
       return true
+    }
+
+    // Handle single * wildcard in path segments (match single segment)
+    if (cleanPattern.includes("*")) {
+      // Convert pattern to regex: * matches any characters within a segment (not /)
+      const regexPattern = cleanPattern
+        .split("*")
+        .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[^/]*")
+
+      const regex = new RegExp(`^${regexPattern}`)
+      return regex.test(cleanPath)
     }
 
     // Exact prefix matching

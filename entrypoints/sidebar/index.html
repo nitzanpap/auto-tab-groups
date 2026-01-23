@@ -20,7 +20,13 @@
           <button id="group" class="button primaryButton">Group Tabs</button>
           <button id="ungroup" class="button primaryButton">Ungroup All</button>
         </div>
-        <button id="generateNewColors" class="button gradientButton">Generate New Colors</button>
+        <button
+          id="generateNewColors"
+          class="button gradientButton"
+          title="Randomize group colors. Colors are saved and restored automatically for each domain/rule."
+        >
+          Generate New Colors
+        </button>
         <div class="button-group-row">
           <button id="collapseAllButton" class="button secondaryButton collapse-all-button">
             Collapse All
@@ -66,6 +72,10 @@
                 class="number-input"
               />
             </div>
+          </div>
+          <div class="settings-info">
+            <span class="info-icon">&#128204;</span>
+            <span>Pinned tabs are never grouped automatically</span>
           </div>
         </div>
 

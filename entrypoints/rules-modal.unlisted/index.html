@@ -17,7 +17,8 @@
       <form id="ruleForm">
         <div class="form-group">
           <label for="ruleName">Rule Name</label>
-          <input type="text" id="ruleName" placeholder="e.g., Work Apps" required />
+          <input type="text" id="ruleName" placeholder="e.g., Work Apps, 工作, 仕事" required />
+          <div class="help-text">Supports any language including Chinese, Japanese, Korean, and emojis</div>
         </div>
         <div class="form-group">
           <label for="rulePatterns">URL Patterns (one per line)</label>
@@ -26,9 +27,12 @@
             rows="4"
             placeholder="example.com
 *.github.com
-app.example.com"
+example.com/admin/*
+192.168.1.*"
             required
           ></textarea>
+          <div class="help-text pattern-help">Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses</div>
+          <div id="patternFeedback" class="pattern-feedback"></div>
         </div>
         <div class="form-group">
           <label for="ruleColor">Group Color</label>
