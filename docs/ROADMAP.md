@@ -32,6 +32,7 @@ Server-side AI grouping using tab metadata.
 ```
 
 **Implementation Steps**:
+
 1. Create `/api/group-tabs-ai` endpoint
 2. Integrate AI provider (e.g., OpenAI)
 3. Track token usage per user
@@ -40,15 +41,18 @@ Server-side AI grouping using tab metadata.
 ### Premium Model
 
 **Free Tier**:
+
 - Automatic domain grouping
 - 10 free AI grouping tokens
 
 **Premium Tier**:
+
 - Unlimited AI grouping
 - Priority support
 - Future advanced features
 
 **Token System**:
+
 - Each AI request = 1 token
 - Free users: limited tokens to try
 - Premium users: unlimited (or high quota)

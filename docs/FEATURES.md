@@ -4,7 +4,7 @@
 
 Pinned tabs are never moved to groups and remain at the beginning of the tab bar.
 
-### Behavior
+### Behavior of Pinned Tabs
 
 - **Pinned tab created**: Stays ungrouped
 - **Existing tab pinned**: Removed from group, moves to tab bar start
@@ -32,7 +32,7 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 ### Pattern Types
 
 | Pattern | Example | Matches |
-|---------|---------|---------|
+| ------- | ------- | ------- |
 | Domain Only | `google.com` | `google.com/*` |
 | Subdomain Wildcard | `*.google.com` | `docs.google.com/*` |
 | Domain + Path | `docs.google.com/forms` | `docs.google.com/forms*` |
@@ -41,7 +41,7 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 
 ### Examples
 
-```
+```txt
 github.com/**/issues        -> github.com/owner/repo/issues
 *.google.**/forms           -> docs.google.com/forms
 console.cloud.google.com/** -> any path on console.cloud.google.com
@@ -120,7 +120,7 @@ Groups only created when minimum tab count is met.
 - **Global Setting**: Default minimum for all domains
 - **Per-Rule Setting**: Override global for specific rules
 
-### Behavior
+### Behavior of Threshold
 
 - Below threshold: tabs remain ungrouped
 - Meets threshold: group created with all matching tabs

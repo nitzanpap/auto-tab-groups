@@ -11,7 +11,7 @@ The extension uses a stateless architecture where the browser's tab groups API i
 
 ## Tab Grouping Flow
 
-```
+```txt
 Tab URL changes -> Extract domain -> Determine expected title -> Find group by title -> Move if needed
 ```
 
