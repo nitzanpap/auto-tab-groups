@@ -1,6 +1,6 @@
-import { test, expect, chromium, type BrowserContext } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, test } from "@playwright/test"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

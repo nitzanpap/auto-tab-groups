@@ -2,8 +2,8 @@
  * Type definitions for background script messages
  */
 
-import type { GroupByMode, RuleMatchingMode } from "./storage"
-import type { CustomRule, RuleData, RulesStats, RulesExportData } from "./rules"
+import type { CustomRule, RuleData, RulesExportData, RulesStats } from "./rules"
+import type { GroupByMode } from "./storage"
 
 /**
  * All possible message actions

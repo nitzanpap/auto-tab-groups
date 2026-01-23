@@ -124,7 +124,7 @@ async function loadCustomRules(): Promise<void> {
     }>({
       action: "getCustomRules"
     })
-    if (response && response.customRules) {
+    if (response?.customRules) {
       currentRules = response.customRules
       updateRulesDisplay()
     }
@@ -290,7 +290,7 @@ async function deleteRule(ruleId: string, ruleName: string): Promise<void> {
       ruleId
     })
 
-    if (response && response.success) {
+    if (response?.success) {
       delete currentRules[ruleId]
       updateRulesDisplay()
     } else {
@@ -313,7 +313,7 @@ async function exportRules(): Promise<void> {
       action: "exportRules"
     })
 
-    if (response && response.success && response.data) {
+    if (response?.success && response.data) {
       const blob = new Blob([response.data], { type: "application/json" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -367,7 +367,7 @@ async function handleFileImport(event: Event): Promise<void> {
       replaceExisting
     })
 
-    if (response && response.success) {
+    if (response?.success) {
       await loadCustomRules()
 
       const message =
@@ -382,7 +382,7 @@ async function handleFileImport(event: Event): Promise<void> {
     }
   } catch (error) {
     console.error("Error importing rules:", error)
-    alert("Failed to import rules: " + (error as Error).message)
+    alert(`Failed to import rules: ${(error as Error).message}`)
   }
 }
 
@@ -452,7 +452,7 @@ groupByToggleOptions.forEach(option => {
 
 // Minimum tabs input event listener
 minimumTabsInput.addEventListener("change", event => {
-  const value = parseInt((event.target as HTMLInputElement).value) || 1
+  const value = parseInt((event.target as HTMLInputElement).value, 10) || 1
   const clampedValue = Math.max(1, Math.min(10, value))
   ;(event.target as HTMLInputElement).value = String(clampedValue)
   sendMessage({ action: "setMinimumTabsForGroup", minimumTabs: clampedValue })

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
-import { urlPatternMatcher, PATTERN_TYPES } from "../utils/UrlPatternMatcher"
+import { describe, expect, it } from "vitest"
 import type { PatternType } from "../utils/UrlPatternMatcher"
+import { PATTERN_TYPES, urlPatternMatcher } from "../utils/UrlPatternMatcher"
 
 describe("UrlPatternMatcher", () => {
   describe("detectPatternType", () => {
@@ -264,12 +264,18 @@ describe("UrlPatternMatcher", () => {
 
   describe("match - middle wildcard", () => {
     it("should match middle wildcard pattern", () => {
-      const result = urlPatternMatcher.match("https://prefix-test.example.com", "prefix-*.example.com")
+      const result = urlPatternMatcher.match(
+        "https://prefix-test.example.com",
+        "prefix-*.example.com"
+      )
       expect(result.matched).toBe(true)
     })
 
     it("should not match middle wildcard with wrong suffix", () => {
-      const result = urlPatternMatcher.match("https://prefix-test.other.com", "prefix-*.example.com")
+      const result = urlPatternMatcher.match(
+        "https://prefix-test.other.com",
+        "prefix-*.example.com"
+      )
       expect(result.matched).toBe(false)
     })
   })
@@ -286,7 +292,10 @@ describe("UrlPatternMatcher", () => {
     })
 
     it("should match path with ** wildcard", () => {
-      const result = urlPatternMatcher.match("https://example.com/api/v1/users", "example.com/api/**/users")
+      const result = urlPatternMatcher.match(
+        "https://example.com/api/v1/users",
+        "example.com/api/**/users"
+      )
       expect(result.matched).toBe(true)
     })
   })
@@ -324,11 +333,9 @@ describe("UrlPatternMatcher", () => {
 
   describe("match - group name generation", () => {
     it("should use groupNameTemplate when provided", () => {
-      const result = urlPatternMatcher.match(
-        "https://blog.example.com",
-        "{section}.example.com",
-        { groupNameTemplate: "Site: {section}" }
-      )
+      const result = urlPatternMatcher.match("https://blog.example.com", "{section}.example.com", {
+        groupNameTemplate: "Site: {section}"
+      })
       expect(result.matched).toBe(true)
       expect(result.groupName).toBe("Site: blog")
     })
@@ -455,10 +462,7 @@ describe("UrlPatternMatcher", () => {
   describe("parseVariableSpec", () => {
     it("should parse variable with default type", () => {
       // Test internal method through segment extraction
-      const result = urlPatternMatcher.match(
-        "https://testuser.example.com",
-        "{user}.example.com"
-      )
+      const result = urlPatternMatcher.match("https://testuser.example.com", "{user}.example.com")
       expect(result.matched).toBe(true)
       expect(result.extractedValues.user).toBe("testuser")
     })

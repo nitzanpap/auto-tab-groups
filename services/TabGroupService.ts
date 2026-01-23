@@ -4,12 +4,12 @@
  */
 
 import type { Browser } from "wxt/browser"
-import { tabGroupState } from "./TabGroupState"
-import { rulesService, type MatchedRule } from "./RulesService"
-import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
-import { getRandomTabGroupColor } from "../utils/Constants"
-import { getGroupColor, updateGroupColor, groupColorMapping } from "../utils/storage"
 import type { CustomRule, TabGroupColor } from "../types"
+import { getRandomTabGroupColor } from "../utils/Constants"
+import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
+import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/storage"
+import { type MatchedRule, rulesService } from "./RulesService"
+import { tabGroupState } from "./TabGroupState"
 
 /**
  * Collapse state result

@@ -9,28 +9,26 @@
  * - Subdomain mode
  */
 
-import { test, expect, chromium, type BrowserContext, type Page } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
 import {
-  getExtensionId,
-  openPopup,
+  closeTestTabs,
   createTab,
-  enableAutoGroup,
   disableAutoGroup,
-  ungroupAllTabs,
-  waitForGroup,
-  waitForTabInGroup,
-  waitForTabUngrouped,
-  waitForGroupCount,
+  enableAutoGroup,
+  getExtensionId,
   getTabGroups,
   getTabs,
-  setGroupByMode,
+  openPopup,
   pinTab,
-  unpinTab,
-  closeTestTabs,
+  setGroupByMode,
   setMinimumTabs,
-  TEST_URLS
+  TEST_URLS,
+  ungroupAllTabs,
+  unpinTab,
+  waitForGroup,
+  waitForTabInGroup
 } from "./helpers/extension-helpers"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -100,7 +98,7 @@ test.describe("Tab Grouping by Domain", () => {
       t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
     )
     expect(exampleTabs.length).toBe(3)
-    expect(exampleTabs.every(t => t.groupId === exampleGroup!.id)).toBe(true)
+    expect(exampleTabs.every(t => t.groupId === exampleGroup?.id)).toBe(true)
 
     // Cleanup
     await tab1.close()
@@ -131,9 +129,9 @@ test.describe("Tab Grouping by Domain", () => {
 
     expect(exampleTab).toBeDefined()
     expect(httpbinTab).toBeDefined()
-    expect(exampleTab!.groupId).not.toBe(httpbinTab!.groupId)
-    expect(exampleTab!.groupId).not.toBe(-1)
-    expect(httpbinTab!.groupId).not.toBe(-1)
+    expect(exampleTab?.groupId).not.toBe(httpbinTab?.groupId)
+    expect(exampleTab?.groupId).not.toBe(-1)
+    expect(httpbinTab?.groupId).not.toBe(-1)
 
     // Cleanup
     await tab1.close()
@@ -187,7 +185,7 @@ test.describe("Tab Grouping by Domain", () => {
     const tabs = await getTabs(popupPage)
     const pinnedTab = tabs.find(t => t.url.includes("example.com") && t.pinned)
     expect(pinnedTab).toBeDefined()
-    expect(pinnedTab!.groupId).toBe(-1)
+    expect(pinnedTab?.groupId).toBe(-1)
 
     // Unpin for cleanup
     await unpinTab(popupPage, "example.com")
@@ -215,7 +213,7 @@ test.describe("Tab Grouping by Domain", () => {
 
     expect(apiGroup).toBeDefined()
     expect(docsGroup).toBeDefined()
-    expect(apiGroup!.id).not.toBe(docsGroup!.id)
+    expect(apiGroup?.id).not.toBe(docsGroup?.id)
 
     // Cleanup
     await tab1.close()

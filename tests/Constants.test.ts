@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 import {
-  TAB_GROUP_COLORS,
-  RULE_COLORS,
-  getRandomTabGroupColor,
   getColorInfo,
-  isValidColor
+  getRandomTabGroupColor,
+  isValidColor,
+  RULE_COLORS,
+  TAB_GROUP_COLORS
 } from "../utils/Constants"
 
 describe("Constants", () => {

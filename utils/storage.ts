@@ -5,11 +5,11 @@
 
 import { storage } from "wxt/utils/storage"
 import type {
-  StorageSchema,
   CustomRulesMapping,
-  GroupColorMapping,
   GroupByMode,
+  GroupColorMapping,
   RuleMatchingMode,
+  StorageSchema,
   TabGroupColor
 } from "../types"
 import { DEFAULT_STATE } from "../types/storage"

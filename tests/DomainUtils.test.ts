@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 import {
   extractDomain,
   getDomainDisplayName,
-  validateStrictDomain,
-  isIPAddress
+  isIPAddress,
+  validateStrictDomain
 } from "../utils/DomainUtils"
 
 describe("DomainUtils", () => {
@@ -181,7 +181,7 @@ describe("DomainUtils", () => {
     })
 
     it("should reject domain exceeding max length", () => {
-      const longDomain = "a".repeat(250) + ".com"
+      const longDomain = `${"a".repeat(250)}.com`
       const result = validateStrictDomain(longDomain)
       expect(result.isValid).toBe(false)
       expect(result.error).toBe("Domain too long (max 253 characters)")

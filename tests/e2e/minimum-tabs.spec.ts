@@ -7,27 +7,24 @@
  * - Ungroups when below threshold after tab close
  */
 
-import { test, expect, chromium, type BrowserContext, type Page } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
 import {
-  getExtensionId,
-  openPopup,
+  closeTestTabs,
   createTab,
-  enableAutoGroup,
   disableAutoGroup,
-  ungroupAllTabs,
-  waitForGroup,
-  waitForTabInGroup,
-  waitForTabUngrouped,
-  waitForNoGroups,
+  enableAutoGroup,
+  getExtensionId,
+  getMinimumTabs,
   getTabGroups,
   getTabs,
-  closeTestTabs,
-  setMinimumTabs,
-  getMinimumTabs,
+  openPopup,
   setGroupByMode,
-  TEST_URLS
+  setMinimumTabs,
+  TEST_URLS,
+  ungroupAllTabs,
+  waitForGroup
 } from "./helpers/extension-helpers"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -107,134 +104,135 @@ test.afterEach(async () => {
 // TODO: These tests have a Playwright context isolation issue that needs investigation.
 // The browser context closes unexpectedly between beforeEach and test body.
 // The minimum tabs threshold functionality is partially tested by other test suites.
-test.describe.skip("Minimum Tabs Threshold", () => {
-  // Note: The extension strips TLDs from domain names for group titles
-  // e.g., "example.com" -> "example"
+test.describe
+  .skip("Minimum Tabs Threshold", () => {
+    // Note: The extension strips TLDs from domain names for group titles
+    // e.g., "example.com" -> "example"
 
-  test("does not group tabs when below threshold", async () => {
-    // Set threshold to 3
-    await setMinimumTabs(popupPage, 3)
+    test("does not group tabs when below threshold", async () => {
+      // Set threshold to 3
+      await setMinimumTabs(popupPage, 3)
 
-    // Verify threshold is set
-    const threshold = await getMinimumTabs(popupPage)
-    expect(threshold).toBe(3)
+      // Verify threshold is set
+      const threshold = await getMinimumTabs(popupPage)
+      expect(threshold).toBe(3)
 
-    await enableAutoGroup(popupPage)
+      await enableAutoGroup(popupPage)
 
-    // Create only 2 tabs (below threshold of 3)
-    const tab1 = await createTab(context, TEST_URLS.domain1)
-    const tab2 = await createTab(context, TEST_URLS.domain1Page2)
+      // Create only 2 tabs (below threshold of 3)
+      const tab1 = await createTab(context, TEST_URLS.domain1)
+      const tab2 = await createTab(context, TEST_URLS.domain1Page2)
 
-    // Wait to ensure no grouping happens
-    await popupPage.waitForTimeout(1000)
+      // Wait to ensure no grouping happens
+      await popupPage.waitForTimeout(1000)
 
-    // Verify no groups were created
-    const groups = await getTabGroups(popupPage)
-    expect(groups.length).toBe(0)
+      // Verify no groups were created
+      const groups = await getTabGroups(popupPage)
+      expect(groups.length).toBe(0)
 
-    // Verify tabs are ungrouped
-    const tabs = await getTabs(popupPage)
-    const exampleTabs = tabs.filter(
-      t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
-    )
-    expect(exampleTabs.length).toBe(2)
-    expect(exampleTabs.every(t => t.groupId === -1)).toBe(true)
-
-    // Cleanup
-    await tab1.close()
-    await tab2.close()
-  })
-
-  test("groups tabs when threshold is met", async () => {
-    // Set threshold to 3
-    await setMinimumTabs(popupPage, 3)
-    await enableAutoGroup(popupPage)
-
-    // Create 2 tabs (below threshold)
-    const tab1 = await createTab(context, TEST_URLS.domain1)
-    const tab2 = await createTab(context, TEST_URLS.domain1Page2)
-
-    // Wait and verify no groups yet
-    await popupPage.waitForTimeout(500)
-    let groups = await getTabGroups(popupPage)
-    expect(groups.length).toBe(0)
-
-    // Create 3rd tab (meets threshold)
-    const tab3 = await createTab(context, TEST_URLS.domain1Page3)
-
-    // Now grouping should happen (TLD stripped)
-    await waitForGroup(popupPage, "example")
-
-    // Verify group was created
-    groups = await getTabGroups(popupPage)
-    expect(groups.length).toBe(1)
-    expect(groups[0].title).toBe("example")
-
-    // Verify all 3 tabs are in the group
-    const tabs = await getTabs(popupPage)
-    const exampleTabs = tabs.filter(
-      t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
-    )
-    expect(exampleTabs.length).toBe(3)
-    expect(exampleTabs.every(t => t.groupId === groups[0].id)).toBe(true)
-
-    // Cleanup
-    await tab1.close()
-    await tab2.close()
-    await tab3.close()
-  })
-
-  test("ungroups tabs when count drops below threshold after tab close", async () => {
-    // Set threshold to 3
-    await setMinimumTabs(popupPage, 3)
-    await enableAutoGroup(popupPage)
-
-    // Create 3 tabs to meet threshold
-    const tab1 = await createTab(context, TEST_URLS.domain1)
-    const tab2 = await createTab(context, TEST_URLS.domain1Page2)
-    const tab3 = await createTab(context, TEST_URLS.domain1Page3)
-
-    // Wait for grouping (TLD stripped)
-    await waitForGroup(popupPage, "example")
-
-    // Verify all tabs are grouped
-    let groups = await getTabGroups(popupPage)
-    expect(groups.length).toBe(1)
-
-    const groupId = groups[0].id
-    let tabs = await getTabs(popupPage)
-    const groupedTabs = tabs.filter(t => t.groupId === groupId)
-    expect(groupedTabs.length).toBe(3)
-
-    // Close one tab (drops below threshold)
-    await tab3.close()
-
-    // Wait for potential regrouping
-    await popupPage.waitForTimeout(1000)
-
-    // Note: The extension may or may not auto-ungroup based on implementation
-    // This test verifies the expected behavior when below threshold
-    // Check current state - if threshold enforcement is active, tabs should be ungrouped
-    groups = await getTabGroups(popupPage)
-    tabs = await getTabs(popupPage)
-
-    const exampleTabs = tabs.filter(
-      t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
-    )
-
-    // If the extension enforces threshold on tab removal, there should be no groups
-    // If it only enforces on creation, the group may persist
-    // This test documents the actual behavior
-    if (groups.length === 0) {
-      // Threshold enforcement on removal is active
+      // Verify tabs are ungrouped
+      const tabs = await getTabs(popupPage)
+      const exampleTabs = tabs.filter(
+        t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
+      )
+      expect(exampleTabs.length).toBe(2)
       expect(exampleTabs.every(t => t.groupId === -1)).toBe(true)
-    } else {
-      // Group persists even below threshold (only enforced on creation)
-      expect(groups[0].title).toBe("example")
-    }
 
-    // Cleanup
-    await tab1.close()
-    await tab2.close()
+      // Cleanup
+      await tab1.close()
+      await tab2.close()
+    })
+
+    test("groups tabs when threshold is met", async () => {
+      // Set threshold to 3
+      await setMinimumTabs(popupPage, 3)
+      await enableAutoGroup(popupPage)
+
+      // Create 2 tabs (below threshold)
+      const tab1 = await createTab(context, TEST_URLS.domain1)
+      const tab2 = await createTab(context, TEST_URLS.domain1Page2)
+
+      // Wait and verify no groups yet
+      await popupPage.waitForTimeout(500)
+      let groups = await getTabGroups(popupPage)
+      expect(groups.length).toBe(0)
+
+      // Create 3rd tab (meets threshold)
+      const tab3 = await createTab(context, TEST_URLS.domain1Page3)
+
+      // Now grouping should happen (TLD stripped)
+      await waitForGroup(popupPage, "example")
+
+      // Verify group was created
+      groups = await getTabGroups(popupPage)
+      expect(groups.length).toBe(1)
+      expect(groups[0].title).toBe("example")
+
+      // Verify all 3 tabs are in the group
+      const tabs = await getTabs(popupPage)
+      const exampleTabs = tabs.filter(
+        t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
+      )
+      expect(exampleTabs.length).toBe(3)
+      expect(exampleTabs.every(t => t.groupId === groups[0].id)).toBe(true)
+
+      // Cleanup
+      await tab1.close()
+      await tab2.close()
+      await tab3.close()
+    })
+
+    test("ungroups tabs when count drops below threshold after tab close", async () => {
+      // Set threshold to 3
+      await setMinimumTabs(popupPage, 3)
+      await enableAutoGroup(popupPage)
+
+      // Create 3 tabs to meet threshold
+      const tab1 = await createTab(context, TEST_URLS.domain1)
+      const tab2 = await createTab(context, TEST_URLS.domain1Page2)
+      const tab3 = await createTab(context, TEST_URLS.domain1Page3)
+
+      // Wait for grouping (TLD stripped)
+      await waitForGroup(popupPage, "example")
+
+      // Verify all tabs are grouped
+      let groups = await getTabGroups(popupPage)
+      expect(groups.length).toBe(1)
+
+      const groupId = groups[0].id
+      let tabs = await getTabs(popupPage)
+      const groupedTabs = tabs.filter(t => t.groupId === groupId)
+      expect(groupedTabs.length).toBe(3)
+
+      // Close one tab (drops below threshold)
+      await tab3.close()
+
+      // Wait for potential regrouping
+      await popupPage.waitForTimeout(1000)
+
+      // Note: The extension may or may not auto-ungroup based on implementation
+      // This test verifies the expected behavior when below threshold
+      // Check current state - if threshold enforcement is active, tabs should be ungrouped
+      groups = await getTabGroups(popupPage)
+      tabs = await getTabs(popupPage)
+
+      const exampleTabs = tabs.filter(
+        t => t.url.includes("example.com") && !t.url.includes("chrome-extension")
+      )
+
+      // If the extension enforces threshold on tab removal, there should be no groups
+      // If it only enforces on creation, the group may persist
+      // This test documents the actual behavior
+      if (groups.length === 0) {
+        // Threshold enforcement on removal is active
+        expect(exampleTabs.every(t => t.groupId === -1)).toBe(true)
+      } else {
+        // Group persists even below threshold (only enforced on creation)
+        expect(groups[0].title).toBe("example")
+      }
+
+      // Cleanup
+      await tab1.close()
+      await tab2.close()
+    })
   })
-})

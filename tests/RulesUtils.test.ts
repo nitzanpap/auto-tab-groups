@@ -1,21 +1,21 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
+import type { CustomRule, RuleData } from "../types"
 import {
+  createSafeRule,
+  formatDomainsDisplay,
   isIPv4Address,
   isIPv4Pattern,
-  validateIPv4Pattern,
-  matchIPv4,
-  validateHostPattern,
-  validateDomainPattern,
-  validatePathPattern,
   isValidPathSegment,
-  validateRuleName,
+  matchIPv4,
   parseDomainsText,
   sanitizePatterns,
-  formatDomainsDisplay,
+  validateDomainPattern,
+  validateHostPattern,
+  validateIPv4Pattern,
+  validatePathPattern,
   validateRuleData,
-  createSafeRule
+  validateRuleName
 } from "../utils/RulesUtils"
-import type { RuleData, CustomRule } from "../types"
 
 describe("RulesUtils", () => {
   describe("isIPv4Address", () => {
@@ -300,7 +300,7 @@ describe("RulesUtils", () => {
     })
 
     it("should reject too long path", () => {
-      const result = validatePathPattern("/" + "a".repeat(101))
+      const result = validatePathPattern(`/${"a".repeat(101)}`)
       expect(result.isValid).toBe(false)
       expect(result.error).toBe("Path pattern too long (max 100 characters)")
     })

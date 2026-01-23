@@ -8,7 +8,7 @@
  * - All operations must ensure state is loaded from storage before proceeding
  */
 
-import { tabGroupState, tabGroupService, rulesService } from "../services"
+import { rulesService, tabGroupService, tabGroupState } from "../services"
 import { loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -279,10 +279,7 @@ export default defineBackground(() => {
         console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tabId)
-      } else if (
-        Object.prototype.hasOwnProperty.call(changeInfo, "pinned") &&
-        changeInfo.pinned === false
-      ) {
+      } else if (Object.hasOwn(changeInfo, "pinned") && changeInfo.pinned === false) {
         console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`)
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tabId)

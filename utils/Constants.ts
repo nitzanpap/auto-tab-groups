@@ -2,7 +2,7 @@
  * Constants used throughout the Auto Tab Groups extension
  */
 
-import type { TabGroupColor, RuleColorInfo } from "../types"
+import type { RuleColorInfo, TabGroupColor } from "../types"
 
 /**
  * Available colors for tab groups in Chrome/Firefox

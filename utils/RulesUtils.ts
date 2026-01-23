@@ -2,9 +2,9 @@
  * Utility functions for custom rules validation and processing
  */
 
-import type { PatternValidationResult, RuleData, CustomRule, RuleValidationResult } from "../types"
+import type { CustomRule, PatternValidationResult, RuleData, RuleValidationResult } from "../types"
+import { isValidColor } from "./Constants"
 import { urlPatternMatcher } from "./UrlPatternMatcher"
-import { getColorInfo, isValidColor } from "./Constants"
 
 /**
  * Checks if a string is an IPv4 address

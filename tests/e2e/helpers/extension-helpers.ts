@@ -215,13 +215,13 @@ export async function waitForTabInGroup(
     const tab = tabs.find(t => t.url.includes(tabUrl))
     expect(tab).toBeDefined()
 
-    if (tab!.groupId === -1) {
+    if (tab?.groupId === -1) {
       throw new Error(`Tab ${tabUrl} is not in any group`)
     }
 
-    const group = groups.find(g => g.id === tab!.groupId)
+    const group = groups.find(g => g.id === tab?.groupId)
     expect(group).toBeDefined()
-    expect(group!.title).toBe(expectedGroupTitle)
+    expect(group?.title).toBe(expectedGroupTitle)
   }).toPass({ timeout })
 }
 
@@ -237,7 +237,7 @@ export async function waitForTabUngrouped(
     const tabs = await getTabs(popupPage)
     const tab = tabs.find(t => t.url.includes(tabUrl))
     expect(tab).toBeDefined()
-    expect(tab!.groupId).toBe(-1)
+    expect(tab?.groupId).toBe(-1)
   }).toPass({ timeout })
 }
 
@@ -442,7 +442,7 @@ export async function getCollapseState(popupPage: Page): Promise<boolean> {
 export async function waitForGroupsCollapsed(popupPage: Page, timeout = 5000): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
-    const nonActiveGroups = groups.filter(g => !g.collapsed === false)
+    const _nonActiveGroups = groups.filter(g => !g.collapsed === false)
     expect(groups.every(g => g.collapsed)).toBe(true)
   }).toPass({ timeout })
 }

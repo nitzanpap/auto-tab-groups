@@ -7,27 +7,25 @@
  * - Toggle collapse state
  */
 
-import { test, expect, chromium, type BrowserContext, type Page } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
 import {
-  getExtensionId,
-  openPopup,
-  createTab,
-  enableAutoGroup,
-  disableAutoGroup,
-  ungroupAllTabs,
-  waitForGroup,
-  waitForGroupCount,
-  getTabGroups,
   closeTestTabs,
-  setMinimumTabs,
-  setGroupByMode,
   collapseAllGroups,
+  createTab,
+  disableAutoGroup,
+  enableAutoGroup,
   expandAllGroups,
+  getExtensionId,
+  getTabGroups,
+  openPopup,
+  setGroupByMode,
+  setMinimumTabs,
+  TEST_URLS,
   toggleCollapseGroups,
-  getCollapseState,
-  TEST_URLS
+  ungroupAllTabs,
+  waitForGroup
 } from "./helpers/extension-helpers"
 
 const __filename = fileURLToPath(import.meta.url)

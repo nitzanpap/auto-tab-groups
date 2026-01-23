@@ -176,7 +176,7 @@ class UrlPatternMatcher {
       if (!baseDomain || !baseDomain.includes(".")) return false
 
       // Check for exact match or subdomain match
-      return cleanDomain === baseDomain || cleanDomain.endsWith("." + baseDomain)
+      return cleanDomain === baseDomain || cleanDomain.endsWith(`.${baseDomain}`)
     }
 
     // Handle middle wildcards

@@ -8,30 +8,26 @@
  * - Delete rule regroups tabs by domain
  */
 
-import { test, expect, chromium, type BrowserContext, type Page } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
 import {
-  getExtensionId,
-  openPopup,
+  addCustomRule,
+  closeTestTabs,
   createTab,
-  enableAutoGroup,
+  deleteCustomRule,
   disableAutoGroup,
-  ungroupAllTabs,
-  groupAllTabs,
-  waitForGroup,
-  waitForTabInGroup,
-  waitForNoGroups,
+  enableAutoGroup,
+  getCustomRules,
+  getExtensionId,
   getTabGroups,
   getTabs,
-  closeTestTabs,
-  setMinimumTabs,
+  openPopup,
   setGroupByMode,
-  addCustomRule,
-  deleteCustomRule,
-  updateCustomRule,
-  getCustomRules,
-  TEST_URLS
+  setMinimumTabs,
+  TEST_URLS,
+  ungroupAllTabs,
+  waitForGroup
 } from "./helpers/extension-helpers"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -119,7 +115,7 @@ test.describe("Custom Rules", () => {
         !t.url.includes("chrome-extension")
     )
     expect(matchingTabs.length).toBe(2)
-    expect(matchingTabs.every(t => t.groupId === ruleGroup!.id)).toBe(true)
+    expect(matchingTabs.every(t => t.groupId === ruleGroup?.id)).toBe(true)
 
     // Verify no separate domain groups were created
     const exampleGroup = groups.find(g => g.title === "example")

@@ -4,10 +4,10 @@
  */
 
 import type { CustomRule, RuleData, RulesStats, TabGroupColor } from "../types"
-import { tabGroupState } from "./TabGroupState"
-import { urlPatternMatcher } from "../utils/UrlPatternMatcher"
-import { saveAllStorage } from "../utils/storage"
 import { isValidColor } from "../utils/Constants"
+import { saveAllStorage } from "../utils/storage"
+import { urlPatternMatcher } from "../utils/UrlPatternMatcher"
+import { tabGroupState } from "./TabGroupState"
 
 /**
  * Extended rule with match information
@@ -216,7 +216,7 @@ class RulesService {
     // Validate minimumTabs
     if (ruleData.minimumTabs !== null && ruleData.minimumTabs !== undefined) {
       const minTabs = Number(ruleData.minimumTabs)
-      if (isNaN(minTabs) || minTabs < 1 || minTabs > 10) {
+      if (Number.isNaN(minTabs) || minTabs < 1 || minTabs > 10) {
         errors.push("Minimum tabs must be a number between 1 and 10")
       }
     }

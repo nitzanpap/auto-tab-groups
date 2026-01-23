@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import { tabGroupState } from "../services/TabGroupState"
+import type { CustomRule } from "../types"
 import { DEFAULT_STATE } from "../types/storage"
-import type { CustomRule, StorageSchema } from "../types"
 
 describe("TabGroupState", () => {
   beforeEach(() => {

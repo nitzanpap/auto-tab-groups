@@ -8,29 +8,27 @@
  * - Ungroup all functionality
  */
 
-import { test, expect, chromium, type BrowserContext, type Page } from "@playwright/test"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
 import {
-  getExtensionId,
-  openPopup,
+  closeTestTabs,
   createTab,
-  enableAutoGroup,
   disableAutoGroup,
-  ungroupAllTabs,
-  groupAllTabs,
-  waitForGroup,
-  waitForTabInGroup,
-  waitForTabUngrouped,
-  waitForNoGroups,
-  waitForGroupCount,
+  enableAutoGroup,
+  getAutoGroupState,
+  getExtensionId,
   getTabGroups,
   getTabs,
-  closeTestTabs,
-  setMinimumTabs,
+  groupAllTabs,
+  openPopup,
   setGroupByMode,
-  getAutoGroupState,
-  TEST_URLS
+  setMinimumTabs,
+  TEST_URLS,
+  ungroupAllTabs,
+  waitForGroup,
+  waitForNoGroups,
+  waitForTabInGroup
 } from "./helpers/extension-helpers"
 
 const __filename = fileURLToPath(import.meta.url)

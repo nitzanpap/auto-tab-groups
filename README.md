@@ -118,31 +118,31 @@ The extension is built with [WXT](https://wxt.dev/) and TypeScript, supporting b
 ### Quick Start
 
 ```bash
-npm install
-npm run dev        # Start development server
+bun install
+bun run dev        # Start development server
 ```
 
 ### Build Commands
 
 | Command                 | Description                          |
 | ----------------------- | ------------------------------------ |
-| `npm run dev`           | Start WXT development server         |
-| `npm run dev:chrome`    | Development server for Chrome        |
-| `npm run dev:firefox`   | Development server for Firefox       |
-| `npm run build`         | Build production extension (Chrome)  |
-| `npm run build:firefox` | Build production extension (Firefox) |
-| `npm run zip`           | Create release zip (Chrome)          |
-| `npm run zip:firefox`   | Create release zip (Firefox)         |
-| `npm run typecheck`     | Run TypeScript type checking         |
-| `npm run test`          | Run unit tests (72+ tests)           |
-| `npm run lint`          | Run ESLint                           |
-| `npm run format`        | Format with Prettier                 |
+| `bun run dev`           | Start WXT development server         |
+| `bun run dev:chrome`    | Development server for Chrome        |
+| `bun run dev:firefox`   | Development server for Firefox       |
+| `bun run build`         | Build production extension (Chrome)  |
+| `bun run build:firefox` | Build production extension (Firefox) |
+| `bun run zip`           | Create release zip (Chrome)          |
+| `bun run zip:firefox`   | Create release zip (Firefox)         |
+| `bun run typecheck`     | Run TypeScript type checking         |
+| `bun run test`          | Run unit tests (272+ tests)          |
+| `bun run lint`          | Run Biome linter                     |
+| `bun run format`        | Format with Biome                    |
 
 ### Loading for Development
 
 **Chrome:**
 
-1. Run `npm run dev:chrome`
+1. Run `bun run dev:chrome`
 2. Go to `chrome://extensions/`
 3. Enable "Developer mode"
 4. Click "Load unpacked"
@@ -150,7 +150,7 @@ npm run dev        # Start development server
 
 **Firefox:**
 
-1. Run `npm run dev:firefox`
+1. Run `bun run dev:firefox`
 2. Go to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on"
 4. Select any file in `.output/firefox-mv3-dev/`
@@ -171,8 +171,8 @@ The project follows Test-Driven Development (TDD) principles with comprehensive 
 ### Running Tests
 
 ```bash
-npm test              # Run unit tests (72+ tests)
-npm run test:e2e      # Build extension and run E2E tests
+bun run test          # Run unit tests (272+ tests)
+bun run test:e2e      # Build extension and run E2E tests
 ```
 
 ### Unit Tests
@@ -183,9 +183,9 @@ Located in `tests/`, these test core utilities and business logic:
 - **`UrlPatternMatcher.test.ts`** (27 tests) - URL pattern matching, wildcards, validation
 
 ```bash
-npm test                    # Run all unit tests
-npm test -- --watch         # Watch mode during development
-npm test -- --coverage      # Generate coverage report
+bun run test                    # Run all unit tests
+bun run test -- --watch         # Watch mode during development
+bun run test -- --coverage      # Generate coverage report
 ```
 
 ### E2E Tests
@@ -197,7 +197,7 @@ Located in `tests/e2e/`, these test the extension in a real browser:
 E2E tests require building the extension first:
 
 ```bash
-npm run test:e2e            # Builds Chrome extension, then runs Playwright
+bun run test:e2e            # Builds Chrome extension, then runs Playwright
 ```
 
 **Note:** E2E tests run in headed mode (visible browser) since Chrome extension testing requires it.
@@ -264,7 +264,7 @@ auto-tab-groups/
 │   ├── RulesUtils.ts         # Rule validation helpers
 │   └── storage.ts            # WXT storage utilities
 ├── types/                    # TypeScript type definitions
-├── tests/                    # Unit tests (72+ tests)
+├── tests/                    # Unit tests (272+ tests)
 ├── public/                   # Static assets (icons)
 ├── docs/                     # Documentation
 ├── wxt.config.ts             # WXT configuration
@@ -393,8 +393,8 @@ This ensures that international users get proper domain grouping regardless of t
 2. Build the extension:
 
    ```bash
-   npm run zip          # Chrome
-   npm run zip:firefox  # Firefox
+   bun run zip          # Chrome
+   bun run zip:firefox  # Firefox
    ```
 
 3. Output files:

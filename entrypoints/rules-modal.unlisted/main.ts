@@ -37,7 +37,7 @@ async function loadExistingRule(): Promise<void> {
       action: "getCustomRules"
     })
 
-    if (response?.customRules && response.customRules[ruleId]) {
+    if (response?.customRules?.[ruleId]) {
       const rule = response.customRules[ruleId]
       ruleNameInput.value = rule.name
       rulePatternsInput.value = rule.domains.join("\n")
@@ -103,7 +103,7 @@ async function saveRule(event: Event): Promise<void> {
     }
   } catch (error) {
     console.error("Error saving rule:", error)
-    alert("Failed to save rule: " + (error as Error).message)
+    alert(`Failed to save rule: ${(error as Error).message}`)
   }
 }
 

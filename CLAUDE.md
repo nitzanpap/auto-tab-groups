@@ -11,45 +11,45 @@ Auto Tab Groups is a cross-browser extension (Chrome & Firefox) that automatical
 ### Development Setup
 
 ```bash
-npm install
+bun install
 ```
 
 ### Build Commands
 
 ```bash
-npm run build           # Build for both browsers
-npm run build:chrome    # Build for Chrome (.output/chrome-mv3/)
-npm run build:firefox   # Build for Firefox (.output/firefox-mv3/)
-npm run zip             # Create distribution zips
-npm run zip:chrome      # Create Chrome zip
-npm run zip:firefox     # Create Firefox zip
+bun run build           # Build for both browsers
+bun run build:chrome    # Build for Chrome (.output/chrome-mv3/)
+bun run build:firefox   # Build for Firefox (.output/firefox-mv3/)
+bun run zip             # Create distribution zips
+bun run zip:chrome      # Create Chrome zip
+bun run zip:firefox     # Create Firefox zip
 ```
 
 ### Development Mode
 
 ```bash
-npm run dev             # Start WXT dev server (default browser)
-npm run dev:chrome      # Start Chrome dev with hot reload
-npm run dev:firefox     # Start Firefox dev with hot reload (uses MV2)
+bun run dev             # Start WXT dev server (default browser)
+bun run dev:chrome      # Start Chrome dev with hot reload
+bun run dev:firefox     # Start Firefox dev with hot reload (uses MV2)
 ```
 
 ### Code Quality
 
 ```bash
-npm run lint            # Run ESLint
-npm run lint:fix        # Auto-fix ESLint issues
-npm run format          # Format with Prettier
-npm run format:check    # Check Prettier formatting
-npm run typecheck       # Run TypeScript type checking
-npm run code:check      # Run lint, format check, and typecheck
-npm run code:fix        # Fix lint and formatting issues
+bun run lint            # Run Biome linter
+bun run lint:fix        # Auto-fix Biome linting issues
+bun run format          # Format with Biome
+bun run format:check    # Check Biome formatting
+bun run typecheck       # Run TypeScript type checking
+bun run code:check      # Run Biome check and typecheck
+bun run code:fix        # Fix lint and formatting issues with Biome
 ```
 
 ### Testing
 
 ```bash
-npm test                # Run Vitest unit tests
-npm run test:e2e        # Build and run Playwright E2E tests
+bun test                # Run Vitest unit tests
+bun run test:e2e        # Build and run Playwright E2E tests
 ```
 
 ## Architecture Overview
@@ -147,7 +147,7 @@ Rules allow grouping multiple domains under a single named group:
 - Use `browser` global (provided by WXT) for cross-browser API calls
 - Group titles must be unique - handle conflicts appropriately
 - Minimum tabs threshold: Groups auto-create when threshold met, auto-disband when below
-- Always run `npm run code:check` after making changes
+- Always run `bun run code:check` after making changes
 - Firefox dev mode uses MV2 for hot reload support; production builds use MV3
 
 ## Firefox MV3 Dev Mode Limitation
