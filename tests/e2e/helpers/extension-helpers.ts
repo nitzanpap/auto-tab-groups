@@ -525,10 +525,7 @@ export async function setupCleanState(context: BrowserContext, extensionId: stri
 /**
  * Enable auto-collapse feature
  */
-export async function enableAutoCollapse(
-  popupPage: Page,
-  delayMs = 0
-): Promise<void> {
+export async function enableAutoCollapse(popupPage: Page, delayMs = 0): Promise<void> {
   await sendMessage(popupPage, "updateAutoCollapse", {
     autoCollapseEnabled: true,
     autoCollapseDelayMs: delayMs

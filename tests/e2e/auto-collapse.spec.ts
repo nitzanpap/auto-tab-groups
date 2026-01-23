@@ -268,7 +268,12 @@ test.describe("Auto-Collapse Feature", () => {
     const activeGroup = groups.find(g => g.id === activeTab?.groupId)
 
     if (activeGroup) {
-      console.log("Active group after activation:", activeGroup.title, "collapsed:", activeGroup.collapsed)
+      console.log(
+        "Active group after activation:",
+        activeGroup.title,
+        "collapsed:",
+        activeGroup.collapsed
+      )
       expect(activeGroup.collapsed).toBe(false)
     }
 

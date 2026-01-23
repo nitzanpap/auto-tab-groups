@@ -366,10 +366,11 @@ export default defineBackground(() => {
       const delayMs = tabGroupState.autoCollapseDelayMs
 
       if (delayMs === 0) {
-        // Immediate collapse
+        // Immediate mode - call directly without delay
+        // collapseOtherGroups queries for fresh active tab state
         await tabGroupService.collapseOtherGroups(activeInfo.tabId)
       } else {
-        // Delayed collapse
+        // Delayed mode - use the configured delay
         autoCollapseTimeoutId = setTimeout(async () => {
           await tabGroupService.collapseOtherGroups(activeInfo.tabId)
           autoCollapseTimeoutId = null
