@@ -27,11 +27,48 @@ function sendMessage<T = Record<string, unknown>>(message: Record<string, unknow
   })
 }
 
-// Escape HTML to prevent XSS
-function escapeHtml(text: string): string {
-  const div = document.createElement("div")
-  div.textContent = text
-  return div.innerHTML
+// DOM helper functions for safe rendering (no innerHTML)
+function createStatElement(value: number, label: string, isWarning = false): HTMLDivElement {
+  const stat = document.createElement("div")
+  stat.className = isWarning ? "stat warning" : "stat"
+
+  const statValue = document.createElement("span")
+  statValue.className = "stat-value"
+  statValue.textContent = String(value)
+
+  const statLabel = document.createElement("span")
+  statLabel.className = "stat-label"
+  statLabel.textContent = label
+
+  stat.appendChild(statValue)
+  stat.appendChild(statLabel)
+
+  return stat
+}
+
+function createPreviewRuleElement(rule: RuleData): HTMLDivElement {
+  const ruleDiv = document.createElement("div")
+  ruleDiv.className = "preview-rule"
+
+  const nameSpan = document.createElement("span")
+  nameSpan.className = "preview-rule-name"
+  nameSpan.textContent = rule.name || "Unnamed"
+
+  const domainsSpan = document.createElement("span")
+  domainsSpan.className = "preview-rule-domains"
+  domainsSpan.textContent = `${rule.domains?.length || 0} patterns`
+
+  ruleDiv.appendChild(nameSpan)
+  ruleDiv.appendChild(domainsSpan)
+
+  return ruleDiv
+}
+
+function createMoreRulesElement(additionalCount: number): HTMLDivElement {
+  const moreDiv = document.createElement("div")
+  moreDiv.className = "preview-more"
+  moreDiv.textContent = `...and ${additionalCount} more rules`
+  return moreDiv
 }
 
 // File handling
@@ -89,43 +126,24 @@ function displayPreview(rules: Record<string, RuleData>): void {
   const validRules = ruleArray.filter(r => r.name && r.domains?.length > 0)
   const invalidCount = ruleArray.length - validRules.length
 
-  // Stats
-  previewStats.innerHTML = `
-    <div class="stat">
-      <span class="stat-value">${validRules.length}</span>
-      <span class="stat-label">Valid Rules</span>
-    </div>
-    ${
-      invalidCount > 0
-        ? `
-    <div class="stat warning">
-      <span class="stat-value">${invalidCount}</span>
-      <span class="stat-label">Invalid (will be skipped)</span>
-    </div>
-    `
-        : ""
-    }
-  `
+  // Stats - using DOM manipulation instead of innerHTML
+  previewStats.replaceChildren()
+  previewStats.appendChild(createStatElement(validRules.length, "Valid Rules"))
 
-  // Rule list preview (show first 5)
+  if (invalidCount > 0) {
+    previewStats.appendChild(createStatElement(invalidCount, "Invalid (will be skipped)", true))
+  }
+
+  // Rule list preview (show first 5) - using DOM manipulation
+  previewList.replaceChildren()
   const previewRules = validRules.slice(0, 5)
-  previewList.innerHTML = previewRules
-    .map(
-      rule => `
-    <div class="preview-rule">
-      <span class="preview-rule-name">${escapeHtml(rule.name || "Unnamed")}</span>
-      <span class="preview-rule-domains">${rule.domains?.length || 0} patterns</span>
-    </div>
-  `
-    )
-    .join("")
+
+  for (const rule of previewRules) {
+    previewList.appendChild(createPreviewRuleElement(rule))
+  }
 
   if (validRules.length > 5) {
-    previewList.innerHTML += `
-      <div class="preview-more">
-        ...and ${validRules.length - 5} more rules
-      </div>
-    `
+    previewList.appendChild(createMoreRulesElement(validRules.length - 5))
   }
 }
 
