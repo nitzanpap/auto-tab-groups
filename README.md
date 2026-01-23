@@ -4,9 +4,8 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 📦 Downloads
 
-🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**  
+🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**
 🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
-💻 **Developer Builds**: See [`extension/`](extension/) folder for latest builds
 
 ## Example of tab groups in the navigation bar
 
@@ -18,10 +17,10 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 🌐 Browser Compatibility
 
-| Browser | Version | Status |
-|---------|---------|--------|
-| Firefox | 139+ | ✅ Fully supported (Manifest V3, Tab Groups API) |
-| Chrome | Latest | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Browser | Version | Status                                           |
+| ------- | ------- | ------------------------------------------------ |
+| Firefox | 139+    | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Chrome  | Latest  | ✅ Fully supported (Manifest V3, Tab Groups API) |
 
 **Note**: Firefox 139+ required for full Tab Groups API support and enhanced features.
 
@@ -44,7 +43,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 - Automatically groups tabs by their domain/subdomain
 - Smart domain name display (e.g., "github" instead of "www.github.com")
-- **Country code second-level domain (ccSLD) support** - Properly handles domains like `dailymail.co.uk`, `example.co.uk`, `abc.net.au`, etc.
+- **Country code second-level domain (ccSLD) support** - Properly handles domains like `calendar-uk.co.uk`, `example.co.uk`, `abc.net.au`, etc.
 - Special handling for IP addresses, localhost, and .local domains
 - Real-time group updates as you browse
 
@@ -114,108 +113,165 @@ The AI grouping feature is currently under active development with:
 
 ## 🛠️ Development
 
-The extension is built with a unified codebase supporting both Chrome and Firefox:
+The extension is built with [WXT](https://wxt.dev/) and TypeScript, supporting both Chrome and Firefox from a unified codebase.
 
 ### Quick Start
 
 ```bash
-cd extension/
-npm install
+bun install
+bun run dev        # Start development server
 ```
 
 ### Build Commands
 
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `bun run dev`           | Start WXT development server         |
+| `bun run dev:chrome`    | Development server for Chrome        |
+| `bun run dev:firefox`   | Development server for Firefox       |
+| `bun run build`         | Build production extension (Chrome)  |
+| `bun run build:firefox` | Build production extension (Firefox) |
+| `bun run zip`           | Create release zip (Chrome)          |
+| `bun run zip:firefox`   | Create release zip (Firefox)         |
+| `bun run typecheck`     | Run TypeScript type checking         |
+| `bun run test`          | Run unit tests (272+ tests)          |
+| `bun run lint`          | Run Biome linter                     |
+| `bun run format`        | Format with Biome                    |
+
+### Loading for Development
+
+**Chrome:**
+
+1. Run `bun run dev:chrome`
+2. Go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked"
+5. Select `.output/chrome-mv3-dev/`
+
+**Firefox:**
+
+1. Run `bun run dev:firefox`
+2. Go to `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on"
+4. Select any file in `.output/firefox-mv3-dev/`
+
+---
+
+## 🧪 Testing
+
+The project follows Test-Driven Development (TDD) principles with comprehensive test coverage across unit and end-to-end tests.
+
+### Test Stack
+
+| Tool       | Purpose                        |
+| ---------- | ------------------------------ |
+| Vitest     | Unit tests (fast, Vite-native) |
+| Playwright | E2E browser extension testing  |
+
+### Running Tests
+
 ```bash
-# Build for Chrome
-npm run build:chrome
-
-# Build for Firefox  
-npm run build:firefox
-
-# Build for both browsers
-npm run build
-
-# Development mode
-npm run dev:chrome    # Sets up for Chrome development
-npm run dev:firefox   # Sets up for Firefox development
+bun run test          # Run unit tests (272+ tests)
+bun run test:e2e      # Build extension and run E2E tests
 ```
 
-### Project Structure
+### Unit Tests
 
-```sh
-extension/
-├── src/                          # Single source code base
-│   ├── manifest.chrome.json     # Chrome Manifest V3
-│   ├── manifest.firefox.json    # Firefox Manifest V3
-│   ├── utils/BrowserAPI.js       # Cross-browser compatibility layer
-│   └── ...                      # Shared components
-├── package.json                  # Build scripts for both browsers
-└── README.md                     # Detailed development docs
+Located in `tests/`, these test core utilities and business logic:
+
+- **`DomainUtils.test.ts`** (45 tests) - Domain extraction, ccSLD handling, edge cases
+- **`UrlPatternMatcher.test.ts`** (27 tests) - URL pattern matching, wildcards, validation
+
+```bash
+bun run test                    # Run all unit tests
+bun run test -- --watch         # Watch mode during development
+bun run test -- --coverage      # Generate coverage report
 ```
 
-For detailed development information, see [`extension/README.md`](extension/README.md).
+### E2E Tests
+
+Located in `tests/e2e/`, these test the extension in a real browser:
+
+- **`extension.spec.ts`** - Extension loading, popup UI, toggle functionality, sidebar
+
+E2E tests require building the extension first:
+
+```bash
+bun run test:e2e            # Builds Chrome extension, then runs Playwright
+```
+
+**Note:** E2E tests run in headed mode (visible browser) since Chrome extension testing requires it.
+
+### Test Coverage Goals
+
+- **Unit tests**: Core utilities at 80%+ coverage
+- **E2E tests**: Critical user flows (popup, toggle, rules)
+
+### Writing New Tests
+
+Follow TDD workflow:
+
+1. **Write test first** (RED) - Define expected behavior
+2. **Run test** - Verify it fails
+3. **Implement code** (GREEN) - Minimal code to pass
+4. **Refactor** (IMPROVE) - Clean up while keeping tests green
+
+Example unit test pattern:
+
+```typescript
+import { describe, it, expect } from "vitest"
+import { extractDomain } from "../utils/DomainUtils"
+
+describe("extractDomain", () => {
+  it("extracts domain from standard URL", () => {
+    expect(extractDomain("https://github.com/user/repo")).toBe("github")
+  })
+
+  it("handles ccSLD domains correctly", () => {
+    expect(extractDomain("https://example.co.uk/page")).toBe("example")
+  })
+})
+```
 
 ---
 
 ## 📦 Project Structure
 
 ```text
-extension/
-├── src/                          # Single source code base
-│   ├── manifest.chrome.json     # Chrome Manifest V3
-│   ├── manifest.firefox.json    # Firefox Manifest V3
-│   ├── background.js             # Service worker (both browsers)
-│   ├── utils/
-│   │   ├── BrowserAPI.js        # Cross-browser compatibility layer
-│   │   ├── DomainUtils.js       # Domain processing utilities
-│   │   └── RulesUtils.js        # Custom rules utilities
-│   ├── config/
-│   │   └── StorageManager.js    # Cross-browser storage handling
-│   ├── services/
-│   │   ├── TabGroupService.js   # Tab grouping logic
-│   │   └── RulesService.js      # Custom rules management
-│   ├── state/
-│   │   └── TabGroupState.js     # State management
-│   ├── public/
-│   │   ├── popup.html           # Extension popup
-│   │   ├── popup.js             # Popup logic
-│   │   ├── popup.css            # Styling
-│   │   ├── rules-modal.html     # Custom rules modal
-│   │   ├── rules-modal.js       # Rules modal logic
-│   │   └── sidebar.html         # Side panel/sidebar
-│   └── assets/
-│       ├── icon16.png           # Icons (PNG for compatibility)
-│       ├── icon48.png
-│       └── icon128.png
-├── package.json                  # Build scripts for both browsers
-└── README.md                     # Detailed development docs
-└── docs/                         # Documentation for AI features and implementation plans
+auto-tab-groups/
+├── entrypoints/              # Extension entry points (WXT)
+│   ├── background.ts         # Service worker
+│   ├── popup/                # Popup UI
+│   │   ├── index.html
+│   │   ├── main.ts
+│   │   └── style.css
+│   ├── sidebar/              # Sidebar UI (Chrome side panel / Firefox sidebar)
+│   │   ├── index.html
+│   │   └── main.ts
+│   └── rules-modal.unlisted/ # Rule creation/editing modal
+│       ├── index.html
+│       ├── main.ts
+│       └── style.css
+├── services/                 # Business logic
+│   ├── TabGroupService.ts    # Tab grouping logic
+│   ├── RulesService.ts       # Custom rules management
+│   ├── TabGroupState.ts      # State management
+│   └── index.ts
+├── utils/                    # Utilities
+│   ├── DomainUtils.ts        # Domain processing with ccSLD support
+│   ├── UrlPatternMatcher.ts  # URL pattern matching
+│   ├── Constants.ts          # Tab group colors
+│   ├── RulesUtils.ts         # Rule validation helpers
+│   └── storage.ts            # WXT storage utilities
+├── types/                    # TypeScript type definitions
+├── tests/                    # Unit tests (272+ tests)
+├── public/                   # Static assets (icons)
+├── docs/                     # Documentation
+├── wxt.config.ts             # WXT configuration
+├── vitest.config.ts          # Vitest configuration
+├── tsconfig.json             # TypeScript configuration
+└── package.json
 ```
-
----
-
-## 🛠 Development Setup
-
-### Extension
-
-1. Install dependencies:
-
-    ```bash
-    npm install
-    ```
-
-2. Available scripts:
-
-- `npm start`: Run the extension in Firefox for development
-- `npm run build`: Build the extension and generate .xpi file
-- `npm run format`: Format code using Prettier
-- `npm run lint`: Run ESLint checks
-
-### Loading Extension for Development
-
-1. Open Firefox and go to: `about:debugging`
-2. Click **"This Firefox"** → **"Load Temporary Add-on..."**
-3. Select the `manifest.json` file from the `src` directory
 
 ---
 
@@ -238,8 +294,8 @@ The extension works automatically in the background, grouping tabs by domain wit
 Create named tab groups that combine multiple domains under a single group:
 
 1. Open the extension popup
-2. Click "🔧 Custom Rules" to expand the section
-3. Click "➕ Add New Rule" to create your first rule
+2. Click "Custom Rules" to expand the section
+3. Click "Add New Rule" to create your first rule
 4. Enter a group name (or let the system suggest one)
 5. **Quick add from current tabs**: Select domains from your currently open tabs instead of typing them manually
 6. Choose a color and save
@@ -325,6 +381,7 @@ This ensures that international users get proper domain grouping regardless of t
 
 - [MDN WebExtensions API Docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 - [tabs.group() API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/group)
+- [WXT Framework](https://wxt.dev/)
 
 ---
 
@@ -332,20 +389,43 @@ This ensures that international users get proper domain grouping regardless of t
 
 ### Building for Production
 
-1. Update version in `manifest.json`
+1. Update version in `package.json`
 2. Build the extension:
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   bun run zip          # Chrome
+   bun run zip:firefox  # Firefox
+   ```
 
-3. The built extension will be available as an .xpi file
+3. Output files:
+   - `.output/auto-tab-groups-{version}-chrome.zip` - Chrome extension
+   - `.output/auto-tab-groups-{version}-firefox.zip` - Firefox extension
+   - `.output/auto-tab-groups-{version}-sources.zip` - Source code (for Firefox review)
 
-### Publishing to Firefox Add-ons
+### Publishing
 
-1. Update the version in `manifest.json`
-2. Build using `npm run build`
-3. Upload the .xpi file to [Firefox Add-ons Developer Hub](https://addons.mozilla.org/en-US/developers/)
+**Chrome Web Store:**
+
+1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+2. Upload the Chrome zip file
+
+**Firefox Add-ons:**
+
+Firefox requires source code submission because the extension uses build tools (WXT, Vite, TypeScript).
+
+1. Go to [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/)
+2. Upload the Firefox zip file (`auto-tab-groups-{version}-firefox.zip`)
+3. When prompted "Do you need to submit source code?" select **Yes**
+4. Upload the sources zip file (`auto-tab-groups-{version}-sources.zip`)
+5. In the reviewer notes, add:
+
+   ```text
+   Build Instructions:
+   1. Install Bun: https://bun.sh
+   2. Run: bun install
+   3. Run: bun run build:firefox
+   4. Output in: .output/firefox-mv3/
+   ```
 
 ---
 

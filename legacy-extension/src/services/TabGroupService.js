@@ -84,7 +84,7 @@ class TabGroupServiceSimplified {
         }
 
         // Try to find a matching rule for the full URL
-        let customRule = await rulesService.findMatchingRule(tab.url)
+        const customRule = rulesService.findMatchingRule(tab.url)
         let matchedDomain = null
 
         if (customRule) {

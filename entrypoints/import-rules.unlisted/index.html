@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import Rules - Auto Tab Groups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="modal-container">
+      <h1>Import Rules</h1>
+
+      <!-- File Selection Area -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-content">
+          <span class="drop-icon">📁</span>
+          <p>Drag & drop a JSON file here</p>
+          <p class="drop-zone-separator">or</p>
+          <button type="button" class="button secondary" id="selectFileButton">
+            Browse Files
+          </button>
+          <input type="file" id="fileInput" accept=".json" style="display: none" />
+        </div>
+      </div>
+
+      <!-- File Info (shown after file selected) -->
+      <div class="file-info" id="fileInfo">
+        <span class="file-name" id="fileName"></span>
+        <button type="button" class="clear-file" id="clearFile">&times;</button>
+      </div>
+
+      <!-- Preview Section (shown after file parsed) -->
+      <div class="preview-section" id="previewSection">
+        <h2>Preview</h2>
+        <div class="preview-stats" id="previewStats"></div>
+        <div class="preview-list" id="previewList"></div>
+        <div class="preview-errors" id="previewErrors"></div>
+      </div>
+
+      <!-- Import Options -->
+      <div class="form-group import-options" id="importOptions">
+        <label>Import Mode</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="importMode" value="merge" checked />
+            <span>Merge with existing rules</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="importMode" value="replace" />
+            <span>Replace all existing rules</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button type="button" class="button primary" id="importButton" disabled>
+          Import Rules
+        </button>
+        <button type="button" class="button secondary" id="cancelButton">Cancel</button>
+      </div>
+
+      <!-- Result Message -->
+      <div class="result-message" id="resultMessage"></div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
