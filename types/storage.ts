@@ -42,6 +42,10 @@ export interface StorageSchema {
   groupColorMapping: GroupColorMapping
   /** Global minimum tabs required to form a group */
   minimumTabsForGroup: number
+  /** Whether auto-collapse is enabled (focus mode) */
+  autoCollapseEnabled: boolean
+  /** Delay in milliseconds before collapsing (0 = immediate) */
+  autoCollapseDelayMs: number
 }
 
 /**
@@ -54,7 +58,9 @@ export const DEFAULT_STATE: StorageSchema = {
   customRules: {},
   ruleMatchingMode: "exact",
   groupColorMapping: {},
-  minimumTabsForGroup: 1
+  minimumTabsForGroup: 1,
+  autoCollapseEnabled: false,
+  autoCollapseDelayMs: 0
 }
 
 /**

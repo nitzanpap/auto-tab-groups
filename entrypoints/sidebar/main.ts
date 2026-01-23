@@ -13,6 +13,12 @@ const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTML
 const groupByToggleOptions = document.querySelectorAll<HTMLButtonElement>(".toggle-option")
 const minimumTabsInput = document.getElementById("minimumTabsInput") as HTMLInputElement
 
+// Auto-collapse Elements
+const autoCollapseToggle = document.getElementById("autoCollapseToggle") as HTMLInputElement
+const collapseDelayContainer = document.getElementById("collapseDelayContainer") as HTMLDivElement
+const collapseDelayInput = document.getElementById("collapseDelayInput") as HTMLInputElement
+const collapseHelp = document.getElementById("collapseHelp") as HTMLDivElement
+
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle") as HTMLButtonElement
 const rulesContent = document.querySelector(".rules-content") as HTMLDivElement
@@ -71,6 +77,17 @@ function updateBrowserDisplay(): void {
   } else {
     browserNameElement.textContent = "Chrome"
     browserEmojiElement.textContent = ""
+  }
+}
+
+// Update collapse delay visibility
+function updateCollapseDelayVisibility(enabled: boolean): void {
+  if (enabled) {
+    collapseDelayContainer.classList.add("visible")
+    collapseHelp.classList.add("visible")
+  } else {
+    collapseDelayContainer.classList.remove("visible")
+    collapseHelp.classList.remove("visible")
   }
 }
 
@@ -425,6 +442,17 @@ sendMessage<{ minimumTabs?: number }>({
   minimumTabsInput.value = String(response?.minimumTabs || 1)
 })
 
+// Initialize auto-collapse state
+sendMessage<{ enabled?: boolean; delayMs?: number }>({
+  action: "getAutoCollapseState"
+}).then(response => {
+  const enabled = response?.enabled ?? false
+  const delayMs = response?.delayMs ?? 0
+  autoCollapseToggle.checked = enabled
+  collapseDelayInput.value = String(delayMs)
+  updateCollapseDelayVisibility(enabled)
+})
+
 // Toggle event listeners
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -457,6 +485,32 @@ minimumTabsInput.addEventListener("change", event => {
   const clampedValue = Math.max(1, Math.min(10, value))
   ;(event.target as HTMLInputElement).value = String(clampedValue)
   sendMessage({ action: "setMinimumTabsForGroup", minimumTabs: clampedValue })
+})
+
+// Auto-collapse event listeners
+autoCollapseToggle.addEventListener("change", async () => {
+  const enabled = autoCollapseToggle.checked
+  updateCollapseDelayVisibility(enabled)
+  await sendMessage({
+    action: "updateAutoCollapse",
+    autoCollapseEnabled: enabled,
+    autoCollapseDelayMs: parseInt(collapseDelayInput.value, 10) || 0
+  })
+})
+
+collapseDelayInput.addEventListener("change", async () => {
+  let delayMs = parseInt(collapseDelayInput.value, 10)
+
+  // Clamp to valid range
+  if (Number.isNaN(delayMs) || delayMs < 0) delayMs = 0
+  if (delayMs > 5000) delayMs = 5000
+
+  collapseDelayInput.value = String(delayMs)
+  await sendMessage({
+    action: "updateAutoCollapse",
+    autoCollapseEnabled: autoCollapseToggle.checked,
+    autoCollapseDelayMs: delayMs
+  })
 })
 
 // Custom Rules event listeners

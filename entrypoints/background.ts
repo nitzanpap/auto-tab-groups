@@ -269,6 +269,20 @@ export default defineBackground(() => {
             }
             break
 
+          case "updateAutoCollapse":
+            tabGroupState.autoCollapseEnabled = msg.autoCollapseEnabled
+            tabGroupState.autoCollapseDelayMs = msg.autoCollapseDelayMs
+            await saveState()
+            result = { success: true }
+            break
+
+          case "getAutoCollapseState":
+            result = {
+              enabled: tabGroupState.autoCollapseEnabled,
+              delayMs: tabGroupState.autoCollapseDelayMs
+            }
+            break
+
           default:
             result = { error: "Unknown action" }
         }
@@ -330,6 +344,39 @@ export default defineBackground(() => {
       await tabGroupService.moveTabToGroup(tabId)
     } catch (error) {
       console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
+    }
+  })
+
+  // Auto-collapse: Track timeout for debouncing
+  let autoCollapseTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+  // Handle tab activation for auto-collapse
+  browser.tabs.onActivated.addListener(async activeInfo => {
+    try {
+      await ensureStateLoaded()
+
+      if (!tabGroupState.autoCollapseEnabled) return
+
+      // Clear any pending collapse
+      if (autoCollapseTimeoutId) {
+        clearTimeout(autoCollapseTimeoutId)
+        autoCollapseTimeoutId = null
+      }
+
+      const delayMs = tabGroupState.autoCollapseDelayMs
+
+      if (delayMs === 0) {
+        // Immediate collapse
+        await tabGroupService.collapseOtherGroups(activeInfo.tabId)
+      } else {
+        // Delayed collapse
+        autoCollapseTimeoutId = setTimeout(async () => {
+          await tabGroupService.collapseOtherGroups(activeInfo.tabId)
+          autoCollapseTimeoutId = null
+        }, delayMs)
+      }
+    } catch (error) {
+      console.error(`[tabs.onActivated] Error handling tab activation:`, error)
     }
   })
 

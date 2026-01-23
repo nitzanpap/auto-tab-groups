@@ -768,6 +768,48 @@ class TabGroupServiceSimplified {
     }
   }
 
+  /**
+   * Collapse all groups except the one containing the active tab.
+   * Used by auto-collapse feature.
+   */
+  async collapseOtherGroups(activeTabId: number): Promise<void> {
+    try {
+      if (!browser.tabGroups) return
+
+      const activeTab = await browser.tabs.get(activeTabId)
+
+      // Tab not in a group - collapse all groups
+      if (!activeTab.groupId || activeTab.groupId === -1) {
+        await this.collapseAllGroups()
+        return
+      }
+
+      const groups = await browser.tabGroups.query({ windowId: activeTab.windowId })
+
+      for (const group of groups) {
+        if (group.id !== activeTab.groupId && !group.collapsed) {
+          try {
+            await browser.tabGroups.update(group.id, { collapsed: true })
+          } catch (error) {
+            console.warn(`[TabGroupService] Failed to collapse group ${group.id}:`, error)
+          }
+        }
+      }
+
+      // Expand the active group if collapsed
+      const activeGroup = groups.find(g => g.id === activeTab.groupId)
+      if (activeGroup?.collapsed) {
+        try {
+          await browser.tabGroups.update(activeGroup.id, { collapsed: false })
+        } catch (error) {
+          console.warn(`[TabGroupService] Failed to expand active group:`, error)
+        }
+      }
+    } catch (error) {
+      console.error(`[TabGroupService] Error in collapseOtherGroups:`, error)
+    }
+  }
+
   // Legacy aliases
   async groupTabsWithRules(): Promise<boolean> {
     return await this.groupAllTabs()

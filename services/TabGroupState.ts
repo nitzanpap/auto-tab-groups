@@ -19,6 +19,8 @@ class TabGroupState {
   customRules: Map<string, CustomRule>
   ruleMatchingMode: RuleMatchingMode
   minimumTabsForGroup: number
+  autoCollapseEnabled: boolean
+  autoCollapseDelayMs: number
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -27,6 +29,8 @@ class TabGroupState {
     this.customRules = new Map()
     this.ruleMatchingMode = DEFAULT_STATE.ruleMatchingMode
     this.minimumTabsForGroup = DEFAULT_STATE.minimumTabsForGroup
+    this.autoCollapseEnabled = DEFAULT_STATE.autoCollapseEnabled
+    this.autoCollapseDelayMs = DEFAULT_STATE.autoCollapseDelayMs
   }
 
   /**
@@ -38,6 +42,8 @@ class TabGroupState {
     this.groupByMode = data.groupByMode ?? this.groupByMode
     this.ruleMatchingMode = data.ruleMatchingMode ?? this.ruleMatchingMode
     this.minimumTabsForGroup = data.minimumTabsForGroup ?? this.minimumTabsForGroup
+    this.autoCollapseEnabled = data.autoCollapseEnabled ?? this.autoCollapseEnabled
+    this.autoCollapseDelayMs = data.autoCollapseDelayMs ?? this.autoCollapseDelayMs
 
     this.customRules.clear()
 
@@ -59,7 +65,9 @@ class TabGroupState {
       ruleMatchingMode: this.ruleMatchingMode,
       customRules: this.getCustomRulesObject(),
       groupColorMapping: {}, // Color mapping is managed separately
-      minimumTabsForGroup: this.minimumTabsForGroup
+      minimumTabsForGroup: this.minimumTabsForGroup,
+      autoCollapseEnabled: this.autoCollapseEnabled,
+      autoCollapseDelayMs: this.autoCollapseDelayMs
     }
   }
 

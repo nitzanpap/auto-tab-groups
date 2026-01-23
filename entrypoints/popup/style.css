@@ -699,3 +699,37 @@ input:checked + .slider:before {
   font-size: 11px;
   color: #6c757d;
 }
+
+.collapse-delay-container {
+  display: none;
+  padding-left: 16px;
+}
+
+.collapse-delay-container.visible {
+  display: flex;
+}
+
+.delay-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delay-input {
+  width: 70px;
+}
+
+.delay-unit {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.collapse-help {
+  display: none;
+  padding-left: 16px;
+  margin-top: -4px;
+}
+
+.collapse-help.visible {
+  display: block;
+}
