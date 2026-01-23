@@ -398,8 +398,9 @@ This ensures that international users get proper domain grouping regardless of t
    ```
 
 3. Output files:
-   - `.output/auto-tab-groups-{version}-chrome.zip`
-   - `.output/auto-tab-groups-{version}-firefox.zip`
+   - `.output/auto-tab-groups-{version}-chrome.zip` - Chrome extension
+   - `.output/auto-tab-groups-{version}-firefox.zip` - Firefox extension
+   - `.output/auto-tab-groups-{version}-sources.zip` - Source code (for Firefox review)
 
 ### Publishing
 
@@ -410,8 +411,21 @@ This ensures that international users get proper domain grouping regardless of t
 
 **Firefox Add-ons:**
 
+Firefox requires source code submission because the extension uses build tools (WXT, Vite, TypeScript).
+
 1. Go to [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/)
-2. Upload the Firefox zip file
+2. Upload the Firefox zip file (`auto-tab-groups-{version}-firefox.zip`)
+3. When prompted "Do you need to submit source code?" select **Yes**
+4. Upload the sources zip file (`auto-tab-groups-{version}-sources.zip`)
+5. In the reviewer notes, add:
+
+   ```text
+   Build Instructions:
+   1. Install Bun: https://bun.sh
+   2. Run: bun install
+   3. Run: bun run build:firefox
+   4. Output in: .output/firefox-mv3/
+   ```
 
 ---
 
