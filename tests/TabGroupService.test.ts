@@ -559,11 +559,10 @@ describe("TabGroupService", () => {
     })
 
     it("should collapse all groups except the active tab's group", async () => {
-      mockBrowser.tabs.get.mockResolvedValue({
-        id: 1,
-        groupId: 100,
-        windowId: 1
-      })
+      const activeTab = { id: 1, groupId: 100, windowId: 1, active: true }
+      mockBrowser.tabs.get.mockResolvedValue(activeTab)
+      // Mock tabs.query to return the active tab when queried for active tab
+      mockBrowser.tabs.query.mockResolvedValue([activeTab])
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 100, collapsed: false },
         { id: 101, collapsed: false },
@@ -578,11 +577,9 @@ describe("TabGroupService", () => {
     })
 
     it("should expand active group if it was collapsed", async () => {
-      mockBrowser.tabs.get.mockResolvedValue({
-        id: 1,
-        groupId: 100,
-        windowId: 1
-      })
+      const activeTab = { id: 1, groupId: 100, windowId: 1, active: true }
+      mockBrowser.tabs.get.mockResolvedValue(activeTab)
+      mockBrowser.tabs.query.mockResolvedValue([activeTab])
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 100, collapsed: true },
         { id: 101, collapsed: false }
@@ -595,11 +592,9 @@ describe("TabGroupService", () => {
     })
 
     it("should collapse all groups when active tab is ungrouped", async () => {
-      mockBrowser.tabs.get.mockResolvedValue({
-        id: 1,
-        groupId: -1,
-        windowId: 1
-      })
+      const activeTab = { id: 1, groupId: -1, windowId: 1, active: true }
+      mockBrowser.tabs.get.mockResolvedValue(activeTab)
+      mockBrowser.tabs.query.mockResolvedValue([activeTab])
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 100, collapsed: false },
         { id: 101, collapsed: false }
@@ -612,11 +607,9 @@ describe("TabGroupService", () => {
     })
 
     it("should skip already collapsed groups", async () => {
-      mockBrowser.tabs.get.mockResolvedValue({
-        id: 1,
-        groupId: 100,
-        windowId: 1
-      })
+      const activeTab = { id: 1, groupId: 100, windowId: 1, active: true }
+      mockBrowser.tabs.get.mockResolvedValue(activeTab)
+      mockBrowser.tabs.query.mockResolvedValue([activeTab])
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 100, collapsed: false },
         { id: 101, collapsed: true } // Already collapsed
@@ -629,11 +622,9 @@ describe("TabGroupService", () => {
     })
 
     it("should handle tab with no groupId", async () => {
-      mockBrowser.tabs.get.mockResolvedValue({
-        id: 1,
-        windowId: 1
-        // No groupId property
-      })
+      const activeTab = { id: 1, windowId: 1, active: true }
+      mockBrowser.tabs.get.mockResolvedValue(activeTab)
+      mockBrowser.tabs.query.mockResolvedValue([activeTab])
       mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, collapsed: false }])
 
       await tabGroupService.collapseOtherGroups(1)

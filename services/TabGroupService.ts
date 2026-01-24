@@ -769,16 +769,27 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Helper to update a tab group with retry logic.
+   * Helper to update a tab group with retry logic using exponential backoff.
    * Chrome throws "Tabs cannot be edited right now" during tab transitions.
-   * This retries the operation when that specific error occurs.
+   * This retries the operation with increasing delays when that error occurs.
+   *
+   * Retry timeline with defaults (maxRetries=5, initialDelayMs=25):
+   * - Attempt 0: Immediate
+   * - Attempt 1: Wait 25ms
+   * - Attempt 2: Wait 50ms
+   * - Attempt 3: Wait 100ms
+   * - Attempt 4: Wait 200ms
+   * - Attempt 5: Wait 400ms
+   * - Total window: ~775ms
    */
   private async updateTabGroupWithRetry(
     groupId: number,
     updateProperties: { collapsed?: boolean; title?: string; color?: TabGroupColor },
-    maxRetries = 3,
-    retryDelayMs = 50
+    maxRetries = 5,
+    initialDelayMs = 25
   ): Promise<boolean> {
+    let delayMs = initialDelayMs
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         await browser.tabGroups.update(groupId, updateProperties)
@@ -788,15 +799,16 @@ class TabGroupServiceSimplified {
         const isTransientError = errorMessage.includes("cannot be edited right now")
 
         if (isTransientError && attempt < maxRetries) {
-          // Wait before retrying - Chrome is in a transitional state
-          await new Promise(resolve => setTimeout(resolve, retryDelayMs))
+          // Wait before retrying with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+          delayMs *= 2 // Exponential backoff: 25 -> 50 -> 100 -> 200 -> 400ms
           continue
         }
 
         // Non-transient error or max retries reached
         if (attempt === maxRetries && isTransientError) {
           console.warn(
-            `[TabGroupService] Failed to update group ${groupId} after ${maxRetries} retries`
+            `[TabGroupService] Failed to update group ${groupId} after ${maxRetries} retries (~775ms total)`
           )
         }
         return false

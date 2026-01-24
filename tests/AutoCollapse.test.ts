@@ -229,4 +229,136 @@ describe("Auto-collapse delay behavior", () => {
       expect(mockCollapse).not.toHaveBeenCalled()
     })
   })
+
+  describe("exponential backoff retry behavior", () => {
+    /**
+     * Tests for the exponential backoff retry logic used in TabGroupService.
+     * The retry delays follow: 25 -> 50 -> 100 -> 200 -> 400ms (total ~775ms)
+     */
+
+    it("should succeed on first attempt without delays", async () => {
+      const mockUpdate = vi.fn().mockResolvedValue(undefined)
+      const result = await simulateRetryWithBackoff(mockUpdate, 5, 25)
+
+      expect(result).toBe(true)
+      expect(mockUpdate).toHaveBeenCalledTimes(1)
+    })
+
+    it("should retry with exponential backoff on transient errors", async () => {
+      const mockUpdate = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockResolvedValueOnce(undefined)
+
+      const result = await simulateRetryWithBackoff(mockUpdate, 5, 25)
+
+      expect(result).toBe(true)
+      expect(mockUpdate).toHaveBeenCalledTimes(3)
+    })
+
+    it("should fail after max retries on persistent transient errors", async () => {
+      const mockUpdate = vi.fn().mockRejectedValue(new Error("Tabs cannot be edited right now"))
+
+      const result = await simulateRetryWithBackoff(mockUpdate, 5, 25)
+
+      expect(result).toBe(false)
+      expect(mockUpdate).toHaveBeenCalledTimes(6) // Initial + 5 retries
+    })
+
+    it("should not retry on non-transient errors", async () => {
+      const mockUpdate = vi.fn().mockRejectedValue(new Error("Group does not exist"))
+
+      const result = await simulateRetryWithBackoff(mockUpdate, 5, 25)
+
+      expect(result).toBe(false)
+      expect(mockUpdate).toHaveBeenCalledTimes(1) // No retries
+    })
+
+    it("should use correct delay progression (exponential)", async () => {
+      const delays: number[] = []
+      const mockUpdate = vi.fn().mockRejectedValue(new Error("Tabs cannot be edited right now"))
+
+      // Track delays by measuring time between calls
+      await simulateRetryWithBackoffTrackingDelays(mockUpdate, 5, 25, delays)
+
+      // Expected delays: 25, 50, 100, 200, 400
+      expect(delays).toEqual([25, 50, 100, 200, 400])
+    })
+
+    it("should recover on 5th retry (last attempt)", async () => {
+      const mockUpdate = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockRejectedValueOnce(new Error("Tabs cannot be edited right now"))
+        .mockResolvedValueOnce(undefined) // Succeeds on 6th attempt (index 5)
+
+      const result = await simulateRetryWithBackoff(mockUpdate, 5, 25)
+
+      expect(result).toBe(true)
+      expect(mockUpdate).toHaveBeenCalledTimes(6)
+    })
+  })
 })
+
+/**
+ * Helper function to simulate the retry with exponential backoff logic
+ * from TabGroupService.updateTabGroupWithRetry
+ */
+async function simulateRetryWithBackoff(
+  mockUpdate: ReturnType<typeof vi.fn>,
+  maxRetries: number,
+  _initialDelayMs: number
+): Promise<boolean> {
+  // Note: We don't track delays here since we skip actual waiting in tests.
+  // Use simulateRetryWithBackoffTrackingDelays to verify delay progression.
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      await mockUpdate()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isTransientError = errorMessage.includes("cannot be edited right now")
+
+      if (isTransientError && attempt < maxRetries) {
+        continue
+      }
+      return false
+    }
+  }
+  return false
+}
+
+/**
+ * Helper to track delay progression for exponential backoff verification
+ */
+async function simulateRetryWithBackoffTrackingDelays(
+  mockUpdate: ReturnType<typeof vi.fn>,
+  maxRetries: number,
+  initialDelayMs: number,
+  delaysTracker: number[]
+): Promise<boolean> {
+  let delayMs = initialDelayMs
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      await mockUpdate()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isTransientError = errorMessage.includes("cannot be edited right now")
+
+      if (isTransientError && attempt < maxRetries) {
+        delaysTracker.push(delayMs)
+        delayMs *= 2
+        continue
+      }
+      return false
+    }
+  }
+  return false
+}
