@@ -768,6 +768,108 @@ class TabGroupServiceSimplified {
     }
   }
 
+  /**
+   * Helper to update a tab group with retry logic using exponential backoff.
+   * Chrome throws "Tabs cannot be edited right now" during tab transitions.
+   * This retries the operation with increasing delays when that error occurs.
+   *
+   * Retry timeline with defaults (maxRetries=5, initialDelayMs=25):
+   * - Attempt 0: Immediate
+   * - Attempt 1: Wait 25ms
+   * - Attempt 2: Wait 50ms
+   * - Attempt 3: Wait 100ms
+   * - Attempt 4: Wait 200ms
+   * - Attempt 5: Wait 400ms
+   * - Total window: ~775ms
+   */
+  private async updateTabGroupWithRetry(
+    groupId: number,
+    updateProperties: { collapsed?: boolean; title?: string; color?: TabGroupColor },
+    maxRetries = 5,
+    initialDelayMs = 25
+  ): Promise<boolean> {
+    let delayMs = initialDelayMs
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await browser.tabGroups.update(groupId, updateProperties)
+        return true
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        const isTransientError = errorMessage.includes("cannot be edited right now")
+
+        if (isTransientError && attempt < maxRetries) {
+          // Wait before retrying with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+          delayMs *= 2 // Exponential backoff: 25 -> 50 -> 100 -> 200 -> 400ms
+          continue
+        }
+
+        // Non-transient error or max retries reached
+        if (attempt === maxRetries && isTransientError) {
+          console.warn(
+            `[TabGroupService] Failed to update group ${groupId} after ${maxRetries} retries (~775ms total)`
+          )
+        }
+        return false
+      }
+    }
+    return false
+  }
+
+  /**
+   * Collapse all groups except the one containing the active tab.
+   * Used by auto-collapse feature.
+   *
+   * Note: We query for the current active tab fresh instead of using the
+   * tab ID from the event, because browser.tabs.get() can return stale
+   * groupId data immediately after tab activation.
+   */
+  async collapseOtherGroups(activeTabId: number): Promise<void> {
+    try {
+      if (!browser.tabGroups) return
+
+      // Get the window from the original tab ID
+      const targetTab = await browser.tabs.get(activeTabId)
+      const windowId = targetTab.windowId
+
+      // Query for the CURRENT active tab in this window to get fresh state
+      // This is more reliable than using browser.tabs.get(tabId) which can
+      // return stale groupId data immediately after tab activation
+      const activeTabs = await browser.tabs.query({ active: true, windowId })
+      const currentActiveTab = activeTabs[0]
+
+      if (!currentActiveTab) {
+        console.warn("[TabGroupService] No active tab found in window")
+        return
+      }
+
+      const activeGroupId = currentActiveTab.groupId
+
+      // Tab not in a group - collapse all groups
+      if (!activeGroupId || activeGroupId === -1) {
+        await this.collapseAllGroups()
+        return
+      }
+
+      const groups = await browser.tabGroups.query({ windowId })
+
+      for (const group of groups) {
+        if (group.id !== activeGroupId && !group.collapsed) {
+          await this.updateTabGroupWithRetry(group.id, { collapsed: true })
+        }
+      }
+
+      // Expand the active group if collapsed
+      const activeGroup = groups.find(g => g.id === activeGroupId)
+      if (activeGroup?.collapsed) {
+        await this.updateTabGroupWithRetry(activeGroup.id, { collapsed: false })
+      }
+    } catch (error) {
+      console.error(`[TabGroupService] Error in collapseOtherGroups:`, error)
+    }
+  }
+
   // Legacy aliases
   async groupTabsWithRules(): Promise<boolean> {
     return await this.groupAllTabs()

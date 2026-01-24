@@ -72,6 +72,31 @@
             />
           </div>
         </div>
+        <div class="toggle-container">
+          <span>Auto-collapse inactive groups</span>
+          <label class="switch">
+            <input type="checkbox" id="autoCollapseToggle" />
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="toggle-container collapse-delay-container" id="collapseDelayContainer">
+          <span>Collapse delay</span>
+          <div class="delay-input-group">
+            <input
+              type="number"
+              id="collapseDelayInput"
+              min="0"
+              max="5000"
+              step="100"
+              value="0"
+              class="number-input delay-input"
+            />
+            <span class="delay-unit">ms</span>
+          </div>
+        </div>
+        <div class="help-text collapse-help" id="collapseHelp">
+          0 = immediate, or set delay (100-5000ms) before collapsing
+        </div>
         <div class="settings-info">
           <span class="info-icon">&#128204;</span>
           <span>Pinned tabs are never grouped automatically</span>

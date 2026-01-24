@@ -45,6 +45,14 @@ export const minimumTabsForGroup = storage.defineItem<number>("local:minimumTabs
   fallback: DEFAULT_STATE.minimumTabsForGroup
 })
 
+export const autoCollapseEnabled = storage.defineItem<boolean>("local:autoCollapseEnabled", {
+  fallback: DEFAULT_STATE.autoCollapseEnabled
+})
+
+export const autoCollapseDelayMs = storage.defineItem<number>("local:autoCollapseDelayMs", {
+  fallback: DEFAULT_STATE.autoCollapseDelayMs
+})
+
 /**
  * Load all storage values at once
  */
@@ -56,7 +64,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     customRulesValue,
     ruleMatchingModeValue,
     groupColorMappingValue,
-    minimumTabsForGroupValue
+    minimumTabsForGroupValue,
+    autoCollapseEnabledValue,
+    autoCollapseDelayMsValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -64,7 +74,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     customRules.getValue(),
     ruleMatchingMode.getValue(),
     groupColorMapping.getValue(),
-    minimumTabsForGroup.getValue()
+    minimumTabsForGroup.getValue(),
+    autoCollapseEnabled.getValue(),
+    autoCollapseDelayMs.getValue()
   ])
 
   return {
@@ -74,7 +86,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     customRules: customRulesValue,
     ruleMatchingMode: ruleMatchingModeValue,
     groupColorMapping: groupColorMappingValue,
-    minimumTabsForGroup: minimumTabsForGroupValue
+    minimumTabsForGroup: minimumTabsForGroupValue,
+    autoCollapseEnabled: autoCollapseEnabledValue,
+    autoCollapseDelayMs: autoCollapseDelayMsValue
   }
 }
 
@@ -104,6 +118,12 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.minimumTabsForGroup !== undefined) {
     promises.push(minimumTabsForGroup.setValue(data.minimumTabsForGroup))
+  }
+  if (data.autoCollapseEnabled !== undefined) {
+    promises.push(autoCollapseEnabled.setValue(data.autoCollapseEnabled))
+  }
+  if (data.autoCollapseDelayMs !== undefined) {
+    promises.push(autoCollapseDelayMs.setValue(data.autoCollapseDelayMs))
   }
 
   await Promise.all(promises)
