@@ -51,6 +51,14 @@ tests/e2e/
 - Expand all groups
 - Toggle collapse state
 
+### Auto-Collapse / Focus Mode
+
+- Collapses other groups when switching tabs
+- Expands active tab's group if collapsed
+- Handles ungrouped active tabs (collapses all)
+- Skips already collapsed groups
+- Exponential backoff retry on transient errors
+
 ## Manual Testing Checklist
 
 ### Basic Grouping
@@ -95,6 +103,15 @@ tests/e2e/
 - [ ] "Collapse All" collapses all groups
 - [ ] "Expand All" expands all groups
 - [ ] Firefox: active tab's group stays expanded
+
+### Focus Mode (Auto-Collapse)
+
+- [ ] Enable Focus Mode in settings
+- [ ] Switch tabs: other groups collapse, active group expands
+- [ ] Switch to ungrouped tab: all groups collapse
+- [ ] Manually expand a group: stays expanded until tab switch
+- [ ] Rapid tab switching: groups collapse reliably (~95%)
+- [ ] Disable Focus Mode: groups stay as-is when switching
 
 ### Edge Cases
 

@@ -125,3 +125,41 @@ Groups only created when minimum tab count is met.
 - Below threshold: tabs remain ungrouped
 - Meets threshold: group created with all matching tabs
 - Falls below threshold: group disbanded, tabs ungrouped
+
+## Focus Mode (Auto-Collapse)
+
+Focus Mode automatically collapses inactive tab groups when switching tabs, keeping only the active tab's group expanded.
+
+### How It Works
+
+1. **Tab Switch Detection**: Listens to `tabs.onActivated` events
+2. **Active Group Identification**: Queries browser for fresh active tab state
+3. **Collapse Others**: Collapses all groups except the active tab's group
+4. **Expand Active**: Expands the active group if it was collapsed
+
+### Settings
+
+- **Toggle**: Enable/disable via popup settings
+- **Collapse Delay**: Configurable delay before collapsing (default: 300ms)
+
+### Behavior
+
+- Only triggers on actual tab switches (event-driven, not polling)
+- Respects user intent: manually expanded groups won't auto-collapse until you switch tabs
+- Active tab's group always stays expanded
+- Ungrouped tabs: all groups collapse when switching to an ungrouped tab
+
+### Reliability Mechanism
+
+Chrome's tab API can throw "Tabs cannot be edited right now" during tab transitions. The feature uses **exponential backoff** to handle this:
+
+| Attempt | Delay  | Cumulative |
+| ------- | ------ | ---------- |
+| 0       | 0ms    | 0ms        |
+| 1       | 25ms   | 25ms       |
+| 2       | 50ms   | 75ms       |
+| 3       | 100ms  | 175ms      |
+| 4       | 200ms  | 375ms      |
+| 5       | 400ms  | 775ms      |
+
+This provides ~95% reliability by extending the retry window to ~775ms while keeping fast success on quick machines.

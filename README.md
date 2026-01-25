@@ -35,6 +35,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - ✅ **Smart domain display** - Shows clean domain names (e.g., "github" instead of "github.com")
 - ✅ **Color management** - Persistent group colors across browser sessions
 - ✅ **Collapse/expand controls** - Manage tab group visibility
+- ✅ **Focus Mode** - Auto-collapse inactive groups when switching tabs
 - ✅ **Configuration options** - Auto-grouping, subdomain handling, etc.
 - ✅ **Side panel support** - Chrome side panel and Firefox sidebar
 - ✅ **Modern UI** - Clean, responsive interface
@@ -64,6 +65,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - Real-time group updates
 - Maintains existing groups without duplicates
 - Group/Ungroup all tabs with one click
+- **Focus Mode**: Automatically collapse inactive groups when switching tabs
 
 ### 🎨 Advanced Color Management
 
@@ -134,7 +136,7 @@ bun run dev        # Start development server
 | `bun run zip`           | Create release zip (Chrome)          |
 | `bun run zip:firefox`   | Create release zip (Firefox)         |
 | `bun run typecheck`     | Run TypeScript type checking         |
-| `bun run test`          | Run unit tests (272+ tests)          |
+| `bun run test`          | Run unit tests (380+ tests)          |
 | `bun run lint`          | Run Biome linter                     |
 | `bun run format`        | Format with Biome                    |
 
@@ -171,7 +173,7 @@ The project follows Test-Driven Development (TDD) principles with comprehensive 
 ### Running Tests
 
 ```bash
-bun run test          # Run unit tests (272+ tests)
+bun run test          # Run unit tests (380+ tests)
 bun run test:e2e      # Build extension and run E2E tests
 ```
 
@@ -264,7 +266,7 @@ auto-tab-groups/
 │   ├── RulesUtils.ts         # Rule validation helpers
 │   └── storage.ts            # WXT storage utilities
 ├── types/                    # TypeScript type definitions
-├── tests/                    # Unit tests (272+ tests)
+├── tests/                    # Unit tests (380+ tests)
 ├── public/                   # Static assets (icons)
 ├── docs/                     # Documentation
 ├── wxt.config.ts             # WXT configuration
