@@ -538,15 +538,6 @@ describe("RulesUtils", () => {
       expect(result.errors.some(e => e.includes("domain"))).toBe(true)
     })
 
-    it("should reject too many domains", () => {
-      const domains = Array(21)
-        .fill(null)
-        .map((_, i) => `domain${i}.com`)
-      const result = validateRuleData({ ...validRuleData, domains })
-      expect(result.isValid).toBe(false)
-      expect(result.errors.some(e => e.includes("Maximum 20"))).toBe(true)
-    })
-
     it("should reject invalid pattern in domains", () => {
       const result = validateRuleData({ ...validRuleData, domains: ["   "] })
       expect(result.isValid).toBe(false)

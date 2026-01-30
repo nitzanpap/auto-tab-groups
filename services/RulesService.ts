@@ -197,8 +197,6 @@ class RulesService {
       errors.push("Patterns must be an array")
     } else if (ruleData.domains.length === 0) {
       errors.push("At least one pattern is required")
-    } else if (ruleData.domains.length > 20) {
-      errors.push("Maximum 20 patterns per rule")
     } else {
       for (const pattern of ruleData.domains) {
         if (typeof pattern !== "string" || !pattern.trim()) {
