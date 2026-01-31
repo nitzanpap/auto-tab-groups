@@ -72,8 +72,8 @@ test.afterEach(async () => {
 })
 
 test.describe("Tab Grouping by Domain", () => {
-  // Note: The extension strips TLDs from domain names for group titles
-  // e.g., "example.com" -> "example", "httpbin.org" -> "httpbin"
+  // Note: The extension strips TLDs and capitalizes domain names for group titles
+  // e.g., "example.com" -> "Example", "httpbin.org" -> "Httpbin"
 
   test("groups tabs from same domain into one group", async () => {
     // Enable auto-grouping
@@ -84,12 +84,12 @@ test.describe("Tab Grouping by Domain", () => {
     const tab2 = await createTab(context, TEST_URLS.domain1Page2)
     const tab3 = await createTab(context, TEST_URLS.domain1Page3)
 
-    // Wait for all tabs to be grouped under "example" (TLD stripped)
-    await waitForTabInGroup(popupPage, "example.com", "example")
+    // Wait for all tabs to be grouped under "Example" (TLD stripped, capitalized)
+    await waitForTabInGroup(popupPage, "example.com", "Example")
 
     // Verify there's only one group
     const groups = await getTabGroups(popupPage)
-    const exampleGroup = groups.find(g => g.title === "example")
+    const exampleGroup = groups.find(g => g.title === "Example")
     expect(exampleGroup).toBeDefined()
 
     // Verify all tabs are in the same group
@@ -113,14 +113,14 @@ test.describe("Tab Grouping by Domain", () => {
     const tab1 = await createTab(context, TEST_URLS.domain1)
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
-    // Wait for groups to be created (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    // Wait for groups to be created (TLDs stripped, capitalized)
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Verify expected groups exist (may have additional system groups)
     const groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(true)
-    expect(groups.some(g => g.title === "httpbin")).toBe(true)
+    expect(groups.some(g => g.title === "Example")).toBe(true)
+    expect(groups.some(g => g.title === "Httpbin")).toBe(true)
 
     // Verify tabs are in separate groups
     const tabs = await getTabs(popupPage)
@@ -144,12 +144,12 @@ test.describe("Tab Grouping by Domain", () => {
     // Create a tab to a ccSLD domain
     const tab = await createTab(context, TEST_URLS.ccSLD)
 
-    // Wait for the group - should be "bbc" (ccSLD .co.uk stripped correctly)
-    await waitForGroup(popupPage, "bbc")
+    // Wait for the group - should be "Bbc" (ccSLD .co.uk stripped correctly, capitalized)
+    await waitForGroup(popupPage, "Bbc")
 
     // Verify the group title
     const groups = await getTabGroups(popupPage)
-    const bbcGroup = groups.find(g => g.title === "bbc")
+    const bbcGroup = groups.find(g => g.title === "Bbc")
     expect(bbcGroup).toBeDefined()
 
     // Verify no "co" or "co.uk" group was created
@@ -165,7 +165,7 @@ test.describe("Tab Grouping by Domain", () => {
 
     // Create a tab and wait for it to be grouped
     const tab = await createTab(context, TEST_URLS.domain1)
-    await waitForTabInGroup(popupPage, "example.com", "example")
+    await waitForTabInGroup(popupPage, "example.com", "Example")
 
     // Pin the tab
     await pinTab(popupPage, "example.com")
@@ -202,14 +202,14 @@ test.describe("Tab Grouping by Domain", () => {
     const tab2 = await createTab(context, TEST_URLS.subDomain2) // docs.github.com
 
     // Wait for groups to be created - in subdomain mode, full subdomain is used
-    // Group titles strip TLD: "api.github.com" -> "api.github", "docs.github.com" -> "docs.github"
-    await waitForGroup(popupPage, "api.github")
-    await waitForGroup(popupPage, "docs.github")
+    // Group titles strip TLD and capitalize: "api.github.com" -> "Api.github", "docs.github.com" -> "Docs.github"
+    await waitForGroup(popupPage, "Api.github")
+    await waitForGroup(popupPage, "Docs.github")
 
     // Verify there are 2 separate groups
     const groups = await getTabGroups(popupPage)
-    const apiGroup = groups.find(g => g.title === "api.github")
-    const docsGroup = groups.find(g => g.title === "docs.github")
+    const apiGroup = groups.find(g => g.title === "Api.github")
+    const docsGroup = groups.find(g => g.title === "Docs.github")
 
     expect(apiGroup).toBeDefined()
     expect(docsGroup).toBeDefined()

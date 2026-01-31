@@ -105,7 +105,7 @@ describe("Color Persistence", () => {
     })
 
     it("should use saved color when creating group with same title", async () => {
-      colorMappingState = { example: "cyan" }
+      colorMappingState = { Example: "cyan" }
       mockBrowser.tabs.get.mockResolvedValue({
         id: 1,
         url: "https://example.com",
@@ -126,7 +126,7 @@ describe("Color Persistence", () => {
       expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(
         100,
         expect.objectContaining({
-          title: "example",
+          title: "Example",
           color: "cyan"
         })
       )
@@ -154,13 +154,13 @@ describe("Color Persistence", () => {
       expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(
         100,
         expect.objectContaining({
-          title: "newdomain",
+          title: "Newdomain",
           color: expect.any(String)
         })
       )
 
       // Verify updateGroupColor was called to save the color
-      expect(updateGroupColor).toHaveBeenCalledWith("newdomain", expect.any(String))
+      expect(updateGroupColor).toHaveBeenCalledWith("Newdomain", expect.any(String))
     })
 
     it("should not overwrite custom rule colors with saved colors", async () => {

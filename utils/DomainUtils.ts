@@ -172,8 +172,13 @@ export function getDomainDisplayName(domain: string): string {
 
     const displayName = displayParts.join(".")
 
+    // Capitalize first letter of display name
+    if (displayName) {
+      return displayName.charAt(0).toUpperCase() + displayName.slice(1)
+    }
+
     // If we end up with an empty string, return the original domain
-    return displayName || domain
+    return domain
   } catch {
     return domain // Fallback to original domain if error occurs
   }

@@ -117,9 +117,9 @@ test.describe("Custom Rules", () => {
     expect(matchingTabs.length).toBe(2)
     expect(matchingTabs.every(t => t.groupId === ruleGroup?.id)).toBe(true)
 
-    // Verify no separate domain groups were created
-    const exampleGroup = groups.find(g => g.title === "example")
-    const httpbinGroup = groups.find(g => g.title === "httpbin")
+    // Verify no separate domain groups were created (domain groups would be capitalized)
+    const exampleGroup = groups.find(g => g.title === "Example")
+    const httpbinGroup = groups.find(g => g.title === "Httpbin")
     expect(exampleGroup).toBeUndefined()
     expect(httpbinGroup).toBeUndefined()
 
@@ -173,12 +173,12 @@ test.describe("Custom Rules", () => {
     // Create a tab to example.com
     const tab = await createTab(context, TEST_URLS.domain1)
 
-    // Should be grouped by domain (TLD stripped), not rule (since rule is disabled)
-    await waitForGroup(popupPage, "example")
+    // Should be grouped by domain (TLD stripped, capitalized), not rule (since rule is disabled)
+    await waitForGroup(popupPage, "Example")
 
     // Verify the group is named by domain, not the disabled rule
     const groups = await getTabGroups(popupPage)
-    const domainGroup = groups.find(g => g.title === "example")
+    const domainGroup = groups.find(g => g.title === "Example")
     const ruleGroup = groups.find(g => g.title === "Disabled Rule")
 
     expect(domainGroup).toBeDefined()
@@ -215,12 +215,12 @@ test.describe("Custom Rules", () => {
     // Wait for the regrouping to happen
     await popupPage.waitForTimeout(1000)
 
-    // Since auto-group is on and rule is deleted, tabs should regroup by domain (TLD stripped)
-    await waitForGroup(popupPage, "example")
+    // Since auto-group is on and rule is deleted, tabs should regroup by domain (TLD stripped, capitalized)
+    await waitForGroup(popupPage, "Example")
 
     // Verify the tab is now grouped by domain
     groups = await getTabGroups(popupPage)
-    const domainGroup = groups.find(g => g.title === "example")
+    const domainGroup = groups.find(g => g.title === "Example")
     const ruleGroup = groups.find(g => g.title === "Temp Rule")
 
     expect(domainGroup).toBeDefined()

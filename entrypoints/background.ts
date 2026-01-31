@@ -335,6 +335,13 @@ export default defineBackground(() => {
     try {
       console.log(`[tabs.onRemoved] Tab ${tabId} removed`)
       await ensureStateLoaded()
+
+      // Check if any groups now fall below the minimum tabs threshold
+      if (tabGroupState.autoGroupingEnabled) {
+        // Small delay to allow browser to fully update tab counts (needed for Firefox)
+        await new Promise(resolve => setTimeout(resolve, 100))
+        await tabGroupService.checkAllGroupsThreshold()
+      }
     } catch (error) {
       console.error(`[tabs.onRemoved] Error handling tab ${tabId} removal:`, error)
     }

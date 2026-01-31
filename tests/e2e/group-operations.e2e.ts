@@ -67,8 +67,8 @@ test.afterEach(async () => {
 })
 
 test.describe("Group Operations - Collapse/Expand", () => {
-  // Note: The extension strips TLDs from domain names for group titles
-  // e.g., "example.com" -> "example", "httpbin.org" -> "httpbin"
+  // Note: The extension strips TLDs and capitalizes first letter for group titles
+  // e.g., "example.com" -> "Example", "httpbin.org" -> "Httpbin"
 
   test("collapse all groups", async () => {
     await enableAutoGroup(popupPage)
@@ -78,16 +78,16 @@ test.describe("Group Operations - Collapse/Expand", () => {
     const tab2 = await createTab(context, TEST_URLS.domain2)
     const tab3 = await createTab(context, TEST_URLS.domain3)
 
-    // Wait for groups to be created (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
-    await waitForGroup(popupPage, "typicode")
+    // Wait for groups to be created (TLDs stripped, capitalized)
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
+    await waitForGroup(popupPage, "Typicode")
 
     // Verify expected groups exist
     let groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(true)
-    expect(groups.some(g => g.title === "httpbin")).toBe(true)
-    expect(groups.some(g => g.title === "typicode")).toBe(true)
+    expect(groups.some(g => g.title === "Example")).toBe(true)
+    expect(groups.some(g => g.title === "Httpbin")).toBe(true)
+    expect(groups.some(g => g.title === "Typicode")).toBe(true)
     expect(groups.length).toBeGreaterThanOrEqual(3)
 
     // Expand all first to have a known state
@@ -121,9 +121,9 @@ test.describe("Group Operations - Collapse/Expand", () => {
     const tab1 = await createTab(context, TEST_URLS.domain1)
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
-    // Wait for groups (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    // Wait for groups (TLDs stripped, capitalized)
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Collapse all first
     await collapseAllGroups(popupPage)
@@ -154,9 +154,9 @@ test.describe("Group Operations - Collapse/Expand", () => {
     const tab1 = await createTab(context, TEST_URLS.domain1)
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
-    // Wait for groups (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    // Wait for groups (TLDs stripped, capitalized)
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Expand all to start from known state
     await expandAllGroups(popupPage)

@@ -70,8 +70,8 @@ test.afterEach(async () => {
 })
 
 test.describe("Auto-Grouping Toggle", () => {
-  // Note: The extension strips TLDs from domain names for group titles
-  // e.g., "example.com" -> "example", "httpbin.org" -> "httpbin"
+  // Note: The extension strips TLDs and capitalizes domain names for group titles
+  // e.g., "example.com" -> "Example", "httpbin.org" -> "Httpbin"
 
   test("groups tabs automatically when auto-group is enabled", async () => {
     // Enable auto-grouping first
@@ -86,11 +86,11 @@ test.describe("Auto-Grouping Toggle", () => {
     const tab2 = await createTab(context, TEST_URLS.domain1Page2)
 
     // Wait for automatic grouping (TLD stripped)
-    await waitForTabInGroup(popupPage, "example.com", "example")
+    await waitForTabInGroup(popupPage, "example.com", "Example")
 
     // Verify group was created
     const groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(true)
+    expect(groups.some(g => g.title === "Example")).toBe(true)
 
     // Cleanup
     await tab1.close()
@@ -141,20 +141,20 @@ test.describe("Auto-Grouping Toggle", () => {
     // Verify no groups with our test domains initially
     await popupPage.waitForTimeout(500)
     let groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(false)
-    expect(groups.some(g => g.title === "httpbin")).toBe(false)
+    expect(groups.some(g => g.title === "Example")).toBe(false)
+    expect(groups.some(g => g.title === "Httpbin")).toBe(false)
 
     // Click the Group button to manually group tabs
     await groupAllTabs(popupPage)
 
     // Wait for groups to be created (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Verify our expected groups were created (may have additional system groups)
     groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(true)
-    expect(groups.some(g => g.title === "httpbin")).toBe(true)
+    expect(groups.some(g => g.title === "Example")).toBe(true)
+    expect(groups.some(g => g.title === "Httpbin")).toBe(true)
 
     // Cleanup
     await tab1.close()
@@ -169,13 +169,13 @@ test.describe("Auto-Grouping Toggle", () => {
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
     // Wait for groups to be created (TLDs stripped)
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Verify our expected groups exist
     let groups = await getTabGroups(popupPage)
-    expect(groups.some(g => g.title === "example")).toBe(true)
-    expect(groups.some(g => g.title === "httpbin")).toBe(true)
+    expect(groups.some(g => g.title === "Example")).toBe(true)
+    expect(groups.some(g => g.title === "Httpbin")).toBe(true)
 
     // Disable auto-group first to prevent re-grouping
     await disableAutoGroup(popupPage)
