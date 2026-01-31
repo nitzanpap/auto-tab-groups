@@ -612,4 +612,67 @@ describe("UrlPatternMatcher", () => {
       expect(result.matched).toBe(true)
     })
   })
+
+  describe("auto-subdomain matching", () => {
+    it("should NOT auto-match subdomain by default", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com")
+      expect(result.matched).toBe(false)
+    })
+
+    it("should auto-match www subdomain when allowAutoSubdomain is true", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should auto-match language subdomain when allowAutoSubdomain is true", () => {
+      const result = urlPatternMatcher.match("https://he.aliexpress.com", "aliexpress.com", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should auto-match mobile subdomain when allowAutoSubdomain is true", () => {
+      const result = urlPatternMatcher.match("https://m.facebook.com", "facebook.com", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should auto-match deep subdomains when allowAutoSubdomain is true", () => {
+      const result = urlPatternMatcher.match("https://api.v2.service.com", "service.com", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should still match exact domain when allowAutoSubdomain is true", () => {
+      const result = urlPatternMatcher.match("https://example.com", "example.com", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should NOT auto-match subdomain when allowAutoSubdomain is false", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com", {
+        allowAutoSubdomain: false
+      })
+      expect(result.matched).toBe(false)
+    })
+
+    it("should auto-match subdomain for domain with path", () => {
+      const result = urlPatternMatcher.match("https://www.example.com/page", "example.com/page", {
+        allowAutoSubdomain: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match explicit subdomain pattern exactly without auto-subdomain", () => {
+      const result = urlPatternMatcher.match("https://he.aliexpress.com", "he.aliexpress.com", {
+        allowAutoSubdomain: false
+      })
+      expect(result.matched).toBe(true)
+    })
+  })
 })

@@ -451,8 +451,6 @@ export function validateRuleData(
     errors.push("Domains must be an array")
   } else if (ruleData.domains.length === 0) {
     errors.push("At least one domain is required")
-  } else if (ruleData.domains.length > 20) {
-    errors.push("Maximum 20 domains per rule")
   } else {
     const validPatterns: string[] = []
     for (const pattern of ruleData.domains) {

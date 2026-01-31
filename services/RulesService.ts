@@ -45,6 +45,8 @@ interface ImportResult {
 class RulesService {
   /**
    * Finds a matching custom rule for a given URL
+   * Uses two-pass matching: exact matches first, then auto-www matches
+   * This ensures explicit www.domain.com rules take priority over domain.com with auto-www
    */
   async findMatchingRule(url: string): Promise<MatchedRule | null> {
     if (!url) return null
@@ -54,6 +56,7 @@ class RulesService {
 
     console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
+    // First pass: exact matches only (no auto-subdomain)
     for (const rule of Object.values(customRules)) {
       if (!rule.enabled) {
         continue
@@ -61,12 +64,39 @@ class RulesService {
 
       for (const rulePattern of rule.domains) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
-          ruleName: rule.name
+          ruleName: rule.name,
+          allowAutoSubdomain: false
         })
 
         if (matchResult.matched) {
           console.log(
             `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`
+          )
+
+          return {
+            ...rule,
+            matchInfo: matchResult,
+            effectiveGroupName: matchResult.groupName || rule.name
+          }
+        }
+      }
+    }
+
+    // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
+    for (const rule of Object.values(customRules)) {
+      if (!rule.enabled) {
+        continue
+      }
+
+      for (const rulePattern of rule.domains) {
+        const matchResult = urlPatternMatcher.match(url, rulePattern, {
+          ruleName: rule.name,
+          allowAutoSubdomain: true
+        })
+
+        if (matchResult.matched) {
+          console.log(
+            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}" (auto-subdomain)`
           )
 
           return {
@@ -197,8 +227,6 @@ class RulesService {
       errors.push("Patterns must be an array")
     } else if (ruleData.domains.length === 0) {
       errors.push("At least one pattern is required")
-    } else if (ruleData.domains.length > 20) {
-      errors.push("Maximum 20 patterns per rule")
     } else {
       for (const pattern of ruleData.domains) {
         if (typeof pattern !== "string" || !pattern.trim()) {
