@@ -47,18 +47,19 @@ example.com/admin/*
           <div id="patternFeedback" class="pattern-feedback"></div>
         </div>
         <div class="form-group">
-          <label for="ruleColor">Group Color</label>
-          <select id="ruleColor">
-            <option value="blue">Blue</option>
-            <option value="red">Red</option>
-            <option value="yellow">Yellow</option>
-            <option value="green">Green</option>
-            <option value="pink">Pink</option>
-            <option value="purple">Purple</option>
-            <option value="cyan">Cyan</option>
-            <option value="orange">Orange</option>
-            <option value="grey">Grey</option>
-          </select>
+          <label>Group Color</label>
+          <div id="colorPicker" class="color-picker">
+            <button type="button" class="color-btn active" data-color="blue" title="Blue"></button>
+            <button type="button" class="color-btn" data-color="red" title="Red"></button>
+            <button type="button" class="color-btn" data-color="yellow" title="Yellow"></button>
+            <button type="button" class="color-btn" data-color="green" title="Green"></button>
+            <button type="button" class="color-btn" data-color="pink" title="Pink"></button>
+            <button type="button" class="color-btn" data-color="purple" title="Purple"></button>
+            <button type="button" class="color-btn" data-color="cyan" title="Cyan"></button>
+            <button type="button" class="color-btn" data-color="orange" title="Orange"></button>
+            <button type="button" class="color-btn" data-color="grey" title="Grey"></button>
+          </div>
+          <input type="hidden" id="ruleColor" value="blue" />
         </div>
         <div class="form-group checkbox-group">
           <label>
