@@ -476,7 +476,7 @@ describe("TabGroupService", () => {
           { id: 3, url: "https://example.com", pinned: false }
         ])
 
-        const count = await tabGroupService.countTabsForGroup("example", 1, null)
+        const count = await tabGroupService.countTabsForGroup("Example", 1, null)
 
         // Should be 2 (excludes pinned tab)
         expect(count).toBe(2)
@@ -488,7 +488,7 @@ describe("TabGroupService", () => {
           { id: 2, url: "https://example.com", pinned: true }
         ])
 
-        const count = await tabGroupService.countTabsForGroup("example", 1, null)
+        const count = await tabGroupService.countTabsForGroup("Example", 1, null)
 
         expect(count).toBe(0)
       })

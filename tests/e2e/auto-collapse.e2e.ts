@@ -104,9 +104,9 @@ test.describe("Auto-Collapse Feature", () => {
     const tab3 = await createTab(context, TEST_URLS.domain3)
 
     // Wait for groups to be created
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
-    await waitForGroup(popupPage, "typicode")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
+    await waitForGroup(popupPage, "Typicode")
 
     // Expand all groups first
     await expandAllGroups(popupPage)
@@ -163,8 +163,8 @@ test.describe("Auto-Collapse Feature", () => {
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
     // Wait for groups
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Expand all groups
     await expandAllGroups(popupPage)
@@ -200,8 +200,8 @@ test.describe("Auto-Collapse Feature", () => {
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
     // Wait for groups
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Expand all
     await expandAllGroups(popupPage)
@@ -239,8 +239,8 @@ test.describe("Auto-Collapse Feature", () => {
     const tab2 = await createTab(context, TEST_URLS.domain2)
 
     // Wait for groups
-    await waitForGroup(popupPage, "example")
-    await waitForGroup(popupPage, "httpbin")
+    await waitForGroup(popupPage, "Example")
+    await waitForGroup(popupPage, "Httpbin")
 
     // Collapse all groups first
     await popupPage.evaluate(async () => {

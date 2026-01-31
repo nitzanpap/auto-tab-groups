@@ -78,28 +78,28 @@ describe("DomainUtils", () => {
   })
 
   describe("getDomainDisplayName", () => {
-    it("should return display name for simple domain", () => {
-      expect(getDomainDisplayName("example.com")).toBe("example")
+    it("should return capitalized display name for simple domain", () => {
+      expect(getDomainDisplayName("example.com")).toBe("Example")
     })
 
     it('should return "System" for system domain', () => {
       expect(getDomainDisplayName("system")).toBe("System")
     })
 
-    it("should remove www prefix", () => {
-      expect(getDomainDisplayName("www.example.com")).toBe("example")
+    it("should remove www prefix and capitalize", () => {
+      expect(getDomainDisplayName("www.example.com")).toBe("Example")
     })
 
-    it("should handle country code SLDs (co.uk)", () => {
-      expect(getDomainDisplayName("bbc.co.uk")).toBe("bbc")
+    it("should handle country code SLDs (co.uk) and capitalize", () => {
+      expect(getDomainDisplayName("bbc.co.uk")).toBe("Bbc")
     })
 
-    it("should handle country code SLDs (com.au)", () => {
-      expect(getDomainDisplayName("abc.com.au")).toBe("abc")
+    it("should handle country code SLDs (com.au) and capitalize", () => {
+      expect(getDomainDisplayName("abc.com.au")).toBe("Abc")
     })
 
-    it("should handle subdomains with ccSLDs", () => {
-      expect(getDomainDisplayName("news.bbc.co.uk")).toBe("news.bbc")
+    it("should handle subdomains with ccSLDs and capitalize", () => {
+      expect(getDomainDisplayName("news.bbc.co.uk")).toBe("News.bbc")
     })
 
     it("should capitalize single word domains", () => {
