@@ -8,7 +8,7 @@ export default defineConfig({
       name: "Auto Tab Groups",
       description: "Automatically groups tabs by domain.",
       author: "Nitzan Papini",
-      permissions: ["tabs", "storage", "tabGroups"],
+      permissions: ["tabs", "storage", "tabGroups", "contextMenus"],
       icons: {
         16: "icon/16.png",
         48: "icon/48.png",

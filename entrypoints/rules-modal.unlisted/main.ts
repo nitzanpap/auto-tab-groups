@@ -7,6 +7,13 @@ const urlParams = new URLSearchParams(window.location.search)
 const isEditMode = urlParams.get("edit") === "true"
 const ruleId = urlParams.get("ruleId")
 
+// Parameters for "Create from Group" mode
+const isFromGroup = urlParams.get("fromGroup") === "true"
+const groupName = urlParams.get("name") || ""
+const groupColor = urlParams.get("color") || "blue"
+const simpleDomains = urlParams.get("domains")?.split(",").filter(Boolean) || []
+const explicitUrls = urlParams.get("urls")?.split(",").filter(Boolean) || []
+
 // DOM Elements
 const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement
 const ruleForm = document.getElementById("ruleForm") as HTMLFormElement
@@ -17,6 +24,12 @@ const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputE
 const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
 const patternFeedback = document.getElementById("patternFeedback") as HTMLDivElement
+
+// Pattern mode toggle elements (for "Create from Group" mode)
+const patternModeToggle = document.getElementById("patternModeToggle") as HTMLDivElement
+const simpleModeBtn = document.getElementById("simpleModeBtn") as HTMLButtonElement
+const explicitModeBtn = document.getElementById("explicitModeBtn") as HTMLButtonElement
+const modeHint = document.getElementById("modeHint") as HTMLDivElement
 
 // Validate patterns in real-time
 function validatePatterns(): void {
@@ -144,8 +157,49 @@ function cancel(): void {
   window.close()
 }
 
+// Pre-populate form from group data
+function loadFromGroup(): void {
+  if (!isFromGroup) return
+
+  modalTitle.textContent = "Create Rule from Group"
+
+  // Pre-populate form fields
+  ruleNameInput.value = groupName
+  ruleColorSelect.value = groupColor
+  rulePatternsInput.value = simpleDomains.join("\n")
+
+  // Show the pattern mode toggle
+  patternModeToggle.classList.remove("hidden")
+
+  // Validate the pre-filled patterns
+  validatePatterns()
+}
+
+// Set up pattern mode toggle functionality
+function setupPatternModeToggle(): void {
+  if (!isFromGroup) return
+
+  simpleModeBtn.addEventListener("click", () => {
+    rulePatternsInput.value = simpleDomains.join("\n")
+    simpleModeBtn.classList.add("active")
+    explicitModeBtn.classList.remove("active")
+    modeHint.textContent = "Groups all pages from these base domains"
+    validatePatterns()
+  })
+
+  explicitModeBtn.addEventListener("click", () => {
+    rulePatternsInput.value = explicitUrls.join("\n")
+    explicitModeBtn.classList.add("active")
+    simpleModeBtn.classList.remove("active")
+    modeHint.textContent = "Only matches these exact URLs"
+    validatePatterns()
+  })
+}
+
 // Initialize
 loadExistingRule()
+loadFromGroup()
+setupPatternModeToggle()
 
 // Event listeners
 ruleForm.addEventListener("submit", saveRule)

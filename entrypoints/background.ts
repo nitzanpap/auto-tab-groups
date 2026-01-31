@@ -8,7 +8,7 @@
  * - All operations must ensure state is loaded from storage before proceeding
  */
 
-import { rulesService, tabGroupService, tabGroupState } from "../services"
+import { contextMenuService, rulesService, tabGroupService, tabGroupState } from "../services"
 import { loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -49,6 +49,9 @@ export default defineBackground(() => {
   ensureStateLoaded()
     .then(async () => {
       try {
+        // Initialize context menus
+        await contextMenuService.initialize()
+
         if (tabGroupState.autoGroupingEnabled) {
           console.log("Auto-grouping is enabled, grouping existing tabs...")
           await tabGroupService.groupAllTabs()
