@@ -20,6 +20,18 @@
           <input type="text" id="ruleName" placeholder="e.g., Work Apps, 工作, 仕事" required />
           <div class="help-text">Supports any language including Chinese, Japanese, Korean, and emojis</div>
         </div>
+        <div id="patternModeToggle" class="form-group pattern-mode-toggle hidden">
+          <label>Pattern Mode</label>
+          <div class="toggle-buttons">
+            <button type="button" id="simpleModeBtn" class="toggle-btn active">
+              Simple (domains)
+            </button>
+            <button type="button" id="explicitModeBtn" class="toggle-btn">
+              Explicit (full URLs)
+            </button>
+          </div>
+          <div id="modeHint" class="help-text">Groups all pages from these base domains</div>
+        </div>
         <div class="form-group">
           <label for="rulePatterns">URL Patterns (one per line)</label>
           <textarea

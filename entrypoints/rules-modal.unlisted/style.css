@@ -146,3 +146,38 @@ h1 {
 .pattern-feedback.success {
   color: #28a745;
 }
+
+/* Pattern Mode Toggle */
+.pattern-mode-toggle.hidden {
+  display: none;
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.toggle-btn.active {
+  border-color: var(--primary-color);
+  background: #eff6ff;
+  color: var(--primary-color);
+}
