@@ -181,3 +181,70 @@ h1 {
   background: #eff6ff;
   color: var(--primary-color);
 }
+
+/* Color Picker */
+.color-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.color-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.color-btn.active {
+  border-color: #1f2937;
+  box-shadow:
+    0 0 0 2px white,
+    0 0 0 4px #1f2937;
+}
+
+/* Chrome tab group colors */
+.color-btn[data-color="blue"] {
+  background-color: #8ab4f8;
+}
+
+.color-btn[data-color="red"] {
+  background-color: #f28b82;
+}
+
+.color-btn[data-color="yellow"] {
+  background-color: #fdd663;
+}
+
+.color-btn[data-color="green"] {
+  background-color: #81c995;
+}
+
+.color-btn[data-color="pink"] {
+  background-color: #ff8bcb;
+}
+
+.color-btn[data-color="purple"] {
+  background-color: #c58af9;
+}
+
+.color-btn[data-color="cyan"] {
+  background-color: #78d9ec;
+}
+
+.color-btn[data-color="orange"] {
+  background-color: #fcad70;
+}
+
+.color-btn[data-color="grey"] {
+  background-color: #dadce0;
+}

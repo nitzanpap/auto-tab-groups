@@ -19,7 +19,8 @@ const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement
 const ruleForm = document.getElementById("ruleForm") as HTMLFormElement
 const ruleNameInput = document.getElementById("ruleName") as HTMLInputElement
 const rulePatternsInput = document.getElementById("rulePatterns") as HTMLTextAreaElement
-const ruleColorSelect = document.getElementById("ruleColor") as HTMLSelectElement
+const ruleColorInput = document.getElementById("ruleColor") as HTMLInputElement
+const colorPicker = document.getElementById("colorPicker") as HTMLDivElement
 const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputElement
 const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
@@ -86,7 +87,7 @@ async function loadExistingRule(): Promise<void> {
       const rule = response.customRules[ruleId]
       ruleNameInput.value = rule.name
       rulePatternsInput.value = rule.domains.join("\n")
-      ruleColorSelect.value = rule.color || "blue"
+      setColorPickerValue(rule.color || "blue")
       ruleEnabledCheckbox.checked = rule.enabled !== false
     }
   } catch (error) {
@@ -104,7 +105,7 @@ async function saveRule(event: Event): Promise<void> {
     .split("\n")
     .map(p => p.trim())
     .filter(p => p)
-  const color = ruleColorSelect.value as TabGroupColor
+  const color = ruleColorInput.value as TabGroupColor
   const enabled = ruleEnabledCheckbox.checked
 
   if (!name) {
@@ -157,6 +158,30 @@ function cancel(): void {
   window.close()
 }
 
+// Color picker helpers
+function setColorPickerValue(color: string): void {
+  ruleColorInput.value = color
+
+  // Update active state on buttons
+  const buttons = colorPicker.querySelectorAll(".color-btn")
+  buttons.forEach(btn => {
+    const btnColor = btn.getAttribute("data-color")
+    btn.classList.toggle("active", btnColor === color)
+  })
+}
+
+function setupColorPicker(): void {
+  colorPicker.addEventListener("click", e => {
+    const target = e.target as HTMLElement
+    if (target.classList.contains("color-btn")) {
+      const color = target.getAttribute("data-color")
+      if (color) {
+        setColorPickerValue(color)
+      }
+    }
+  })
+}
+
 // Pre-populate form from group data
 function loadFromGroup(): void {
   if (!isFromGroup) return
@@ -165,7 +190,7 @@ function loadFromGroup(): void {
 
   // Pre-populate form fields
   ruleNameInput.value = groupName
-  ruleColorSelect.value = groupColor
+  setColorPickerValue(groupColor)
   rulePatternsInput.value = simpleDomains.join("\n")
 
   // Show the pattern mode toggle
@@ -197,6 +222,7 @@ function setupPatternModeToggle(): void {
 }
 
 // Initialize
+setupColorPicker()
 loadExistingRule()
 loadFromGroup()
 setupPatternModeToggle()
