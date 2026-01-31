@@ -56,7 +56,7 @@ class RulesService {
 
     console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
-    // First pass: exact matches only (no auto-www)
+    // First pass: exact matches only (no auto-subdomain)
     for (const rule of Object.values(customRules)) {
       if (!rule.enabled) {
         continue
@@ -65,7 +65,7 @@ class RulesService {
       for (const rulePattern of rule.domains) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
           ruleName: rule.name,
-          allowAutoWww: false
+          allowAutoSubdomain: false
         })
 
         if (matchResult.matched) {
@@ -82,7 +82,7 @@ class RulesService {
       }
     }
 
-    // Second pass: auto-www matches (domain.com matches www.domain.com)
+    // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
     for (const rule of Object.values(customRules)) {
       if (!rule.enabled) {
         continue
@@ -91,12 +91,12 @@ class RulesService {
       for (const rulePattern of rule.domains) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
           ruleName: rule.name,
-          allowAutoWww: true
+          allowAutoSubdomain: true
         })
 
         if (matchResult.matched) {
           console.log(
-            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}" (auto-www)`
+            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}" (auto-subdomain)`
           )
 
           return {

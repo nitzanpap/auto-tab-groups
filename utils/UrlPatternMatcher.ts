@@ -31,7 +31,7 @@ export interface MatchResult {
 export interface MatchOptions {
   ruleName?: string
   groupNameTemplate?: string
-  allowAutoWww?: boolean
+  allowAutoSubdomain?: boolean
 }
 
 /**
@@ -191,8 +191,8 @@ class UrlPatternMatcher {
     // Exact match
     if (cleanDomain === cleanPattern) return true
 
-    // Auto-match www subdomain (only if enabled)
-    if (options.allowAutoWww && cleanDomain === `www.${cleanPattern}`) return true
+    // Auto-match any subdomain (only if enabled)
+    if (options.allowAutoSubdomain && cleanDomain.endsWith(`.${cleanPattern}`)) return true
 
     return false
   }
