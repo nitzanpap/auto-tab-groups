@@ -229,4 +229,95 @@ test.describe("Custom Rules", () => {
     // Cleanup
     await tab.close()
   })
+
+  test("auto-subdomain: base domain rule matches subdomains", async () => {
+    // Create a rule for github.com (no subdomain specified)
+    const ruleId = await addCustomRule(popupPage, {
+      name: "GitHub",
+      domains: ["github.com"],
+      color: "cyan",
+      enabled: true
+    })
+    expect(ruleId).toBeTruthy()
+
+    await enableAutoGroup(popupPage)
+
+    // Create tabs to different GitHub subdomains
+    const tab1 = await createTab(context, TEST_URLS.subDomain1) // api.github.com
+    const tab2 = await createTab(context, TEST_URLS.subDomain2) // docs.github.com
+
+    // Wait for group to be created with the rule name
+    await waitForGroup(popupPage, "GitHub")
+
+    // Verify the rule group exists
+    const groups = await getTabGroups(popupPage)
+    const ruleGroup = groups.find(g => g.title === "GitHub")
+    expect(ruleGroup).toBeDefined()
+
+    // Verify both subdomain tabs are in the rule group
+    const tabs = await getTabs(popupPage)
+    const matchingTabs = tabs.filter(
+      t => t.url.includes("github.com") && !t.url.includes("chrome-extension")
+    )
+    expect(matchingTabs.length).toBe(2)
+    expect(matchingTabs.every(t => t.groupId === ruleGroup?.id)).toBe(true)
+
+    // Cleanup
+    await tab1.close()
+    await tab2.close()
+  })
+
+  test("auto-subdomain: explicit subdomain rule takes priority", async () => {
+    // Create a general rule for github.com
+    const generalRuleId = await addCustomRule(popupPage, {
+      name: "GitHub General",
+      domains: ["github.com"],
+      color: "blue",
+      enabled: true
+    })
+    expect(generalRuleId).toBeTruthy()
+
+    // Create a specific rule for api.github.com
+    const specificRuleId = await addCustomRule(popupPage, {
+      name: "GitHub API",
+      domains: ["api.github.com"],
+      color: "green",
+      enabled: true
+    })
+    expect(specificRuleId).toBeTruthy()
+
+    await enableAutoGroup(popupPage)
+
+    // Create tabs to both subdomains
+    const apiTab = await createTab(context, TEST_URLS.subDomain1) // api.github.com
+    const docsTab = await createTab(context, TEST_URLS.subDomain2) // docs.github.com
+
+    // Wait for both groups to be created
+    await waitForGroup(popupPage, "GitHub API")
+    await waitForGroup(popupPage, "GitHub General")
+
+    // Verify both groups exist
+    const groups = await getTabGroups(popupPage)
+    const apiGroup = groups.find(g => g.title === "GitHub API")
+    const generalGroup = groups.find(g => g.title === "GitHub General")
+
+    expect(apiGroup).toBeDefined()
+    expect(generalGroup).toBeDefined()
+
+    // Verify api.github.com tab is in the specific API group (explicit rule wins)
+    const tabs = await getTabs(popupPage)
+    const apiTabs = tabs.filter(t => t.url.includes("api.github.com"))
+    const docsTabs = tabs.filter(t => t.url.includes("docs.github.com"))
+
+    expect(apiTabs.length).toBe(1)
+    expect(apiTabs[0].groupId).toBe(apiGroup?.id)
+
+    // Verify docs.github.com tab is in the general group (auto-subdomain match)
+    expect(docsTabs.length).toBe(1)
+    expect(docsTabs[0].groupId).toBe(generalGroup?.id)
+
+    // Cleanup
+    await apiTab.close()
+    await docsTab.close()
+  })
 })
