@@ -612,4 +612,53 @@ describe("UrlPatternMatcher", () => {
       expect(result.matched).toBe(true)
     })
   })
+
+  describe("auto-www subdomain matching", () => {
+    it("should NOT auto-match www subdomain by default", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com")
+      expect(result.matched).toBe(false)
+    })
+
+    it("should auto-match www subdomain when allowAutoWww is true", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com", {
+        allowAutoWww: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should still match exact domain when allowAutoWww is true", () => {
+      const result = urlPatternMatcher.match("https://example.com", "example.com", {
+        allowAutoWww: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should NOT auto-match www subdomain when allowAutoWww is false", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "example.com", {
+        allowAutoWww: false
+      })
+      expect(result.matched).toBe(false)
+    })
+
+    it("should NOT auto-match other subdomains with allowAutoWww", () => {
+      const result = urlPatternMatcher.match("https://blog.example.com", "example.com", {
+        allowAutoWww: true
+      })
+      expect(result.matched).toBe(false)
+    })
+
+    it("should auto-match www for domain with path", () => {
+      const result = urlPatternMatcher.match("https://www.example.com/page", "example.com/page", {
+        allowAutoWww: true
+      })
+      expect(result.matched).toBe(true)
+    })
+
+    it("should match explicit www.domain.com pattern exactly", () => {
+      const result = urlPatternMatcher.match("https://www.example.com", "www.example.com", {
+        allowAutoWww: false
+      })
+      expect(result.matched).toBe(true)
+    })
+  })
 })

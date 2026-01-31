@@ -31,6 +31,7 @@ export interface MatchResult {
 export interface MatchOptions {
   ruleName?: string
   groupNameTemplate?: string
+  allowAutoWww?: boolean
 }
 
 /**
@@ -124,7 +125,7 @@ class UrlPatternMatcher {
       const pathPattern = hasPath ? cleanPattern.substring(firstSlashIndex + 1) : ""
 
       // Match domain part
-      const domainMatch = this.matchDomainWildcard(hostname, domainPattern)
+      const domainMatch = this.matchDomainWildcard(hostname, domainPattern, options)
       if (!domainMatch) {
         return { matched: false, extractedValues: {}, groupName: null }
       }
@@ -147,7 +148,7 @@ class UrlPatternMatcher {
   /**
    * Matches domain with wildcard support
    */
-  matchDomainWildcard(domain: string, pattern: string): boolean {
+  matchDomainWildcard(domain: string, pattern: string, options: MatchOptions = {}): boolean {
     if (!domain || !pattern) return false
 
     const cleanDomain = domain.toLowerCase().trim()
@@ -188,7 +189,12 @@ class UrlPatternMatcher {
     }
 
     // Exact match
-    return cleanDomain === cleanPattern
+    if (cleanDomain === cleanPattern) return true
+
+    // Auto-match www subdomain (only if enabled)
+    if (options.allowAutoWww && cleanDomain === `www.${cleanPattern}`) return true
+
+    return false
   }
 
   /**

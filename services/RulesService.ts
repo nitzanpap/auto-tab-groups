@@ -45,6 +45,8 @@ interface ImportResult {
 class RulesService {
   /**
    * Finds a matching custom rule for a given URL
+   * Uses two-pass matching: exact matches first, then auto-www matches
+   * This ensures explicit www.domain.com rules take priority over domain.com with auto-www
    */
   async findMatchingRule(url: string): Promise<MatchedRule | null> {
     if (!url) return null
@@ -54,6 +56,7 @@ class RulesService {
 
     console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
+    // First pass: exact matches only (no auto-www)
     for (const rule of Object.values(customRules)) {
       if (!rule.enabled) {
         continue
@@ -61,12 +64,39 @@ class RulesService {
 
       for (const rulePattern of rule.domains) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
-          ruleName: rule.name
+          ruleName: rule.name,
+          allowAutoWww: false
         })
 
         if (matchResult.matched) {
           console.log(
             `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`
+          )
+
+          return {
+            ...rule,
+            matchInfo: matchResult,
+            effectiveGroupName: matchResult.groupName || rule.name
+          }
+        }
+      }
+    }
+
+    // Second pass: auto-www matches (domain.com matches www.domain.com)
+    for (const rule of Object.values(customRules)) {
+      if (!rule.enabled) {
+        continue
+      }
+
+      for (const rulePattern of rule.domains) {
+        const matchResult = urlPatternMatcher.match(url, rulePattern, {
+          ruleName: rule.name,
+          allowAutoWww: true
+        })
+
+        if (matchResult.matched) {
+          console.log(
+            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}" (auto-www)`
           )
 
           return {
