@@ -54,12 +54,15 @@ class TabGroupServiceSimplified {
       const tab = await browser.tabs.get(tabId)
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
-      // Check if this is a new tab URL and user has disabled grouping new tabs
-      if (!forceGrouping && !tabGroupState.groupNewTabs && tab.url && this.isNewTabUrl(tab.url)) {
-        console.log(
-          `[TabGroupService] Tab ${tabId} has a new tab URL and grouping new tabs is disabled`
-        )
-        return false
+      // Check if this is a system URL and user has disabled grouping system tabs
+      if (!forceGrouping && !tabGroupState.groupNewTabs) {
+        const domain = extractDomain(tab.url || "", false)
+        if (domain === "system") {
+          console.log(
+            `[TabGroupService] Tab ${tabId} has a system URL and grouping system tabs is disabled`
+          )
+          return false
+        }
       }
 
       // Skip pinned tabs
@@ -146,9 +149,10 @@ class TabGroupServiceSimplified {
             count++
           }
         } else {
-          // Handle empty/undefined URLs and new tab URLs as System tabs
+          // Handle empty/undefined URLs and system URLs as System tabs
           if (expectedTitle === "System") {
-            if (!tab.url || tab.url === "" || this.isNewTabUrl(tab.url)) {
+            const tabDomain = extractDomain(tab.url || "", false)
+            if (!tab.url || tab.url === "" || tabDomain === "system") {
               count++
               continue
             }
@@ -404,9 +408,10 @@ class TabGroupServiceSimplified {
             continue
           }
 
-          // For new tab URLs, respect the groupNewTabs setting
-          if (this.isNewTabUrl(tab.url) && !tabGroupState.groupNewTabs) {
-            console.log(`[TabGroupService] Skipping new tab ${tab.id} - groupNewTabs disabled`)
+          // For system URLs, respect the groupNewTabs setting
+          const domain = extractDomain(tab.url, false)
+          if (domain === "system" && !tabGroupState.groupNewTabs) {
+            console.log(`[TabGroupService] Skipping system tab ${tab.id} - groupNewTabs disabled`)
             continue
           }
 

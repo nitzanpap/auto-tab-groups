@@ -71,6 +71,116 @@ describe("TabGroupService", () => {
     })
   })
 
+  describe("handleTabUpdate with system URLs", () => {
+    beforeEach(() => {
+      tabGroupState.autoGroupingEnabled = true
+    })
+
+    it("should skip chrome://settings/ when groupNewTabs is disabled", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://settings/",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip chrome://extensions/ when groupNewTabs is disabled", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://extensions/",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip about:preferences when groupNewTabs is disabled", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "about:preferences",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip about:config when groupNewTabs is disabled", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "about:config",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should group chrome://settings/ when groupNewTabs is enabled", async () => {
+      tabGroupState.groupNewTabs = true
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://settings/",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "chrome://settings/", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+    })
+
+    it("should still group regular URLs when groupNewTabs is disabled", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+    })
+  })
+
   describe("getEffectiveMinimumTabs", () => {
     it("should return global minimum when no custom rule", () => {
       tabGroupState.minimumTabsForGroup = 3
@@ -367,6 +477,54 @@ describe("TabGroupService", () => {
 
       expect(mockBrowser.tabs.get).not.toHaveBeenCalled()
     })
+
+    it("should skip chrome://settings/ when groupNewTabs is disabled (manual grouping)", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "chrome://settings/", groupId: -1, pinned: false }
+      ])
+
+      await tabGroupService.groupAllTabsManually()
+
+      expect(mockBrowser.tabs.get).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip chrome://extensions/ when groupNewTabs is disabled (manual grouping)", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "chrome://extensions/", groupId: -1, pinned: false }
+      ])
+
+      await tabGroupService.groupAllTabsManually()
+
+      expect(mockBrowser.tabs.get).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip about:config when groupNewTabs is disabled (manual grouping)", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "about:config", groupId: -1, pinned: false }
+      ])
+
+      await tabGroupService.groupAllTabsManually()
+
+      expect(mockBrowser.tabs.get).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip about:preferences when groupNewTabs is disabled (manual grouping)", async () => {
+      tabGroupState.groupNewTabs = false
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "about:preferences", groupId: -1, pinned: false }
+      ])
+
+      await tabGroupService.groupAllTabsManually()
+
+      expect(mockBrowser.tabs.get).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
   })
 
   describe("findGroupByTitle", () => {
@@ -491,6 +649,56 @@ describe("TabGroupService", () => {
         const count = await tabGroupService.countTabsForGroup("Example", 1, null)
 
         expect(count).toBe(0)
+      })
+    })
+
+    describe("countTabsForGroup with system URLs", () => {
+      it("should count chrome://settings/ tabs for System group", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "chrome://settings/", pinned: false },
+          { id: 2, url: "chrome://newtab/", pinned: false },
+          { id: 3, url: "about:blank", pinned: false }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("System", 1, null)
+
+        expect(count).toBe(3)
+      })
+
+      it("should count chrome://extensions/ for System group", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "chrome://extensions/", pinned: false },
+          { id: 2, url: "about:config", pinned: false }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("System", 1, null)
+
+        expect(count).toBe(2)
+      })
+
+      it("should count about:preferences for System group", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "about:preferences", pinned: false },
+          { id: 2, url: "https://example.com", pinned: false }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("System", 1, null)
+
+        // Only about:preferences is a system URL, example.com is not
+        expect(count).toBe(1)
+      })
+
+      it("should count tabs with empty URLs for System group", async () => {
+        mockBrowser.tabs.query.mockResolvedValue([
+          { id: 1, url: "", pinned: false },
+          { id: 2, url: undefined, pinned: false },
+          { id: 3, url: "https://example.com", pinned: false }
+        ])
+
+        const count = await tabGroupService.countTabsForGroup("System", 1, null)
+
+        // Empty and undefined URLs count as system tabs
+        expect(count).toBe(2)
       })
     })
 
