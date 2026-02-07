@@ -293,6 +293,34 @@ describe("AiResponseParser", () => {
         '[{"groupName":"A","tabIndices":[1],"color":"blue"}]'
       )
     })
+
+    it("should combine multiple separate JSON objects (JSONL-like)", () => {
+      const input = [
+        '{"groupName":"Travel","tabIndices":[1,3],"color":"cyan"}',
+        "",
+        '{"groupName":"Cooking","tabIndices":[2],"color":"orange"}',
+        "",
+        '{"groupName":"Extensions","tabIndices":[4,5],"color":"green"}'
+      ].join("\n")
+      const result = extractJsonArrayFromResponse(input)
+      expect(result).not.toBeNull()
+      const parsed = JSON.parse(result!)
+      expect(Array.isArray(parsed)).toBe(true)
+      expect(parsed).toHaveLength(3)
+      expect(parsed[0].groupName).toBe("Travel")
+      expect(parsed[1].groupName).toBe("Cooking")
+      expect(parsed[2].groupName).toBe("Extensions")
+    })
+
+    it("should combine JSONL objects with surrounding text", () => {
+      const input =
+        'Here are the groups:\n{"groupName":"A","tabIndices":[1],"color":"blue"}\n{"groupName":"B","tabIndices":[2],"color":"red"}\nDone!'
+      const result = extractJsonArrayFromResponse(input)
+      expect(result).not.toBeNull()
+      const parsed = JSON.parse(result!)
+      expect(Array.isArray(parsed)).toBe(true)
+      expect(parsed).toHaveLength(2)
+    })
   })
 
   describe("parseAiSuggestionResponse", () => {

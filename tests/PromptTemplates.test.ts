@@ -70,15 +70,19 @@ describe("PromptTemplates", () => {
       expect(messages[1].role).toBe("user")
     })
 
-    it("should list tabs with titles and URLs", () => {
+    it("should list tabs with domains in brackets and titles", () => {
       const tabs = [
         { title: "Google", url: "https://google.com" },
         { title: "GitHub", url: "https://github.com" }
       ]
       const messages = tabGroupSuggestionPrompt(tabs)
-      expect(messages[1].content).toContain("Google")
-      expect(messages[1].content).toContain("https://google.com")
-      expect(messages[1].content).toContain("GitHub")
+      expect(messages[1].content).toContain('[google.com] "Google"')
+      expect(messages[1].content).toContain('[github.com] "GitHub"')
+    })
+
+    it("should emphasize domain-based grouping in system prompt", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("same domain")
     })
 
     it("should number the tabs", () => {

@@ -243,6 +243,24 @@ export function extractJsonArrayFromResponse(content: string): string | null {
     }
   }
 
+  // Strategy 5: Multiple separate JSON objects (JSONL-like)
+  // Small models sometimes output each object on its own line without array wrapper
+  const objectMatches = trimmed.match(/\{[^{}]+\}/g)
+  if (objectMatches && objectMatches.length >= 1) {
+    const arrayCandidate = `[${objectMatches.join(",")}]`
+    try {
+      const parsed = JSON.parse(arrayCandidate)
+      if (
+        Array.isArray(parsed) &&
+        parsed.some(obj => obj && typeof obj === "object" && obj.groupName)
+      ) {
+        return arrayCandidate
+      }
+    } catch {
+      // Could not combine objects
+    }
+  }
+
   return null
 }
 

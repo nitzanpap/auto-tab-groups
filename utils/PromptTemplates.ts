@@ -49,20 +49,31 @@ export function ruleGenerationPrompt(
 export function tabGroupSuggestionPrompt(
   tabs: ReadonlyArray<{ title: string; url: string }>
 ): AiChatMessage[] {
-  const tabList = tabs.map((t, i) => `${i + 1}. "${t.title}" - ${t.url}`).join("\n")
+  const tabList = tabs
+    .map((t, i) => {
+      let domain = t.url
+      try {
+        domain = new URL(t.url).hostname
+      } catch {
+        // Keep raw URL as fallback
+      }
+      return `${i + 1}. [${domain}] "${t.title}"`
+    })
+    .join("\n")
 
   return [
     {
       role: "system",
       content: [
         "You organize browser tabs into groups.",
-        "Output ONLY a JSON array. Each element: groupName (1-3 words), tabIndices (array of 1-based tab numbers from the user list), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
+        "Output ONLY a JSON array. Each element: groupName (1-3 words), tabIndices (array of 1-based tab numbers), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
+        "Tabs from the same domain usually belong in the same group.",
         "",
         "Example:",
-        'Input: 1. "Flights to Paris" - https://expedia.com/flights 2. "Best pasta recipe" - https://allrecipes.com/pasta 3. "Hotel deals Rome" - https://booking.com/rome',
+        'Input: 1. [expedia.com] "Flights to Paris" 2. [allrecipes.com] "Best pasta recipe" 3. [booking.com] "Hotel deals Rome"',
         'Output: [{"groupName":"Travel","tabIndices":[1,3],"color":"cyan"},{"groupName":"Cooking","tabIndices":[2],"color":"orange"}]',
         "",
-        "Rules: every tab in exactly one group, short names (1-3 words), use tabIndices from the user's numbered list, JSON array only — no other text."
+        "Rules: every tab in exactly one group, short names (1-3 words), JSON array only — no other text."
       ].join("\n")
     },
     {
