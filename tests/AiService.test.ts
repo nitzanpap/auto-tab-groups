@@ -59,9 +59,7 @@ describe("AiService", () => {
     aiService.updateFromStorage({
       aiEnabled: false,
       aiProvider: "webllm",
-      aiModelId: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-      aiExternalApiKey: "",
-      aiExternalApiEndpoint: ""
+      aiModelId: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
     })
   })
 
@@ -69,16 +67,14 @@ describe("AiService", () => {
     it("should initialize with default values", () => {
       expect(aiService.isEnabled()).toBe(false)
       expect(aiService.getSelectedProvider()).toBe("webllm")
-      expect(aiService.getSelectedModelId()).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
+      expect(aiService.getSelectedModelId()).toBe("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
     })
 
     it("should update from storage settings", () => {
       aiService.updateFromStorage({
         aiEnabled: true,
         aiProvider: "external",
-        aiModelId: "test-model",
-        aiExternalApiKey: "key123",
-        aiExternalApiEndpoint: "https://api.example.com"
+        aiModelId: "test-model"
       })
 
       expect(aiService.isEnabled()).toBe(true)
@@ -114,18 +110,14 @@ describe("AiService", () => {
       aiService.updateFromStorage({
         aiEnabled: true,
         aiProvider: "webllm",
-        aiModelId: "test-model",
-        aiExternalApiKey: "key",
-        aiExternalApiEndpoint: "endpoint"
+        aiModelId: "test-model"
       })
 
       const settings = aiService.getSettings()
       expect(settings).toEqual({
         aiEnabled: true,
         aiProvider: "webllm",
-        aiModelId: "test-model",
-        aiExternalApiKey: "key",
-        aiExternalApiEndpoint: "endpoint"
+        aiModelId: "test-model"
       })
     })
   })

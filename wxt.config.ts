@@ -9,6 +9,7 @@ export default defineConfig({
       description: "Automatically groups tabs by domain.",
       author: "Nitzan Papini",
       permissions: ["tabs", "storage", "tabGroups", "contextMenus"],
+      // 'wasm-unsafe-eval' required for WebLLM: @mlc-ai/web-llm uses WebAssembly for model inference
       content_security_policy: {
         extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
       },

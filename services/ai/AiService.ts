@@ -24,17 +24,12 @@ import { webLlmProvider } from "./WebLlmProvider"
 class AiService {
   private enabled = false
   private provider: AiProvider = "webllm"
-  private modelId = "SmolLM2-360M-Instruct-q4f16_1-MLC"
-  private externalApiKey = ""
-  private externalApiEndpoint = ""
+  private modelId = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
 
   updateFromStorage(settings: Partial<AiStorageSettings>): void {
     if (settings.aiEnabled !== undefined) this.enabled = settings.aiEnabled
     if (settings.aiProvider !== undefined) this.provider = settings.aiProvider
     if (settings.aiModelId !== undefined) this.modelId = settings.aiModelId
-    if (settings.aiExternalApiKey !== undefined) this.externalApiKey = settings.aiExternalApiKey
-    if (settings.aiExternalApiEndpoint !== undefined)
-      this.externalApiEndpoint = settings.aiExternalApiEndpoint
   }
 
   isEnabled(): boolean {
@@ -68,9 +63,7 @@ class AiService {
     return {
       aiEnabled: this.enabled,
       aiProvider: this.provider,
-      aiModelId: this.modelId,
-      aiExternalApiKey: this.externalApiKey,
-      aiExternalApiEndpoint: this.externalApiEndpoint
+      aiModelId: this.modelId
     }
   }
 

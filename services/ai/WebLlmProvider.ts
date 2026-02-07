@@ -14,16 +14,16 @@ import type { AiProviderInterface } from "./AiProviderInterface"
 
 const AVAILABLE_MODELS: readonly AiModelConfig[] = [
   {
-    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-    displayName: "SmolLM2 360M (Recommended)",
-    sizeInMb: 245,
-    vramRequiredMb: 512
-  },
-  {
     id: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
-    displayName: "Qwen2.5 0.5B",
+    displayName: "Qwen2.5 0.5B (Recommended)",
     sizeInMb: 398,
     vramRequiredMb: 1024
+  },
+  {
+    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
+    displayName: "SmolLM2 360M",
+    sizeInMb: 245,
+    vramRequiredMb: 512
   },
   {
     id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",

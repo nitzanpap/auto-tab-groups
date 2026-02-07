@@ -53,10 +53,6 @@ export interface StorageSchema {
   aiProvider: AiProvider
   /** Selected AI model ID */
   aiModelId: string
-  /** API key for external AI provider */
-  aiExternalApiKey: string
-  /** API endpoint for external AI provider */
-  aiExternalApiEndpoint: string
 }
 
 /**
@@ -74,9 +70,7 @@ export const DEFAULT_STATE: StorageSchema = {
   autoCollapseDelayMs: 0,
   aiEnabled: false,
   aiProvider: "webllm",
-  aiModelId: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-  aiExternalApiKey: "",
-  aiExternalApiEndpoint: ""
+  aiModelId: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
 }
 
 /**

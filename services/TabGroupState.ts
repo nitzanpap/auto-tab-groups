@@ -71,9 +71,7 @@ class TabGroupState {
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,
-      aiModelId: DEFAULT_STATE.aiModelId,
-      aiExternalApiKey: DEFAULT_STATE.aiExternalApiKey,
-      aiExternalApiEndpoint: DEFAULT_STATE.aiExternalApiEndpoint
+      aiModelId: DEFAULT_STATE.aiModelId
     }
   }
 

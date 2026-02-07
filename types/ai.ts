@@ -72,6 +72,4 @@ export interface AiStorageSettings {
   aiEnabled: boolean
   aiProvider: AiProvider
   aiModelId: string
-  aiExternalApiKey: string
-  aiExternalApiEndpoint: string
 }

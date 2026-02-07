@@ -342,6 +342,22 @@ export default defineBackground(() => {
           }
 
           case "generateRule": {
+            if (typeof msg.description !== "string" || !msg.description.trim()) {
+              result = { success: false, error: "Description is required" }
+              break
+            }
+            if (msg.description.length > 500) {
+              result = { success: false, error: "Description too long (max 500 characters)" }
+              break
+            }
+            if (!Array.isArray(msg.existingDomains)) {
+              result = { success: false, error: "existingDomains must be an array" }
+              break
+            }
+            if (!aiService.isEnabled()) {
+              result = { success: false, error: "AI features are disabled" }
+              break
+            }
             const modelStatus = aiService.getModelStatus()
             if (modelStatus.status !== "ready") {
               result = {

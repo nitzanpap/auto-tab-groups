@@ -56,15 +56,15 @@ describe("WebLlmProvider", () => {
       expect(models).toHaveLength(3)
     })
 
-    it("should include SmolLM2 as first model", () => {
+    it("should include Qwen2.5 as first model (recommended)", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[0].id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
+      expect(models[0].id).toBe("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
       expect(models[0].displayName).toContain("Recommended")
     })
 
-    it("should include Qwen2.5 model", () => {
+    it("should include SmolLM2 model", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[1].id).toBe("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
+      expect(models[1].id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
     })
 
     it("should include Llama 3.2 model", () => {
@@ -154,18 +154,23 @@ describe("WebLlmProvider", () => {
     })
 
     it("should throw when a model is already loading", async () => {
-      // Start a load that never resolves
-      mockCreateMLCEngine.mockReturnValueOnce(new Promise(() => {}))
+      // Use a controllable deferred promise instead of new Promise(() => {})
+      // to avoid corrupting vi.mock for dynamic import() in subsequent tests
+      let resolveDeferred: (value: unknown) => void
+      const deferred = new Promise(resolve => {
+        resolveDeferred = resolve
+      })
+      mockCreateMLCEngine.mockReturnValueOnce(deferred)
       const loadPromise = webLlmProvider.loadModel("model-1")
 
       await expect(webLlmProvider.loadModel("model-2")).rejects.toThrow(
         "A model is already being loaded"
       )
 
-      // Clean up - cancel the pending load by forcing state reset
+      // Resolve the deferred and clean up
+      resolveDeferred!(mockEngine)
+      await loadPromise
       await webLlmProvider.unloadModel()
-      // Avoid unhandled promise
-      loadPromise.catch(() => {})
     })
   })
 

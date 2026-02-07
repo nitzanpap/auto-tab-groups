@@ -66,14 +66,6 @@ export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
 
-export const aiExternalApiKey = storage.defineItem<string>("local:aiExternalApiKey", {
-  fallback: DEFAULT_STATE.aiExternalApiKey
-})
-
-export const aiExternalApiEndpoint = storage.defineItem<string>("local:aiExternalApiEndpoint", {
-  fallback: DEFAULT_STATE.aiExternalApiEndpoint
-})
-
 /**
  * Load all storage values at once
  */
@@ -90,9 +82,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMsValue,
     aiEnabledValue,
     aiProviderValue,
-    aiModelIdValue,
-    aiExternalApiKeyValue,
-    aiExternalApiEndpointValue
+    aiModelIdValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -105,9 +95,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs.getValue(),
     aiEnabled.getValue(),
     aiProvider.getValue(),
-    aiModelId.getValue(),
-    aiExternalApiKey.getValue(),
-    aiExternalApiEndpoint.getValue()
+    aiModelId.getValue()
   ])
 
   return {
@@ -122,9 +110,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs: autoCollapseDelayMsValue,
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
-    aiModelId: aiModelIdValue,
-    aiExternalApiKey: aiExternalApiKeyValue,
-    aiExternalApiEndpoint: aiExternalApiEndpointValue
+    aiModelId: aiModelIdValue
   }
 }
 
@@ -170,13 +156,6 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   if (data.aiModelId !== undefined) {
     promises.push(aiModelId.setValue(data.aiModelId))
   }
-  if (data.aiExternalApiKey !== undefined) {
-    promises.push(aiExternalApiKey.setValue(data.aiExternalApiKey))
-  }
-  if (data.aiExternalApiEndpoint !== undefined) {
-    promises.push(aiExternalApiEndpoint.setValue(data.aiExternalApiEndpoint))
-  }
-
   await Promise.all(promises)
 }
 
