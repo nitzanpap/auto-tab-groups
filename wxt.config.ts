@@ -9,6 +9,9 @@ export default defineConfig({
       description: "Automatically groups tabs by domain.",
       author: "Nitzan Papini",
       permissions: ["tabs", "storage", "tabGroups", "contextMenus"],
+      content_security_policy: {
+        extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+      },
       icons: {
         16: "icon/16.png",
         48: "icon/48.png",
