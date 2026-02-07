@@ -20,16 +20,16 @@ const AVAILABLE_MODELS: readonly AiModelConfig[] = [
     vramRequiredMb: 1024
   },
   {
-    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-    displayName: "SmolLM2 360M",
-    sizeInMb: 245,
-    vramRequiredMb: 512
-  },
-  {
     id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    displayName: "Llama 3.2 1B",
+    displayName: "Llama 3.2 1B (Best Quality)",
     sizeInMb: 879,
     vramRequiredMb: 2048
+  },
+  {
+    id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
+    displayName: "SmolLM2 360M (Fastest)",
+    sizeInMb: 245,
+    vramRequiredMb: 512
   }
 ] as const
 

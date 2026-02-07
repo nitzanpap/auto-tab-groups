@@ -299,7 +299,8 @@ export default defineBackground(() => {
           case "getAiState":
             result = {
               settings: aiService.getSettings(),
-              modelStatus: aiService.getModelStatus()
+              modelStatus: aiService.getModelStatus(),
+              availableModels: aiService.getAvailableModels()
             }
             break
 

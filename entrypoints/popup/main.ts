@@ -518,7 +518,17 @@ async function initializeAiSection(): Promise<void> {
     const response = await sendMessage<{
       settings?: { aiEnabled: boolean; aiModelId: string }
       modelStatus?: { status: string; progress: number; error: string | null }
+      availableModels?: Array<{ id: string; displayName: string }>
     }>({ action: "getAiState" })
+
+    if (response?.availableModels && aiModelSelect.options.length === 0) {
+      for (const model of response.availableModels) {
+        const option = document.createElement("option")
+        option.value = model.id
+        option.textContent = model.displayName
+        aiModelSelect.appendChild(option)
+      }
+    }
 
     if (response?.settings) {
       aiEnabledToggle.checked = response.settings.aiEnabled
