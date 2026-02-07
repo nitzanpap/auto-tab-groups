@@ -51,25 +51,29 @@ describe("WebLlmProvider", () => {
   })
 
   describe("getAvailableModels", () => {
-    it("should return 3 available models", () => {
+    it("should return 6 available models", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models).toHaveLength(3)
+      expect(models).toHaveLength(6)
     })
 
-    it("should include Qwen2.5 as first model (recommended)", () => {
+    it("should include Qwen2.5 3B as first model (recommended)", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[0].id).toBe("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
+      expect(models[0].id).toBe("Qwen2.5-3B-Instruct-q4f16_1-MLC")
       expect(models[0].displayName).toContain("Recommended")
     })
 
-    it("should include Llama 3.2 model", () => {
+    it("should include 3B+ models before lightweight models", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[1].id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC")
+      expect(models[0].id).toContain("3B")
+      expect(models[1].id).toContain("3B")
+      expect(models[2].id).toContain("Phi-3.5")
     })
 
-    it("should include SmolLM2 model", () => {
+    it("should include lightweight models for low-end hardware", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[2].id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
+      const ids = models.map(m => m.id)
+      expect(ids).toContain("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
+      expect(ids).toContain("SmolLM2-360M-Instruct-q4f16_1-MLC")
     })
 
     it("should have valid size information for all models", () => {
@@ -274,6 +278,30 @@ describe("WebLlmProvider", () => {
           max_tokens: 256
         })
       )
+    })
+
+    it("should pass response_format when responseFormat is json", async () => {
+      await webLlmProvider.loadModel("test-model")
+      await webLlmProvider.complete({
+        messages: [{ role: "user", content: "test" }],
+        responseFormat: "json"
+      })
+
+      expect(mockEngine.chat.completions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          response_format: { type: "json_object" }
+        })
+      )
+    })
+
+    it("should not include response_format when responseFormat is not set", async () => {
+      await webLlmProvider.loadModel("test-model")
+      await webLlmProvider.complete({
+        messages: [{ role: "user", content: "test" }]
+      })
+
+      const callArgs = mockEngine.chat.completions.create.mock.calls[0][0]
+      expect(callArgs.response_format).toBeUndefined()
     })
 
     it("should throw when model is not loaded", async () => {

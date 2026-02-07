@@ -59,7 +59,7 @@ describe("AiService", () => {
     aiService.updateFromStorage({
       aiEnabled: false,
       aiProvider: "webllm",
-      aiModelId: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
+      aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC"
     })
   })
 
@@ -67,7 +67,7 @@ describe("AiService", () => {
     it("should initialize with default values", () => {
       expect(aiService.isEnabled()).toBe(false)
       expect(aiService.getSelectedProvider()).toBe("webllm")
-      expect(aiService.getSelectedModelId()).toBe("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
+      expect(aiService.getSelectedModelId()).toBe("Qwen2.5-3B-Instruct-q4f16_1-MLC")
     })
 
     it("should update from storage settings", () => {

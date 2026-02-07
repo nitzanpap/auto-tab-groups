@@ -47,6 +47,8 @@ export interface AiCompletionRequest {
   messages: AiChatMessage[]
   temperature?: number
   maxTokens?: number
+  /** When set, forces the model to produce valid JSON at the decoding level */
+  responseFormat?: "json"
 }
 
 /**

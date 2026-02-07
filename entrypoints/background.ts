@@ -377,7 +377,8 @@ export default defineBackground(() => {
             const completion = await aiService.complete({
               messages: prompt,
               temperature: 0.3,
-              maxTokens: 256
+              maxTokens: 256,
+              responseFormat: "json"
             })
 
             console.log("[AI] generateRule raw output:", completion.content)
@@ -447,7 +448,8 @@ export default defineBackground(() => {
             const suggestCompletion = await aiService.complete({
               messages: suggestPrompt,
               temperature: 0.3,
-              maxTokens: 512
+              maxTokens: 512,
+              responseFormat: "json"
             })
 
             console.log("[AI] suggestGroups raw output:", suggestCompletion.content)

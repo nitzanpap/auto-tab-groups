@@ -14,14 +14,32 @@ import type { AiProviderInterface } from "./AiProviderInterface"
 
 const AVAILABLE_MODELS: readonly AiModelConfig[] = [
   {
+    id: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+    displayName: "Qwen2.5 3B (Recommended)",
+    sizeInMb: 1750,
+    vramRequiredMb: 2505
+  },
+  {
+    id: "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+    displayName: "Llama 3.2 3B",
+    sizeInMb: 1820,
+    vramRequiredMb: 2264
+  },
+  {
+    id: "Phi-3.5-mini-instruct-q4f16_1-MLC",
+    displayName: "Phi-3.5 Mini 3.8B",
+    sizeInMb: 2150,
+    vramRequiredMb: 3672
+  },
+  {
     id: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
-    displayName: "Qwen2.5 0.5B (Recommended)",
+    displayName: "Qwen2.5 0.5B (Lightweight)",
     sizeInMb: 398,
     vramRequiredMb: 1024
   },
   {
     id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    displayName: "Llama 3.2 1B (Best Quality)",
+    displayName: "Llama 3.2 1B",
     sizeInMb: 879,
     vramRequiredMb: 2048
   },
@@ -126,6 +144,7 @@ class WebLlmProvider implements AiProviderInterface {
             messages: Array<{ role: string; content: string }>
             temperature?: number
             max_tokens?: number
+            response_format?: { type: "json_object" }
           }) => Promise<{
             choices: Array<{
               message: { content: string }
@@ -136,11 +155,17 @@ class WebLlmProvider implements AiProviderInterface {
       }
     }
 
-    const response = await eng.chat.completions.create({
+    const params: Parameters<typeof eng.chat.completions.create>[0] = {
       messages: request.messages.map(m => ({ role: m.role, content: m.content })),
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 512
-    })
+    }
+
+    if (request.responseFormat === "json") {
+      params.response_format = { type: "json_object" }
+    }
+
+    const response = await eng.chat.completions.create(params)
 
     const choice = response.choices[0]
     return {

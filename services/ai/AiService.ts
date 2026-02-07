@@ -24,7 +24,7 @@ import { webLlmProvider } from "./WebLlmProvider"
 class AiService {
   private enabled = false
   private provider: AiProvider = "webllm"
-  private modelId = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
+  private modelId = "Qwen2.5-3B-Instruct-q4f16_1-MLC"
 
   updateFromStorage(settings: Partial<AiStorageSettings>): void {
     if (settings.aiEnabled !== undefined) this.enabled = settings.aiEnabled
