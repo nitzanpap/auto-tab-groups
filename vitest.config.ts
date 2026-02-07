@@ -14,6 +14,7 @@ export default defineConfig({
         "services/TabGroupState.ts",
         "services/TabGroupService.ts",
         "services/ai/AiService.ts",
+        "services/ai/WebLlmProvider.ts",
         "utils/Constants.ts",
         "utils/DomainUtils.ts",
         "utils/PromptTemplates.ts",

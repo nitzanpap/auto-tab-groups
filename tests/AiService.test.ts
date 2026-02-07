@@ -180,6 +180,69 @@ describe("AiService", () => {
     })
   })
 
+  describe("external provider fallback", () => {
+    it("should still delegate to webllm provider when set to external (future placeholder)", async () => {
+      aiService.updateFromStorage({ aiProvider: "external" })
+      const status = aiService.getModelStatus()
+      // The external provider fallback currently returns webLlmProvider
+      expect(status.status).toBe("idle")
+    })
+
+    it("should delegate loadModel even with external provider", async () => {
+      aiService.updateFromStorage({ aiProvider: "external" })
+      await aiService.loadModel()
+      expect(mockProvider.loadModel).toHaveBeenCalled()
+    })
+  })
+
+  describe("toggle operations", () => {
+    it("should set enabled to false and persist", async () => {
+      aiService.updateFromStorage({ aiEnabled: true })
+      await aiService.setEnabled(false)
+      expect(aiService.isEnabled()).toBe(false)
+      expect(mockSetAiEnabled).toHaveBeenCalledWith(false)
+    })
+
+    it("should switch provider back to webllm", async () => {
+      aiService.updateFromStorage({ aiProvider: "external" })
+      await aiService.setProvider("webllm")
+      expect(aiService.getSelectedProvider()).toBe("webllm")
+      expect(mockSetAiProvider).toHaveBeenCalledWith("webllm")
+    })
+  })
+
+  describe("model status with different provider states", () => {
+    it("should reflect provider error state in model status", () => {
+      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("error")
+      ;(mockProvider.getError as ReturnType<typeof vi.fn>).mockReturnValueOnce("Something broke")
+      const status = aiService.getModelStatus()
+      expect(status.status).toBe("error")
+      expect(status.error).toBe("Something broke")
+    })
+
+    it("should reflect provider loading state in model status", () => {
+      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("loading")
+      ;(mockProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(42)
+      const status = aiService.getModelStatus()
+      expect(status.status).toBe("loading")
+      expect(status.progress).toBe(42)
+    })
+
+    it("should reflect provider ready state in model status", () => {
+      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("ready")
+      ;(mockProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(100)
+      const status = aiService.getModelStatus()
+      expect(status.status).toBe("ready")
+      expect(status.progress).toBe(100)
+    })
+
+    it("should include selected model ID in status", () => {
+      aiService.updateFromStorage({ aiModelId: "custom-model" })
+      const status = aiService.getModelStatus()
+      expect(status.modelId).toBe("custom-model")
+    })
+  })
+
   describe("WebGPU support", () => {
     it("should check WebGPU capability", async () => {
       const result = await aiService.checkWebGpuSupport()
