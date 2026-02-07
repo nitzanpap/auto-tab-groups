@@ -47,7 +47,7 @@ export function ruleGenerationPrompt(
  * Build a prompt for suggesting tab group assignments based on open tabs
  */
 export function tabGroupSuggestionPrompt(
-  tabs: Array<{ title: string; url: string }>
+  tabs: ReadonlyArray<{ title: string; url: string }>
 ): AiChatMessage[] {
   const tabList = tabs.map((t, i) => `${i + 1}. "${t.title}" - ${t.url}`).join("\n")
 
@@ -55,15 +55,19 @@ export function tabGroupSuggestionPrompt(
     {
       role: "system",
       content: [
-        "You are a browser tab organization assistant.",
-        "Given a list of open tabs, suggest logical groupings.",
-        "Output a JSON array of objects with: groupName (string), tabIndices (number[]), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
-        "Only output valid JSON. No markdown, no explanation."
-      ].join(" ")
+        "You organize browser tabs into groups.",
+        "Output ONLY a JSON array. Each element: groupName (1-3 words), tabIndices (array of 1-based tab numbers from the user list), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
+        "",
+        "Example:",
+        'Input: 1. "Flights to Paris" - https://expedia.com/flights 2. "Best pasta recipe" - https://allrecipes.com/pasta 3. "Hotel deals Rome" - https://booking.com/rome',
+        'Output: [{"groupName":"Travel","tabIndices":[1,3],"color":"cyan"},{"groupName":"Cooking","tabIndices":[2],"color":"orange"}]',
+        "",
+        "Rules: every tab in exactly one group, short names (1-3 words), use tabIndices from the user's numbered list, JSON array only — no other text."
+      ].join("\n")
     },
     {
       role: "user",
-      content: `Open tabs:\n${tabList}`
+      content: `Organize these tabs:\n${tabList}`
     }
   ]
 }

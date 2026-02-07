@@ -89,6 +89,29 @@ describe("PromptTemplates", () => {
       expect(messages[1].content).toContain("1.")
       expect(messages[1].content).toContain("2.")
     })
+
+    it("should include a few-shot example in the system prompt", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("Example:")
+      expect(messages[0].content).toContain("Input:")
+      expect(messages[0].content).toContain("Output:")
+    })
+
+    it("should use a dissimilar example (travel/cooking, not dev)", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("Travel")
+      expect(messages[0].content).toContain("Cooking")
+    })
+
+    it("should instruct short group names (1-3 words)", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("1-3 words")
+    })
+
+    it("should instruct every tab in exactly one group", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("every tab in exactly one group")
+    })
   })
 
   describe("tabExplainerPrompt", () => {

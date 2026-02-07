@@ -18,6 +18,8 @@ export type AiMessageAction =
   | "unloadAiModel"
   | "checkWebGpuSupport"
   | "generateRule"
+  | "suggestGroups"
+  | "applySuggestion"
 
 /**
  * Get full AI state message
@@ -102,6 +104,50 @@ export interface GenerateRuleResponse {
 }
 
 /**
+ * A single AI-suggested tab group
+ */
+export interface AiGroupSuggestion {
+  groupName: string
+  color: TabGroupColor
+  tabs: ReadonlyArray<{ tabId: number; title: string; url: string }>
+}
+
+/**
+ * Request AI to suggest tab groups for the current window
+ */
+export interface SuggestGroupsMessage {
+  action: "suggestGroups"
+}
+
+/**
+ * Response for suggestGroups
+ */
+export interface SuggestGroupsResponse {
+  success: boolean
+  suggestions?: readonly AiGroupSuggestion[]
+  error?: string
+  warnings?: string[]
+}
+
+/**
+ * Apply a single AI-suggested group
+ */
+export interface ApplySuggestionMessage {
+  action: "applySuggestion"
+  suggestion: AiGroupSuggestion
+}
+
+/**
+ * Response for applySuggestion
+ */
+export interface ApplySuggestionResponse {
+  success: boolean
+  groupId?: number
+  error?: string
+  staleTabIds?: readonly number[]
+}
+
+/**
  * Union of all AI messages
  */
 export type AiMessage =
@@ -114,6 +160,8 @@ export type AiMessage =
   | UnloadAiModelMessage
   | CheckWebGpuSupportMessage
   | GenerateRuleMessage
+  | SuggestGroupsMessage
+  | ApplySuggestionMessage
 
 /**
  * Response for getAiState

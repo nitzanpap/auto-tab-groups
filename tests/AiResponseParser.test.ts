@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
+  extractJsonArrayFromResponse,
   extractJsonFromResponse,
   normalizeColor,
   parseAiRuleResponse,
+  parseAiSuggestionResponse,
   sanitizeGeneratedDomains,
   validateParsedRule
 } from "../utils/AiResponseParser"
@@ -225,6 +227,202 @@ describe("AiResponseParser", () => {
       expect(normalizeColor("")).toBe("blue")
       expect(normalizeColor(null)).toBe("blue")
       expect(normalizeColor(123)).toBe("blue")
+    })
+  })
+
+  describe("extractJsonArrayFromResponse", () => {
+    it("should return pure JSON array directly", () => {
+      const json = '[{"groupName":"Dev","tabIndices":[1,2],"color":"blue"}]'
+      expect(extractJsonArrayFromResponse(json)).toBe(json)
+    })
+
+    it("should extract from markdown fence", () => {
+      const input = '```json\n[{"groupName":"Dev","tabIndices":[1],"color":"blue"}]\n```'
+      expect(extractJsonArrayFromResponse(input)).toBe(
+        '[{"groupName":"Dev","tabIndices":[1],"color":"blue"}]'
+      )
+    })
+
+    it("should extract first [ ... ] block when no fence", () => {
+      const input =
+        'Here are the groups: [{"groupName":"Dev","tabIndices":[1],"color":"blue"}] Hope this helps!'
+      expect(extractJsonArrayFromResponse(input)).toBe(
+        '[{"groupName":"Dev","tabIndices":[1],"color":"blue"}]'
+      )
+    })
+
+    it("should return null for no JSON array", () => {
+      expect(extractJsonArrayFromResponse("no json here")).toBeNull()
+    })
+
+    it("should return null for JSON object without groupName", () => {
+      expect(extractJsonArrayFromResponse('{"key":"value"}')).toBeNull()
+    })
+
+    it("should wrap a single suggestion object in an array", () => {
+      const input = '{"groupName":"Dev","tabIndices":[1,2],"color":"blue"}'
+      const result = extractJsonArrayFromResponse(input)
+      expect(result).not.toBeNull()
+      const parsed = JSON.parse(result!)
+      expect(Array.isArray(parsed)).toBe(true)
+      expect(parsed).toHaveLength(1)
+      expect(parsed[0].groupName).toBe("Dev")
+    })
+
+    it("should wrap a single object from markdown fence in an array", () => {
+      const input = '```json\n{"groupName":"Dev","tabIndices":[1],"color":"blue"}\n```'
+      const result = extractJsonArrayFromResponse(input)
+      expect(result).not.toBeNull()
+      const parsed = JSON.parse(result!)
+      expect(Array.isArray(parsed)).toBe(true)
+      expect(parsed[0].groupName).toBe("Dev")
+    })
+
+    it("should wrap a single object from surrounding text in an array", () => {
+      const input = 'Here is the result: {"groupName":"Dev","tabIndices":[1],"color":"blue"} done'
+      const result = extractJsonArrayFromResponse(input)
+      expect(result).not.toBeNull()
+      const parsed = JSON.parse(result!)
+      expect(Array.isArray(parsed)).toBe(true)
+      expect(parsed[0].groupName).toBe("Dev")
+    })
+
+    it("should handle whitespace-padded input", () => {
+      const input = '  \n  [{"groupName":"A","tabIndices":[1],"color":"blue"}]  \n  '
+      expect(extractJsonArrayFromResponse(input)).toBe(
+        '[{"groupName":"A","tabIndices":[1],"color":"blue"}]'
+      )
+    })
+  })
+
+  describe("parseAiSuggestionResponse", () => {
+    const sampleTabs = [
+      { tabId: 101, title: "GitHub - repo", url: "https://github.com/user/repo" },
+      { tabId: 102, title: "Stack Overflow - JS", url: "https://stackoverflow.com/q/123" },
+      { tabId: 103, title: "YouTube - Music", url: "https://youtube.com/watch?v=abc" },
+      { tabId: 104, title: "MDN Web Docs", url: "https://developer.mozilla.org/en-US/docs" }
+    ]
+
+    it("should parse valid JSON array with all fields", () => {
+      const input =
+        '[{"groupName":"Dev","tabIndices":[1,2,4],"color":"blue"},{"groupName":"Media","tabIndices":[3],"color":"red"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions).toHaveLength(2)
+      expect(result.suggestions[0].groupName).toBe("Dev")
+      expect(result.suggestions[0].tabs).toHaveLength(3)
+      expect(result.suggestions[0].tabs[0].tabId).toBe(101)
+      expect(result.suggestions[0].tabs[1].tabId).toBe(102)
+      expect(result.suggestions[0].tabs[2].tabId).toBe(104)
+      expect(result.suggestions[0].color).toBe("blue")
+      expect(result.suggestions[1].groupName).toBe("Media")
+      expect(result.suggestions[1].tabs).toHaveLength(1)
+      expect(result.suggestions[1].tabs[0].tabId).toBe(103)
+      expect(result.suggestions[1].color).toBe("red")
+    })
+
+    it("should extract JSON array from markdown code fence", () => {
+      const input = '```json\n[{"groupName":"Dev","tabIndices":[1,2],"color":"green"}]\n```'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions).toHaveLength(1)
+      expect(result.suggestions[0].groupName).toBe("Dev")
+    })
+
+    it("should extract JSON array with surrounding text", () => {
+      const input =
+        'Here are my suggestions: [{"groupName":"All","tabIndices":[1,2,3,4],"color":"cyan"}] Done!'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].tabs).toHaveLength(4)
+    })
+
+    it("should return error for empty string", () => {
+      const result = parseAiSuggestionResponse("", sampleTabs)
+      expect(result.success).toBe(false)
+      expect(result.error).toBeDefined()
+    })
+
+    it("should handle single object without tabIndices gracefully", () => {
+      const result = parseAiSuggestionResponse('{"groupName":"Dev"}', sampleTabs)
+      expect(result.success).toBe(false)
+      expect(result.error).toBeDefined()
+    })
+
+    it("should filter out-of-range tab indices with warning", () => {
+      const input = '[{"groupName":"Dev","tabIndices":[1,2,99],"color":"blue"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].tabs).toHaveLength(2)
+      expect(result.warnings.some(w => w.includes("out-of-range"))).toBe(true)
+    })
+
+    it("should skip suggestions with no valid tab indices", () => {
+      const input =
+        '[{"groupName":"Bad","tabIndices":[99,100],"color":"blue"},{"groupName":"Good","tabIndices":[1],"color":"red"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions).toHaveLength(1)
+      expect(result.suggestions[0].groupName).toBe("Good")
+      expect(result.warnings.some(w => w.includes("Bad"))).toBe(true)
+    })
+
+    it("should normalize invalid colors to blue with warning", () => {
+      const input = '[{"groupName":"Dev","tabIndices":[1],"color":"rainbow"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].color).toBe("blue")
+      expect(result.warnings.some(w => w.includes("rainbow"))).toBe(true)
+    })
+
+    it("should trim group names", () => {
+      const input = '[{"groupName":"  Dev Tools  ","tabIndices":[1],"color":"blue"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].groupName).toBe("Dev Tools")
+    })
+
+    it("should truncate group names longer than 3 words", () => {
+      const input =
+        '[{"groupName":"Technicians app for reading meters","tabIndices":[1],"color":"blue"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].groupName).toBe("Technicians app for")
+    })
+
+    it("should deduplicate tabs across groups (first-wins)", () => {
+      const input =
+        '[{"groupName":"A","tabIndices":[1,2],"color":"blue"},{"groupName":"B","tabIndices":[2,3],"color":"red"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].tabs).toHaveLength(2)
+      expect(result.suggestions[1].tabs).toHaveLength(1)
+      expect(result.suggestions[1].tabs[0].tabId).toBe(103)
+    })
+
+    it("should return error when no valid suggestions remain", () => {
+      const input = '[{"groupName":"Bad","tabIndices":[99],"color":"blue"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain("No valid suggestions")
+    })
+
+    it("should skip suggestions with empty or missing groupName", () => {
+      const input =
+        '[{"groupName":"","tabIndices":[1],"color":"blue"},{"tabIndices":[2],"color":"red"},{"groupName":"Valid","tabIndices":[3],"color":"green"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions).toHaveLength(1)
+      expect(result.suggestions[0].groupName).toBe("Valid")
+    })
+
+    it("should handle non-number tab indices gracefully", () => {
+      const input = '[{"groupName":"Dev","tabIndices":[1,"two",null,3],"color":"blue"}]'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions[0].tabs).toHaveLength(2)
+      expect(result.suggestions[0].tabs[0].tabId).toBe(101)
+      expect(result.suggestions[0].tabs[1].tabId).toBe(103)
     })
   })
 })

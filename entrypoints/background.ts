@@ -15,8 +15,8 @@ import {
   tabGroupService,
   tabGroupState
 } from "../services"
-import { parseAiRuleResponse } from "../utils/AiResponseParser"
-import { ruleGenerationPrompt } from "../utils/PromptTemplates"
+import { parseAiRuleResponse, parseAiSuggestionResponse } from "../utils/AiResponseParser"
+import { ruleGenerationPrompt, tabGroupSuggestionPrompt } from "../utils/PromptTemplates"
 import { loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -391,6 +391,135 @@ export default defineBackground(() => {
             })
 
             result = parsed as unknown as Record<string, unknown>
+            break
+          }
+
+          case "suggestGroups": {
+            if (!aiService.isEnabled()) {
+              result = { success: false, error: "AI features are disabled" }
+              break
+            }
+            const suggestModelStatus = aiService.getModelStatus()
+            if (suggestModelStatus.status !== "ready") {
+              result = {
+                success: false,
+                error: "AI model is not loaded. Please load a model first."
+              }
+              break
+            }
+
+            const allTabs = await browser.tabs.query({ currentWindow: true })
+            const eligibleTabs = allTabs.filter(
+              tab =>
+                tab.id !== undefined &&
+                !tab.pinned &&
+                tab.url &&
+                !tab.url.startsWith("chrome-extension://") &&
+                !tab.url.startsWith("moz-extension://") &&
+                !tab.url.startsWith("chrome://") &&
+                !tab.url.startsWith("about:")
+            )
+
+            if (eligibleTabs.length === 0) {
+              result = { success: false, error: "No eligible tabs to analyze" }
+              break
+            }
+
+            const tabsToAnalyze = eligibleTabs.slice(0, 50)
+            const tabsInfo = tabsToAnalyze.map(tab => ({
+              title: tab.title || "Untitled",
+              url: tab.url!
+            }))
+            const tabsWithIds = tabsToAnalyze.map(tab => ({
+              tabId: tab.id!,
+              title: tab.title || "Untitled",
+              url: tab.url!
+            }))
+
+            console.log(
+              "[AI] suggestGroups: analyzing",
+              tabsWithIds.length,
+              "tabs:",
+              tabsInfo.map((t, i) => `${i + 1}. "${t.title}" - ${t.url}`)
+            )
+
+            const suggestPrompt = tabGroupSuggestionPrompt(tabsInfo)
+            const suggestCompletion = await aiService.complete({
+              messages: suggestPrompt,
+              temperature: 0.3,
+              maxTokens: 512
+            })
+
+            console.log("[AI] suggestGroups raw output:", suggestCompletion.content)
+
+            const suggestParsed = parseAiSuggestionResponse(suggestCompletion.content, tabsWithIds)
+            console.log("[AI] suggestGroups parse result:", {
+              success: suggestParsed.success,
+              count: suggestParsed.suggestions.length,
+              error: suggestParsed.error,
+              warnings: suggestParsed.warnings
+            })
+
+            result = suggestParsed as unknown as Record<string, unknown>
+            break
+          }
+
+          case "applySuggestion": {
+            if (
+              !msg.suggestion ||
+              !msg.suggestion.groupName ||
+              !Array.isArray(msg.suggestion.tabs)
+            ) {
+              result = { success: false, error: "Invalid suggestion data" }
+              break
+            }
+
+            const { groupName: sugGroupName, color: sugColor, tabs: sugTabs } = msg.suggestion
+            const staleTabIds: number[] = []
+            const validTabIds: number[] = []
+
+            for (const tabInfo of sugTabs) {
+              try {
+                await browser.tabs.get(tabInfo.tabId)
+                validTabIds.push(tabInfo.tabId)
+              } catch {
+                staleTabIds.push(tabInfo.tabId)
+              }
+            }
+
+            if (validTabIds.length === 0) {
+              result = {
+                success: false,
+                error: "All suggested tabs have been closed",
+                staleTabIds
+              }
+              break
+            }
+
+            try {
+              if (!browser.tabGroups) {
+                result = { success: false, error: "Tab groups API not available" }
+                break
+              }
+
+              const sugGroupId = await browser.tabs.group({
+                tabIds: validTabIds as [number, ...number[]]
+              })
+              await browser.tabGroups.update(sugGroupId, {
+                title: sugGroupName,
+                color: (sugColor || "blue") as Parameters<
+                  typeof browser.tabGroups.update
+                >[1]["color"]
+              })
+
+              result = {
+                success: true,
+                groupId: sugGroupId,
+                ...(staleTabIds.length > 0 ? { staleTabIds } : {})
+              }
+            } catch (error) {
+              result = { success: false, error: (error as Error).message }
+            }
             break
           }
 

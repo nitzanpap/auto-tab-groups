@@ -1,5 +1,6 @@
 import "./style.css"
 import type { CustomRule } from "../../types"
+import type { AiGroupSuggestion } from "../../types/ai-messages"
 
 // DOM Elements
 const groupButton = document.getElementById("group") as HTMLButtonElement
@@ -39,6 +40,11 @@ const aiProgressBar = document.getElementById("aiProgressBar") as HTMLDivElement
 const aiProgressFill = document.getElementById("aiProgressFill") as HTMLDivElement
 const aiLoadButton = document.getElementById("aiLoadButton") as HTMLButtonElement
 const aiWebGpuWarning = document.getElementById("aiWebGpuWarning") as HTMLDivElement
+
+// AI Suggest Elements
+const aiSuggestButton = document.getElementById("aiSuggestButton") as HTMLButtonElement
+const aiSuggestStatus = document.getElementById("aiSuggestStatus") as HTMLDivElement
+const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer") as HTMLDivElement
 
 // State
 let aiSectionExpanded = false
@@ -606,17 +612,20 @@ function updateAiModelStatus(modelStatus: {
     aiLoadButton.classList.add("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = true
+    aiSuggestButton.disabled = false
     stopAiStatusPolling()
   } else if (status === "loading") {
     aiLoadButton.textContent = "Loading..."
     aiLoadButton.disabled = true
     aiModelSelect.disabled = true
+    aiSuggestButton.disabled = true
     startAiStatusPolling()
   } else if (status === "error") {
     aiLoadButton.textContent = "Retry Load"
     aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
+    aiSuggestButton.disabled = true
     stopAiStatusPolling()
     if (error) {
       console.error("AI model error:", error)
@@ -626,6 +635,7 @@ function updateAiModelStatus(modelStatus: {
     aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
+    aiSuggestButton.disabled = true
   }
 }
 
@@ -652,6 +662,172 @@ function stopAiStatusPolling(): void {
   }
 }
 
+// --- AI Suggestion Handlers ---
+
+async function handleSuggestGroups(): Promise<void> {
+  aiSuggestButton.disabled = true
+  aiSuggestStatus.textContent = "Analyzing your tabs..."
+  aiSuggestStatus.className = "ai-suggest-status loading"
+  aiSuggestionsContainer.innerHTML = ""
+
+  try {
+    const response = await sendMessage<{
+      success?: boolean
+      suggestions?: AiGroupSuggestion[]
+      error?: string
+      warnings?: string[]
+    }>({ action: "suggestGroups" })
+
+    if (response?.success && response.suggestions) {
+      aiSuggestStatus.textContent = ""
+      aiSuggestStatus.className = "ai-suggest-status"
+      renderSuggestions(response.suggestions)
+    } else {
+      aiSuggestStatus.textContent = response?.error || "Failed to get suggestions"
+      aiSuggestStatus.className = "ai-suggest-status error"
+    }
+  } catch (error) {
+    console.error("Error suggesting groups:", error)
+    aiSuggestStatus.textContent = "Failed to get suggestions"
+    aiSuggestStatus.className = "ai-suggest-status error"
+  } finally {
+    aiSuggestButton.disabled = false
+  }
+}
+
+function renderSuggestions(suggestions: readonly AiGroupSuggestion[]): void {
+  aiSuggestionsContainer.innerHTML = ""
+
+  if (suggestions.length === 0) {
+    aiSuggestStatus.textContent = "No suggestions found"
+    aiSuggestStatus.className = "ai-suggest-status"
+    return
+  }
+
+  for (const suggestion of suggestions) {
+    const card = document.createElement("div")
+    card.className = "suggestion-card"
+    const colorHex = RULE_COLORS[suggestion.color] || RULE_COLORS.blue
+    card.style.borderLeftColor = colorHex
+
+    const header = document.createElement("div")
+    header.className = "suggestion-header"
+
+    const colorDot = document.createElement("span")
+    colorDot.className = "suggestion-color-dot"
+    colorDot.style.backgroundColor = colorHex
+
+    const name = document.createElement("span")
+    name.className = "suggestion-name"
+    name.textContent = suggestion.groupName
+
+    const tabCount = document.createElement("span")
+    tabCount.className = "suggestion-tab-count"
+    tabCount.textContent = `${suggestion.tabs.length} tab${suggestion.tabs.length !== 1 ? "s" : ""}`
+
+    header.appendChild(colorDot)
+    header.appendChild(name)
+    header.appendChild(tabCount)
+
+    const tabsList = document.createElement("div")
+    tabsList.className = "suggestion-tabs"
+
+    for (const tab of suggestion.tabs) {
+      const tabEl = document.createElement("div")
+      tabEl.className = "suggestion-tab"
+      tabEl.textContent = tab.title || tab.url
+      tabEl.title = tab.url
+      tabsList.appendChild(tabEl)
+    }
+
+    const actions = document.createElement("div")
+    actions.className = "suggestion-actions"
+
+    const applyBtn = document.createElement("button")
+    applyBtn.className = "suggestion-apply-btn"
+    applyBtn.textContent = "Apply"
+    applyBtn.addEventListener("click", () => handleApplySuggestion(suggestion, applyBtn))
+
+    const ruleBtn = document.createElement("button")
+    ruleBtn.className = "suggestion-rule-btn"
+    ruleBtn.textContent = "Create Rule"
+    ruleBtn.addEventListener("click", () => createRuleFromSuggestion(suggestion))
+
+    actions.appendChild(applyBtn)
+    actions.appendChild(ruleBtn)
+
+    card.appendChild(header)
+    card.appendChild(tabsList)
+    card.appendChild(actions)
+    aiSuggestionsContainer.appendChild(card)
+  }
+}
+
+async function handleApplySuggestion(
+  suggestion: AiGroupSuggestion,
+  button: HTMLButtonElement
+): Promise<void> {
+  button.disabled = true
+  button.textContent = "Applying..."
+
+  try {
+    const response = await sendMessage<{
+      success?: boolean
+      groupId?: number
+      error?: string
+      staleTabIds?: number[]
+    }>({
+      action: "applySuggestion",
+      suggestion
+    })
+
+    if (response?.success) {
+      button.textContent = "Applied!"
+      button.classList.add("applied")
+      if (response.staleTabIds && response.staleTabIds.length > 0) {
+        button.textContent = `Applied (${response.staleTabIds.length} tab${response.staleTabIds.length !== 1 ? "s" : ""} closed)`
+      }
+    } else {
+      button.textContent = "Failed"
+      button.disabled = false
+      console.error("Failed to apply suggestion:", response?.error)
+    }
+  } catch (error) {
+    console.error("Error applying suggestion:", error)
+    button.textContent = "Failed"
+    button.disabled = false
+  }
+}
+
+async function createRuleFromSuggestion(suggestion: AiGroupSuggestion): Promise<void> {
+  try {
+    const domains = [
+      ...new Set(
+        suggestion.tabs
+          .map(tab => {
+            try {
+              return new URL(tab.url).hostname
+            } catch {
+              return null
+            }
+          })
+          .filter((d): d is string => d !== null)
+      )
+    ]
+
+    const params = new URLSearchParams({
+      fromGroup: "true",
+      name: suggestion.groupName,
+      color: suggestion.color,
+      domains: domains.join(",")
+    })
+    const url = browser.runtime.getURL(`/rules-modal.html?${params.toString()}`)
+    await browser.tabs.create({ url, active: true })
+  } catch (error) {
+    console.error("Error creating rule from suggestion:", error)
+  }
+}
+
 // AI Event Listeners
 aiToggle?.addEventListener("click", toggleAiSection)
 
@@ -665,6 +841,8 @@ aiEnabledToggle?.addEventListener("change", async () => {
 aiModelSelect?.addEventListener("change", async () => {
   await sendMessage({ action: "setAiModelId", modelId: aiModelSelect.value })
 })
+
+aiSuggestButton?.addEventListener("click", handleSuggestGroups)
 
 aiLoadButton?.addEventListener("click", async () => {
   const response = await sendMessage<{

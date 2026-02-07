@@ -62,14 +62,14 @@ describe("WebLlmProvider", () => {
       expect(models[0].displayName).toContain("Recommended")
     })
 
-    it("should include SmolLM2 model", () => {
-      const models = webLlmProvider.getAvailableModels()
-      expect(models[1].id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
-    })
-
     it("should include Llama 3.2 model", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models[2].id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC")
+      expect(models[1].id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC")
+    })
+
+    it("should include SmolLM2 model", () => {
+      const models = webLlmProvider.getAvailableModels()
+      expect(models[2].id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC")
     })
 
     it("should have valid size information for all models", () => {
