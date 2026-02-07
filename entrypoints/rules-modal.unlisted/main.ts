@@ -26,6 +26,12 @@ const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
 const patternFeedback = document.getElementById("patternFeedback") as HTMLDivElement
 
+// AI Assist elements
+const aiDescription = document.getElementById("aiDescription") as HTMLTextAreaElement
+const aiGenerateBtn = document.getElementById("aiGenerateBtn") as HTMLButtonElement
+const aiAssistStatus = document.getElementById("aiAssistStatus") as HTMLDivElement
+const isAiAssist = urlParams.get("aiAssist") === "true"
+
 // Pattern mode toggle elements (for "Create from Group" mode)
 const patternModeToggle = document.getElementById("patternModeToggle") as HTMLDivElement
 const simpleModeBtn = document.getElementById("simpleModeBtn") as HTMLButtonElement
@@ -221,13 +227,106 @@ function setupPatternModeToggle(): void {
   })
 }
 
+// AI Assist: Check if AI model is available and update button state
+async function checkAiAvailability(): Promise<void> {
+  try {
+    const response = await sendMessage<{
+      modelStatus?: { status: string }
+    }>({ action: "getAiModelStatus" })
+
+    const isReady = response?.modelStatus?.status === "ready"
+    aiGenerateBtn.disabled = !isReady
+
+    if (!isReady) {
+      aiAssistStatus.textContent =
+        "Load an AI model from the popup's AI Features section to use AI Assist"
+      aiAssistStatus.className = "ai-assist-status info"
+    } else {
+      aiAssistStatus.textContent = ""
+      aiAssistStatus.className = "ai-assist-status"
+    }
+  } catch {
+    aiGenerateBtn.disabled = true
+  }
+}
+
+// AI Assist: Get current patterns from textarea for context
+function getCurrentPatterns(): string[] {
+  return rulePatternsInput.value
+    .split("\n")
+    .map(p => p.trim())
+    .filter(p => p)
+}
+
+// AI Assist: Generate rule from natural language description
+async function generateRuleFromDescription(): Promise<void> {
+  const description = aiDescription.value.trim()
+  if (!description) {
+    aiAssistStatus.textContent = "Please enter a description"
+    aiAssistStatus.className = "ai-assist-status error"
+    return
+  }
+
+  aiGenerateBtn.disabled = true
+  aiGenerateBtn.textContent = "Generating..."
+  aiGenerateBtn.classList.add("generating")
+  aiAssistStatus.textContent = "AI is thinking..."
+  aiAssistStatus.className = "ai-assist-status info"
+
+  try {
+    const response = await sendMessage<{
+      success: boolean
+      rule?: { name: string; domains: string[]; color: string }
+      error?: string
+      warnings?: string[]
+    }>({
+      action: "generateRule",
+      description,
+      existingDomains: getCurrentPatterns()
+    })
+
+    if (response?.success && response.rule) {
+      ruleNameInput.value = response.rule.name
+      rulePatternsInput.value = response.rule.domains.join("\n")
+      setColorPickerValue(response.rule.color || "blue")
+      validatePatterns()
+
+      const warningText =
+        response.warnings && response.warnings.length > 0
+          ? ` (${response.warnings.join("; ")})`
+          : ""
+      aiAssistStatus.textContent = `Rule generated! Review and edit below, then save.${warningText}`
+      aiAssistStatus.className = "ai-assist-status success"
+    } else {
+      aiAssistStatus.textContent =
+        response?.error || "Failed to generate rule. Try rephrasing your description."
+      aiAssistStatus.className = "ai-assist-status error"
+    }
+  } catch (error) {
+    aiAssistStatus.textContent = `Generation failed: ${(error as Error).message}`
+    aiAssistStatus.className = "ai-assist-status error"
+  } finally {
+    aiGenerateBtn.disabled = false
+    aiGenerateBtn.textContent = "Generate"
+    aiGenerateBtn.classList.remove("generating")
+  }
+}
+
 // Initialize
 setupColorPicker()
 loadExistingRule()
 loadFromGroup()
 setupPatternModeToggle()
+checkAiAvailability()
+
+// Auto-focus AI description when opened via AI Assist entry point
+if (isAiAssist) {
+  aiDescription.focus()
+}
 
 // Event listeners
 ruleForm.addEventListener("submit", saveRule)
 cancelButton.addEventListener("click", cancel)
 rulePatternsInput.addEventListener("input", validatePatterns)
+aiGenerateBtn.addEventListener("click", generateRuleFromDescription)
+aiDescription.addEventListener("focus", checkAiAvailability)

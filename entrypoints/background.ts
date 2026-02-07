@@ -15,6 +15,8 @@ import {
   tabGroupService,
   tabGroupState
 } from "../services"
+import { parseAiRuleResponse } from "../utils/AiResponseParser"
+import { ruleGenerationPrompt } from "../utils/PromptTemplates"
 import { loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -336,6 +338,27 @@ export default defineBackground(() => {
           case "checkWebGpuSupport": {
             const webGpu = await aiService.checkWebGpuSupport()
             result = { webGpu }
+            break
+          }
+
+          case "generateRule": {
+            const modelStatus = aiService.getModelStatus()
+            if (modelStatus.status !== "ready") {
+              result = {
+                success: false,
+                error: "AI model is not loaded. Please load a model first."
+              }
+              break
+            }
+
+            const prompt = ruleGenerationPrompt(msg.description, msg.existingDomains)
+            const completion = await aiService.complete({
+              messages: prompt,
+              temperature: 0.3,
+              maxTokens: 256
+            })
+
+            result = parseAiRuleResponse(completion.content) as unknown as Record<string, unknown>
             break
           }
 

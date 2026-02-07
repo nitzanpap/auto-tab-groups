@@ -3,6 +3,7 @@
  */
 
 import type { AiModelStatusInfo, AiProvider, AiStorageSettings, WebGpuCapability } from "./ai"
+import type { TabGroupColor } from "./rules"
 
 /**
  * AI-specific message actions
@@ -16,6 +17,7 @@ export type AiMessageAction =
   | "loadAiModel"
   | "unloadAiModel"
   | "checkWebGpuSupport"
+  | "generateRule"
 
 /**
  * Get full AI state message
@@ -77,6 +79,29 @@ export interface CheckWebGpuSupportMessage {
 }
 
 /**
+ * Generate rule from natural language description
+ */
+export interface GenerateRuleMessage {
+  action: "generateRule"
+  description: string
+  existingDomains: string[]
+}
+
+/**
+ * Response for generateRule
+ */
+export interface GenerateRuleResponse {
+  success: boolean
+  rule?: {
+    name: string
+    domains: string[]
+    color: TabGroupColor
+  }
+  error?: string
+  warnings?: string[]
+}
+
+/**
  * Union of all AI messages
  */
 export type AiMessage =
@@ -88,6 +113,7 @@ export type AiMessage =
   | LoadAiModelMessage
   | UnloadAiModelMessage
   | CheckWebGpuSupportMessage
+  | GenerateRuleMessage
 
 /**
  * Response for getAiState

@@ -17,16 +17,25 @@ export function ruleGenerationPrompt(
       role: "system",
       content: [
         "You are a browser tab organization assistant.",
-        "Given a user's description, generate a JSON object for a custom tab grouping rule.",
-        "The rule must have: name (string), domains (string[]), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
-        "Only output valid JSON. No markdown, no explanation."
-      ].join(" ")
+        "Given a user's description, output a JSON object for a custom tab grouping rule.",
+        "The JSON must have exactly these fields:",
+        "- name: string (short descriptive name for the group)",
+        '- domains: string[] (domain patterns like "example.com" or "*.example.com")',
+        "- color: string (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange)",
+        "",
+        'Example input: "Group all Google services"',
+        'Example output: {"name":"Google","domains":["*.google.com","gmail.com","youtube.com"],"color":"blue"}',
+        "",
+        "Only output the JSON object. No markdown, no explanation, no extra text."
+      ].join("\n")
     },
     {
       role: "user",
       content: [
         `Description: ${description}`,
-        existingDomains.length > 0 ? `Currently open domains: ${existingDomains.join(", ")}` : ""
+        existingDomains.length > 0
+          ? `Currently open domains for context: ${existingDomains.join(", ")}`
+          : ""
       ]
         .filter(Boolean)
         .join("\n")

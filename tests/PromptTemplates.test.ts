@@ -37,6 +37,21 @@ describe("PromptTemplates", () => {
       const messages = ruleGenerationPrompt("test", [])
       expect(messages[0].content).toContain("JSON")
     })
+
+    it("should include a few-shot example in the system prompt", () => {
+      const messages = ruleGenerationPrompt("test", [])
+      expect(messages[0].content).toContain("Example input")
+      expect(messages[0].content).toContain("Example output")
+      expect(messages[0].content).toContain("*.google.com")
+    })
+
+    it("should list all valid color options in the system prompt", () => {
+      const messages = ruleGenerationPrompt("test", [])
+      const colors = ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"]
+      for (const color of colors) {
+        expect(messages[0].content).toContain(color)
+      }
+    })
   })
 
   describe("tabGroupSuggestionPrompt", () => {

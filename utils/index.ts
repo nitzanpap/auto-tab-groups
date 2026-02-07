@@ -2,6 +2,7 @@
  * Utility exports for Auto Tab Groups extension
  */
 
+export * from "./AiResponseParser"
 export * from "./Constants"
 export * from "./DomainUtils"
 export * from "./PromptTemplates"

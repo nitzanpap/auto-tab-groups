@@ -147,6 +147,83 @@ h1 {
   color: #28a745;
 }
 
+/* AI Assist Section */
+.ai-assist-section {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  background: #faf5ff;
+}
+
+.ai-assist-container {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.ai-assist-container textarea {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: "Inter", sans-serif;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.2s;
+}
+
+.ai-assist-container textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+.ai-generate-btn {
+  background: #7c3aed;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 90px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.ai-generate-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.ai-generate-btn.generating {
+  background: #8b5cf6;
+  cursor: wait;
+}
+
+.ai-assist-status {
+  margin-top: 6px;
+  font-size: 12px;
+  min-height: 18px;
+}
+
+.ai-assist-status.error {
+  color: #dc3545;
+}
+
+.ai-assist-status.success {
+  color: #28a745;
+}
+
+.ai-assist-status.info {
+  color: #6c757d;
+}
+
 /* Pattern Mode Toggle */
 .pattern-mode-toggle.hidden {
   display: none;
