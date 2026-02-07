@@ -286,8 +286,17 @@ function toggleRulesSection(): void {
   rulesToggle.classList.toggle("expanded", customRulesExpanded)
   rulesContent.classList.toggle("expanded", customRulesExpanded)
 
-  if (customRulesExpanded && Object.keys(currentRules).length === 0) {
-    loadCustomRules()
+  if (customRulesExpanded) {
+    if (Object.keys(currentRules).length === 0) {
+      loadCustomRules()
+    }
+    // Collapse AI section (accordion)
+    if (aiSectionExpanded) {
+      aiSectionExpanded = false
+      aiToggle.classList.remove("expanded")
+      aiContent.classList.remove("expanded")
+      stopAiStatusPolling()
+    }
   }
 }
 
@@ -537,6 +546,12 @@ function toggleAiSection(): void {
 
   if (aiSectionExpanded) {
     initializeAiSection()
+    // Collapse rules section (accordion)
+    if (customRulesExpanded) {
+      customRulesExpanded = false
+      rulesToggle.classList.remove("expanded")
+      rulesContent.classList.remove("expanded")
+    }
   } else {
     stopAiStatusPolling()
   }
@@ -701,6 +716,15 @@ addRuleButton?.addEventListener("click", addRule)
 exportRulesButton?.addEventListener("click", exportRules)
 importRulesButton?.addEventListener("click", importRules)
 importFileInput?.addEventListener("change", handleFileImport)
+
+// Initialize AI badge on sidebar open
+sendMessage<{
+  settings?: { aiEnabled: boolean }
+}>({ action: "getAiState" }).then(response => {
+  if (response?.settings) {
+    updateAiBadge(response.settings.aiEnabled)
+  }
+})
 
 // Load custom rules on sidebar open
 loadCustomRules()
