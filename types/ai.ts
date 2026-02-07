@@ -1,0 +1,77 @@
+/**
+ * Type definitions for AI features
+ */
+
+/**
+ * Supported AI provider backends
+ */
+export type AiProvider = "webllm" | "external"
+
+/**
+ * AI model loading state machine: idle → loading → ready (or error)
+ */
+export type AiModelStatus = "idle" | "loading" | "ready" | "error"
+
+/**
+ * Configuration for an available AI model
+ */
+export interface AiModelConfig {
+  id: string
+  displayName: string
+  sizeInMb: number
+  vramRequiredMb: number
+}
+
+/**
+ * Current status of the AI model including progress
+ */
+export interface AiModelStatusInfo {
+  status: AiModelStatus
+  progress: number
+  modelId: string | null
+  error: string | null
+}
+
+/**
+ * OpenAI-compatible chat message format
+ */
+export interface AiChatMessage {
+  role: "system" | "user" | "assistant"
+  content: string
+}
+
+/**
+ * Request to complete a chat prompt
+ */
+export interface AiCompletionRequest {
+  messages: AiChatMessage[]
+  temperature?: number
+  maxTokens?: number
+}
+
+/**
+ * Response from a chat completion
+ */
+export interface AiCompletionResponse {
+  content: string
+  finishReason: string
+}
+
+/**
+ * WebGPU capability detection result
+ */
+export interface WebGpuCapability {
+  available: boolean
+  reason: string | null
+}
+
+/**
+ * AI settings stored in browser storage
+ */
+export interface AiStorageSettings {
+  aiEnabled: boolean
+  aiProvider: AiProvider
+  aiModelId: string
+  aiExternalApiKey: string
+  aiExternalApiEndpoint: string
+}

@@ -2,6 +2,7 @@
  * Type definitions for browser storage
  */
 
+import type { AiProvider } from "./ai"
 import type { CustomRule, TabGroupColor } from "./rules"
 
 /**
@@ -46,6 +47,16 @@ export interface StorageSchema {
   autoCollapseEnabled: boolean
   /** Delay in milliseconds before collapsing (0 = immediate) */
   autoCollapseDelayMs: number
+  /** Whether AI features are enabled */
+  aiEnabled: boolean
+  /** Active AI provider backend */
+  aiProvider: AiProvider
+  /** Selected AI model ID */
+  aiModelId: string
+  /** API key for external AI provider */
+  aiExternalApiKey: string
+  /** API endpoint for external AI provider */
+  aiExternalApiEndpoint: string
 }
 
 /**
@@ -60,7 +71,12 @@ export const DEFAULT_STATE: StorageSchema = {
   groupColorMapping: {},
   minimumTabsForGroup: 1,
   autoCollapseEnabled: false,
-  autoCollapseDelayMs: 0
+  autoCollapseDelayMs: 0,
+  aiEnabled: false,
+  aiProvider: "webllm",
+  aiModelId: "SmolLM2-360M-Instruct-q4f16_1-MLC",
+  aiExternalApiKey: "",
+  aiExternalApiEndpoint: ""
 }
 
 /**

@@ -8,7 +8,13 @@
  * - All operations must ensure state is loaded from storage before proceeding
  */
 
-import { contextMenuService, rulesService, tabGroupService, tabGroupState } from "../services"
+import {
+  aiService,
+  contextMenuService,
+  rulesService,
+  tabGroupService,
+  tabGroupState
+} from "../services"
 import { loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -24,6 +30,7 @@ export default defineBackground(() => {
         console.log("Service worker starting - loading state from storage...")
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
+        aiService.updateFromStorage(storageData)
         stateInitialized = true
         console.log("State loaded successfully from storage")
         console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
@@ -285,6 +292,52 @@ export default defineBackground(() => {
               delayMs: tabGroupState.autoCollapseDelayMs
             }
             break
+
+          // AI Features
+          case "getAiState":
+            result = {
+              settings: aiService.getSettings(),
+              modelStatus: aiService.getModelStatus()
+            }
+            break
+
+          case "setAiEnabled":
+            await aiService.setEnabled(msg.enabled)
+            result = { enabled: aiService.isEnabled() }
+            break
+
+          case "setAiProvider":
+            await aiService.setProvider(msg.provider)
+            result = { provider: aiService.getSelectedProvider() }
+            break
+
+          case "setAiModelId":
+            await aiService.setModelId(msg.modelId)
+            result = { modelId: aiService.getSelectedModelId() }
+            break
+
+          case "getAiModelStatus":
+            result = { modelStatus: aiService.getModelStatus() }
+            break
+
+          case "loadAiModel":
+            // Fire-and-forget — model loading is long-running, UI polls status
+            aiService.loadModel().catch(err => {
+              console.error("[Background] AI model load failed:", err)
+            })
+            result = { success: true }
+            break
+
+          case "unloadAiModel":
+            await aiService.unloadModel()
+            result = { success: true }
+            break
+
+          case "checkWebGpuSupport": {
+            const webGpu = await aiService.checkWebGpuSupport()
+            result = { webGpu }
+            break
+          }
 
           default:
             result = { error: "Unknown action" }

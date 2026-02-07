@@ -5,6 +5,7 @@
 
 import { storage } from "wxt/utils/storage"
 import type {
+  AiProvider,
   CustomRulesMapping,
   GroupByMode,
   GroupColorMapping,
@@ -53,6 +54,26 @@ export const autoCollapseDelayMs = storage.defineItem<number>("local:autoCollaps
   fallback: DEFAULT_STATE.autoCollapseDelayMs
 })
 
+export const aiEnabled = storage.defineItem<boolean>("local:aiEnabled", {
+  fallback: DEFAULT_STATE.aiEnabled
+})
+
+export const aiProvider = storage.defineItem<AiProvider>("local:aiProvider", {
+  fallback: DEFAULT_STATE.aiProvider
+})
+
+export const aiModelId = storage.defineItem<string>("local:aiModelId", {
+  fallback: DEFAULT_STATE.aiModelId
+})
+
+export const aiExternalApiKey = storage.defineItem<string>("local:aiExternalApiKey", {
+  fallback: DEFAULT_STATE.aiExternalApiKey
+})
+
+export const aiExternalApiEndpoint = storage.defineItem<string>("local:aiExternalApiEndpoint", {
+  fallback: DEFAULT_STATE.aiExternalApiEndpoint
+})
+
 /**
  * Load all storage values at once
  */
@@ -66,7 +87,12 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMappingValue,
     minimumTabsForGroupValue,
     autoCollapseEnabledValue,
-    autoCollapseDelayMsValue
+    autoCollapseDelayMsValue,
+    aiEnabledValue,
+    aiProviderValue,
+    aiModelIdValue,
+    aiExternalApiKeyValue,
+    aiExternalApiEndpointValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -76,7 +102,12 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMapping.getValue(),
     minimumTabsForGroup.getValue(),
     autoCollapseEnabled.getValue(),
-    autoCollapseDelayMs.getValue()
+    autoCollapseDelayMs.getValue(),
+    aiEnabled.getValue(),
+    aiProvider.getValue(),
+    aiModelId.getValue(),
+    aiExternalApiKey.getValue(),
+    aiExternalApiEndpoint.getValue()
   ])
 
   return {
@@ -88,7 +119,12 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMapping: groupColorMappingValue,
     minimumTabsForGroup: minimumTabsForGroupValue,
     autoCollapseEnabled: autoCollapseEnabledValue,
-    autoCollapseDelayMs: autoCollapseDelayMsValue
+    autoCollapseDelayMs: autoCollapseDelayMsValue,
+    aiEnabled: aiEnabledValue,
+    aiProvider: aiProviderValue,
+    aiModelId: aiModelIdValue,
+    aiExternalApiKey: aiExternalApiKeyValue,
+    aiExternalApiEndpoint: aiExternalApiEndpointValue
   }
 }
 
@@ -124,6 +160,21 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.autoCollapseDelayMs !== undefined) {
     promises.push(autoCollapseDelayMs.setValue(data.autoCollapseDelayMs))
+  }
+  if (data.aiEnabled !== undefined) {
+    promises.push(aiEnabled.setValue(data.aiEnabled))
+  }
+  if (data.aiProvider !== undefined) {
+    promises.push(aiProvider.setValue(data.aiProvider))
+  }
+  if (data.aiModelId !== undefined) {
+    promises.push(aiModelId.setValue(data.aiModelId))
+  }
+  if (data.aiExternalApiKey !== undefined) {
+    promises.push(aiExternalApiKey.setValue(data.aiExternalApiKey))
+  }
+  if (data.aiExternalApiEndpoint !== undefined) {
+    promises.push(aiExternalApiEndpoint.setValue(data.aiExternalApiEndpoint))
   }
 
   await Promise.all(promises)

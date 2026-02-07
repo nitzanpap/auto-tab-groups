@@ -29,7 +29,22 @@ const exportRulesButton = document.getElementById("exportRulesButton") as HTMLBu
 const importRulesButton = document.getElementById("importRulesButton") as HTMLButtonElement
 const importFileInput = document.getElementById("importFileInput") as HTMLInputElement
 
+// AI Elements
+const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
+const aiContent = document.querySelector(".ai-content") as HTMLDivElement
+const aiBadge = document.getElementById("aiBadge") as HTMLSpanElement
+const aiEnabledToggle = document.getElementById("aiEnabledToggle") as HTMLInputElement
+const aiSettings = document.getElementById("aiSettings") as HTMLDivElement
+const aiModelSelect = document.getElementById("aiModelSelect") as HTMLSelectElement
+const aiStatusBadge = document.getElementById("aiStatusBadge") as HTMLSpanElement
+const aiProgressBar = document.getElementById("aiProgressBar") as HTMLDivElement
+const aiProgressFill = document.getElementById("aiProgressFill") as HTMLDivElement
+const aiLoadButton = document.getElementById("aiLoadButton") as HTMLButtonElement
+const aiWebGpuWarning = document.getElementById("aiWebGpuWarning") as HTMLDivElement
+
 // State
+let aiSectionExpanded = false
+let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
 let customRulesExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
@@ -511,6 +526,173 @@ collapseDelayInput.addEventListener("change", async () => {
     autoCollapseEnabled: autoCollapseToggle.checked,
     autoCollapseDelayMs: delayMs
   })
+})
+
+// --- AI Features ---
+
+function toggleAiSection(): void {
+  aiSectionExpanded = !aiSectionExpanded
+  aiToggle.classList.toggle("expanded", aiSectionExpanded)
+  aiContent.classList.toggle("expanded", aiSectionExpanded)
+
+  if (aiSectionExpanded) {
+    initializeAiSection()
+  } else {
+    stopAiStatusPolling()
+  }
+}
+
+async function initializeAiSection(): Promise<void> {
+  try {
+    const response = await sendMessage<{
+      settings?: { aiEnabled: boolean; aiModelId: string }
+      modelStatus?: { status: string; progress: number; error: string | null }
+    }>({ action: "getAiState" })
+
+    if (response?.settings) {
+      aiEnabledToggle.checked = response.settings.aiEnabled
+      aiModelSelect.value = response.settings.aiModelId
+      updateAiSettingsVisibility(response.settings.aiEnabled)
+      updateAiBadge(response.settings.aiEnabled)
+    }
+
+    if (response?.modelStatus) {
+      updateAiModelStatus(response.modelStatus)
+    }
+
+    const webGpuResponse = await sendMessage<{
+      webGpu?: { available: boolean; reason: string | null }
+    }>({ action: "checkWebGpuSupport" })
+
+    if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
+      aiWebGpuWarning.classList.add("visible")
+      aiWebGpuWarning.textContent = webGpuResponse.webGpu.reason || "WebGPU is not available"
+      aiLoadButton.disabled = true
+    }
+  } catch (error) {
+    console.error("Error initializing AI section:", error)
+  }
+}
+
+function updateAiSettingsVisibility(enabled: boolean): void {
+  if (enabled) {
+    aiSettings.classList.add("visible")
+  } else {
+    aiSettings.classList.remove("visible")
+    stopAiStatusPolling()
+  }
+}
+
+function updateAiBadge(enabled: boolean): void {
+  aiBadge.textContent = enabled ? "On" : "Off"
+  aiBadge.classList.toggle("enabled", enabled)
+}
+
+function updateAiModelStatus(modelStatus: {
+  status: string
+  progress: number
+  error: string | null
+}): void {
+  const { status, progress, error } = modelStatus
+
+  aiStatusBadge.textContent =
+    status === "idle"
+      ? "Idle"
+      : status === "loading"
+        ? `Loading ${progress}%`
+        : status === "ready"
+          ? "Ready"
+          : "Error"
+
+  aiStatusBadge.className = "ai-status-badge"
+  if (status !== "idle") {
+    aiStatusBadge.classList.add(status)
+  }
+
+  if (status === "loading") {
+    aiProgressBar.classList.add("visible")
+    aiProgressFill.style.width = `${progress}%`
+  } else {
+    aiProgressBar.classList.remove("visible")
+  }
+
+  if (status === "ready") {
+    aiLoadButton.textContent = "Unload Model"
+    aiLoadButton.classList.add("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = true
+    stopAiStatusPolling()
+  } else if (status === "loading") {
+    aiLoadButton.textContent = "Loading..."
+    aiLoadButton.disabled = true
+    aiModelSelect.disabled = true
+    startAiStatusPolling()
+  } else if (status === "error") {
+    aiLoadButton.textContent = "Retry Load"
+    aiLoadButton.classList.remove("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = false
+    stopAiStatusPolling()
+    if (error) {
+      console.error("AI model error:", error)
+    }
+  } else {
+    aiLoadButton.textContent = "Load Model"
+    aiLoadButton.classList.remove("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = false
+  }
+}
+
+function startAiStatusPolling(): void {
+  if (aiStatusPollingInterval) return
+  aiStatusPollingInterval = setInterval(async () => {
+    try {
+      const response = await sendMessage<{
+        modelStatus?: { status: string; progress: number; error: string | null }
+      }>({ action: "getAiModelStatus" })
+      if (response?.modelStatus) {
+        updateAiModelStatus(response.modelStatus)
+      }
+    } catch {
+      stopAiStatusPolling()
+    }
+  }, 500)
+}
+
+function stopAiStatusPolling(): void {
+  if (aiStatusPollingInterval) {
+    clearInterval(aiStatusPollingInterval)
+    aiStatusPollingInterval = null
+  }
+}
+
+// AI Event Listeners
+aiToggle?.addEventListener("click", toggleAiSection)
+
+aiEnabledToggle?.addEventListener("change", async () => {
+  const enabled = aiEnabledToggle.checked
+  await sendMessage({ action: "setAiEnabled", enabled })
+  updateAiSettingsVisibility(enabled)
+  updateAiBadge(enabled)
+})
+
+aiModelSelect?.addEventListener("change", async () => {
+  await sendMessage({ action: "setAiModelId", modelId: aiModelSelect.value })
+})
+
+aiLoadButton?.addEventListener("click", async () => {
+  const response = await sendMessage<{
+    modelStatus?: { status: string; progress: number; error: string | null }
+  }>({ action: "getAiModelStatus" })
+
+  if (response?.modelStatus?.status === "ready") {
+    await sendMessage({ action: "unloadAiModel" })
+    updateAiModelStatus({ status: "idle", progress: 0, error: null })
+  } else {
+    await sendMessage({ action: "loadAiModel" })
+    updateAiModelStatus({ status: "loading", progress: 0, error: null })
+  }
 })
 
 // Custom Rules event listeners

@@ -26,6 +26,9 @@
     "code:fix": "biome check --write .",
     "postinstall": "wxt prepare"
   },
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.80"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
     "@playwright/test": "^1.56.1",
