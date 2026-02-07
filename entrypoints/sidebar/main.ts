@@ -25,7 +25,6 @@ const rulesContent = document.querySelector(".rules-content") as HTMLDivElement
 const rulesCount = document.getElementById("rulesCount") as HTMLSpanElement
 const rulesList = document.getElementById("rulesList") as HTMLDivElement
 const addRuleButton = document.getElementById("addRuleButton") as HTMLButtonElement
-const aiAssistRuleButton = document.getElementById("aiAssistRuleButton") as HTMLButtonElement
 const exportRulesButton = document.getElementById("exportRulesButton") as HTMLButtonElement
 const importRulesButton = document.getElementById("importRulesButton") as HTMLButtonElement
 const importFileInput = document.getElementById("importFileInput") as HTMLInputElement
@@ -299,16 +298,6 @@ async function addRule(): Promise<void> {
     await browser.tabs.create({ url, active: true })
   } catch (error) {
     console.error("Error opening add rule modal:", error)
-  }
-}
-
-// Open add rule modal with AI Assist focused
-async function addRuleWithAi(): Promise<void> {
-  try {
-    const url = browser.runtime.getURL("/rules-modal.html?aiAssist=true")
-    await browser.tabs.create({ url, active: true })
-  } catch (error) {
-    console.error("Error opening AI-assisted rule modal:", error)
   }
 }
 
@@ -709,7 +698,6 @@ aiLoadButton?.addEventListener("click", async () => {
 // Custom Rules event listeners
 rulesToggle?.addEventListener("click", toggleRulesSection)
 addRuleButton?.addEventListener("click", addRule)
-aiAssistRuleButton?.addEventListener("click", addRuleWithAi)
 exportRulesButton?.addEventListener("click", exportRules)
 importRulesButton?.addEventListener("click", importRules)
 importFileInput?.addEventListener("change", handleFileImport)

@@ -351,6 +351,11 @@ export default defineBackground(() => {
               break
             }
 
+            console.log("[AI] generateRule prompt:", {
+              description: msg.description,
+              existingDomains: msg.existingDomains
+            })
+
             const prompt = ruleGenerationPrompt(msg.description, msg.existingDomains)
             const completion = await aiService.complete({
               messages: prompt,
@@ -358,7 +363,17 @@ export default defineBackground(() => {
               maxTokens: 256
             })
 
-            result = parseAiRuleResponse(completion.content) as unknown as Record<string, unknown>
+            console.log("[AI] generateRule raw output:", completion.content)
+
+            const parsed = parseAiRuleResponse(completion.content)
+            console.log("[AI] generateRule parse result:", {
+              success: parsed.success,
+              error: parsed.error,
+              warnings: parsed.warnings,
+              ruleName: parsed.rule?.name
+            })
+
+            result = parsed as unknown as Record<string, unknown>
             break
           }
 
