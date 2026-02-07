@@ -169,7 +169,7 @@ h1 {
   font-size: 14px;
   font-family: "Inter", sans-serif;
   resize: vertical;
-  min-height: 60px;
+  min-height: 100px;
   transition: border-color 0.2s;
 }
 
