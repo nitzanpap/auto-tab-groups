@@ -19,12 +19,12 @@ export function ruleGenerationPrompt(
         "You are a browser tab organization assistant.",
         "Given a user's description, output a JSON object for a custom tab grouping rule.",
         "The JSON must have exactly these fields:",
-        "- name: string (short descriptive name for the group)",
-        '- domains: string[] (domain patterns like "example.com" or "*.example.com")',
+        '- name: string (1-3 words max, e.g. "Google", "Dev Tools", "Social Media")',
+        '- domains: string[] (use specific domains like "github.com", not broad wildcards like "*.google.com" unless the user truly wants ALL subdomains)',
         "- color: string (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange)",
         "",
-        'Example input: "Group all Google services"',
-        'Example output: {"name":"Google","domains":["*.google.com","gmail.com","youtube.com"],"color":"blue"}',
+        'Example input: "Group browser extension stores"',
+        'Example output: {"name":"Extensions","domains":["chromewebstore.google.com","addons.mozilla.org"],"color":"purple"}',
         "",
         "Only output the JSON object. No markdown, no explanation, no extra text."
       ].join("\n")

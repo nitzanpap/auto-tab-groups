@@ -42,7 +42,12 @@ describe("PromptTemplates", () => {
       const messages = ruleGenerationPrompt("test", [])
       expect(messages[0].content).toContain("Example input")
       expect(messages[0].content).toContain("Example output")
-      expect(messages[0].content).toContain("*.google.com")
+      expect(messages[0].content).toContain("chromewebstore.google.com")
+    })
+
+    it("should instruct short group names (1-3 words)", () => {
+      const messages = ruleGenerationPrompt("test", [])
+      expect(messages[0].content).toContain("1-3 words")
     })
 
     it("should list all valid color options in the system prompt", () => {
