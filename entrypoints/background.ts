@@ -17,7 +17,7 @@ import {
 } from "../services"
 import { parseAiRuleResponse, parseAiSuggestionResponse } from "../utils/AiResponseParser"
 import { ruleGenerationPrompt, tabGroupSuggestionPrompt } from "../utils/PromptTemplates"
-import { loadAllStorage, saveAllStorage } from "../utils/storage"
+import { cachedAiSuggestions, loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
   // State initialization flag to ensure it only happens once per service worker instance
@@ -462,6 +462,14 @@ export default defineBackground(() => {
               warnings: suggestParsed.warnings
             })
 
+            if (suggestParsed.success) {
+              await cachedAiSuggestions.setValue({
+                suggestions: [...suggestParsed.suggestions],
+                appliedIndices: [],
+                timestamp: Date.now()
+              })
+            }
+
             result = suggestParsed as unknown as Record<string, unknown>
             break
           }
@@ -513,6 +521,18 @@ export default defineBackground(() => {
                   typeof browser.tabGroups.update
                 >[1]["color"]
               })
+
+              // Mark this suggestion as applied in cache
+              const cached = await cachedAiSuggestions.getValue()
+              if (cached) {
+                const idx = cached.suggestions.findIndex(s => s.groupName === sugGroupName)
+                if (idx !== -1 && !cached.appliedIndices.includes(idx)) {
+                  await cachedAiSuggestions.setValue({
+                    ...cached,
+                    appliedIndices: [...cached.appliedIndices, idx]
+                  })
+                }
+              }
 
               result = {
                 success: true,

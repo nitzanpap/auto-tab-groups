@@ -1,6 +1,7 @@
 import "./style.css"
 import type { CustomRule } from "../../types"
 import type { AiGroupSuggestion } from "../../types/ai-messages"
+import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
 const groupButton = document.getElementById("group") as HTMLButtonElement
@@ -681,7 +682,7 @@ async function handleSuggestGroups(): Promise<void> {
     if (response?.success && response.suggestions) {
       aiSuggestStatus.textContent = ""
       aiSuggestStatus.className = "ai-suggest-status"
-      renderSuggestions(response.suggestions)
+      renderSuggestions(response.suggestions, [])
     } else {
       aiSuggestStatus.textContent = response?.error || "Failed to get suggestions"
       aiSuggestStatus.className = "ai-suggest-status error"
@@ -695,7 +696,10 @@ async function handleSuggestGroups(): Promise<void> {
   }
 }
 
-function renderSuggestions(suggestions: readonly AiGroupSuggestion[]): void {
+function renderSuggestions(
+  suggestions: readonly AiGroupSuggestion[],
+  appliedIndices: readonly number[] = []
+): void {
   aiSuggestionsContainer.innerHTML = ""
 
   if (suggestions.length === 0) {
@@ -704,9 +708,19 @@ function renderSuggestions(suggestions: readonly AiGroupSuggestion[]): void {
     return
   }
 
-  for (const suggestion of suggestions) {
+  const dismissBtn = document.createElement("button")
+  dismissBtn.className = "suggestion-dismiss-btn"
+  dismissBtn.textContent = "Dismiss"
+  dismissBtn.addEventListener("click", async () => {
+    await cachedAiSuggestions.setValue(null)
+    aiSuggestionsContainer.innerHTML = ""
+  })
+  aiSuggestionsContainer.appendChild(dismissBtn)
+
+  for (const [index, suggestion] of suggestions.entries()) {
+    const isApplied = appliedIndices.includes(index)
     const card = document.createElement("div")
-    card.className = "suggestion-card"
+    card.className = `suggestion-card${isApplied ? " applied" : ""}`
     const colorHex = RULE_COLORS[suggestion.color] || RULE_COLORS.blue
     card.style.borderLeftColor = colorHex
 
@@ -744,9 +758,12 @@ function renderSuggestions(suggestions: readonly AiGroupSuggestion[]): void {
     actions.className = "suggestion-actions"
 
     const applyBtn = document.createElement("button")
-    applyBtn.className = "suggestion-apply-btn"
-    applyBtn.textContent = "Apply"
-    applyBtn.addEventListener("click", () => handleApplySuggestion(suggestion, applyBtn))
+    applyBtn.className = `suggestion-apply-btn${isApplied ? " applied" : ""}`
+    applyBtn.textContent = isApplied ? "Applied!" : "Apply"
+    applyBtn.disabled = isApplied
+    if (!isApplied) {
+      applyBtn.addEventListener("click", () => handleApplySuggestion(suggestion, applyBtn))
+    }
 
     const ruleBtn = document.createElement("button")
     ruleBtn.className = "suggestion-rule-btn"
@@ -872,6 +889,21 @@ sendMessage<{
     updateAiBadge(response.settings.aiEnabled)
   }
 })
+
+// Load cached AI suggestions on popup open
+async function loadCachedSuggestions(): Promise<void> {
+  const cached = await cachedAiSuggestions.getValue()
+  if (!cached || cached.suggestions.length === 0) return
+
+  const THIRTY_MINUTES = 30 * 60 * 1000
+  if (Date.now() - cached.timestamp > THIRTY_MINUTES) {
+    await cachedAiSuggestions.setValue(null)
+    return
+  }
+
+  renderSuggestions(cached.suggestions, cached.appliedIndices)
+}
+loadCachedSuggestions()
 
 // Load custom rules on popup open
 loadCustomRules()

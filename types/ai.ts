@@ -2,6 +2,8 @@
  * Type definitions for AI features
  */
 
+import type { AiGroupSuggestion } from "./ai-messages"
+
 /**
  * Supported AI provider backends
  */
@@ -76,4 +78,13 @@ export interface AiStorageSettings {
   aiEnabled: boolean
   aiProvider: AiProvider
   aiModelId: string
+}
+
+/**
+ * Cached AI group suggestions (persisted across popup reopens)
+ */
+export interface CachedAiSuggestions {
+  suggestions: AiGroupSuggestion[]
+  appliedIndices: number[]
+  timestamp: number
 }

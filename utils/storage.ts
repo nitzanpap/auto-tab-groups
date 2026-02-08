@@ -6,6 +6,7 @@
 import { storage } from "wxt/utils/storage"
 import type {
   AiProvider,
+  CachedAiSuggestions,
   CustomRulesMapping,
   GroupByMode,
   GroupColorMapping,
@@ -65,6 +66,14 @@ export const aiProvider = storage.defineItem<AiProvider>("local:aiProvider", {
 export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
+
+/**
+ * Cached AI suggestions (survives popup reopens, not a user setting)
+ */
+export const cachedAiSuggestions = storage.defineItem<CachedAiSuggestions | null>(
+  "local:cachedAiSuggestions",
+  { fallback: null }
+)
 
 /**
  * Load all storage values at once

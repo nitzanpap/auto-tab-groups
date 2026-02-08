@@ -1071,3 +1071,32 @@ input:checked + .slider:before {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.suggestion-apply-btn.applied {
+  background: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+  opacity: 0.8;
+}
+
+.suggestion-card.applied {
+  opacity: 0.7;
+}
+
+.suggestion-dismiss-btn {
+  display: block;
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #888;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suggestion-dismiss-btn:hover {
+  color: #555;
+  border-color: #ccc;
+  background: #f5f5f5;
+}
