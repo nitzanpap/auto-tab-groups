@@ -132,9 +132,45 @@ tests/e2e/
 3. Clear existing tab groups
 4. Reset settings to defaults
 
+### AI Features
+
+- [ ] Enable AI in popup -> AI Features section appears
+- [ ] Select model -> model appears in dropdown
+- [ ] Load model -> progress bar fills, status shows "Ready"
+- [ ] "Suggest Groups" -> suggestions appear with group names and tab lists
+- [ ] Apply a suggestion -> tab group created in browser
+- [ ] Reopen popup after apply -> cached suggestions shown, applied one marked "Applied!"
+- [ ] Apply remaining suggestions one by one
+- [ ] "Dismiss" clears suggestions
+- [ ] "Suggest Groups" again -> fresh suggestions replace old cache
+- [ ] Unload model -> status returns to "Idle"
+- [ ] Disable AI -> AI section hidden
+
+### AI Edge Cases
+
+- [ ] Suggest with 0 eligible tabs shows error
+- [ ] Suggest with pinned-only tabs shows "No eligible tabs"
+- [ ] Close tabs after suggest, apply -> stale tabs handled gracefully
+- [ ] Service worker restart -> model unloaded, settings preserved
+- [ ] No WebGPU -> warning shown, load button disabled
+
+## Unit Test Suites
+
+### AI Tests
+
+Located in `tests/`:
+
+- **`AiService.test.ts`** - Service orchestration, model lifecycle, settings persistence
+- **`WebLlmProvider.test.ts`** - Model loading, completion, response_format passthrough
+- **`AiResponseParser.test.ts`** - JSON extraction strategies, suggestion parsing, rule parsing, edge cases
+- **`PromptTemplates.test.ts`** - Prompt structure, few-shot examples, tab formatting
+- **`WebGpuUtils.test.ts`** - WebGPU capability detection
+
 ## Common Issues
 
 - Tabs not grouped when expected
 - Duplicate groups created
 - Settings not persisting
 - Console errors during operations
+- AI model fails to load: check WebGPU availability and VRAM
+- AI suggestions empty: check browser console for parse errors

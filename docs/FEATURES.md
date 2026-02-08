@@ -163,3 +163,74 @@ Chrome's tab API can throw "Tabs cannot be edited right now" during tab transiti
 | 5       | 400ms  | 775ms      |
 
 This provides ~95% reliability by extending the retry window to ~775ms while keeping fast success on quick machines.
+
+## AI Features (On-Device via WebLLM)
+
+All AI features run entirely on-device using [WebLLM](https://github.com/mlc-ai/web-llm) with WebGPU acceleration. No tab data leaves the browser.
+
+### Architecture
+
+- **AiService** (`services/ai/AiService.ts`): Orchestrator managing model lifecycle (load/unload), settings persistence, and provider delegation
+- **WebLlmProvider** (`services/ai/WebLlmProvider.ts`): WebLLM backend using dynamic `import()` (never loaded until user triggers it)
+- **AiResponseParser** (`utils/AiResponseParser.ts`): Robust JSON extraction with multiple fallback strategies
+- **PromptTemplates** (`utils/PromptTemplates.ts`): Engineered prompts for suggestion and rule generation
+
+### Available Models
+
+| Model | Size | VRAM | Notes |
+|-------|------|------|-------|
+| Qwen2.5 3B (Recommended) | 1750 MB | 2505 MB | Best quality for tab grouping |
+| Llama 3.2 3B | 1820 MB | 2264 MB | Good alternative |
+| Phi-3.5 Mini 3.8B | 2150 MB | 3672 MB | Largest, most capable |
+| Qwen2.5 0.5B (Lightweight) | 398 MB | 1024 MB | Fast, lower quality |
+| Llama 3.2 1B | 879 MB | 2048 MB | Mid-range |
+| SmolLM2 360M (Fastest) | 245 MB | 512 MB | Minimal resource usage |
+
+### Tab Group Suggestions
+
+1. User clicks "Suggest Groups" in popup/sidebar
+2. Background queries current window tabs (filters pinned, extension, and system URLs; caps at 50)
+3. Prompt instructs model to group by **topic** (not domain) with descriptive category names
+4. Model returns `{"groups": [{ groupName, tabIndices, color }]}` (JSON mode enforced)
+5. Parser validates, maps indices to tab IDs, deduplicates, and normalizes colors
+6. UI renders suggestion cards with "Apply" and "Create Rule" buttons
+
+### Suggestion Caching
+
+Suggestions persist in `browser.storage.local` so they survive popup reopens:
+
+- After `suggestGroups`: cache saved with `appliedIndices: []`
+- After `applySuggestion`: the applied suggestion's index is added to `appliedIndices`
+- On popup reopen: cached suggestions render with applied ones marked "Applied!" and disabled
+- Cache expires after 30 minutes
+- "Dismiss" button clears cache; clicking "Suggest Groups" overwrites with fresh results
+
+### AI Rule Generation
+
+1. User describes a rule in natural language (e.g., "Group social media sites")
+2. Background sends description + existing domains to model
+3. Model returns `{ name, domains[], color }`
+4. Parser validates domains and color, returns structured rule for the rules modal
+
+### Response Parsing Strategy
+
+The AI response parser uses multiple extraction strategies for robustness:
+
+1. Direct JSON parse (for clean `json_object` mode output)
+2. `{"groups": [...]}` wrapper extraction
+3. Markdown code fence extraction
+4. Brace/bracket block extraction from surrounding text
+5. JSONL (one object per line) concatenation
+
+Each suggestion is individually validated:
+- Group name truncated to 30 chars
+- Tab indices validated against actual tab list
+- Invalid colors normalized to `blue`
+- Tabs deduplicated across groups (first-wins)
+
+### Model State Management
+
+- Model state is **ephemeral** (service workers restart); settings are persisted to storage
+- UI polls `getAiModelStatus` every 500ms during loading to show progress
+- Background fires-and-forgets `loadModel()` (never awaits it in message handler)
+- WebGPU capability checked before enabling the load button

@@ -7,61 +7,59 @@
 - [x] Custom rules with colors and minimum tabs
 - [x] Export/import rules
 - [x] Pinned tab handling
+- [x] Focus Mode (auto-collapse inactive groups)
+- [x] AI infrastructure (WebLLM on-device inference via WebGPU)
+- [x] AI-powered rule generation from natural language
+- [x] AI-powered tab group suggestions (topic-based grouping)
+- [x] Suggestion caching across popup reopens
+
+### AI Implementation Details (Completed)
+
+**Phase 1 - AI Infrastructure**:
+
+- WebLLM provider with dynamic `import()` (zero bundle cost until activated)
+- AiService orchestrator with model lifecycle management
+- WebGPU capability detection
+- 6 model options (360MB to 3.8GB) with Qwen2.5 3B as recommended default
+- Settings persistence across service worker restarts
+
+**Phase 2 - Smart Rule Generation**:
+
+- Natural language to rule conversion (e.g., "Group social media" -> domains + color)
+- AI response parser with robust JSON extraction
+- Integration with rules modal for review before saving
+
+**Phase 3 - Tab Group Suggestions**:
+
+- Topic-based grouping prompts (groups by subject, not domain)
+- `response_format: json_object` for reliable structured output
+- Suggestion cards with "Apply" and "Create Rule" actions
+- Caching system so suggestions survive popup closes
+- Applied/pending state tracking across reopens
 
 ## Planned
 
-### AI-Driven Grouping
+### AI Enhancements
 
-Server-side AI grouping using tab metadata.
+- [ ] Content-aware grouping (analyze page content, not just URL/title)
+- [ ] Autonomous AI mode (AI decides when to regroup tabs)
+- [ ] "Why is this tab here?" explainer for group assignments
+- [ ] Rule conflict detection and resolution suggestions
 
-**API Endpoint**: `POST /api/group-tabs-ai`
+### UI Improvements
 
-```json
-// Request
-{
-  "tabs": [{ "id": 1, "title": "Example", "url": "https://example.com" }],
-  "user_id": "optional",
-  "token": "optional"
-}
+- [ ] Custom Rules UI enhancements (better visualization of priorities and conflicts)
+- [ ] Search through open tabs and groups
+- [ ] Filter by domain, group name, or custom rules
+- [ ] Pattern testing interface for custom rules
 
-// Response
-{
-  "groups": [{ "group_name": "Work", "tab_ids": [1, 3, 5] }],
-  "usage": { "tokens_used": 1, "tokens_remaining": 9 }
-}
-```
+### Security & Quality
 
-**Implementation Steps**:
-
-1. Create `/api/group-tabs-ai` endpoint
-2. Integrate AI provider (e.g., OpenAI)
-3. Track token usage per user
-4. Enforce quotas
-
-### Premium Model
-
-**Free Tier**:
-
-- Automatic domain grouping
-- 10 free AI grouping tokens
-
-**Premium Tier**:
-
-- Unlimited AI grouping
-- Priority support
-- Future advanced features
-
-**Token System**:
-
-- Each AI request = 1 token
-- Free users: limited tokens to try
-- Premium users: unlimited (or high quota)
+- [ ] Enhanced XSS prevention
+- [ ] Content Security Policy (CSP) updates
+- [ ] Cloud sync for rules across devices
 
 ### Future Features
 
-- [ ] Token system and usage tracking
-- [ ] Payment and account system
-- [ ] Cloud sync for rules
 - [ ] Rule templates marketplace
-- [ ] Query parameter matching
-- [ ] Pattern testing interface
+- [ ] Query parameter matching in URL patterns
