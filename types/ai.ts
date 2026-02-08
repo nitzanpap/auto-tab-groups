@@ -49,6 +49,8 @@ export interface AiCompletionRequest {
   maxTokens?: number
   /** When set, forces the model to produce valid JSON at the decoding level */
   responseFormat?: "json"
+  /** JSON Schema string — enforces exact structure at the grammar level */
+  responseSchema?: string
 }
 
 /**

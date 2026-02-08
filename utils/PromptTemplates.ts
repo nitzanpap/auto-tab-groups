@@ -44,6 +44,29 @@ export function ruleGenerationPrompt(
 }
 
 /**
+ * JSON Schema for tab grouping suggestions.
+ * Forces the model to produce the exact object structure at the grammar level.
+ */
+export const SUGGESTION_SCHEMA = JSON.stringify({
+  type: "object",
+  properties: {
+    groups: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          groupName: { type: "string" },
+          tabIndices: { type: "array", items: { type: "integer" } },
+          color: { type: "string" }
+        },
+        required: ["groupName", "tabIndices", "color"]
+      }
+    }
+  },
+  required: ["groups"]
+})
+
+/**
  * Build a prompt for suggesting tab group assignments based on open tabs
  */
 export function tabGroupSuggestionPrompt(
@@ -65,15 +88,16 @@ export function tabGroupSuggestionPrompt(
     {
       role: "system",
       content: [
-        "You organize browser tabs into groups.",
-        "Output ONLY a JSON array. Each element: groupName (1-3 words), tabIndices (array of 1-based tab numbers), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).",
-        "Tabs from the same domain usually belong in the same group.",
+        "You organize browser tabs into groups by topic or purpose.",
+        'Output a JSON object: {"groups":[...]} where each element has groupName (1-3 words), tabIndices (1-based tab numbers), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).',
+        "Group by TOPIC, not by website. Tabs about the same subject from different sites belong together.",
+        "Use descriptive category names like 'Dev Tools', 'Shopping', 'Streaming' — not website names like 'Amazon' or 'GitHub'.",
         "",
         "Example:",
-        'Input: 1. [expedia.com] "Flights to Paris" 2. [allrecipes.com] "Best pasta recipe" 3. [booking.com] "Hotel deals Rome"',
-        'Output: [{"groupName":"Travel","tabIndices":[1,3],"color":"cyan"},{"groupName":"Cooking","tabIndices":[2],"color":"orange"}]',
+        'Input: 1. [reddit.com] "Best hiking trails" 2. [alltrails.com] "Mount Tam Loop" 3. [youtube.com] "Cooking pasta" 4. [reddit.com] "Easy dinner recipes"',
+        'Output: {"groups":[{"groupName":"Hiking","tabIndices":[1,2],"color":"green"},{"groupName":"Cooking","tabIndices":[3,4],"color":"orange"}]}',
         "",
-        "Rules: every tab in exactly one group, short names (1-3 words), JSON array only — no other text."
+        "Rules: every tab in exactly one group, short names (1-3 words), JSON only."
       ].join("\n")
     },
     {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   ruleGenerationPrompt,
+  SUGGESTION_SCHEMA,
   tabExplainerPrompt,
   tabGroupSuggestionPrompt
 } from "../utils/PromptTemplates"
@@ -80,9 +81,15 @@ describe("PromptTemplates", () => {
       expect(messages[1].content).toContain('[github.com] "GitHub"')
     })
 
-    it("should emphasize domain-based grouping in system prompt", () => {
+    it("should emphasize topic-based grouping over domain", () => {
       const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
-      expect(messages[0].content).toContain("same domain")
+      expect(messages[0].content).toContain("TOPIC")
+      expect(messages[0].content).toContain("not by website")
+    })
+
+    it("should instruct descriptive category names", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain("descriptive category names")
     })
 
     it("should number the tabs", () => {
@@ -101,10 +108,15 @@ describe("PromptTemplates", () => {
       expect(messages[0].content).toContain("Output:")
     })
 
-    it("should use a dissimilar example (travel/cooking, not dev)", () => {
+    it("should use a cross-domain example (hiking/cooking from different sites)", () => {
       const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
-      expect(messages[0].content).toContain("Travel")
+      expect(messages[0].content).toContain("Hiking")
       expect(messages[0].content).toContain("Cooking")
+    })
+
+    it("should ask for {groups: [...]} wrapper format", () => {
+      const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
+      expect(messages[0].content).toContain('{"groups"')
     })
 
     it("should instruct short group names (1-3 words)", () => {
@@ -115,6 +127,27 @@ describe("PromptTemplates", () => {
     it("should instruct every tab in exactly one group", () => {
       const messages = tabGroupSuggestionPrompt([{ title: "Test", url: "https://test.com" }])
       expect(messages[0].content).toContain("every tab in exactly one group")
+    })
+  })
+
+  describe("SUGGESTION_SCHEMA", () => {
+    it("should be a valid JSON string", () => {
+      expect(() => JSON.parse(SUGGESTION_SCHEMA)).not.toThrow()
+    })
+
+    it("should describe an object with a groups array", () => {
+      const schema = JSON.parse(SUGGESTION_SCHEMA)
+      expect(schema.type).toBe("object")
+      expect(schema.required).toContain("groups")
+      expect(schema.properties.groups.type).toBe("array")
+    })
+
+    it("should require groupName, tabIndices, and color in items", () => {
+      const schema = JSON.parse(SUGGESTION_SCHEMA)
+      const itemProps = schema.properties.groups.items.properties
+      expect(itemProps.groupName).toBeDefined()
+      expect(itemProps.tabIndices).toBeDefined()
+      expect(itemProps.color).toBeDefined()
     })
   })
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   extractJsonArrayFromResponse,
   extractJsonFromResponse,
+  extractSuggestionItems,
   normalizeColor,
   parseAiRuleResponse,
   parseAiSuggestionResponse,
@@ -323,6 +324,49 @@ describe("AiResponseParser", () => {
     })
   })
 
+  describe("extractSuggestionItems", () => {
+    it("should extract groups from {groups: [...]} wrapper", () => {
+      const input = '{"groups":[{"groupName":"Dev","tabIndices":[1,2],"color":"blue"}]}'
+      const items = extractSuggestionItems(input)
+      expect(items).not.toBeNull()
+      expect(items).toHaveLength(1)
+      expect((items![0] as Record<string, unknown>).groupName).toBe("Dev")
+    })
+
+    it("should extract groups from markdown-fenced wrapper", () => {
+      const input = '```json\n{"groups":[{"groupName":"Dev","tabIndices":[1],"color":"blue"}]}\n```'
+      const items = extractSuggestionItems(input)
+      expect(items).not.toBeNull()
+      expect(items).toHaveLength(1)
+    })
+
+    it("should extract groups from wrapper with surrounding text", () => {
+      const input =
+        'Here is the result: {"groups":[{"groupName":"A","tabIndices":[1],"color":"red"}]} done'
+      const items = extractSuggestionItems(input)
+      expect(items).not.toBeNull()
+      expect(items).toHaveLength(1)
+    })
+
+    it("should fall back to raw array extraction", () => {
+      const input = '[{"groupName":"Dev","tabIndices":[1],"color":"blue"}]'
+      const items = extractSuggestionItems(input)
+      expect(items).not.toBeNull()
+      expect(items).toHaveLength(1)
+    })
+
+    it("should return null for non-JSON input", () => {
+      expect(extractSuggestionItems("no json here")).toBeNull()
+    })
+
+    it("should prefer groups wrapper over raw array fallback", () => {
+      const input = '{"groups":[{"groupName":"FromWrapper","tabIndices":[1],"color":"blue"}]}'
+      const items = extractSuggestionItems(input)
+      expect(items).not.toBeNull()
+      expect((items![0] as Record<string, unknown>).groupName).toBe("FromWrapper")
+    })
+  })
+
   describe("parseAiSuggestionResponse", () => {
     const sampleTabs = [
       { tabId: 101, title: "GitHub - repo", url: "https://github.com/user/repo" },
@@ -330,6 +374,16 @@ describe("AiResponseParser", () => {
       { tabId: 103, title: "YouTube - Music", url: "https://youtube.com/watch?v=abc" },
       { tabId: 104, title: "MDN Web Docs", url: "https://developer.mozilla.org/en-US/docs" }
     ]
+
+    it("should parse {groups: [...]} wrapper format", () => {
+      const input =
+        '{"groups":[{"groupName":"Dev","tabIndices":[1,2,4],"color":"blue"},{"groupName":"Media","tabIndices":[3],"color":"red"}]}'
+      const result = parseAiSuggestionResponse(input, sampleTabs)
+      expect(result.success).toBe(true)
+      expect(result.suggestions).toHaveLength(2)
+      expect(result.suggestions[0].groupName).toBe("Dev")
+      expect(result.suggestions[1].groupName).toBe("Media")
+    })
 
     it("should parse valid JSON array with all fields", () => {
       const input =

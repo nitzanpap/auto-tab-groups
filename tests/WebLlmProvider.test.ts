@@ -294,6 +294,22 @@ describe("WebLlmProvider", () => {
       )
     })
 
+    it("should pass response_format with schema when responseSchema is provided", async () => {
+      const schema = '{"type":"object","properties":{"groups":{"type":"array"}}}'
+      await webLlmProvider.loadModel("test-model")
+      await webLlmProvider.complete({
+        messages: [{ role: "user", content: "test" }],
+        responseFormat: "json",
+        responseSchema: schema
+      })
+
+      expect(mockEngine.chat.completions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          response_format: { type: "json_object", schema }
+        })
+      )
+    })
+
     it("should not include response_format when responseFormat is not set", async () => {
       await webLlmProvider.loadModel("test-model")
       await webLlmProvider.complete({

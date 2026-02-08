@@ -265,6 +265,64 @@ export function extractJsonArrayFromResponse(content: string): string | null {
 }
 
 /**
+ * Extract suggestion items from AI output.
+ * Handles both raw JSON arrays and schema-wrapped {"groups": [...]} objects.
+ */
+export function extractSuggestionItems(rawContent: string): unknown[] | null {
+  const trimmed = rawContent.trim()
+
+  // Try parsing as a JSON object with a "groups" array (schema-enforced format)
+  try {
+    const obj = JSON.parse(trimmed)
+    if (obj && typeof obj === "object" && !Array.isArray(obj) && Array.isArray(obj.groups)) {
+      return obj.groups
+    }
+  } catch {
+    // Not direct JSON, continue
+  }
+
+  // Try extracting from markdown fence as {groups: [...]}
+  const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+  if (fenceMatch?.[1]) {
+    try {
+      const obj = JSON.parse(fenceMatch[1].trim())
+      if (obj && typeof obj === "object" && !Array.isArray(obj) && Array.isArray(obj.groups)) {
+        return obj.groups
+      }
+    } catch {
+      // Continue
+    }
+  }
+
+  // Try extracting {groups: [...]} from brace block
+  const braceStart = trimmed.indexOf("{")
+  const braceEnd = trimmed.lastIndexOf("}")
+  if (braceStart !== -1 && braceEnd > braceStart) {
+    try {
+      const obj = JSON.parse(trimmed.slice(braceStart, braceEnd + 1))
+      if (obj && typeof obj === "object" && !Array.isArray(obj) && Array.isArray(obj.groups)) {
+        return obj.groups
+      }
+    } catch {
+      // Continue
+    }
+  }
+
+  // Fall back to raw array extraction (backward compatibility)
+  const jsonString = extractJsonArrayFromResponse(rawContent)
+  if (!jsonString) return null
+
+  try {
+    const parsed = JSON.parse(jsonString)
+    if (Array.isArray(parsed)) return parsed
+  } catch {
+    // Invalid JSON
+  }
+
+  return null
+}
+
+/**
  * Parse raw AI text output into structured tab grouping suggestions.
  * Maps 1-based tabIndices from AI back to actual tab data.
  */
@@ -276,36 +334,18 @@ export function parseAiSuggestionResponse(
     return { success: false, suggestions: [], error: "Empty or invalid AI response", warnings: [] }
   }
 
-  const jsonString = extractJsonArrayFromResponse(rawContent)
-  if (!jsonString) {
+  // Try extracting as array first, then as {groups: [...]} object
+  const items = extractSuggestionItems(rawContent)
+  if (!items) {
     return {
       success: false,
       suggestions: [],
-      error: "Could not extract JSON array from AI response",
+      error: "Could not extract suggestions from AI response",
       warnings: []
     }
   }
 
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(jsonString)
-  } catch {
-    return {
-      success: false,
-      suggestions: [],
-      error: "AI response contained invalid JSON",
-      warnings: []
-    }
-  }
-
-  if (!Array.isArray(parsed)) {
-    return {
-      success: false,
-      suggestions: [],
-      error: "AI response is not a JSON array",
-      warnings: []
-    }
-  }
+  const parsed = items
 
   const warnings: string[] = []
   const suggestions: AiGroupSuggestion[] = []

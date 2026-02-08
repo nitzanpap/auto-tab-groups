@@ -144,7 +144,7 @@ class WebLlmProvider implements AiProviderInterface {
             messages: Array<{ role: string; content: string }>
             temperature?: number
             max_tokens?: number
-            response_format?: { type: "json_object" }
+            response_format?: { type: "json_object"; schema?: string }
           }) => Promise<{
             choices: Array<{
               message: { content: string }
@@ -162,7 +162,9 @@ class WebLlmProvider implements AiProviderInterface {
     }
 
     if (request.responseFormat === "json") {
-      params.response_format = { type: "json_object" }
+      params.response_format = request.responseSchema
+        ? { type: "json_object", schema: request.responseSchema }
+        : { type: "json_object" }
     }
 
     const response = await eng.chat.completions.create(params)
