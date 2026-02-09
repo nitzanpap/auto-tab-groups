@@ -55,11 +55,11 @@ import { aiService } from "../services/ai/AiService"
 describe("AiService", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset to defaults
+    // Reset to defaults (use "test-model" which matches mock's available models)
     aiService.updateFromStorage({
       aiEnabled: false,
       aiProvider: "webllm",
-      aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC"
+      aiModelId: "test-model"
     })
   })
 
@@ -67,7 +67,7 @@ describe("AiService", () => {
     it("should initialize with default values", () => {
       expect(aiService.isEnabled()).toBe(false)
       expect(aiService.getSelectedProvider()).toBe("webllm")
-      expect(aiService.getSelectedModelId()).toBe("Qwen2.5-3B-Instruct-q4f16_1-MLC")
+      expect(aiService.getSelectedModelId()).toBe("test-model")
     })
 
     it("should update from storage settings", () => {
@@ -229,9 +229,26 @@ describe("AiService", () => {
     })
 
     it("should include selected model ID in status", () => {
-      aiService.updateFromStorage({ aiModelId: "custom-model" })
+      aiService.updateFromStorage({ aiModelId: "test-model" })
       const status = aiService.getModelStatus()
-      expect(status.modelId).toBe("custom-model")
+      expect(status.modelId).toBe("test-model")
+    })
+  })
+
+  describe("stale model ID migration", () => {
+    it("should fall back to first available model when stored ID is invalid", () => {
+      aiService.updateFromStorage({ aiModelId: "removed-model-id" })
+      expect(aiService.getSelectedModelId()).toBe("test-model")
+    })
+
+    it("should persist corrected model ID to storage", () => {
+      aiService.updateFromStorage({ aiModelId: "removed-model-id" })
+      expect(mockSetAiModelId).toHaveBeenCalledWith("test-model")
+    })
+
+    it("should not persist when stored ID is valid", () => {
+      aiService.updateFromStorage({ aiModelId: "test-model" })
+      expect(mockSetAiModelId).not.toHaveBeenCalled()
     })
   })
 

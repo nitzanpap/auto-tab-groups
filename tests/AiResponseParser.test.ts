@@ -6,6 +6,7 @@ import {
   normalizeColor,
   parseAiRuleResponse,
   parseAiSuggestionResponse,
+  parseConflictResolutionResponse,
   sanitizeGeneratedDomains,
   validateParsedRule
 } from "../utils/AiResponseParser"
@@ -505,6 +506,61 @@ describe("AiResponseParser", () => {
       expect(result.suggestions[0].tabs).toHaveLength(2)
       expect(result.suggestions[0].tabs[0].tabId).toBe(101)
       expect(result.suggestions[0].tabs[1].tabId).toBe(103)
+    })
+  })
+
+  describe("parseConflictResolutionResponse", () => {
+    it("should parse valid JSON with resolutions array", () => {
+      const input = '{"resolutions":["Merge rules A and B","Remove overlapping pattern"]}'
+      const result = parseConflictResolutionResponse(input)
+      expect(result.success).toBe(true)
+      expect(result.resolutions).toEqual(["Merge rules A and B", "Remove overlapping pattern"])
+    })
+
+    it("should extract JSON from markdown code fence", () => {
+      const input = '```json\n{"resolutions":["Adjust pattern to be more specific"]}\n```'
+      const result = parseConflictResolutionResponse(input)
+      expect(result.success).toBe(true)
+      expect(result.resolutions).toHaveLength(1)
+    })
+
+    it("should return error for empty input", () => {
+      const result = parseConflictResolutionResponse("")
+      expect(result.success).toBe(false)
+      expect(result.error).toBeTruthy()
+      expect(result.resolutions).toEqual([])
+    })
+
+    it("should return error for invalid JSON", () => {
+      const result = parseConflictResolutionResponse("not json at all")
+      expect(result.success).toBe(false)
+      expect(result.error).toBeTruthy()
+    })
+
+    it("should return error for missing resolutions array", () => {
+      const result = parseConflictResolutionResponse('{"suggestions":["wrong key"]}')
+      expect(result.success).toBe(false)
+      expect(result.error).toContain("resolutions")
+    })
+
+    it("should filter out non-string entries in resolutions", () => {
+      const input = '{"resolutions":["Valid suggestion", 42, null, "", "Another valid one"]}'
+      const result = parseConflictResolutionResponse(input)
+      expect(result.success).toBe(true)
+      expect(result.resolutions).toEqual(["Valid suggestion", "Another valid one"])
+    })
+
+    it("should return error when all resolutions are invalid", () => {
+      const input = '{"resolutions":[42, null, ""]}'
+      const result = parseConflictResolutionResponse(input)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain("No valid resolution")
+    })
+
+    it("should return error for non-object response", () => {
+      const result = parseConflictResolutionResponse('["not an object"]')
+      expect(result.success).toBe(false)
+      expect(result.error).toContain("not a JSON object")
     })
   })
 })

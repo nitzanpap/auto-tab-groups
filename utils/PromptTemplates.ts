@@ -3,7 +3,7 @@
  * Pure functions returning AiChatMessage arrays.
  */
 
-import type { AiChatMessage } from "../types"
+import type { AiChatMessage, PatternConflict } from "../types"
 
 /**
  * Build a prompt for generating custom grouping rules from a natural language description
@@ -120,6 +120,53 @@ export function tabExplainerPrompt(title: string, url: string): AiChatMessage[] 
     {
       role: "user",
       content: `Title: "${title}"\nURL: ${url}`
+    }
+  ]
+}
+
+/**
+ * Build a prompt for AI to suggest resolutions for rule pattern conflicts.
+ */
+export function conflictResolutionPrompt(
+  ruleName: string,
+  rulePatterns: readonly string[],
+  conflicts: readonly PatternConflict[],
+  conflictingRules: ReadonlyArray<{ name: string; domains: readonly string[] }>
+): AiChatMessage[] {
+  const conflictList = conflicts
+    .map(
+      c =>
+        `- "${c.sourcePattern}" overlaps with "${c.targetPattern}" in rule "${c.targetRuleName}" (${c.conflictType})`
+    )
+    .join("\n")
+
+  const existingRulesList = conflictingRules
+    .map(r => `- "${r.name}": ${r.domains.join(", ")}`)
+    .join("\n")
+
+  return [
+    {
+      role: "system",
+      content: [
+        "You are a browser tab grouping rule analyst.",
+        "Given a new rule and its conflicts with existing rules, suggest resolutions.",
+        'Output a JSON object: {"resolutions":[...]} where each resolution is a string describing one actionable suggestion.',
+        "Possible actions: merge rules into one, adjust patterns to be more specific, or ignore if the overlap is intentional.",
+        "Keep each suggestion to one sentence. Be specific about which patterns or rules to change.",
+        "Output only the JSON object."
+      ].join("\n")
+    },
+    {
+      role: "user",
+      content: [
+        `New rule: "${ruleName}" with patterns: ${rulePatterns.join(", ")}`,
+        "",
+        "Conflicts detected:",
+        conflictList,
+        "",
+        "Existing rules involved:",
+        existingRulesList
+      ].join("\n")
     }
   ]
 }

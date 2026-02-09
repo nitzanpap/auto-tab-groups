@@ -420,3 +420,53 @@ export function parseAiSuggestionResponse(
 
   return { success: true, suggestions, warnings }
 }
+
+export interface ParsedConflictResolutionResult {
+  success: boolean
+  resolutions: string[]
+  error?: string
+}
+
+/**
+ * Parse AI response for conflict resolution suggestions.
+ * Expects JSON: {"resolutions": ["suggestion 1", "suggestion 2", ...]}
+ */
+export function parseConflictResolutionResponse(
+  rawContent: string
+): ParsedConflictResolutionResult {
+  if (!rawContent || typeof rawContent !== "string") {
+    return { success: false, resolutions: [], error: "Empty or invalid AI response" }
+  }
+
+  const jsonString = extractJsonFromResponse(rawContent)
+  if (!jsonString) {
+    return { success: false, resolutions: [], error: "Could not extract JSON from AI response" }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(jsonString)
+  } catch {
+    return { success: false, resolutions: [], error: "AI response contained invalid JSON" }
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { success: false, resolutions: [], error: "AI response is not a JSON object" }
+  }
+
+  const obj = parsed as Record<string, unknown>
+
+  if (!Array.isArray(obj.resolutions)) {
+    return { success: false, resolutions: [], error: "AI response missing 'resolutions' array" }
+  }
+
+  const resolutions = obj.resolutions
+    .filter((r): r is string => typeof r === "string" && r.trim().length > 0)
+    .map(r => r.trim())
+
+  if (resolutions.length === 0) {
+    return { success: false, resolutions: [], error: "No valid resolution suggestions in response" }
+  }
+
+  return { success: true, resolutions }
+}

@@ -199,10 +199,12 @@ class TabGroupServiceSimplified {
       }
 
       console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
-      await browser.tabs.group({
-        tabIds: [tabId],
-        groupId: existingGroup.id
-      })
+      await this.withTabEditRetry(() =>
+        browser.tabs.group({
+          tabIds: [tabId],
+          groupId: existingGroup.id
+        })
+      )
 
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {
@@ -230,7 +232,7 @@ class TabGroupServiceSimplified {
       console.log(`[TabGroupService] Not enough tabs to create group "${expectedTitle}"`)
 
       if (tab.groupId && tab.groupId !== -1) {
-        await browser.tabs.ungroup([tabId])
+        await this.withTabEditRetry(() => browser.tabs.ungroup([tabId]))
       }
 
       return false
@@ -239,7 +241,7 @@ class TabGroupServiceSimplified {
     // Create new group
     console.log(`[TabGroupService] Creating new group "${expectedTitle}"`)
 
-    const groupId = await browser.tabs.group({ tabIds: [tabId] })
+    const groupId = await this.withTabEditRetry(() => browser.tabs.group({ tabIds: [tabId] }))
 
     try {
       const updateOptions: Browser.tabGroups.UpdateProperties = {
@@ -312,10 +314,12 @@ class TabGroupServiceSimplified {
       }
 
       if (tabsToGroup.length > 0) {
-        await browser.tabs.group({
-          tabIds: tabsToGroup as [number, ...number[]],
-          groupId: existingGroup.id
-        })
+        await this.withTabEditRetry(() =>
+          browser.tabs.group({
+            tabIds: tabsToGroup as [number, ...number[]],
+            groupId: existingGroup.id
+          })
+        )
         console.log(
           `[TabGroupService] Added ${tabsToGroup.length} tabs to group "${expectedTitle}"`
         )
@@ -440,7 +444,7 @@ class TabGroupServiceSimplified {
       if (groupedTabs.length > 0) {
         const tabIds = groupedTabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await browser.tabs.ungroup(tabIds as [number, ...number[]])
+          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
         }
         console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`)
       }
@@ -490,7 +494,7 @@ class TabGroupServiceSimplified {
         console.log(`[TabGroupService] Group "${group.title}" below threshold, ungrouping`)
         const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await browser.tabs.ungroup(tabIds as [number, ...number[]])
+          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
         }
         return true
       }
@@ -539,7 +543,7 @@ class TabGroupServiceSimplified {
       if (tabs.length > 0) {
         const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await browser.tabs.ungroup(tabIds as [number, ...number[]])
+          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
           console.log(`[TabGroupService] Ungrouped ${tabIds.length} tabs from System group`)
         }
       }
@@ -774,52 +778,53 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Helper to update a tab group with retry logic using exponential backoff.
-   * Chrome throws "Tabs cannot be edited right now" during tab transitions.
-   * This retries the operation with increasing delays when that error occurs.
-   *
-   * Retry timeline with defaults (maxRetries=5, initialDelayMs=25):
-   * - Attempt 0: Immediate
-   * - Attempt 1: Wait 25ms
-   * - Attempt 2: Wait 50ms
-   * - Attempt 3: Wait 100ms
-   * - Attempt 4: Wait 200ms
-   * - Attempt 5: Wait 400ms
-   * - Total window: ~775ms
+   * Generic retry wrapper for Chrome tab operations that may throw
+   * "Tabs cannot be edited right now (user may be dragging a tab)".
+   * Uses exponential backoff: 25 → 50 → 100 → 200 → 400ms (~775ms total).
+   * Re-throws non-transient errors immediately.
    */
-  private async updateTabGroupWithRetry(
-    groupId: number,
-    updateProperties: { collapsed?: boolean; title?: string; color?: TabGroupColor },
+  private async withTabEditRetry<T>(
+    operation: () => Promise<T>,
     maxRetries = 5,
     initialDelayMs = 25
-  ): Promise<boolean> {
+  ): Promise<T> {
     let delayMs = initialDelayMs
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        await browser.tabGroups.update(groupId, updateProperties)
-        return true
+        return await operation()
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         const isTransientError = errorMessage.includes("cannot be edited right now")
 
         if (isTransientError && attempt < maxRetries) {
-          // Wait before retrying with exponential backoff
           await new Promise(resolve => setTimeout(resolve, delayMs))
-          delayMs *= 2 // Exponential backoff: 25 -> 50 -> 100 -> 200 -> 400ms
+          delayMs *= 2
           continue
         }
 
-        // Non-transient error or max retries reached
-        if (attempt === maxRetries && isTransientError) {
-          console.warn(
-            `[TabGroupService] Failed to update group ${groupId} after ${maxRetries} retries (~775ms total)`
-          )
-        }
-        return false
+        throw error
       }
     }
-    return false
+
+    // Unreachable, but TypeScript requires it
+    throw new Error("Max retries exceeded")
+  }
+
+  /**
+   * Helper to update a tab group with retry logic using exponential backoff.
+   * Chrome throws "Tabs cannot be edited right now" during tab transitions.
+   */
+  private async updateTabGroupWithRetry(
+    groupId: number,
+    updateProperties: { collapsed?: boolean; title?: string; color?: TabGroupColor }
+  ): Promise<boolean> {
+    try {
+      await this.withTabEditRetry(() => browser.tabGroups.update(groupId, updateProperties))
+      return true
+    } catch {
+      return false
+    }
   }
 
   /**

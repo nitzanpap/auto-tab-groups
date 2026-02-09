@@ -182,9 +182,6 @@ All AI features run entirely on-device using [WebLLM](https://github.com/mlc-ai/
 | Qwen2.5 3B (Recommended) | 1750 MB | 2505 MB | Best quality for tab grouping |
 | Llama 3.2 3B | 1820 MB | 2264 MB | Good alternative |
 | Phi-3.5 Mini 3.8B | 2150 MB | 3672 MB | Largest, most capable |
-| Qwen2.5 0.5B (Lightweight) | 398 MB | 1024 MB | Fast, lower quality |
-| Llama 3.2 1B | 879 MB | 2048 MB | Mid-range |
-| SmolLM2 360M (Fastest) | 245 MB | 512 MB | Minimal resource usage |
 
 ### Tab Group Suggestions
 

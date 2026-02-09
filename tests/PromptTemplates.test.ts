@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
+import type { PatternConflict } from "../types"
 import {
+  conflictResolutionPrompt,
   ruleGenerationPrompt,
   SUGGESTION_SCHEMA,
   tabExplainerPrompt,
@@ -148,6 +150,77 @@ describe("PromptTemplates", () => {
       expect(itemProps.groupName).toBeDefined()
       expect(itemProps.tabIndices).toBeDefined()
       expect(itemProps.color).toBeDefined()
+    })
+  })
+
+  describe("conflictResolutionPrompt", () => {
+    const sampleConflicts: PatternConflict[] = [
+      {
+        sourcePattern: "*.example.com",
+        targetPattern: "www.example.com",
+        targetRuleId: "r1",
+        targetRuleName: "Example WWW",
+        conflictType: "wildcard_subsumes",
+        description: '"*.example.com" covers "www.example.com" in rule "Example WWW"'
+      }
+    ]
+
+    const sampleRules = [{ name: "Example WWW", domains: ["www.example.com"] }]
+
+    it("should return an array of AiChatMessage objects", () => {
+      const messages = conflictResolutionPrompt(
+        "My Rule",
+        ["*.example.com"],
+        sampleConflicts,
+        sampleRules
+      )
+      expect(messages).toHaveLength(2)
+      expect(messages[0].role).toBe("system")
+      expect(messages[1].role).toBe("user")
+    })
+
+    it("should include the rule name in the user message", () => {
+      const messages = conflictResolutionPrompt(
+        "My Rule",
+        ["*.example.com"],
+        sampleConflicts,
+        sampleRules
+      )
+      expect(messages[1].content).toContain("My Rule")
+    })
+
+    it("should include conflict details in the user message", () => {
+      const messages = conflictResolutionPrompt(
+        "My Rule",
+        ["*.example.com"],
+        sampleConflicts,
+        sampleRules
+      )
+      expect(messages[1].content).toContain("*.example.com")
+      expect(messages[1].content).toContain("www.example.com")
+      expect(messages[1].content).toContain("Example WWW")
+    })
+
+    it("should include existing rules in the user message", () => {
+      const messages = conflictResolutionPrompt(
+        "My Rule",
+        ["*.example.com"],
+        sampleConflicts,
+        sampleRules
+      )
+      expect(messages[1].content).toContain("Existing rules involved")
+      expect(messages[1].content).toContain("www.example.com")
+    })
+
+    it("should request JSON output in system message", () => {
+      const messages = conflictResolutionPrompt(
+        "My Rule",
+        ["*.example.com"],
+        sampleConflicts,
+        sampleRules
+      )
+      expect(messages[0].content).toContain("JSON")
+      expect(messages[0].content).toContain("resolutions")
     })
   })
 

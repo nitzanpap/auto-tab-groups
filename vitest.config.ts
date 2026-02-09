@@ -19,6 +19,7 @@ export default defineConfig({
         "utils/Constants.ts",
         "utils/DomainUtils.ts",
         "utils/PromptTemplates.ts",
+        "utils/RuleConflictDetector.ts",
         "utils/RulesUtils.ts",
         "utils/UrlPatternMatcher.ts",
         "utils/WebGpuUtils.ts"

@@ -3,7 +3,7 @@
  */
 
 import type { AiModelStatusInfo, AiProvider, AiStorageSettings, WebGpuCapability } from "./ai"
-import type { TabGroupColor } from "./rules"
+import type { PatternConflict, RuleData, TabGroupColor } from "./rules"
 
 /**
  * AI-specific message actions
@@ -20,6 +20,7 @@ export type AiMessageAction =
   | "generateRule"
   | "suggestGroups"
   | "applySuggestion"
+  | "analyzeRuleConflicts"
 
 /**
  * Get full AI state message
@@ -148,6 +149,26 @@ export interface ApplySuggestionResponse {
 }
 
 /**
+ * Analyze rule patterns for conflicts with existing rules
+ */
+export interface AnalyzeRuleConflictsMessage {
+  action: "analyzeRuleConflicts"
+  ruleData: RuleData
+  excludeRuleId?: string
+}
+
+/**
+ * Response for analyzeRuleConflicts
+ */
+export interface AnalyzeRuleConflictsResponse {
+  success: boolean
+  hasConflicts: boolean
+  conflicts: PatternConflict[]
+  resolutions: string[]
+  error?: string
+}
+
+/**
  * Union of all AI messages
  */
 export type AiMessage =
@@ -162,6 +183,7 @@ export type AiMessage =
   | GenerateRuleMessage
   | SuggestGroupsMessage
   | ApplySuggestionMessage
+  | AnalyzeRuleConflictsMessage
 
 /**
  * Response for getAiState

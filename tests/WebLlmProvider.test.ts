@@ -51,9 +51,9 @@ describe("WebLlmProvider", () => {
   })
 
   describe("getAvailableModels", () => {
-    it("should return 6 available models", () => {
+    it("should return 3 available models", () => {
       const models = webLlmProvider.getAvailableModels()
-      expect(models).toHaveLength(6)
+      expect(models).toHaveLength(3)
     })
 
     it("should include Qwen2.5 3B as first model (recommended)", () => {
@@ -69,13 +69,6 @@ describe("WebLlmProvider", () => {
       expect(models[2].id).toContain("Phi-3.5")
     })
 
-    it("should include lightweight models for low-end hardware", () => {
-      const models = webLlmProvider.getAvailableModels()
-      const ids = models.map(m => m.id)
-      expect(ids).toContain("Qwen2.5-0.5B-Instruct-q4f16_1-MLC")
-      expect(ids).toContain("SmolLM2-360M-Instruct-q4f16_1-MLC")
-    })
-
     it("should have valid size information for all models", () => {
       const models = webLlmProvider.getAvailableModels()
       for (const model of models) {
@@ -88,7 +81,7 @@ describe("WebLlmProvider", () => {
 
   describe("loadModel", () => {
     it("should transition to ready status on success", async () => {
-      await webLlmProvider.loadModel("SmolLM2-360M-Instruct-q4f16_1-MLC")
+      await webLlmProvider.loadModel("Qwen2.5-3B-Instruct-q4f16_1-MLC")
       expect(webLlmProvider.getStatus()).toBe("ready")
       expect(webLlmProvider.getProgress()).toBe(100)
       expect(webLlmProvider.getError()).toBeNull()

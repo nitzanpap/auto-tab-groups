@@ -82,6 +82,19 @@ example.com/admin/*
           <button type="button" class="button secondary" id="cancelButton">Cancel</button>
         </div>
       </form>
+      <div id="conflictWarning" class="conflict-warning hidden">
+        <h3>Pattern Conflicts Detected</h3>
+        <p class="conflict-subtitle">These patterns overlap with existing rules. Tabs matching both rules will only be assigned to one.</p>
+        <div id="conflictList" class="conflict-list"></div>
+        <div id="conflictResolutions" class="conflict-resolutions hidden">
+          <h4>AI Suggestions</h4>
+          <ul id="resolutionList"></ul>
+        </div>
+        <div class="conflict-actions">
+          <button type="button" class="button primary" id="saveAnywayBtn">Save Anyway</button>
+          <button type="button" class="button secondary" id="goBackBtn">Go Back</button>
+        </div>
+      </div>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

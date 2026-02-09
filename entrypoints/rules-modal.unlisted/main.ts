@@ -1,5 +1,5 @@
 import "./style.css"
-import type { RuleData, TabGroupColor } from "../../types"
+import type { PatternConflict, RuleData, TabGroupColor } from "../../types"
 import { urlPatternMatcher } from "../../utils/UrlPatternMatcher"
 
 // Get URL parameters
@@ -37,6 +37,14 @@ const patternModeToggle = document.getElementById("patternModeToggle") as HTMLDi
 const simpleModeBtn = document.getElementById("simpleModeBtn") as HTMLButtonElement
 const explicitModeBtn = document.getElementById("explicitModeBtn") as HTMLButtonElement
 const modeHint = document.getElementById("modeHint") as HTMLDivElement
+
+// Conflict warning elements
+const conflictWarning = document.getElementById("conflictWarning") as HTMLDivElement
+const conflictList = document.getElementById("conflictList") as HTMLDivElement
+const conflictResolutions = document.getElementById("conflictResolutions") as HTMLDivElement
+const resolutionList = document.getElementById("resolutionList") as HTMLUListElement
+const saveAnywayBtn = document.getElementById("saveAnywayBtn") as HTMLButtonElement
+const goBackBtn = document.getElementById("goBackBtn") as HTMLButtonElement
 
 // Validate patterns in real-time
 function validatePatterns(): void {
@@ -102,10 +110,8 @@ async function loadExistingRule(): Promise<void> {
   }
 }
 
-// Save rule
-async function saveRule(event: Event): Promise<void> {
-  event.preventDefault()
-
+// Build RuleData from form inputs
+function buildRuleData(): RuleData | null {
   const name = ruleNameInput.value.trim()
   const patterns = rulePatternsInput.value
     .split("\n")
@@ -116,46 +122,138 @@ async function saveRule(event: Event): Promise<void> {
 
   if (!name) {
     alert("Please enter a rule name")
-    return
+    return null
   }
 
   if (patterns.length === 0) {
     alert("Please enter at least one URL pattern")
-    return
+    return null
   }
 
-  const ruleData: RuleData = {
-    name,
-    domains: patterns,
-    color,
-    enabled,
-    priority: 1
+  return { name, domains: patterns, color, enabled, priority: 1 }
+}
+
+// Persist rule to background
+async function persistRule(ruleData: RuleData): Promise<void> {
+  let response: { success?: boolean; error?: string }
+
+  if (isEditMode && ruleId) {
+    response = await sendMessage({
+      action: "updateCustomRule",
+      ruleId,
+      ruleData
+    })
+  } else {
+    response = await sendMessage({
+      action: "addCustomRule",
+      ruleData
+    })
   }
+
+  if (response?.success) {
+    window.close()
+  } else {
+    alert(response?.error || "Failed to save rule")
+  }
+}
+
+// Render conflict items in the warning UI
+function renderConflicts(
+  conflicts: readonly PatternConflict[],
+  resolutions: readonly string[]
+): void {
+  conflictList.innerHTML = ""
+  for (const conflict of conflicts) {
+    const item = document.createElement("div")
+    item.className = "conflict-item"
+
+    const badge = document.createElement("span")
+    badge.className = "conflict-type"
+    badge.textContent = conflict.conflictType.replace(/_/g, " ")
+
+    item.appendChild(badge)
+    item.appendChild(document.createTextNode(conflict.description))
+    conflictList.appendChild(item)
+  }
+
+  if (resolutions.length > 0) {
+    resolutionList.innerHTML = ""
+    for (const resolution of resolutions) {
+      const li = document.createElement("li")
+      li.textContent = resolution
+      resolutionList.appendChild(li)
+    }
+    conflictResolutions.classList.remove("hidden")
+  } else {
+    conflictResolutions.classList.add("hidden")
+  }
+
+  ruleForm.classList.add("hidden")
+  conflictWarning.classList.remove("hidden")
+}
+
+// Hide conflict warning and show form again
+function hideConflictWarning(): void {
+  conflictWarning.classList.add("hidden")
+  ruleForm.classList.remove("hidden")
+}
+
+// Save rule — checks for conflicts before persisting
+async function saveRule(event: Event): Promise<void> {
+  event.preventDefault()
+
+  const ruleData = buildRuleData()
+  if (!ruleData) return
+
+  saveButton.disabled = true
+  saveButton.textContent = "Checking..."
 
   try {
-    let response: { success?: boolean; error?: string }
+    const analysis = await sendMessage<{
+      success: boolean
+      hasConflicts: boolean
+      conflicts: PatternConflict[]
+      resolutions: string[]
+      error?: string
+    }>({
+      action: "analyzeRuleConflicts",
+      ruleData,
+      excludeRuleId: isEditMode ? ruleId : undefined
+    })
 
-    if (isEditMode && ruleId) {
-      response = await sendMessage({
-        action: "updateCustomRule",
-        ruleId,
-        ruleData
+    if (analysis?.hasConflicts && analysis.conflicts.length > 0) {
+      renderConflicts(analysis.conflicts, analysis.resolutions)
+
+      // Wait for user decision
+      const proceed = await new Promise<boolean>(resolve => {
+        const onSaveAnyway = (): void => {
+          saveAnywayBtn.removeEventListener("click", onSaveAnyway)
+          goBackBtn.removeEventListener("click", onGoBack)
+          resolve(true)
+        }
+        const onGoBack = (): void => {
+          saveAnywayBtn.removeEventListener("click", onSaveAnyway)
+          goBackBtn.removeEventListener("click", onGoBack)
+          resolve(false)
+        }
+        saveAnywayBtn.addEventListener("click", onSaveAnyway)
+        goBackBtn.addEventListener("click", onGoBack)
       })
-    } else {
-      response = await sendMessage({
-        action: "addCustomRule",
-        ruleData
-      })
+
+      hideConflictWarning()
+
+      if (!proceed) {
+        return
+      }
     }
 
-    if (response?.success) {
-      window.close()
-    } else {
-      alert(response?.error || "Failed to save rule")
-    }
+    await persistRule(ruleData)
   } catch (error) {
     console.error("Error saving rule:", error)
     alert(`Failed to save rule: ${(error as Error).message}`)
+  } finally {
+    saveButton.disabled = false
+    saveButton.textContent = isEditMode ? "Update Rule" : "Save Rule"
   }
 }
 

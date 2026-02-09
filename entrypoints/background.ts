@@ -15,8 +15,17 @@ import {
   tabGroupService,
   tabGroupState
 } from "../services"
-import { parseAiRuleResponse, parseAiSuggestionResponse } from "../utils/AiResponseParser"
-import { ruleGenerationPrompt, tabGroupSuggestionPrompt } from "../utils/PromptTemplates"
+import {
+  parseAiRuleResponse,
+  parseAiSuggestionResponse,
+  parseConflictResolutionResponse
+} from "../utils/AiResponseParser"
+import {
+  conflictResolutionPrompt,
+  ruleGenerationPrompt,
+  tabGroupSuggestionPrompt
+} from "../utils/PromptTemplates"
+import { detectConflicts } from "../utils/RuleConflictDetector"
 import { cachedAiSuggestions, loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
@@ -541,6 +550,69 @@ export default defineBackground(() => {
               }
             } catch (error) {
               result = { success: false, error: (error as Error).message }
+            }
+            break
+          }
+
+          case "analyzeRuleConflicts": {
+            if (!msg.ruleData || !Array.isArray(msg.ruleData.domains)) {
+              result = {
+                success: false,
+                hasConflicts: false,
+                conflicts: [],
+                resolutions: [],
+                error: "Invalid rule data"
+              }
+              break
+            }
+
+            const existingRules = Object.values(tabGroupState.getCustomRulesObject())
+            const conflicts = detectConflicts(
+              msg.ruleData.domains,
+              existingRules,
+              msg.excludeRuleId
+            )
+
+            let resolutions: string[] = []
+            if (
+              conflicts.length > 0 &&
+              aiService.isEnabled() &&
+              aiService.getModelStatus().status === "ready"
+            ) {
+              try {
+                const conflictRuleIds = [...new Set(conflicts.map(c => c.targetRuleId))]
+                const conflictingRules = existingRules
+                  .filter(r => conflictRuleIds.includes(r.id))
+                  .map(r => ({ name: r.name, domains: r.domains }))
+
+                const resolutionPrompt = conflictResolutionPrompt(
+                  msg.ruleData.name || "",
+                  msg.ruleData.domains,
+                  conflicts,
+                  conflictingRules
+                )
+                const resolutionCompletion = await aiService.complete({
+                  messages: resolutionPrompt,
+                  temperature: 0.3,
+                  maxTokens: 512,
+                  responseFormat: "json"
+                })
+                const resolutionParsed = parseConflictResolutionResponse(
+                  resolutionCompletion.content
+                )
+                if (resolutionParsed.success) {
+                  resolutions = resolutionParsed.resolutions
+                }
+              } catch (error) {
+                console.error("[AI] conflict resolution failed:", error)
+              }
+            }
+
+            result = {
+              success: true,
+              hasConflicts: conflicts.length > 0,
+              conflicts,
+              resolutions
             }
             break
           }

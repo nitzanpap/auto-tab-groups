@@ -74,7 +74,7 @@ Examples:
 ```tree
 AIProviderInterface
 ├── WebLLMProvider (default, client-side, privacy-first)
-│   ├── Model: SmolLM2-360M or similar small model
+│   ├── Model: Qwen2.5-3B or similar small model
 │   ├── Runs in browser via WebWorker
 │   └── No API key required
 └── ExternalAPIProvider (opt-in, higher quality)

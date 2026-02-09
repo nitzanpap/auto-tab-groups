@@ -70,7 +70,7 @@ export const DEFAULT_STATE: StorageSchema = {
   autoCollapseDelayMs: 0,
   aiEnabled: false,
   aiProvider: "webllm",
-  aiModelId: "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
+  aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC"
 }
 
 /**

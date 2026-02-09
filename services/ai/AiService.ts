@@ -29,7 +29,14 @@ class AiService {
   updateFromStorage(settings: Partial<AiStorageSettings>): void {
     if (settings.aiEnabled !== undefined) this.enabled = settings.aiEnabled
     if (settings.aiProvider !== undefined) this.provider = settings.aiProvider
-    if (settings.aiModelId !== undefined) this.modelId = settings.aiModelId
+    if (settings.aiModelId !== undefined) {
+      const available = this.getActiveProvider().getAvailableModels()
+      const isValid = available.some(m => m.id === settings.aiModelId)
+      this.modelId = isValid ? settings.aiModelId : available[0].id
+      if (!isValid) {
+        aiModelIdStorage.setValue(this.modelId)
+      }
+    }
   }
 
   isEnabled(): boolean {
