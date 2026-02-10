@@ -417,7 +417,7 @@ input:checked + .slider:before {
 .rules-toggle {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   align-items: center;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -440,6 +440,11 @@ input:checked + .slider:before {
   border-bottom-right-radius: 0;
   border-bottom: none;
   background: #e9ecef;
+}
+
+.rules-toggle .noselect {
+  flex: 1;
+  text-align: left;
 }
 
 .rules-count {
@@ -739,7 +744,7 @@ input:checked + .slider:before {
 .ai-toggle {
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   align-items: center;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -770,6 +775,25 @@ input:checked + .slider:before {
 
 .ai-toggle.expanded .up-arrow {
   transform: rotate(180deg);
+}
+
+.ai-toggle .noselect {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-experimental {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .ai-badge {
@@ -946,7 +970,6 @@ input:checked + .slider:before {
   cursor: help;
   position: relative;
   flex-shrink: 0;
-  margin-left: 4px;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
