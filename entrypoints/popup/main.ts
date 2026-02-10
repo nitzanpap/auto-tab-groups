@@ -840,6 +840,7 @@ async function createRuleFromSuggestion(suggestion: AiGroupSuggestion): Promise<
     })
     const url = browser.runtime.getURL(`/rules-modal.html?${params.toString()}`)
     await browser.tabs.create({ url, active: true })
+    await cachedAiSuggestions.setValue(null)
   } catch (error) {
     console.error("Error creating rule from suggestion:", error)
   }

@@ -454,6 +454,10 @@ export default defineBackground(() => {
             )
 
             const suggestPrompt = tabGroupSuggestionPrompt(tabsInfo)
+
+            const existingRuleNames = Object.values(tabGroupState.getCustomRulesObject()).map(
+              rule => rule.name
+            )
             const suggestCompletion = await aiService.complete({
               messages: suggestPrompt,
               temperature: 0.3,
@@ -464,22 +468,35 @@ export default defineBackground(() => {
             console.log("[AI] suggestGroups raw output:", suggestCompletion.content)
 
             const suggestParsed = parseAiSuggestionResponse(suggestCompletion.content, tabsWithIds)
+
+            // Filter out suggestions that duplicate existing custom rules
+            const ruleNamesLower = new Set(existingRuleNames.map(n => n.toLowerCase()))
+            const filtered = suggestParsed.suggestions.filter(
+              s => !ruleNamesLower.has(s.groupName.toLowerCase())
+            )
+
             console.log("[AI] suggestGroups parse result:", {
               success: suggestParsed.success,
-              count: suggestParsed.suggestions.length,
+              count: filtered.length,
+              filteredOut: suggestParsed.suggestions.length - filtered.length,
               error: suggestParsed.error,
               warnings: suggestParsed.warnings
             })
 
-            if (suggestParsed.success) {
+            const filteredResult = {
+              ...suggestParsed,
+              suggestions: filtered
+            }
+
+            if (filteredResult.success) {
               await cachedAiSuggestions.setValue({
-                suggestions: [...suggestParsed.suggestions],
+                suggestions: [...filtered],
                 appliedIndices: [],
                 timestamp: Date.now()
               })
             }
 
-            result = suggestParsed as unknown as Record<string, unknown>
+            result = filteredResult as unknown as Record<string, unknown>
             break
           }
 
