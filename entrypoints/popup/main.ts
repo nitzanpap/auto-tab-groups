@@ -522,6 +522,13 @@ function toggleAiSection(): void {
 
 async function initializeAiSection(): Promise<void> {
   try {
+    // AI features are Chrome-only for now (WebLLM's tokenizer exceeds Firefox store limits)
+    if (navigator.userAgent.includes("Firefox")) {
+      aiContent.innerHTML =
+        '<div class="ai-firefox-notice">AI features are currently available on Chrome only. Firefox support is coming soon.</div>'
+      return
+    }
+
     const response = await sendMessage<{
       settings?: { aiEnabled: boolean; aiModelId: string }
       modelStatus?: { status: string; progress: number; error: string | null }

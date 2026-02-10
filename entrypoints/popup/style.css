@@ -951,6 +951,16 @@ input:checked + .slider:before {
   display: block;
 }
 
+.ai-firefox-notice {
+  padding: 10px 12px;
+  background: #f0ebff;
+  color: #5b21b6;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .ai-help-text {
   padding-top: 4px;
 }
