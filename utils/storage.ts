@@ -5,6 +5,8 @@
 
 import { storage } from "wxt/utils/storage"
 import type {
+  AiProvider,
+  CachedAiSuggestions,
   CustomRulesMapping,
   GroupByMode,
   GroupColorMapping,
@@ -53,6 +55,26 @@ export const autoCollapseDelayMs = storage.defineItem<number>("local:autoCollaps
   fallback: DEFAULT_STATE.autoCollapseDelayMs
 })
 
+export const aiEnabled = storage.defineItem<boolean>("local:aiEnabled", {
+  fallback: DEFAULT_STATE.aiEnabled
+})
+
+export const aiProvider = storage.defineItem<AiProvider>("local:aiProvider", {
+  fallback: DEFAULT_STATE.aiProvider
+})
+
+export const aiModelId = storage.defineItem<string>("local:aiModelId", {
+  fallback: DEFAULT_STATE.aiModelId
+})
+
+/**
+ * Cached AI suggestions (survives popup reopens, not a user setting)
+ */
+export const cachedAiSuggestions = storage.defineItem<CachedAiSuggestions | null>(
+  "local:cachedAiSuggestions",
+  { fallback: null }
+)
+
 /**
  * Load all storage values at once
  */
@@ -66,7 +88,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMappingValue,
     minimumTabsForGroupValue,
     autoCollapseEnabledValue,
-    autoCollapseDelayMsValue
+    autoCollapseDelayMsValue,
+    aiEnabledValue,
+    aiProviderValue,
+    aiModelIdValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -76,7 +101,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMapping.getValue(),
     minimumTabsForGroup.getValue(),
     autoCollapseEnabled.getValue(),
-    autoCollapseDelayMs.getValue()
+    autoCollapseDelayMs.getValue(),
+    aiEnabled.getValue(),
+    aiProvider.getValue(),
+    aiModelId.getValue()
   ])
 
   return {
@@ -88,7 +116,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     groupColorMapping: groupColorMappingValue,
     minimumTabsForGroup: minimumTabsForGroupValue,
     autoCollapseEnabled: autoCollapseEnabledValue,
-    autoCollapseDelayMs: autoCollapseDelayMsValue
+    autoCollapseDelayMs: autoCollapseDelayMsValue,
+    aiEnabled: aiEnabledValue,
+    aiProvider: aiProviderValue,
+    aiModelId: aiModelIdValue
   }
 }
 
@@ -125,7 +156,15 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   if (data.autoCollapseDelayMs !== undefined) {
     promises.push(autoCollapseDelayMs.setValue(data.autoCollapseDelayMs))
   }
-
+  if (data.aiEnabled !== undefined) {
+    promises.push(aiEnabled.setValue(data.aiEnabled))
+  }
+  if (data.aiProvider !== undefined) {
+    promises.push(aiProvider.setValue(data.aiProvider))
+  }
+  if (data.aiModelId !== undefined) {
+    promises.push(aiModelId.setValue(data.aiModelId))
+  }
   await Promise.all(promises)
 }
 

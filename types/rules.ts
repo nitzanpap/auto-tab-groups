@@ -109,3 +109,31 @@ export interface RulesImportResult {
   skipped: number
   errors: string[]
 }
+
+/**
+ * Types of pattern conflicts between rules
+ */
+export type PatternConflictType =
+  | "exact_duplicate"
+  | "wildcard_subsumes"
+  | "subsumed_by_wildcard"
+  | "tld_wildcard_overlap"
+  | "segment_overlap"
+
+/**
+ * A detected conflict between a source pattern and an existing rule's pattern
+ */
+export interface PatternConflict {
+  /** The pattern from the rule being saved */
+  sourcePattern: string
+  /** The conflicting pattern in an existing rule */
+  targetPattern: string
+  /** The existing rule's ID */
+  targetRuleId: string
+  /** The existing rule's name */
+  targetRuleName: string
+  /** Type of overlap detected */
+  conflictType: PatternConflictType
+  /** Human-readable description of the conflict */
+  description: string
+}

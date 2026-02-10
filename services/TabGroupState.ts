@@ -67,7 +67,11 @@ class TabGroupState {
       groupColorMapping: {}, // Color mapping is managed separately
       minimumTabsForGroup: this.minimumTabsForGroup,
       autoCollapseEnabled: this.autoCollapseEnabled,
-      autoCollapseDelayMs: this.autoCollapseDelayMs
+      autoCollapseDelayMs: this.autoCollapseDelayMs,
+      // AI settings managed by AiService, pass defaults for storage schema
+      aiEnabled: DEFAULT_STATE.aiEnabled,
+      aiProvider: DEFAULT_STATE.aiProvider,
+      aiModelId: DEFAULT_STATE.aiModelId
     }
   }
 

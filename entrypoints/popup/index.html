@@ -98,6 +98,59 @@
         </div>
       </div>
 
+      <!-- AI Features Section -->
+      <div class="ai-section">
+        <button class="ai-toggle">
+          <span class="noselect">AI Features <span class="ai-experimental">Experimental</span><span class="ai-help-icon" data-tooltip="AI-powered tab grouping suggestions. This feature is experimental. All processing runs locally in your browser — no data is sent to external servers.">?</span></span>
+          <span class="ai-badge" id="aiBadge">Off</span>
+          <span class="up-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+              <path
+                d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
+                style="fill: #7c3aed"
+                data-name="Up"
+              />
+            </svg>
+          </span>
+        </button>
+        <div class="ai-content">
+          <div class="toggle-container">
+            <span>Enable AI</span>
+            <label class="switch">
+              <input type="checkbox" id="aiEnabledToggle" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="ai-settings" id="aiSettings">
+            <div class="toggle-container">
+              <span>Model</span>
+              <select id="aiModelSelect" class="ai-select"></select>
+            </div>
+            <div class="ai-status-row">
+              <span class="ai-status-label">Status:</span>
+              <span class="ai-status-badge" id="aiStatusBadge">Idle</span>
+            </div>
+            <div class="ai-progress-bar" id="aiProgressBar">
+              <div class="ai-progress-fill" id="aiProgressFill"></div>
+            </div>
+            <button id="aiLoadButton" class="button ai-load-button">Load Model</button>
+            <div class="ai-webgpu-warning" id="aiWebGpuWarning">
+              WebGPU is not available. AI features require a browser with WebGPU support.
+            </div>
+            <div class="help-text ai-help-text">
+              Models run locally in your browser. First load downloads the model (~250MB-900MB).
+            </div>
+            <div class="ai-suggest-section" id="aiSuggestSection">
+              <button id="aiSuggestButton" class="button ai-suggest-button" disabled>
+                Suggest Groups
+              </button>
+              <div class="ai-suggest-status" id="aiSuggestStatus"></div>
+              <div class="ai-suggestions-container" id="aiSuggestionsContainer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Custom Rules Section -->
       <div class="rules-section">
         <button class="rules-toggle">

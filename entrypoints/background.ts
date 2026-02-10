@@ -8,8 +8,25 @@
  * - All operations must ensure state is loaded from storage before proceeding
  */
 
-import { contextMenuService, rulesService, tabGroupService, tabGroupState } from "../services"
-import { loadAllStorage, saveAllStorage } from "../utils/storage"
+import {
+  aiService,
+  contextMenuService,
+  rulesService,
+  tabGroupService,
+  tabGroupState
+} from "../services"
+import {
+  parseAiRuleResponse,
+  parseAiSuggestionResponse,
+  parseConflictResolutionResponse
+} from "../utils/AiResponseParser"
+import {
+  conflictResolutionPrompt,
+  ruleGenerationPrompt,
+  tabGroupSuggestionPrompt
+} from "../utils/PromptTemplates"
+import { detectConflicts } from "../utils/RuleConflictDetector"
+import { cachedAiSuggestions, loadAllStorage, saveAllStorage } from "../utils/storage"
 
 export default defineBackground(() => {
   // State initialization flag to ensure it only happens once per service worker instance
@@ -24,6 +41,7 @@ export default defineBackground(() => {
         console.log("Service worker starting - loading state from storage...")
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
+        aiService.updateFromStorage(storageData)
         stateInitialized = true
         console.log("State loaded successfully from storage")
         console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
@@ -285,6 +303,336 @@ export default defineBackground(() => {
               delayMs: tabGroupState.autoCollapseDelayMs
             }
             break
+
+          // AI Features
+          case "getAiState":
+            result = {
+              settings: aiService.getSettings(),
+              modelStatus: aiService.getModelStatus(),
+              availableModels: aiService.getAvailableModels()
+            }
+            break
+
+          case "setAiEnabled":
+            await aiService.setEnabled(msg.enabled)
+            result = { enabled: aiService.isEnabled() }
+            break
+
+          case "setAiProvider":
+            await aiService.setProvider(msg.provider)
+            result = { provider: aiService.getSelectedProvider() }
+            break
+
+          case "setAiModelId":
+            await aiService.setModelId(msg.modelId)
+            result = { modelId: aiService.getSelectedModelId() }
+            break
+
+          case "getAiModelStatus":
+            result = { modelStatus: aiService.getModelStatus() }
+            break
+
+          case "loadAiModel":
+            // Fire-and-forget — model loading is long-running, UI polls status
+            aiService.loadModel().catch(err => {
+              console.error("[Background] AI model load failed:", err)
+            })
+            result = { success: true }
+            break
+
+          case "unloadAiModel":
+            await aiService.unloadModel()
+            result = { success: true }
+            break
+
+          case "checkWebGpuSupport": {
+            const webGpu = await aiService.checkWebGpuSupport()
+            result = { webGpu }
+            break
+          }
+
+          case "generateRule": {
+            if (typeof msg.description !== "string" || !msg.description.trim()) {
+              result = { success: false, error: "Description is required" }
+              break
+            }
+            if (msg.description.length > 500) {
+              result = { success: false, error: "Description too long (max 500 characters)" }
+              break
+            }
+            if (!Array.isArray(msg.existingDomains)) {
+              result = { success: false, error: "existingDomains must be an array" }
+              break
+            }
+            if (!aiService.isEnabled()) {
+              result = { success: false, error: "AI features are disabled" }
+              break
+            }
+            const modelStatus = aiService.getModelStatus()
+            if (modelStatus.status !== "ready") {
+              result = {
+                success: false,
+                error: "AI model is not loaded. Please load a model first."
+              }
+              break
+            }
+
+            console.log("[AI] generateRule prompt:", {
+              description: msg.description,
+              existingDomains: msg.existingDomains
+            })
+
+            const prompt = ruleGenerationPrompt(msg.description, msg.existingDomains)
+            const completion = await aiService.complete({
+              messages: prompt,
+              temperature: 0.3,
+              maxTokens: 256,
+              responseFormat: "json"
+            })
+
+            console.log("[AI] generateRule raw output:", completion.content)
+
+            const parsed = parseAiRuleResponse(completion.content)
+            console.log("[AI] generateRule parse result:", {
+              success: parsed.success,
+              error: parsed.error,
+              warnings: parsed.warnings,
+              ruleName: parsed.rule?.name
+            })
+
+            result = parsed as unknown as Record<string, unknown>
+            break
+          }
+
+          case "suggestGroups": {
+            if (!aiService.isEnabled()) {
+              result = { success: false, error: "AI features are disabled" }
+              break
+            }
+            const suggestModelStatus = aiService.getModelStatus()
+            if (suggestModelStatus.status !== "ready") {
+              result = {
+                success: false,
+                error: "AI model is not loaded. Please load a model first."
+              }
+              break
+            }
+
+            const allTabs = await browser.tabs.query({ currentWindow: true })
+            const eligibleTabs = allTabs.filter(
+              tab =>
+                tab.id !== undefined &&
+                !tab.pinned &&
+                tab.url &&
+                !tab.url.startsWith("chrome-extension://") &&
+                !tab.url.startsWith("moz-extension://") &&
+                !tab.url.startsWith("chrome://") &&
+                !tab.url.startsWith("about:")
+            )
+
+            if (eligibleTabs.length === 0) {
+              result = { success: false, error: "No eligible tabs to analyze" }
+              break
+            }
+
+            const tabsToAnalyze = eligibleTabs.slice(0, 50)
+            const tabsInfo = tabsToAnalyze.map(tab => ({
+              title: tab.title || "Untitled",
+              url: tab.url!
+            }))
+            const tabsWithIds = tabsToAnalyze.map(tab => ({
+              tabId: tab.id!,
+              title: tab.title || "Untitled",
+              url: tab.url!
+            }))
+
+            console.log(
+              "[AI] suggestGroups: analyzing",
+              tabsWithIds.length,
+              "tabs:",
+              tabsInfo.map((t, i) => `${i + 1}. "${t.title}" - ${t.url}`)
+            )
+
+            const suggestPrompt = tabGroupSuggestionPrompt(tabsInfo)
+
+            const existingRuleNames = Object.values(tabGroupState.getCustomRulesObject()).map(
+              rule => rule.name
+            )
+            const suggestCompletion = await aiService.complete({
+              messages: suggestPrompt,
+              temperature: 0.3,
+              maxTokens: 512,
+              responseFormat: "json"
+            })
+
+            console.log("[AI] suggestGroups raw output:", suggestCompletion.content)
+
+            const suggestParsed = parseAiSuggestionResponse(suggestCompletion.content, tabsWithIds)
+
+            // Filter out suggestions that duplicate existing custom rules
+            const ruleNamesLower = new Set(existingRuleNames.map(n => n.toLowerCase()))
+            const filtered = suggestParsed.suggestions.filter(
+              s => !ruleNamesLower.has(s.groupName.toLowerCase())
+            )
+
+            console.log("[AI] suggestGroups parse result:", {
+              success: suggestParsed.success,
+              count: filtered.length,
+              filteredOut: suggestParsed.suggestions.length - filtered.length,
+              error: suggestParsed.error,
+              warnings: suggestParsed.warnings
+            })
+
+            const filteredResult = {
+              ...suggestParsed,
+              suggestions: filtered
+            }
+
+            if (filteredResult.success) {
+              await cachedAiSuggestions.setValue({
+                suggestions: [...filtered],
+                appliedIndices: [],
+                timestamp: Date.now()
+              })
+            }
+
+            result = filteredResult as unknown as Record<string, unknown>
+            break
+          }
+
+          case "applySuggestion": {
+            if (
+              !msg.suggestion ||
+              !msg.suggestion.groupName ||
+              !Array.isArray(msg.suggestion.tabs)
+            ) {
+              result = { success: false, error: "Invalid suggestion data" }
+              break
+            }
+
+            const { groupName: sugGroupName, color: sugColor, tabs: sugTabs } = msg.suggestion
+            const staleTabIds: number[] = []
+            const validTabIds: number[] = []
+
+            for (const tabInfo of sugTabs) {
+              try {
+                await browser.tabs.get(tabInfo.tabId)
+                validTabIds.push(tabInfo.tabId)
+              } catch {
+                staleTabIds.push(tabInfo.tabId)
+              }
+            }
+
+            if (validTabIds.length === 0) {
+              result = {
+                success: false,
+                error: "All suggested tabs have been closed",
+                staleTabIds
+              }
+              break
+            }
+
+            try {
+              if (!browser.tabGroups) {
+                result = { success: false, error: "Tab groups API not available" }
+                break
+              }
+
+              const sugGroupId = await browser.tabs.group({
+                tabIds: validTabIds as [number, ...number[]]
+              })
+              await browser.tabGroups.update(sugGroupId, {
+                title: sugGroupName,
+                color: (sugColor || "blue") as Parameters<
+                  typeof browser.tabGroups.update
+                >[1]["color"]
+              })
+
+              // Mark this suggestion as applied in cache
+              const cached = await cachedAiSuggestions.getValue()
+              if (cached) {
+                const idx = cached.suggestions.findIndex(s => s.groupName === sugGroupName)
+                if (idx !== -1 && !cached.appliedIndices.includes(idx)) {
+                  await cachedAiSuggestions.setValue({
+                    ...cached,
+                    appliedIndices: [...cached.appliedIndices, idx]
+                  })
+                }
+              }
+
+              result = {
+                success: true,
+                groupId: sugGroupId,
+                ...(staleTabIds.length > 0 ? { staleTabIds } : {})
+              }
+            } catch (error) {
+              result = { success: false, error: (error as Error).message }
+            }
+            break
+          }
+
+          case "analyzeRuleConflicts": {
+            if (!msg.ruleData || !Array.isArray(msg.ruleData.domains)) {
+              result = {
+                success: false,
+                hasConflicts: false,
+                conflicts: [],
+                resolutions: [],
+                error: "Invalid rule data"
+              }
+              break
+            }
+
+            const existingRules = Object.values(tabGroupState.getCustomRulesObject())
+            const conflicts = detectConflicts(
+              msg.ruleData.domains,
+              existingRules,
+              msg.excludeRuleId
+            )
+
+            let resolutions: string[] = []
+            if (
+              conflicts.length > 0 &&
+              aiService.isEnabled() &&
+              aiService.getModelStatus().status === "ready"
+            ) {
+              try {
+                const conflictRuleIds = [...new Set(conflicts.map(c => c.targetRuleId))]
+                const conflictingRules = existingRules
+                  .filter(r => conflictRuleIds.includes(r.id))
+                  .map(r => ({ name: r.name, domains: r.domains }))
+
+                const resolutionPrompt = conflictResolutionPrompt(
+                  msg.ruleData.name || "",
+                  msg.ruleData.domains,
+                  conflicts,
+                  conflictingRules
+                )
+                const resolutionCompletion = await aiService.complete({
+                  messages: resolutionPrompt,
+                  temperature: 0.3,
+                  maxTokens: 512,
+                  responseFormat: "json"
+                })
+                const resolutionParsed = parseConflictResolutionResponse(
+                  resolutionCompletion.content
+                )
+                if (resolutionParsed.success) {
+                  resolutions = resolutionParsed.resolutions
+                }
+              } catch (error) {
+                console.error("[AI] conflict resolution failed:", error)
+              }
+            }
+
+            result = {
+              success: true,
+              hasConflicts: conflicts.length > 0,
+              conflicts,
+              resolutions
+            }
+            break
+          }
 
           default:
             result = { error: "Unknown action" }

@@ -6,10 +6,13 @@
     "codepen",
     "newtab",
     "nytimes",
+    "Qwen",
     "SLDS",
+    "SmolLM",
     "tabgroup",
     "techcrunch",
-    "tiktok"
+    "tiktok",
+    "webllm"
   ],
   "snyk.advanced.autoSelectOrganization": true,
   "editor.defaultFormatter": "biomejs.biome",

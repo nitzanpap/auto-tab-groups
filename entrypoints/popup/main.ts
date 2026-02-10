@@ -1,5 +1,7 @@
 import "./style.css"
 import type { CustomRule } from "../../types"
+import type { AiGroupSuggestion } from "../../types/ai-messages"
+import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
 const groupButton = document.getElementById("group") as HTMLButtonElement
@@ -27,7 +29,27 @@ const addRuleButton = document.getElementById("addRuleButton") as HTMLButtonElem
 const exportRulesButton = document.getElementById("exportRulesButton") as HTMLButtonElement
 const importRulesButton = document.getElementById("importRulesButton") as HTMLButtonElement
 
+// AI Elements
+const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
+const aiContent = document.querySelector(".ai-content") as HTMLDivElement
+const aiBadge = document.getElementById("aiBadge") as HTMLSpanElement
+const aiEnabledToggle = document.getElementById("aiEnabledToggle") as HTMLInputElement
+const aiSettings = document.getElementById("aiSettings") as HTMLDivElement
+const aiModelSelect = document.getElementById("aiModelSelect") as HTMLSelectElement
+const aiStatusBadge = document.getElementById("aiStatusBadge") as HTMLSpanElement
+const aiProgressBar = document.getElementById("aiProgressBar") as HTMLDivElement
+const aiProgressFill = document.getElementById("aiProgressFill") as HTMLDivElement
+const aiLoadButton = document.getElementById("aiLoadButton") as HTMLButtonElement
+const aiWebGpuWarning = document.getElementById("aiWebGpuWarning") as HTMLDivElement
+
+// AI Suggest Elements
+const aiSuggestButton = document.getElementById("aiSuggestButton") as HTMLButtonElement
+const aiSuggestStatus = document.getElementById("aiSuggestStatus") as HTMLDivElement
+const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer") as HTMLDivElement
+
 // State
+let aiSectionExpanded = false
+let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
 let customRulesExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
@@ -269,8 +291,17 @@ function toggleRulesSection(): void {
   rulesToggle.classList.toggle("expanded", customRulesExpanded)
   rulesContent.classList.toggle("expanded", customRulesExpanded)
 
-  if (customRulesExpanded && Object.keys(currentRules).length === 0) {
-    loadCustomRules()
+  if (customRulesExpanded) {
+    if (Object.keys(currentRules).length === 0) {
+      loadCustomRules()
+    }
+    // Collapse AI section (accordion)
+    if (aiSectionExpanded) {
+      aiSectionExpanded = false
+      aiToggle.classList.remove("expanded")
+      aiContent.classList.remove("expanded")
+      stopAiStatusPolling()
+    }
   }
 }
 
@@ -469,11 +500,432 @@ collapseDelayInput.addEventListener("change", async () => {
   })
 })
 
+// --- AI Features ---
+
+function toggleAiSection(): void {
+  aiSectionExpanded = !aiSectionExpanded
+  aiToggle.classList.toggle("expanded", aiSectionExpanded)
+  aiContent.classList.toggle("expanded", aiSectionExpanded)
+
+  if (aiSectionExpanded) {
+    initializeAiSection()
+    // Collapse rules section (accordion)
+    if (customRulesExpanded) {
+      customRulesExpanded = false
+      rulesToggle.classList.remove("expanded")
+      rulesContent.classList.remove("expanded")
+    }
+  } else {
+    stopAiStatusPolling()
+  }
+}
+
+async function initializeAiSection(): Promise<void> {
+  try {
+    // AI features are Chrome-only for now (WebLLM's tokenizer exceeds Firefox store limits)
+    if (navigator.userAgent.includes("Firefox")) {
+      aiContent.innerHTML =
+        '<div class="ai-firefox-notice">AI features are currently available on Chrome only. Firefox support is coming soon.</div>'
+      return
+    }
+
+    const response = await sendMessage<{
+      settings?: { aiEnabled: boolean; aiModelId: string }
+      modelStatus?: { status: string; progress: number; error: string | null }
+      availableModels?: Array<{ id: string; displayName: string }>
+    }>({ action: "getAiState" })
+
+    if (response?.availableModels && aiModelSelect.options.length === 0) {
+      for (const model of response.availableModels) {
+        const option = document.createElement("option")
+        option.value = model.id
+        option.textContent = model.displayName
+        aiModelSelect.appendChild(option)
+      }
+    }
+
+    if (response?.settings) {
+      aiEnabledToggle.checked = response.settings.aiEnabled
+      aiModelSelect.value = response.settings.aiModelId
+      updateAiSettingsVisibility(response.settings.aiEnabled)
+      updateAiBadge(response.settings.aiEnabled)
+    }
+
+    if (response?.modelStatus) {
+      updateAiModelStatus(response.modelStatus)
+    }
+
+    // Check WebGPU support
+    const webGpuResponse = await sendMessage<{
+      webGpu?: { available: boolean; reason: string | null }
+    }>({ action: "checkWebGpuSupport" })
+
+    if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
+      aiWebGpuWarning.classList.add("visible")
+      aiWebGpuWarning.textContent = webGpuResponse.webGpu.reason || "WebGPU is not available"
+      aiLoadButton.disabled = true
+    }
+  } catch (error) {
+    console.error("Error initializing AI section:", error)
+  }
+}
+
+function updateAiSettingsVisibility(enabled: boolean): void {
+  if (enabled) {
+    aiSettings.classList.add("visible")
+  } else {
+    aiSettings.classList.remove("visible")
+    stopAiStatusPolling()
+  }
+}
+
+function updateAiBadge(enabled: boolean): void {
+  aiBadge.textContent = enabled ? "On" : "Off"
+  aiBadge.classList.toggle("enabled", enabled)
+}
+
+function updateAiModelStatus(modelStatus: {
+  status: string
+  progress: number
+  error: string | null
+}): void {
+  const { status, progress, error } = modelStatus
+
+  // Update status badge
+  aiStatusBadge.textContent =
+    status === "idle"
+      ? "Idle"
+      : status === "loading"
+        ? `Loading ${progress}%`
+        : status === "ready"
+          ? "Ready"
+          : "Error"
+
+  aiStatusBadge.className = "ai-status-badge"
+  if (status !== "idle") {
+    aiStatusBadge.classList.add(status)
+  }
+
+  // Update progress bar
+  if (status === "loading") {
+    aiProgressBar.classList.add("visible")
+    aiProgressFill.style.width = `${progress}%`
+  } else {
+    aiProgressBar.classList.remove("visible")
+  }
+
+  // Update load button
+  if (status === "ready") {
+    aiLoadButton.textContent = "Unload Model"
+    aiLoadButton.classList.add("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = true
+    aiSuggestButton.disabled = false
+    stopAiStatusPolling()
+  } else if (status === "loading") {
+    aiLoadButton.textContent = "Loading..."
+    aiLoadButton.disabled = true
+    aiModelSelect.disabled = true
+    aiSuggestButton.disabled = true
+    startAiStatusPolling()
+  } else if (status === "error") {
+    aiLoadButton.textContent = "Retry Load"
+    aiLoadButton.classList.remove("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = false
+    aiSuggestButton.disabled = true
+    stopAiStatusPolling()
+    if (error) {
+      console.error("AI model error:", error)
+    }
+  } else {
+    aiLoadButton.textContent = "Load Model"
+    aiLoadButton.classList.remove("unload")
+    aiLoadButton.disabled = false
+    aiModelSelect.disabled = false
+    aiSuggestButton.disabled = true
+  }
+}
+
+function startAiStatusPolling(): void {
+  if (aiStatusPollingInterval) return
+  aiStatusPollingInterval = setInterval(async () => {
+    try {
+      const response = await sendMessage<{
+        modelStatus?: { status: string; progress: number; error: string | null }
+      }>({ action: "getAiModelStatus" })
+      if (response?.modelStatus) {
+        updateAiModelStatus(response.modelStatus)
+      }
+    } catch {
+      stopAiStatusPolling()
+    }
+  }, 500)
+}
+
+function stopAiStatusPolling(): void {
+  if (aiStatusPollingInterval) {
+    clearInterval(aiStatusPollingInterval)
+    aiStatusPollingInterval = null
+  }
+}
+
+// --- AI Suggestion Handlers ---
+
+async function handleSuggestGroups(): Promise<void> {
+  aiSuggestButton.disabled = true
+  aiSuggestStatus.textContent = "Analyzing your tabs..."
+  aiSuggestStatus.className = "ai-suggest-status loading"
+  aiSuggestionsContainer.innerHTML = ""
+
+  try {
+    const response = await sendMessage<{
+      success?: boolean
+      suggestions?: AiGroupSuggestion[]
+      error?: string
+      warnings?: string[]
+    }>({ action: "suggestGroups" })
+
+    if (response?.success && response.suggestions) {
+      aiSuggestStatus.textContent = ""
+      aiSuggestStatus.className = "ai-suggest-status"
+      renderSuggestions(response.suggestions, [])
+    } else {
+      aiSuggestStatus.textContent = response?.error || "Failed to get suggestions"
+      aiSuggestStatus.className = "ai-suggest-status error"
+    }
+  } catch (error) {
+    console.error("Error suggesting groups:", error)
+    aiSuggestStatus.textContent = "Failed to get suggestions"
+    aiSuggestStatus.className = "ai-suggest-status error"
+  } finally {
+    aiSuggestButton.disabled = false
+  }
+}
+
+function renderSuggestions(
+  suggestions: readonly AiGroupSuggestion[],
+  appliedIndices: readonly number[] = []
+): void {
+  aiSuggestionsContainer.innerHTML = ""
+
+  if (suggestions.length === 0) {
+    aiSuggestStatus.textContent = "No suggestions found"
+    aiSuggestStatus.className = "ai-suggest-status"
+    return
+  }
+
+  const dismissBtn = document.createElement("button")
+  dismissBtn.className = "suggestion-dismiss-btn"
+  dismissBtn.textContent = "Dismiss"
+  dismissBtn.addEventListener("click", async () => {
+    await cachedAiSuggestions.setValue(null)
+    aiSuggestionsContainer.innerHTML = ""
+  })
+  aiSuggestionsContainer.appendChild(dismissBtn)
+
+  for (const [index, suggestion] of suggestions.entries()) {
+    const isApplied = appliedIndices.includes(index)
+    const card = document.createElement("div")
+    card.className = `suggestion-card${isApplied ? " applied" : ""}`
+    const colorHex = RULE_COLORS[suggestion.color] || RULE_COLORS.blue
+    card.style.borderLeftColor = colorHex
+
+    const header = document.createElement("div")
+    header.className = "suggestion-header"
+
+    const colorDot = document.createElement("span")
+    colorDot.className = "suggestion-color-dot"
+    colorDot.style.backgroundColor = colorHex
+
+    const name = document.createElement("span")
+    name.className = "suggestion-name"
+    name.textContent = suggestion.groupName
+
+    const tabCount = document.createElement("span")
+    tabCount.className = "suggestion-tab-count"
+    tabCount.textContent = `${suggestion.tabs.length} tab${suggestion.tabs.length !== 1 ? "s" : ""}`
+
+    header.appendChild(colorDot)
+    header.appendChild(name)
+    header.appendChild(tabCount)
+
+    const tabsList = document.createElement("div")
+    tabsList.className = "suggestion-tabs"
+
+    for (const tab of suggestion.tabs) {
+      const tabEl = document.createElement("div")
+      tabEl.className = "suggestion-tab"
+      tabEl.textContent = tab.title || tab.url
+      tabEl.title = tab.url
+      tabsList.appendChild(tabEl)
+    }
+
+    const actions = document.createElement("div")
+    actions.className = "suggestion-actions"
+
+    const applyBtn = document.createElement("button")
+    applyBtn.className = `suggestion-apply-btn${isApplied ? " applied" : ""}`
+    applyBtn.textContent = isApplied ? "Applied!" : "Apply"
+    applyBtn.disabled = isApplied
+    if (!isApplied) {
+      applyBtn.addEventListener("click", () => handleApplySuggestion(suggestion, applyBtn))
+    }
+
+    const ruleBtn = document.createElement("button")
+    ruleBtn.className = "suggestion-rule-btn"
+    ruleBtn.textContent = "Create Rule"
+    ruleBtn.addEventListener("click", () => createRuleFromSuggestion(suggestion))
+
+    actions.appendChild(applyBtn)
+    actions.appendChild(ruleBtn)
+
+    card.appendChild(header)
+    card.appendChild(tabsList)
+    card.appendChild(actions)
+    aiSuggestionsContainer.appendChild(card)
+  }
+}
+
+async function handleApplySuggestion(
+  suggestion: AiGroupSuggestion,
+  button: HTMLButtonElement
+): Promise<void> {
+  button.disabled = true
+  button.textContent = "Applying..."
+
+  try {
+    const response = await sendMessage<{
+      success?: boolean
+      groupId?: number
+      error?: string
+      staleTabIds?: number[]
+    }>({
+      action: "applySuggestion",
+      suggestion
+    })
+
+    if (response?.success) {
+      button.textContent = "Applied!"
+      button.classList.add("applied")
+      if (response.staleTabIds && response.staleTabIds.length > 0) {
+        button.textContent = `Applied (${response.staleTabIds.length} tab${response.staleTabIds.length !== 1 ? "s" : ""} closed)`
+      }
+    } else {
+      button.textContent = "Failed"
+      button.disabled = false
+      console.error("Failed to apply suggestion:", response?.error)
+    }
+  } catch (error) {
+    console.error("Error applying suggestion:", error)
+    button.textContent = "Failed"
+    button.disabled = false
+  }
+}
+
+async function createRuleFromSuggestion(suggestion: AiGroupSuggestion): Promise<void> {
+  try {
+    const domains = [
+      ...new Set(
+        suggestion.tabs
+          .map(tab => {
+            try {
+              return new URL(tab.url).hostname
+            } catch {
+              return null
+            }
+          })
+          .filter((d): d is string => d !== null)
+      )
+    ]
+
+    const params = new URLSearchParams({
+      fromGroup: "true",
+      name: suggestion.groupName,
+      color: suggestion.color,
+      domains: domains.join(",")
+    })
+    const url = browser.runtime.getURL(`/rules-modal.html?${params.toString()}`)
+    const cached = await cachedAiSuggestions.getValue()
+    if (cached) {
+      const remaining = cached.suggestions.filter(
+        s => s.groupName.toLowerCase() !== suggestion.groupName.toLowerCase()
+      )
+      if (remaining.length === 0) {
+        await cachedAiSuggestions.setValue(null)
+      } else {
+        await cachedAiSuggestions.setValue({
+          ...cached,
+          suggestions: remaining,
+          appliedIndices: []
+        })
+      }
+    }
+    await browser.tabs.create({ url, active: true })
+  } catch (error) {
+    console.error("Error creating rule from suggestion:", error)
+  }
+}
+
+// AI Event Listeners
+aiToggle?.addEventListener("click", toggleAiSection)
+
+aiEnabledToggle?.addEventListener("change", async () => {
+  const enabled = aiEnabledToggle.checked
+  await sendMessage({ action: "setAiEnabled", enabled })
+  updateAiSettingsVisibility(enabled)
+  updateAiBadge(enabled)
+})
+
+aiModelSelect?.addEventListener("change", async () => {
+  await sendMessage({ action: "setAiModelId", modelId: aiModelSelect.value })
+})
+
+aiSuggestButton?.addEventListener("click", handleSuggestGroups)
+
+aiLoadButton?.addEventListener("click", async () => {
+  const response = await sendMessage<{
+    modelStatus?: { status: string; progress: number; error: string | null }
+  }>({ action: "getAiModelStatus" })
+
+  if (response?.modelStatus?.status === "ready") {
+    await sendMessage({ action: "unloadAiModel" })
+    updateAiModelStatus({ status: "idle", progress: 0, error: null })
+  } else {
+    await sendMessage({ action: "loadAiModel" })
+    updateAiModelStatus({ status: "loading", progress: 0, error: null })
+  }
+})
+
 // Custom Rules event listeners
 rulesToggle?.addEventListener("click", toggleRulesSection)
 addRuleButton?.addEventListener("click", addRule)
 exportRulesButton?.addEventListener("click", exportRules)
 importRulesButton?.addEventListener("click", importRules)
+
+// Initialize AI badge on popup open
+sendMessage<{
+  settings?: { aiEnabled: boolean }
+}>({ action: "getAiState" }).then(response => {
+  if (response?.settings) {
+    updateAiBadge(response.settings.aiEnabled)
+  }
+})
+
+// Load cached AI suggestions on popup open
+async function loadCachedSuggestions(): Promise<void> {
+  const cached = await cachedAiSuggestions.getValue()
+  if (!cached || cached.suggestions.length === 0) return
+
+  const THIRTY_MINUTES = 30 * 60 * 1000
+  if (Date.now() - cached.timestamp > THIRTY_MINUTES) {
+    await cachedAiSuggestions.setValue(null)
+    return
+  }
+
+  renderSuggestions(cached.suggestions, cached.appliedIndices)
+}
+loadCachedSuggestions()
 
 // Load custom rules on popup open
 loadCustomRules()
