@@ -879,8 +879,22 @@ async function createRuleFromSuggestion(suggestion: AiGroupSuggestion): Promise<
       domains: domains.join(",")
     })
     const url = browser.runtime.getURL(`/rules-modal.html?${params.toString()}`)
+    const cached = await cachedAiSuggestions.getValue()
+    if (cached) {
+      const remaining = cached.suggestions.filter(
+        s => s.groupName.toLowerCase() !== suggestion.groupName.toLowerCase()
+      )
+      if (remaining.length === 0) {
+        await cachedAiSuggestions.setValue(null)
+      } else {
+        await cachedAiSuggestions.setValue({
+          ...cached,
+          suggestions: remaining,
+          appliedIndices: []
+        })
+      }
+    }
     await browser.tabs.create({ url, active: true })
-    await cachedAiSuggestions.setValue(null)
   } catch (error) {
     console.error("Error creating rule from suggestion:", error)
   }
