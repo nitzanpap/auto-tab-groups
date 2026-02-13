@@ -19,6 +19,16 @@ interface CollapseState {
 }
 
 class TabGroupServiceSimplified {
+  private recentlyCreatedTabIds = new Set<number>()
+
+  markAsNewTab(tabId: number): void {
+    this.recentlyCreatedTabIds.add(tabId)
+  }
+
+  private consumeNewTabFlag(tabId: number): boolean {
+    return this.recentlyCreatedTabIds.delete(tabId)
+  }
+
   /**
    * Checks if a URL is a new tab URL
    */
@@ -195,6 +205,9 @@ class TabGroupServiceSimplified {
     if (existingGroup) {
       if (tab.groupId === existingGroup.id) {
         console.log(`[TabGroupService] Tab ${tabId} already in correct group`)
+        if (this.consumeNewTabFlag(tabId)) {
+          await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
+        }
         return true
       }
 
@@ -205,6 +218,9 @@ class TabGroupServiceSimplified {
           groupId: existingGroup.id
         })
       )
+
+      this.consumeNewTabFlag(tabId)
+      await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
 
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {
@@ -809,6 +825,29 @@ class TabGroupServiceSimplified {
 
     // Unreachable, but TypeScript requires it
     throw new Error("Max retries exceeded")
+  }
+
+  /**
+   * Repositions a tab directly after its opener tab within the same group.
+   * Only acts when the tab has an openerTabId and the opener is in the same group.
+   * Fails silently since positioning is a best-effort enhancement.
+   */
+  private async repositionTabNextToOpener(
+    tabId: number,
+    tab: Browser.tabs.Tab,
+    groupId: number
+  ): Promise<void> {
+    if (!tab.openerTabId) return
+
+    try {
+      const openerTab = await browser.tabs.get(tab.openerTabId)
+      if (openerTab.groupId !== groupId) return
+      if (typeof openerTab.index !== "number") return
+
+      await this.withTabEditRetry(() => browser.tabs.move(tabId, { index: openerTab.index + 1 }))
+    } catch {
+      // Best-effort — opener may have been closed
+    }
   }
 
   /**
