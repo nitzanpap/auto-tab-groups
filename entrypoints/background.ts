@@ -670,6 +670,9 @@ export default defineBackground(() => {
   browser.tabs.onCreated.addListener(async tab => {
     try {
       console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
+      if (tab.id) {
+        tabGroupService.markAsNewTab(tab.id)
+      }
       if (tab.url && tab.id) {
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tab.id)

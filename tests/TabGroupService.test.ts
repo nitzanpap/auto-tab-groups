@@ -841,4 +841,260 @@ describe("TabGroupService", () => {
       expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(100, { collapsed: true })
     })
   })
+
+  describe("tab positioning next to opener", () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      tabGroupState.updateFromStorage({ ...DEFAULT_STATE, autoGroupingEnabled: true })
+    })
+
+    it("should position tab next to opener when opener is in the same group", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalledWith({
+        tabIds: [2],
+        groupId: 100
+      })
+      expect(mockBrowser.tabs.move).toHaveBeenCalledWith(2, { index: 4 })
+    })
+
+    it("should NOT reposition when tab has no openerTabId", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 2,
+        url: "https://youtube.com/watch?v=new",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+
+    it("should NOT reposition when opener tab is in a different group", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://google.com",
+            pinned: false,
+            windowId: 1,
+            groupId: 200,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+
+    it("should handle gracefully when opener tab has been closed", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        throw new Error("No tab with id: 1")
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      const result = await tabGroupService.handleTabUpdate(2)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+
+    it("should succeed even when tabs.move fails persistently", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+      mockBrowser.tabs.move.mockRejectedValue(new Error("Tabs cannot be edited right now"))
+
+      const result = await tabGroupService.handleTabUpdate(2)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+    })
+
+    it("should NOT reposition when opener tab has no index", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100
+            // index intentionally omitted
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+
+    it("should reposition when tab is already in correct group (Chrome auto-grouped)", async () => {
+      tabGroupService.markAsNewTab(2)
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).toHaveBeenCalledWith(2, { index: 4 })
+    })
+
+    it("should NOT reposition on manual move (tab not marked as new)", async () => {
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+  })
 })
