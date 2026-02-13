@@ -673,6 +673,16 @@ export default defineBackground(() => {
       if (tab.id) {
         tabGroupService.markAsNewTab(tab.id)
       }
+      // Firefox fires onCreated with about:blank for tabs pending navigation.
+      // The real URL arrives later via onUpdated. Skip immediate grouping to
+      // avoid bouncing the tab through the System group.
+      if (tab.url === "about:blank" && tab.openerTabId) {
+        console.log(
+          `[tabs.onCreated] Tab ${tab.id} is pending navigation (about:blank with opener), deferring to onUpdated`
+        )
+        return
+      }
+
       if (tab.url && tab.id) {
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tab.id)
