@@ -522,15 +522,10 @@ function toggleAiSection(): void {
 
 async function initializeAiSection(): Promise<void> {
   try {
-    // AI features are Chrome-only for now (WebLLM's tokenizer exceeds Firefox store limits)
-    if (navigator.userAgent.includes("Firefox")) {
-      aiContent.innerHTML =
-        '<div class="ai-firefox-notice">AI features are currently available on Chrome only. Firefox support is coming soon.</div>'
-      return
-    }
+    const isFirefox = navigator.userAgent.includes("Firefox")
 
     const response = await sendMessage<{
-      settings?: { aiEnabled: boolean; aiModelId: string }
+      settings?: { aiEnabled: boolean; aiModelId: string; aiProvider: string }
       modelStatus?: { status: string; progress: number; error: string | null }
       availableModels?: Array<{ id: string; displayName: string }>
     }>({ action: "getAiState" })
@@ -555,15 +550,18 @@ async function initializeAiSection(): Promise<void> {
       updateAiModelStatus(response.modelStatus)
     }
 
-    // Check WebGPU support
-    const webGpuResponse = await sendMessage<{
-      webGpu?: { available: boolean; reason: string | null }
-    }>({ action: "checkWebGpuSupport" })
+    // On Chrome, check WebGPU support (required for WebLLM)
+    // On Firefox, wllama uses CPU/WASM — no GPU required
+    if (!isFirefox) {
+      const webGpuResponse = await sendMessage<{
+        webGpu?: { available: boolean; reason: string | null }
+      }>({ action: "checkWebGpuSupport" })
 
-    if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
-      aiWebGpuWarning.classList.add("visible")
-      aiWebGpuWarning.textContent = webGpuResponse.webGpu.reason || "WebGPU is not available"
-      aiLoadButton.disabled = true
+      if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
+        aiWebGpuWarning.classList.add("visible")
+        aiWebGpuWarning.textContent = webGpuResponse.webGpu.reason || "WebGPU is not available"
+        aiLoadButton.disabled = true
+      }
     }
   } catch (error) {
     console.error("Error initializing AI section:", error)

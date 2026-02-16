@@ -7,7 +7,7 @@ import type { AiGroupSuggestion } from "./ai-messages"
 /**
  * Supported AI provider backends
  */
-export type AiProvider = "webllm" | "external"
+export type AiProvider = "webllm" | "wllama" | "external"
 
 /**
  * AI model loading state machine: idle → loading → ready (or error)
@@ -21,7 +21,8 @@ export interface AiModelConfig {
   id: string
   displayName: string
   sizeInMb: number
-  vramRequiredMb: number
+  /** VRAM required for GPU-based providers (WebLLM). Not applicable for CPU-based (wllama). */
+  vramRequiredMb?: number
 }
 
 /**
