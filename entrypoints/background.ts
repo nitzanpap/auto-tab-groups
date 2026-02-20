@@ -710,8 +710,18 @@ export default defineBackground(() => {
 
   browser.tabs.onMoved.addListener(async tabId => {
     try {
-      console.log(`[tabs.onMoved] Tab ${tabId} moved`)
       await ensureStateLoaded()
+
+      // Skip tabs already in a group — this move was likely triggered by
+      // our own tabs.group() call. Re-triggering handleTabUpdate here
+      // would race with the in-progress title update and could create
+      // duplicate untitled groups.
+      const tab = await browser.tabs.get(tabId)
+      if (tab.groupId && tab.groupId !== -1) {
+        return
+      }
+
+      console.log(`[tabs.onMoved] Tab ${tabId} moved (ungrouped), re-evaluating`)
       await tabGroupService.moveTabToGroup(tabId)
     } catch (error) {
       console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)

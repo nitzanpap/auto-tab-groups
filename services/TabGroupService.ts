@@ -20,6 +20,7 @@ interface CollapseState {
 
 class TabGroupServiceSimplified {
   private recentlyCreatedTabIds = new Set<number>()
+  private processingTabs = new Set<number>()
 
   markAsNewTab(tabId: number): void {
     this.recentlyCreatedTabIds.add(tabId)
@@ -58,6 +59,22 @@ class TabGroupServiceSimplified {
       return false
     }
 
+    // Prevent concurrent processing of the same tab (e.g. onMoved firing
+    // while we are still setting the group title after tabs.group())
+    if (this.processingTabs.has(tabId)) {
+      console.log(`[TabGroupService] Tab ${tabId} already being processed, skipping`)
+      return false
+    }
+
+    this.processingTabs.add(tabId)
+    try {
+      return await this._doHandleTabUpdate(tabId, forceGrouping)
+    } finally {
+      this.processingTabs.delete(tabId)
+    }
+  }
+
+  private async _doHandleTabUpdate(tabId: number, forceGrouping: boolean): Promise<boolean> {
     try {
       console.log(`[TabGroupService] Processing tab ${tabId}`)
 
@@ -225,9 +242,11 @@ class TabGroupServiceSimplified {
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {
         try {
-          await browser.tabGroups.update(existingGroup.id, {
-            color: customRule.color
-          })
+          await this.withTabEditRetry(() =>
+            browser.tabGroups.update(existingGroup.id, {
+              color: customRule.color
+            })
+          )
         } catch (error) {
           console.warn(`[TabGroupService] Failed to update group color:`, error)
         }
@@ -276,7 +295,7 @@ class TabGroupServiceSimplified {
         }
       }
 
-      await browser.tabGroups.update(groupId, updateOptions)
+      await this.withTabEditRetry(() => browser.tabGroups.update(groupId, updateOptions))
 
       if (updateOptions.color) {
         await updateGroupColor(expectedTitle, updateOptions.color)
@@ -284,7 +303,7 @@ class TabGroupServiceSimplified {
 
       console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
     } catch (error) {
-      console.warn(`[TabGroupService] Failed to update group ${groupId}:`, error)
+      console.error(`[TabGroupService] Failed to update group ${groupId} title:`, error)
     }
 
     // Group matching ungrouped tabs
