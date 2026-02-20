@@ -1,3 +1,5 @@
+import { cpSync, existsSync, mkdirSync } from "node:fs"
+import { resolve } from "node:path"
 import type { Plugin } from "vite"
 import { defineConfig } from "wxt"
 
@@ -5,7 +7,6 @@ import { defineConfig } from "wxt"
  * Vite plugin that replaces @mlc-ai/web-llm with a lightweight stub for Firefox.
  * The full library bundles a 4.5 MB inline Emscripten tokenizer that pushes the
  * output chunk over the Firefox Add-on Store's 5 MB parse limit.
- * AI features (WebLLM/WebGPU) are Chrome-only for now.
  */
 function stubWebLlmForFirefox(): Plugin {
   const STUB_ID = "\0webllm-stub"
@@ -26,11 +27,67 @@ function stubWebLlmForFirefox(): Plugin {
   }
 }
 
+/**
+ * Vite plugin that replaces @wllama/wllama with a lightweight stub for Chrome.
+ * Chrome uses WebLLM (WebGPU) which is faster; wllama (WASM/CPU) is only for Firefox.
+ */
+function stubWllamaForChrome(): Plugin {
+  const STUB_ID = "\0wllama-stub"
+
+  return {
+    name: "stub-wllama-chrome",
+    enforce: "pre",
+    resolveId(id) {
+      if (id === "@wllama/wllama") {
+        return STUB_ID
+      }
+    },
+    load(id) {
+      if (id === STUB_ID) {
+        return "export class Wllama { constructor() { throw new Error('wllama is not available on Chrome') } }"
+      }
+    }
+  }
+}
+
+/**
+ * Vite plugin that copies wllama WASM files into public/wasm/ before the build.
+ * These files must be accessible at runtime via browser.runtime.getURL().
+ */
+function copyWllamaWasm(): Plugin {
+  return {
+    name: "copy-wllama-wasm",
+    buildStart() {
+      const wasmDir = resolve(__dirname, "public/wasm")
+      const singleSrc = resolve(
+        __dirname,
+        "node_modules/@wllama/wllama/esm/single-thread/wllama.wasm"
+      )
+      const multiSrc = resolve(
+        __dirname,
+        "node_modules/@wllama/wllama/esm/multi-thread/wllama.wasm"
+      )
+
+      if (!existsSync(wasmDir)) {
+        mkdirSync(wasmDir, { recursive: true })
+      }
+
+      if (existsSync(singleSrc)) {
+        cpSync(singleSrc, resolve(wasmDir, "wllama-single.wasm"))
+      }
+      if (existsSync(multiSrc)) {
+        cpSync(multiSrc, resolve(wasmDir, "wllama-multi.wasm"))
+      }
+    }
+  }
+}
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   manifestVersion: 3,
   vite: ({ browser }) => ({
-    plugins: browser === "firefox" ? [stubWebLlmForFirefox()] : []
+    plugins:
+      browser === "firefox" ? [stubWebLlmForFirefox(), copyWllamaWasm()] : [stubWllamaForChrome()]
   }),
   manifest: ({ browser }) => {
     const baseManifest = {
@@ -61,6 +118,10 @@ export default defineConfig({
     if (browser === "firefox") {
       return {
         ...baseManifest,
+        // 'wasm-unsafe-eval' required for wllama: WASM-based LLM inference
+        content_security_policy: {
+          extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+        },
         browser_specific_settings: {
           gecko: {
             id: "{442789cf-4ff6-4a85-bf5b-53aa3282f1a2}",

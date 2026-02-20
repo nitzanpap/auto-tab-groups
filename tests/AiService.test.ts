@@ -8,31 +8,56 @@ import type {
 } from "../types"
 
 // Hoist mock functions so they're available when vi.mock factories execute
-const { mockProvider, mockSetAiEnabled, mockSetAiProvider, mockSetAiModelId } = vi.hoisted(() => {
-  const mockSetAiEnabled = vi.fn().mockResolvedValue(undefined)
-  const mockSetAiProvider = vi.fn().mockResolvedValue(undefined)
-  const mockSetAiModelId = vi.fn().mockResolvedValue(undefined)
+const { mockProvider, mockWllamaProvider, mockSetAiEnabled, mockSetAiProvider, mockSetAiModelId } =
+  vi.hoisted(() => {
+    const mockSetAiEnabled = vi.fn().mockResolvedValue(undefined)
+    const mockSetAiProvider = vi.fn().mockResolvedValue(undefined)
+    const mockSetAiModelId = vi.fn().mockResolvedValue(undefined)
 
-  const mockProvider: AiProviderInterface = {
-    getStatus: vi.fn().mockReturnValue("idle" as AiModelStatus),
-    getProgress: vi.fn().mockReturnValue(0),
-    getError: vi.fn().mockReturnValue(null),
-    getAvailableModels: vi
-      .fn()
-      .mockReturnValue([
-        { id: "test-model", displayName: "Test Model", sizeInMb: 100, vramRequiredMb: 256 }
-      ] as readonly AiModelConfig[]),
-    loadModel: vi.fn().mockResolvedValue(undefined),
-    unloadModel: vi.fn().mockResolvedValue(undefined),
-    complete: vi.fn().mockResolvedValue({
-      content: "test response",
-      finishReason: "stop"
-    } as AiCompletionResponse),
-    isAvailable: vi.fn().mockResolvedValue(true)
-  }
+    const mockProvider: AiProviderInterface = {
+      getStatus: vi.fn().mockReturnValue("idle" as AiModelStatus),
+      getProgress: vi.fn().mockReturnValue(0),
+      getError: vi.fn().mockReturnValue(null),
+      getAvailableModels: vi
+        .fn()
+        .mockReturnValue([
+          { id: "test-model", displayName: "Test Model", sizeInMb: 100, vramRequiredMb: 256 }
+        ] as readonly AiModelConfig[]),
+      loadModel: vi.fn().mockResolvedValue(undefined),
+      unloadModel: vi.fn().mockResolvedValue(undefined),
+      complete: vi.fn().mockResolvedValue({
+        content: "test response",
+        finishReason: "stop"
+      } as AiCompletionResponse),
+      isAvailable: vi.fn().mockResolvedValue(true)
+    }
 
-  return { mockProvider, mockSetAiEnabled, mockSetAiProvider, mockSetAiModelId }
-})
+    const mockWllamaProvider: AiProviderInterface = {
+      getStatus: vi.fn().mockReturnValue("idle" as AiModelStatus),
+      getProgress: vi.fn().mockReturnValue(0),
+      getError: vi.fn().mockReturnValue(null),
+      getAvailableModels: vi
+        .fn()
+        .mockReturnValue([
+          { id: "wllama-test-model", displayName: "Wllama Test Model", sizeInMb: 1000 }
+        ] as readonly AiModelConfig[]),
+      loadModel: vi.fn().mockResolvedValue(undefined),
+      unloadModel: vi.fn().mockResolvedValue(undefined),
+      complete: vi.fn().mockResolvedValue({
+        content: "wllama test response",
+        finishReason: "stop"
+      } as AiCompletionResponse),
+      isAvailable: vi.fn().mockResolvedValue(true)
+    }
+
+    return {
+      mockProvider,
+      mockWllamaProvider,
+      mockSetAiEnabled,
+      mockSetAiProvider,
+      mockSetAiModelId
+    }
+  })
 
 // Mock all dependencies before importing AiService
 vi.mock("../utils/storage", () => ({
@@ -47,6 +72,10 @@ vi.mock("../utils/WebGpuUtils", () => ({
 
 vi.mock("../services/ai/WebLlmProvider", () => ({
   webLlmProvider: mockProvider
+}))
+
+vi.mock("../services/ai/WllamaProvider", () => ({
+  wllamaProvider: mockWllamaProvider
 }))
 
 // Import the singleton after all mocks are set up
@@ -184,6 +213,51 @@ describe("AiService", () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       await aiService.loadModel()
       expect(mockProvider.loadModel).toHaveBeenCalled()
+    })
+  })
+
+  describe("wllama provider routing", () => {
+    beforeEach(() => {
+      aiService.updateFromStorage({
+        aiEnabled: true,
+        aiProvider: "wllama",
+        aiModelId: "wllama-test-model"
+      })
+    })
+
+    it("should route to wllama provider when provider is wllama", () => {
+      const models = aiService.getAvailableModels()
+      expect(models).toHaveLength(1)
+      expect(models[0].id).toBe("wllama-test-model")
+    })
+
+    it("should delegate loadModel to wllama provider", async () => {
+      await aiService.loadModel()
+      expect(mockWllamaProvider.loadModel).toHaveBeenCalledWith("wllama-test-model")
+      expect(mockProvider.loadModel).not.toHaveBeenCalled()
+    })
+
+    it("should delegate complete to wllama provider", async () => {
+      const request: AiCompletionRequest = {
+        messages: [{ role: "user", content: "hello" }]
+      }
+      const result = await aiService.complete(request)
+      expect(result.content).toBe("wllama test response")
+      expect(mockWllamaProvider.complete).toHaveBeenCalledWith(request)
+    })
+
+    it("should delegate unloadModel to wllama provider", async () => {
+      await aiService.unloadModel()
+      expect(mockWllamaProvider.unloadModel).toHaveBeenCalled()
+      expect(mockProvider.unloadModel).not.toHaveBeenCalled()
+    })
+
+    it("should return model status from wllama provider", () => {
+      ;(mockWllamaProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("ready")
+      ;(mockWllamaProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(100)
+      const status = aiService.getModelStatus()
+      expect(status.status).toBe("ready")
+      expect(status.progress).toBe(100)
     })
   })
 

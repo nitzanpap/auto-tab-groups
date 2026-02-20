@@ -27,6 +27,7 @@ import {
 } from "../utils/PromptTemplates"
 import { detectConflicts } from "../utils/RuleConflictDetector"
 import { cachedAiSuggestions, loadAllStorage, saveAllStorage } from "../utils/storage"
+import { isFirefoxBrowser } from "../utils/WebGpuUtils"
 
 export default defineBackground(() => {
   // State initialization flag to ensure it only happens once per service worker instance
@@ -41,6 +42,15 @@ export default defineBackground(() => {
         console.log("Service worker starting - loading state from storage...")
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
+
+        // Auto-detect AI provider based on browser:
+        // Firefox uses wllama (WASM/CPU), Chrome uses webllm (WebGPU)
+        const isFirefox = isFirefoxBrowser()
+        const expectedProvider = isFirefox ? "wllama" : "webllm"
+        if (storageData.aiProvider !== expectedProvider) {
+          storageData.aiProvider = expectedProvider
+        }
+
         aiService.updateFromStorage(storageData)
         stateInitialized = true
         console.log("State loaded successfully from storage")
