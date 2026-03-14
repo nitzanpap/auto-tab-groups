@@ -19,7 +19,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 | Browser | Version | Status                                           |
 | ------- | ------- | ------------------------------------------------ |
-| Firefox | 139+    | ✅ Fully supported (Manifest V3, Tab Groups API) |
+| Firefox | 142+    | ✅ Fully supported (Manifest V3, Tab Groups API) |
 | Chrome  | Latest  | ✅ Fully supported (Manifest V3, Tab Groups API) |
 
 **Note**: Firefox 139+ required for full Tab Groups API support and enhanced features.
