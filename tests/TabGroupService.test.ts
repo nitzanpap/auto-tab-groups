@@ -845,7 +845,11 @@ describe("TabGroupService", () => {
   describe("tab positioning next to opener", () => {
     beforeEach(() => {
       vi.clearAllMocks()
-      tabGroupState.updateFromStorage({ ...DEFAULT_STATE, autoGroupingEnabled: true })
+      tabGroupState.updateFromStorage({
+        ...DEFAULT_STATE,
+        autoGroupingEnabled: true,
+        openTabNextToCurrent: true
+      })
     })
 
     it("should position tab next to opener when opener is in the same group", async () => {
@@ -1063,6 +1067,42 @@ describe("TabGroupService", () => {
 
       expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
       expect(mockBrowser.tabs.move).toHaveBeenCalledWith(2, { index: 4 })
+    })
+
+    it("should NOT reposition when openTabNextToCurrent is disabled", async () => {
+      tabGroupState.openTabNextToCurrent = false
+      tabGroupService.markAsNewTab(2)
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
     })
 
     it("should NOT reposition on manual move (tab not marked as new)", async () => {
