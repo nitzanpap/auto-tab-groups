@@ -27,6 +27,8 @@ export type MessageAction =
   | "setGroupByMode"
   | "getMinimumTabsForGroup"
   | "setMinimumTabsForGroup"
+  | "getOpenTabNextToCurrent"
+  | "toggleOpenTabNextToCurrent"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -62,6 +64,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getOnlyApplyToNewTabs"
     | "getGroupByMode"
     | "getMinimumTabsForGroup"
+    | "getOpenTabNextToCurrent"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -107,6 +110,14 @@ export interface SetMinimumTabsMessage extends BaseMessage {
 }
 
 /**
+ * Toggle open tab next to current message
+ */
+export interface ToggleOpenTabNextToCurrentMessage extends BaseMessage {
+  action: "toggleOpenTabNextToCurrent"
+  enabled: boolean
+}
+
+/**
  * Add custom rule message
  */
 export interface AddCustomRuleMessage extends BaseMessage {
@@ -149,6 +160,7 @@ export type Message =
   | ToggleGroupNewTabsMessage
   | SetGroupByModeMessage
   | SetMinimumTabsMessage
+  | ToggleOpenTabNextToCurrentMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage

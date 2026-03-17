@@ -222,7 +222,7 @@ class TabGroupServiceSimplified {
     if (existingGroup) {
       if (tab.groupId === existingGroup.id) {
         console.log(`[TabGroupService] Tab ${tabId} already in correct group`)
-        if (this.consumeNewTabFlag(tabId)) {
+        if (this.consumeNewTabFlag(tabId) && tabGroupState.openTabNextToCurrent) {
           await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
         }
         return true
@@ -237,7 +237,9 @@ class TabGroupServiceSimplified {
       )
 
       this.consumeNewTabFlag(tabId)
-      await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
+      if (tabGroupState.openTabNextToCurrent) {
+        await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
+      }
 
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {

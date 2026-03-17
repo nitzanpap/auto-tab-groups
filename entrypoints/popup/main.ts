@@ -20,6 +20,11 @@ const collapseDelayContainer = document.getElementById("collapseDelayContainer")
 const collapseDelayInput = document.getElementById("collapseDelayInput") as HTMLInputElement
 const collapseHelp = document.getElementById("collapseHelp") as HTMLDivElement
 
+// Tab Positioning Elements
+const openTabNextToCurrentToggle = document.getElementById(
+  "openTabNextToCurrentToggle"
+) as HTMLInputElement
+
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle") as HTMLButtonElement
 const rulesContent = document.querySelector(".rules-content") as HTMLDivElement
@@ -440,6 +445,11 @@ sendMessage<{ enabled?: boolean; delayMs?: number }>({
   updateCollapseDelayVisibility(enabled)
 })
 
+// Initialize open tab next to current state
+sendMessage<{ enabled?: boolean }>({ action: "getOpenTabNextToCurrent" }).then(response => {
+  openTabNextToCurrentToggle.checked = response?.enabled ?? false
+})
+
 // Toggle event listeners
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -497,6 +507,14 @@ collapseDelayInput.addEventListener("change", async () => {
     action: "updateAutoCollapse",
     autoCollapseEnabled: autoCollapseToggle.checked,
     autoCollapseDelayMs: delayMs
+  })
+})
+
+// Open tab next to current event listener
+openTabNextToCurrentToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleOpenTabNextToCurrent",
+    enabled: (event.target as HTMLInputElement).checked
   })
 })
 

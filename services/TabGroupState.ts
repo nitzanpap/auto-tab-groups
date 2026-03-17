@@ -21,6 +21,7 @@ class TabGroupState {
   minimumTabsForGroup: number
   autoCollapseEnabled: boolean
   autoCollapseDelayMs: number
+  openTabNextToCurrent: boolean
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -31,6 +32,7 @@ class TabGroupState {
     this.minimumTabsForGroup = DEFAULT_STATE.minimumTabsForGroup
     this.autoCollapseEnabled = DEFAULT_STATE.autoCollapseEnabled
     this.autoCollapseDelayMs = DEFAULT_STATE.autoCollapseDelayMs
+    this.openTabNextToCurrent = DEFAULT_STATE.openTabNextToCurrent
   }
 
   /**
@@ -44,6 +46,7 @@ class TabGroupState {
     this.minimumTabsForGroup = data.minimumTabsForGroup ?? this.minimumTabsForGroup
     this.autoCollapseEnabled = data.autoCollapseEnabled ?? this.autoCollapseEnabled
     this.autoCollapseDelayMs = data.autoCollapseDelayMs ?? this.autoCollapseDelayMs
+    this.openTabNextToCurrent = data.openTabNextToCurrent ?? this.openTabNextToCurrent
 
     this.customRules.clear()
 
@@ -68,6 +71,7 @@ class TabGroupState {
       minimumTabsForGroup: this.minimumTabsForGroup,
       autoCollapseEnabled: this.autoCollapseEnabled,
       autoCollapseDelayMs: this.autoCollapseDelayMs,
+      openTabNextToCurrent: this.openTabNextToCurrent,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,

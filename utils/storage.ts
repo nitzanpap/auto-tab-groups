@@ -67,6 +67,10 @@ export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
 
+export const openTabNextToCurrent = storage.defineItem<boolean>("local:openTabNextToCurrent", {
+  fallback: DEFAULT_STATE.openTabNextToCurrent
+})
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -91,7 +95,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMsValue,
     aiEnabledValue,
     aiProviderValue,
-    aiModelIdValue
+    aiModelIdValue,
+    openTabNextToCurrentValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -104,7 +109,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs.getValue(),
     aiEnabled.getValue(),
     aiProvider.getValue(),
-    aiModelId.getValue()
+    aiModelId.getValue(),
+    openTabNextToCurrent.getValue()
   ])
 
   return {
@@ -119,7 +125,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs: autoCollapseDelayMsValue,
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
-    aiModelId: aiModelIdValue
+    aiModelId: aiModelIdValue,
+    openTabNextToCurrent: openTabNextToCurrentValue
   }
 }
 
@@ -164,6 +171,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.aiModelId !== undefined) {
     promises.push(aiModelId.setValue(data.aiModelId))
+  }
+  if (data.openTabNextToCurrent !== undefined) {
+    promises.push(openTabNextToCurrent.setValue(data.openTabNextToCurrent))
   }
   await Promise.all(promises)
 }

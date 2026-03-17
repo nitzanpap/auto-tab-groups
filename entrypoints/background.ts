@@ -202,6 +202,16 @@ export default defineBackground(() => {
             result = { minimumTabs: tabGroupState.minimumTabsForGroup }
             break
 
+          case "getOpenTabNextToCurrent":
+            result = { enabled: tabGroupState.openTabNextToCurrent }
+            break
+
+          case "toggleOpenTabNextToCurrent":
+            tabGroupState.openTabNextToCurrent = msg.enabled
+            await saveState()
+            result = { enabled: tabGroupState.openTabNextToCurrent }
+            break
+
           // Custom Rules Management
           case "getCustomRules": {
             const rules = await rulesService.getCustomRules()
