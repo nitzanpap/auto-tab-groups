@@ -554,6 +554,13 @@ input:checked + .slider:before {
   color: #0d6efd;
 }
 
+.rule-action-btn.add-tab {
+  color: #198754;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .rule-action-btn.delete {
   color: #dc3545;
 }

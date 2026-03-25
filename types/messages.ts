@@ -33,6 +33,7 @@ export type MessageAction =
   | "addCustomRule"
   | "updateCustomRule"
   | "deleteCustomRule"
+  | "addDomainToRule"
   | "getRulesStats"
   | "exportRules"
   | "importRules"
@@ -143,6 +144,15 @@ export interface DeleteCustomRuleMessage extends BaseMessage {
 }
 
 /**
+ * Add a domain to an existing rule message
+ */
+export interface AddDomainToRuleMessage extends BaseMessage {
+  action: "addDomainToRule"
+  ruleId: string
+  domain: string
+}
+
+/**
  * Import rules message
  */
 export interface ImportRulesMessage extends BaseMessage {
@@ -164,6 +174,7 @@ export type Message =
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage
+  | AddDomainToRuleMessage
   | ImportRulesMessage
   | AiMessage
 

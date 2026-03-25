@@ -1,6 +1,7 @@
 import "./style.css"
 import type { CustomRule } from "../../types"
 import type { AiGroupSuggestion } from "../../types/ai-messages"
+import { extractDomain } from "../../utils/DomainUtils"
 import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
@@ -243,6 +244,12 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   const ruleActions = document.createElement("div")
   ruleActions.className = "rule-actions"
 
+  const addTabBtn = document.createElement("button")
+  addTabBtn.className = "rule-action-btn add-tab"
+  addTabBtn.title = "Add Tab to Existing Rule"
+  addTabBtn.setAttribute("data-rule-id", rule.id)
+  addTabBtn.textContent = "+"
+
   const editBtn = document.createElement("button")
   editBtn.className = "rule-action-btn edit"
   editBtn.title = "Edit rule"
@@ -255,6 +262,7 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   deleteBtn.setAttribute("data-rule-id", rule.id)
   deleteBtn.textContent = "Delete"
 
+  ruleActions.appendChild(addTabBtn)
   ruleActions.appendChild(editBtn)
   ruleActions.appendChild(deleteBtn)
 
@@ -262,6 +270,7 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   ruleItem.appendChild(ruleInfo)
   ruleItem.appendChild(ruleActions)
 
+  addTabBtn.addEventListener("click", () => addCurrentTabToRule(rule.id, addTabBtn))
   editBtn.addEventListener("click", () => editRule(rule.id))
   deleteBtn.addEventListener("click", () => deleteRule(rule.id, rule.name))
 
@@ -308,6 +317,66 @@ function toggleRulesSection(): void {
       stopAiStatusPolling()
     }
   }
+}
+
+// Add current tab's domain to an existing rule
+async function addCurrentTabToRule(ruleId: string, button: HTMLButtonElement): Promise<void> {
+  const originalText = button.textContent
+  const originalTitle = button.title
+  button.disabled = true
+
+  const resetButton = (): void => {
+    button.textContent = originalText
+    button.title = originalTitle
+    button.disabled = false
+  }
+
+  try {
+    const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true })
+    if (!activeTab?.url) {
+      button.textContent = "!"
+      button.title = "No active tab found"
+      setTimeout(resetButton, 1500)
+      return
+    }
+
+    const domain = extractDomain(activeTab.url)
+    if (!domain || domain === "system") {
+      button.textContent = "!"
+      button.title = "Cannot extract domain from this tab"
+      setTimeout(resetButton, 1500)
+      return
+    }
+
+    const response = await sendMessage<{
+      success?: boolean
+      alreadyExists?: boolean
+      error?: string
+    }>({
+      action: "addDomainToRule",
+      ruleId,
+      domain
+    })
+
+    if (response?.success) {
+      if (response.alreadyExists) {
+        button.textContent = "="
+        button.title = "Domain already in this rule"
+      } else {
+        button.textContent = "\u2713"
+        button.title = "Added!"
+        await loadCustomRules()
+      }
+    } else {
+      button.textContent = "!"
+      button.title = response?.error || "Failed to add domain"
+    }
+  } catch {
+    button.textContent = "!"
+    button.title = "Failed to add domain"
+  }
+
+  setTimeout(resetButton, 1500)
 }
 
 // Open add rule modal

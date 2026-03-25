@@ -11,6 +11,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: [
+        "services/ContextMenuService.ts",
         "services/TabGroupState.ts",
         "services/TabGroupService.ts",
         "services/ai/AiService.ts",
