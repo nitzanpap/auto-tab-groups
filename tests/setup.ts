@@ -16,10 +16,12 @@ const mockBrowser = {
   tabGroups: {
     query: vi.fn().mockResolvedValue([]),
     update: vi.fn().mockResolvedValue({}),
-    get: vi.fn().mockResolvedValue({})
+    get: vi.fn().mockResolvedValue({}),
+    move: vi.fn().mockResolvedValue(undefined)
   },
   windows: {
-    WINDOW_ID_CURRENT: -2
+    WINDOW_ID_CURRENT: -2,
+    getCurrent: vi.fn().mockResolvedValue({ id: 1 })
   },
   runtime: {
     id: "test-extension-id",

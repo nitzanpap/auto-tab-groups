@@ -27,6 +27,14 @@ const openTabNextToCurrentToggle = document.getElementById(
   "openTabNextToCurrentToggle"
 ) as HTMLInputElement
 
+// Sorting Elements
+const sortingToggle = document.querySelector(".sorting-toggle") as HTMLButtonElement
+const sortingContent = document.querySelector(".sorting-content") as HTMLDivElement
+const sortGroupsToggle = document.getElementById("sortGroupsToggle") as HTMLInputElement
+const sortingIndexContainer = document.getElementById("sortingIndexContainer") as HTMLDivElement
+const indexGroupTitlesToggle = document.getElementById("indexGroupTitlesToggle") as HTMLInputElement
+const sortingHelp = document.getElementById("sortingHelp") as HTMLDivElement
+
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle") as HTMLButtonElement
 const rulesContent = document.querySelector(".rules-content") as HTMLDivElement
@@ -58,6 +66,7 @@ const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer")
 // State
 let aiSectionExpanded = false
 let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
+let sortingSectionExpanded = false
 let customRulesExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
@@ -563,6 +572,17 @@ sendMessage<{ enabled?: boolean }>({ action: "getOpenTabNextToCurrent" }).then(r
   openTabNextToCurrentToggle.checked = response?.enabled ?? false
 })
 
+// Initialize sort groups and index state
+sendMessage<{ enabled?: boolean }>({ action: "getSortGroupsAlphabetically" }).then(response => {
+  const enabled = response?.enabled ?? false
+  sortGroupsToggle.checked = enabled
+  updateSortingSubOptions(enabled)
+})
+
+sendMessage<{ enabled?: boolean }>({ action: "getIndexGroupTitles" }).then(response => {
+  indexGroupTitlesToggle.checked = response?.enabled ?? false
+})
+
 // Toggle event listeners
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -627,6 +647,44 @@ collapseDelayInput.addEventListener("change", async () => {
 openTabNextToCurrentToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleOpenTabNextToCurrent",
+    enabled: (event.target as HTMLInputElement).checked
+  })
+})
+
+// Sorting section toggle
+function toggleSortingSection(): void {
+  sortingSectionExpanded = !sortingSectionExpanded
+  sortingToggle.classList.toggle("expanded", sortingSectionExpanded)
+  sortingContent.classList.toggle("expanded", sortingSectionExpanded)
+}
+
+function updateSortingSubOptions(sortEnabled: boolean): void {
+  if (sortEnabled) {
+    sortingIndexContainer.classList.add("visible")
+    sortingHelp.classList.add("visible")
+  } else {
+    sortingIndexContainer.classList.remove("visible")
+    sortingHelp.classList.remove("visible")
+    indexGroupTitlesToggle.checked = false
+  }
+}
+
+sortingToggle?.addEventListener("click", toggleSortingSection)
+
+// Sort groups event listener
+sortGroupsToggle.addEventListener("change", event => {
+  const enabled = (event.target as HTMLInputElement).checked
+  updateSortingSubOptions(enabled)
+  sendMessage({
+    action: "toggleSortGroupsAlphabetically",
+    enabled
+  })
+})
+
+// Index group titles event listener
+indexGroupTitlesToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleIndexGroupTitles",
     enabled: (event.target as HTMLInputElement).checked
   })
 })
