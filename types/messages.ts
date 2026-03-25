@@ -31,6 +31,8 @@ export type MessageAction =
   | "toggleOpenTabNextToCurrent"
   | "getSortGroupsAlphabetically"
   | "toggleSortGroupsAlphabetically"
+  | "getIndexGroupTitles"
+  | "toggleIndexGroupTitles"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -69,6 +71,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getMinimumTabsForGroup"
     | "getOpenTabNextToCurrent"
     | "getSortGroupsAlphabetically"
+    | "getIndexGroupTitles"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -130,6 +133,14 @@ export interface ToggleSortGroupsMessage extends BaseMessage {
 }
 
 /**
+ * Toggle index group titles message
+ */
+export interface ToggleIndexGroupTitlesMessage extends BaseMessage {
+  action: "toggleIndexGroupTitles"
+  enabled: boolean
+}
+
+/**
  * Add custom rule message
  */
 export interface AddCustomRuleMessage extends BaseMessage {
@@ -183,6 +194,7 @@ export type Message =
   | SetMinimumTabsMessage
   | ToggleOpenTabNextToCurrentMessage
   | ToggleSortGroupsMessage
+  | ToggleIndexGroupTitlesMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage

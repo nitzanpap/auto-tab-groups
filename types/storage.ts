@@ -57,6 +57,8 @@ export interface StorageSchema {
   openTabNextToCurrent: boolean
   /** Whether to keep tab groups sorted alphabetically (A-Z) */
   sortGroupsAlphabetically: boolean
+  /** Whether to prefix group titles with their sort position (e.g., "1. AI") */
+  indexGroupTitles: boolean
 }
 
 /**
@@ -76,7 +78,8 @@ export const DEFAULT_STATE: StorageSchema = {
   aiProvider: "webllm",
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
   openTabNextToCurrent: false,
-  sortGroupsAlphabetically: false
+  sortGroupsAlphabetically: false,
+  indexGroupTitles: false
 }
 
 /**

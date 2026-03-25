@@ -222,8 +222,33 @@ export default defineBackground(() => {
             if (msg.enabled) {
               const { tabSortService } = await import("../services/TabSortService")
               await tabSortService.sortGroups()
+            } else {
+              // Sorting disabled — also disable indexing and strip prefixes
+              if (tabGroupState.indexGroupTitles) {
+                tabGroupState.indexGroupTitles = false
+                await saveState()
+                const { tabSortService } = await import("../services/TabSortService")
+                await tabSortService.stripAllIndexPrefixes()
+              }
             }
             result = { enabled: tabGroupState.sortGroupsAlphabetically }
+            break
+          }
+
+          case "getIndexGroupTitles":
+            result = { enabled: tabGroupState.indexGroupTitles }
+            break
+
+          case "toggleIndexGroupTitles": {
+            tabGroupState.indexGroupTitles = msg.enabled
+            await saveState()
+            const { tabSortService } = await import("../services/TabSortService")
+            if (msg.enabled) {
+              await tabSortService.sortGroups()
+            } else {
+              await tabSortService.stripAllIndexPrefixes()
+            }
+            result = { enabled: tabGroupState.indexGroupTitles }
             break
           }
 
@@ -761,6 +786,10 @@ export default defineBackground(() => {
         await new Promise(resolve => setTimeout(resolve, 100))
         await tabGroupService.checkAllGroupsThreshold()
       }
+
+      // Re-sort to update index prefixes after group count may have changed
+      const { tabSortService } = await import("../services/TabSortService")
+      await tabSortService.applySorting()
     } catch (error) {
       console.error(`[tabs.onRemoved] Error handling tab ${tabId} removal:`, error)
     }
@@ -836,11 +865,16 @@ export default defineBackground(() => {
     })
   }
 
-  // Listen for tab group removal
+  // Listen for tab group removal — re-sort to update index prefixes
   if (browser.tabGroups?.onRemoved) {
     browser.tabGroups.onRemoved.addListener(async group => {
       try {
         console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`)
+        await ensureStateLoaded()
+        // Small delay to let browser fully remove the group before re-querying
+        await new Promise(resolve => setTimeout(resolve, 100))
+        const { tabSortService } = await import("../services/TabSortService")
+        await tabSortService.applySorting()
       } catch (error) {
         console.error("[tabGroups.onRemoved] Error handling group removal:", error)
       }

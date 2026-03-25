@@ -10,7 +10,7 @@ vi.mock("../utils/storage", () => ({
 }))
 
 import { tabGroupState } from "../services/TabGroupState"
-import { tabSortService } from "../services/TabSortService"
+import { stripIndexPrefix, tabSortService } from "../services/TabSortService"
 import { DEFAULT_STATE } from "../types/storage"
 
 describe("TabSortService", () => {
@@ -18,6 +18,32 @@ describe("TabSortService", () => {
     tabGroupState.updateFromStorage(DEFAULT_STATE)
     vi.clearAllMocks()
     mockBrowser.windows.getCurrent.mockResolvedValue({ id: 1 })
+  })
+
+  describe("stripIndexPrefix", () => {
+    it("should strip a single-digit prefix", () => {
+      expect(stripIndexPrefix("1. GitHub")).toBe("GitHub")
+    })
+
+    it("should strip a multi-digit prefix", () => {
+      expect(stripIndexPrefix("10. Long Name")).toBe("Long Name")
+    })
+
+    it("should return unchanged title when no prefix exists", () => {
+      expect(stripIndexPrefix("GitHub")).toBe("GitHub")
+    })
+
+    it("should return empty string unchanged", () => {
+      expect(stripIndexPrefix("")).toBe("")
+    })
+
+    it("should not strip partial patterns like '1.GitHub' (no space)", () => {
+      expect(stripIndexPrefix("1.GitHub")).toBe("1.GitHub")
+    })
+
+    it("should not strip non-numeric prefixes", () => {
+      expect(stripIndexPrefix("a. Something")).toBe("a. Something")
+    })
   })
 
   describe("sortGroups", () => {
@@ -52,7 +78,21 @@ describe("TabSortService", () => {
       expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
     })
 
-    it("should not sort when there is only one group", async () => {
+    it("should sort by stripped title when groups already have index prefixes", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "2. GitHub", windowId: 1 },
+        { id: 2, title: "1. Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Should sort by stripped title: Amazon before GitHub
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+    })
+
+    it("should not move when there is only one group", async () => {
       mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Solo", windowId: 1 }])
 
       await tabSortService.sortGroups()
@@ -122,6 +162,180 @@ describe("TabSortService", () => {
       mockBrowser.tabGroups.query.mockRejectedValue(new Error("API error"))
 
       await expect(tabSortService.sortGroups()).resolves.toBeUndefined()
+    })
+  })
+
+  describe("sortGroups with indexing", () => {
+    it("should apply index prefixes after sorting when indexGroupTitles is enabled", async () => {
+      tabGroupState.indexGroupTitles = true
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "GitHub", windowId: 1 },
+        { id: 2, title: "Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Should update titles with index prefixes in alphabetical order
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, { title: "1. Amazon" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "2. GitHub" })
+    })
+
+    it("should not apply index prefixes when indexGroupTitles is disabled", async () => {
+      tabGroupState.indexGroupTitles = false
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "GitHub", windowId: 1 },
+        { id: 2, title: "Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      expect(mockBrowser.tabGroups.update).not.toHaveBeenCalled()
+    })
+
+    it("should apply index prefix to single group when indexGroupTitles is enabled", async () => {
+      tabGroupState.indexGroupTitles = true
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Solo", windowId: 1 }])
+
+      await tabSortService.sortGroups()
+
+      // Single group should still get prefix, but no move
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "1. Solo" })
+      expect(mockBrowser.tabGroups.move).not.toHaveBeenCalled()
+    })
+
+    it("should correctly re-index when a new group is added among already-indexed groups", async () => {
+      tabGroupState.indexGroupTitles = true
+      // Simulate: existing groups are already indexed, a new "Extensions" group was just created
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "1. AI", windowId: 1 },
+        { id: 2, title: "2. Comms", windowId: 1 },
+        { id: 3, title: "3. Github", windowId: 1 },
+        { id: 4, title: "4. System", windowId: 1 },
+        { id: 5, title: "Extensions", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Sorted alphabetically: AI(1), Comms(2), Extensions(3), Github(4), System(5)
+      // "1. AI" and "2. Comms" are already correct, so no update needed for those
+      // Extensions gets "3.", Github shifts from "3." to "4.", System from "4." to "5."
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(5, { title: "3. Extensions" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(3, { title: "4. Github" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(4, { title: "5. System" })
+      // AI and Comms already have correct prefixes — should NOT be updated
+      expect(mockBrowser.tabGroups.update).not.toHaveBeenCalledWith(1, expect.anything())
+      expect(mockBrowser.tabGroups.update).not.toHaveBeenCalledWith(2, expect.anything())
+    })
+
+    it("should strip old prefixes before re-indexing", async () => {
+      tabGroupState.indexGroupTitles = true
+      // Groups with stale/wrong indices
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "3. AI", windowId: 1 },
+        { id: 2, title: "1. Comms", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Should assign correct indices based on alphabetical order
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "1. AI" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, { title: "2. Comms" })
+    })
+
+    it("should skip title update when title already has correct prefix", async () => {
+      tabGroupState.indexGroupTitles = true
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "1. AI", windowId: 1 },
+        { id: 2, title: "2. Comms", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Titles already correct — no update calls needed
+      expect(mockBrowser.tabGroups.update).not.toHaveBeenCalled()
+    })
+
+    it("should correctly index groups with the same starting letter", async () => {
+      tabGroupState.indexGroupTitles = true
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "Assets", windowId: 1 },
+        { id: 2, title: "AI", windowId: 1 },
+        { id: 3, title: "Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Alphabetical: AI, Amazon, Assets
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, { title: "1. AI" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(3, { title: "2. Amazon" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "3. Assets" })
+    })
+
+    it("should update titles before moving groups", async () => {
+      tabGroupState.indexGroupTitles = true
+      const callOrder: string[] = []
+      mockBrowser.tabGroups.update.mockImplementation(() => {
+        callOrder.push("update")
+        return Promise.resolve({})
+      })
+      mockBrowser.tabGroups.move.mockImplementation(() => {
+        callOrder.push("move")
+        return Promise.resolve(undefined)
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "B", windowId: 1 },
+        { id: 2, title: "A", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // All updates should come before all moves
+      const firstMove = callOrder.indexOf("move")
+      const lastUpdate = callOrder.lastIndexOf("update")
+      expect(lastUpdate).toBeLessThan(firstMove)
+    })
+  })
+
+  describe("stripAllIndexPrefixes", () => {
+    it("should remove prefixes from all groups", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "1. AI", windowId: 1 },
+        { id: 2, title: "2. Communications", windowId: 1 }
+      ])
+
+      await tabSortService.stripAllIndexPrefixes()
+
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "AI" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, {
+        title: "Communications"
+      })
+    })
+
+    it("should skip groups that have no prefix", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "AI", windowId: 1 },
+        { id: 2, title: "3. Communications", windowId: 1 }
+      ])
+
+      await tabSortService.stripAllIndexPrefixes()
+
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledTimes(1)
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, {
+        title: "Communications"
+      })
+    })
+
+    it("should handle errors gracefully", async () => {
+      mockBrowser.tabGroups.query.mockRejectedValue(new Error("API error"))
+
+      await expect(tabSortService.stripAllIndexPrefixes()).resolves.toBeUndefined()
     })
   })
 

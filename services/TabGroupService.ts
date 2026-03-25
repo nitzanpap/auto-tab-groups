@@ -11,7 +11,7 @@ import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/sto
 import { withTabEditRetry } from "../utils/withTabEditRetry"
 import { type MatchedRule, rulesService } from "./RulesService"
 import { tabGroupState } from "./TabGroupState"
-import { tabSortService } from "./TabSortService"
+import { stripIndexPrefix, tabSortService } from "./TabSortService"
 
 /**
  * Collapse state result
@@ -232,7 +232,8 @@ class TabGroupServiceSimplified {
         if (this.consumeNewTabFlag(tabId) && tabGroupState.openTabNextToCurrent) {
           await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
         }
-        return true
+        // Return false — no group change occurred, so no re-sorting needed
+        return false
       }
 
       console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
@@ -384,7 +385,15 @@ class TabGroupServiceSimplified {
       if (!browser.tabGroups) return null
 
       const groups = await browser.tabGroups.query({ windowId })
-      return groups.find(group => group.title === title) || null
+      return (
+        groups.find(group => {
+          if (group.title === title) return true
+          if (tabGroupState.indexGroupTitles) {
+            return stripIndexPrefix(group.title || "") === title
+          }
+          return false
+        }) || null
+      )
     } catch (error) {
       console.error(`[TabGroupService] Error finding group:`, error)
       return null

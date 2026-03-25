@@ -76,6 +76,10 @@ export const sortGroupsAlphabetically = storage.defineItem<boolean>(
   { fallback: DEFAULT_STATE.sortGroupsAlphabetically }
 )
 
+export const indexGroupTitles = storage.defineItem<boolean>("local:indexGroupTitles", {
+  fallback: DEFAULT_STATE.indexGroupTitles
+})
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -102,7 +106,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiProviderValue,
     aiModelIdValue,
     openTabNextToCurrentValue,
-    sortGroupsAlphabeticallyValue
+    sortGroupsAlphabeticallyValue,
+    indexGroupTitlesValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -117,7 +122,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiProvider.getValue(),
     aiModelId.getValue(),
     openTabNextToCurrent.getValue(),
-    sortGroupsAlphabetically.getValue()
+    sortGroupsAlphabetically.getValue(),
+    indexGroupTitles.getValue()
   ])
 
   return {
@@ -134,7 +140,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiProvider: aiProviderValue,
     aiModelId: aiModelIdValue,
     openTabNextToCurrent: openTabNextToCurrentValue,
-    sortGroupsAlphabetically: sortGroupsAlphabeticallyValue
+    sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
+    indexGroupTitles: indexGroupTitlesValue
   }
 }
 
@@ -185,6 +192,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.sortGroupsAlphabetically !== undefined) {
     promises.push(sortGroupsAlphabetically.setValue(data.sortGroupsAlphabetically))
+  }
+  if (data.indexGroupTitles !== undefined) {
+    promises.push(indexGroupTitles.setValue(data.indexGroupTitles))
   }
   await Promise.all(promises)
 }

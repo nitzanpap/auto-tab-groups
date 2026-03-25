@@ -99,16 +99,44 @@
             <span class="slider round"></span>
           </label>
         </div>
-        <div class="toggle-container">
-          <span>Keep groups sorted A-Z</span>
-          <label class="switch">
-            <input type="checkbox" id="sortGroupsToggle" />
-            <span class="slider round"></span>
-          </label>
-        </div>
         <div class="settings-info">
           <span class="info-icon">&#128204;</span>
           <span>Pinned tabs are never grouped automatically</span>
+        </div>
+      </div>
+
+      <!-- Sorting Section -->
+      <div class="sorting-section">
+        <button class="sorting-toggle">
+          <span class="noselect">Sorting</span>
+          <span class="up-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+              <path
+                d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
+                style="fill: #3b82f6"
+                data-name="Up"
+              />
+            </svg>
+          </span>
+        </button>
+        <div class="sorting-content">
+          <div class="toggle-container">
+            <span>Keep groups sorted A-Z</span>
+            <label class="switch">
+              <input type="checkbox" id="sortGroupsToggle" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="toggle-container sorting-index-container" id="sortingIndexContainer">
+            <span>Number groups (1. AI, 2. Docs...)</span>
+            <label class="switch">
+              <input type="checkbox" id="indexGroupTitlesToggle" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="help-text sorting-help" id="sortingHelp">
+            Adds position numbers to group titles for quick reference
+          </div>
         </div>
       </div>
 
