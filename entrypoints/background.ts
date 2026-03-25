@@ -229,6 +229,8 @@ export default defineBackground(() => {
               if (tabGroupState.autoGroupingEnabled) {
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -243,6 +245,8 @@ export default defineBackground(() => {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -257,6 +261,24 @@ export default defineBackground(() => {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
+            } catch (error) {
+              result = { success: false, error: (error as Error).message }
+            }
+            break
+
+          case "addDomainToRule":
+            try {
+              const addResult = await contextMenuService.addDomainToRule(msg.ruleId, msg.domain)
+
+              if (addResult.success && !addResult.alreadyExists) {
+                // Always re-group after adding a domain — user explicitly took this action
+                await tabGroupService.ungroupAllTabs()
+                await tabGroupService.groupAllTabsManually()
+              }
+
+              result = { ...addResult }
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -285,6 +307,10 @@ export default defineBackground(() => {
               if (importResult.success && tabGroupState.autoGroupingEnabled) {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
+              }
+
+              if (importResult.success) {
+                await contextMenuService.refreshRuleSubMenuItems()
               }
             } catch (error) {
               result = { success: false, error: (error as Error).message }

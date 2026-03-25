@@ -1,14 +1,213 @@
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { Browser } from "wxt/browser"
 
-import { contextMenuService } from "../services/ContextMenuService"
+import type { CustomRule } from "../types"
+
+const mockGetCustomRules = vi.fn()
+const mockUpdateRule = vi.fn()
+
+vi.mock("../services/RulesService", () => ({
+  rulesService: {
+    getCustomRules: (...args: unknown[]) => mockGetCustomRules(...args),
+    updateRule: (...args: unknown[]) => mockUpdateRule(...args)
+  }
+}))
+
+vi.mock("../services/TabGroupService", () => ({
+  tabGroupService: {
+    ungroupAllTabs: vi.fn().mockResolvedValue(undefined),
+    groupAllTabsManually: vi.fn().mockResolvedValue(undefined)
+  }
+}))
+
+vi.mock("../services/TabGroupState", () => ({
+  tabGroupState: {
+    getCustomRulesObject: vi.fn().mockReturnValue({})
+  }
+}))
+
+vi.mock("../utils/storage", () => ({
+  saveAllStorage: vi.fn().mockResolvedValue(undefined)
+}))
+
+// Import after mocks are set up
+const { contextMenuService } = await import("../services/ContextMenuService")
 
 // Helper to create mock tabs with just the url property
 function createMockTabs(urls: (string | undefined)[]): Browser.tabs.Tab[] {
   return urls.map(url => ({ url }) as unknown as Browser.tabs.Tab)
 }
 
+function createMockRule(overrides: Partial<CustomRule> = {}): CustomRule {
+  return {
+    id: "rule-1",
+    name: "Shopping",
+    domains: ["amazon.com", "ebay.com"],
+    color: "blue",
+    enabled: true,
+    priority: 0,
+    minimumTabs: 1,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    ...overrides
+  }
+}
+
 describe("ContextMenuService", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe("addDomainToRule", () => {
+    it("should add a new domain to an existing rule", async () => {
+      const rule = createMockRule()
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(mockUpdateRule).toHaveBeenCalledWith("rule-1", {
+        name: "Shopping",
+        domains: ["amazon.com", "ebay.com", "walmart.com"],
+        color: "blue",
+        enabled: true,
+        priority: 0,
+        minimumTabs: 1
+      })
+    })
+
+    it("should return alreadyExists when domain is already in the rule", async () => {
+      const rule = createMockRule()
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "amazon.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: true })
+      expect(mockUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should match existing domains case-insensitively", async () => {
+      const rule = createMockRule()
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "Amazon.COM")
+
+      expect(result).toEqual({ success: true, alreadyExists: true })
+      expect(mockUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should normalize domain to lowercase and trim whitespace", async () => {
+      const rule = createMockRule()
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "  Walmart.COM  ")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(mockUpdateRule).toHaveBeenCalledWith(
+        "rule-1",
+        expect.objectContaining({
+          domains: ["amazon.com", "ebay.com", "walmart.com"]
+        })
+      )
+    })
+
+    it("should return error when rule is not found", async () => {
+      mockGetCustomRules.mockResolvedValue({})
+
+      const result = await contextMenuService.addDomainToRule("nonexistent", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Rule with ID nonexistent not found"
+      })
+      expect(mockUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should return error when rulesService throws", async () => {
+      mockGetCustomRules.mockRejectedValue(new Error("Storage read failed"))
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Storage read failed"
+      })
+    })
+
+    it("should return error when updateRule throws", async () => {
+      const rule = createMockRule()
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockRejectedValue(new Error("Storage write failed"))
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Storage write failed"
+      })
+    })
+
+    it("should not mutate the original rule domains array", async () => {
+      const originalDomains = ["amazon.com", "ebay.com"]
+      const rule = createMockRule({ domains: originalDomains })
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockResolvedValue(true)
+
+      await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(originalDomains).toEqual(["amazon.com", "ebay.com"])
+    })
+
+    it("should handle rule with empty domains array", async () => {
+      const rule = createMockRule({ domains: [] })
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "amazon.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(mockUpdateRule).toHaveBeenCalledWith(
+        "rule-1",
+        expect.objectContaining({ domains: ["amazon.com"] })
+      )
+    })
+
+    it("should handle non-Error exceptions gracefully", async () => {
+      mockGetCustomRules.mockRejectedValue("string error")
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Unknown error"
+      })
+    })
+
+    it("should preserve all rule properties when updating", async () => {
+      const rule = createMockRule({
+        name: "Custom Rule",
+        color: "red",
+        enabled: false,
+        priority: 5,
+        minimumTabs: 3
+      })
+      mockGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      mockUpdateRule.mockResolvedValue(true)
+
+      await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(mockUpdateRule).toHaveBeenCalledWith("rule-1", {
+        name: "Custom Rule",
+        domains: ["amazon.com", "ebay.com", "walmart.com"],
+        color: "red",
+        enabled: false,
+        priority: 5,
+        minimumTabs: 3
+      })
+    })
+  })
+
   describe("extractUniqueDomains", () => {
     it("should extract unique domains from tabs", () => {
       const tabs = createMockTabs([
