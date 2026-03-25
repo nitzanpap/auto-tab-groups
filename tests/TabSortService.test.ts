@@ -147,15 +147,50 @@ describe("TabSortService", () => {
 
     it("should handle groups with undefined titles", async () => {
       mockBrowser.tabGroups.query.mockResolvedValue([
-        { id: 1, title: undefined, windowId: 1 },
-        { id: 2, title: "Alpha", windowId: 1 }
+        { id: 2, title: "Alpha", windowId: 1 },
+        { id: 1, title: undefined, windowId: 1 }
       ])
       mockBrowser.tabs.query.mockResolvedValue([])
 
       await tabSortService.sortGroups()
 
-      // Empty string sorts before "Alpha"
+      // Empty string sorts before "Alpha", so order should be [1, 2]
+      // Current is [2, 1] — needs to move both from mismatch at index 0
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: -1 })
+    })
+
+    it("should skip moves when groups are already in correct order", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 2, title: "Amazon", windowId: 1 },
+        { id: 3, title: "Docs", windowId: 1 },
+        { id: 1, title: "GitHub", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Already in alphabetical order — no moves needed
+      expect(mockBrowser.tabGroups.move).not.toHaveBeenCalled()
+    })
+
+    it("should only move groups from the first mismatch onward", async () => {
+      // Current: Amazon(2), GitHub(1), Docs(3)
+      // Desired: Amazon(2), Docs(3), GitHub(1)
+      // First mismatch at index 1: only move Docs and GitHub
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 2, title: "Amazon", windowId: 1 },
+        { id: 1, title: "GitHub", windowId: 1 },
+        { id: 3, title: "Docs", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 3, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
     })
 
     it("should handle errors gracefully without throwing", async () => {
