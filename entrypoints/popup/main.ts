@@ -26,6 +26,9 @@ const openTabNextToCurrentToggle = document.getElementById(
   "openTabNextToCurrentToggle"
 ) as HTMLInputElement
 
+// Sorting Elements
+const sortGroupsToggle = document.getElementById("sortGroupsToggle") as HTMLInputElement
+
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle") as HTMLButtonElement
 const rulesContent = document.querySelector(".rules-content") as HTMLDivElement
@@ -519,6 +522,11 @@ sendMessage<{ enabled?: boolean }>({ action: "getOpenTabNextToCurrent" }).then(r
   openTabNextToCurrentToggle.checked = response?.enabled ?? false
 })
 
+// Initialize sort groups state
+sendMessage<{ enabled?: boolean }>({ action: "getSortGroupsAlphabetically" }).then(response => {
+  sortGroupsToggle.checked = response?.enabled ?? false
+})
+
 // Toggle event listeners
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -583,6 +591,14 @@ collapseDelayInput.addEventListener("change", async () => {
 openTabNextToCurrentToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleOpenTabNextToCurrent",
+    enabled: (event.target as HTMLInputElement).checked
+  })
+})
+
+// Sort groups event listener
+sortGroupsToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleSortGroupsAlphabetically",
     enabled: (event.target as HTMLInputElement).checked
   })
 })

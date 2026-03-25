@@ -23,7 +23,9 @@ export default defineConfig({
         "utils/RuleConflictDetector.ts",
         "utils/RulesUtils.ts",
         "utils/UrlPatternMatcher.ts",
-        "utils/WebGpuUtils.ts"
+        "utils/WebGpuUtils.ts",
+        "utils/withTabEditRetry.ts",
+        "services/TabSortService.ts"
       ],
       exclude: [
         "**/node_modules/**",

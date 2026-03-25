@@ -212,6 +212,21 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.openTabNextToCurrent }
             break
 
+          case "getSortGroupsAlphabetically":
+            result = { enabled: tabGroupState.sortGroupsAlphabetically }
+            break
+
+          case "toggleSortGroupsAlphabetically": {
+            tabGroupState.sortGroupsAlphabetically = msg.enabled
+            await saveState()
+            if (msg.enabled) {
+              const { tabSortService } = await import("../services/TabSortService")
+              await tabSortService.sortGroups()
+            }
+            result = { enabled: tabGroupState.sortGroupsAlphabetically }
+            break
+          }
+
           // Custom Rules Management
           case "getCustomRules": {
             const rules = await rulesService.getCustomRules()
@@ -709,10 +724,17 @@ export default defineBackground(() => {
       if (tab.id) {
         tabGroupService.markAsNewTab(tab.id)
       }
-      // Firefox fires onCreated with about:blank for tabs pending navigation.
-      // The real URL arrives later via onUpdated. Skip immediate grouping to
+      // When a tab is opened via "Open link in new tab" (has openerTabId),
+      // the browser may initially report a system URL (about:blank, chrome://newtab, etc.)
+      // before the real destination URL arrives via onUpdated. Defer grouping to
       // avoid bouncing the tab through the System group.
-      if (tab.url === "about:blank" && tab.openerTabId) {
+      if (tab.openerTabId && tab.url && tabGroupService.isNewTabUrl(tab.url)) {
+        console.log(
+          `[tabs.onCreated] Tab ${tab.id} has opener and system URL "${tab.url}", deferring to onUpdated`
+        )
+        return
+      }
+      if (tab.openerTabId && tab.url === "about:blank") {
         console.log(
           `[tabs.onCreated] Tab ${tab.id} is pending navigation (about:blank with opener), deferring to onUpdated`
         )

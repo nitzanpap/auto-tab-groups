@@ -71,6 +71,11 @@ export const openTabNextToCurrent = storage.defineItem<boolean>("local:openTabNe
   fallback: DEFAULT_STATE.openTabNextToCurrent
 })
 
+export const sortGroupsAlphabetically = storage.defineItem<boolean>(
+  "local:sortGroupsAlphabetically",
+  { fallback: DEFAULT_STATE.sortGroupsAlphabetically }
+)
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -96,7 +101,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabledValue,
     aiProviderValue,
     aiModelIdValue,
-    openTabNextToCurrentValue
+    openTabNextToCurrentValue,
+    sortGroupsAlphabeticallyValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -110,7 +116,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled.getValue(),
     aiProvider.getValue(),
     aiModelId.getValue(),
-    openTabNextToCurrent.getValue()
+    openTabNextToCurrent.getValue(),
+    sortGroupsAlphabetically.getValue()
   ])
 
   return {
@@ -126,7 +133,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
     aiModelId: aiModelIdValue,
-    openTabNextToCurrent: openTabNextToCurrentValue
+    openTabNextToCurrent: openTabNextToCurrentValue,
+    sortGroupsAlphabetically: sortGroupsAlphabeticallyValue
   }
 }
 
@@ -174,6 +182,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.openTabNextToCurrent !== undefined) {
     promises.push(openTabNextToCurrent.setValue(data.openTabNextToCurrent))
+  }
+  if (data.sortGroupsAlphabetically !== undefined) {
+    promises.push(sortGroupsAlphabetically.setValue(data.sortGroupsAlphabetically))
   }
   await Promise.all(promises)
 }

@@ -29,6 +29,8 @@ export type MessageAction =
   | "setMinimumTabsForGroup"
   | "getOpenTabNextToCurrent"
   | "toggleOpenTabNextToCurrent"
+  | "getSortGroupsAlphabetically"
+  | "toggleSortGroupsAlphabetically"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -66,6 +68,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getGroupByMode"
     | "getMinimumTabsForGroup"
     | "getOpenTabNextToCurrent"
+    | "getSortGroupsAlphabetically"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -115,6 +118,14 @@ export interface SetMinimumTabsMessage extends BaseMessage {
  */
 export interface ToggleOpenTabNextToCurrentMessage extends BaseMessage {
   action: "toggleOpenTabNextToCurrent"
+  enabled: boolean
+}
+
+/**
+ * Toggle sort groups alphabetically message
+ */
+export interface ToggleSortGroupsMessage extends BaseMessage {
+  action: "toggleSortGroupsAlphabetically"
   enabled: boolean
 }
 
@@ -171,6 +182,7 @@ export type Message =
   | SetGroupByModeMessage
   | SetMinimumTabsMessage
   | ToggleOpenTabNextToCurrentMessage
+  | ToggleSortGroupsMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage
