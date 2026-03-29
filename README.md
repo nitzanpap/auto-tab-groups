@@ -453,4 +453,4 @@ Built by [Nitzan Papini](https://github.com/nitzanpap)
 
 ## 📄 License
 
-See [LICENSE.md](LICENSE.md) for details.
+See [LICENSE](LICENSE) for details.
