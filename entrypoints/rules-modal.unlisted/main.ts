@@ -71,7 +71,14 @@ function validatePatterns(): void {
     patternFeedback.textContent = errors.join("; ")
     patternFeedback.className = "pattern-feedback error"
   } else {
-    patternFeedback.textContent = `${patterns.length} valid pattern(s)`
+    const includeCount = patterns.filter(p => !p.startsWith("!")).length
+    const excludeCount = patterns.filter(p => p.startsWith("!")).length
+    const total = includeCount + excludeCount
+    const parts = [`${includeCount} include`]
+    if (excludeCount > 0) {
+      parts.push(`${excludeCount} exclude`)
+    }
+    patternFeedback.textContent = `${parts.join(", ")} pattern${total === 1 ? "" : "s"}`
     patternFeedback.className = "pattern-feedback success"
   }
 }

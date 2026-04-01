@@ -675,4 +675,42 @@ describe("UrlPatternMatcher", () => {
       expect(result.matched).toBe(true)
     })
   })
+
+  describe("exclusion pattern validation", () => {
+    it("should validate exclusion pattern with simple domain", () => {
+      const result = urlPatternMatcher.validatePattern("!docs.google.com")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should validate exclusion pattern with wildcard", () => {
+      const result = urlPatternMatcher.validatePattern("!*.google.com")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should validate exclusion pattern with TLD wildcard", () => {
+      const result = urlPatternMatcher.validatePattern("!google.**")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should validate exclusion pattern with path", () => {
+      const result = urlPatternMatcher.validatePattern("!example.com/docs")
+      expect(result.isValid).toBe(true)
+    })
+
+    it("should reject empty exclusion pattern", () => {
+      const result = urlPatternMatcher.validatePattern("!")
+      expect(result.isValid).toBe(false)
+    })
+
+    it("should reject exclusion pattern with invalid inner content", () => {
+      const result = urlPatternMatcher.validatePattern("!***")
+      expect(result.isValid).toBe(false)
+    })
+
+    it("should detect exclusion patterns via isExclusionPattern", () => {
+      expect(urlPatternMatcher.isExclusionPattern("!docs.google.com")).toBe(true)
+      expect(urlPatternMatcher.isExclusionPattern("docs.google.com")).toBe(false)
+      expect(urlPatternMatcher.isExclusionPattern("  !trimmed.com")).toBe(true)
+    })
+  })
 })
