@@ -73,7 +73,35 @@ describe("DomainUtils", () => {
     })
 
     it("should handle localhost", () => {
-      expect(extractDomain("http://localhost")).toBe("system")
+      expect(extractDomain("http://localhost")).toBe("localhost")
+    })
+
+    it("should handle localhost with port", () => {
+      expect(extractDomain("http://localhost:3000")).toBe("localhost")
+    })
+
+    it("should handle localhost with path", () => {
+      expect(extractDomain("http://localhost:8080/api/v1")).toBe("localhost")
+    })
+
+    it("should handle IPv6 loopback [::1]", () => {
+      expect(extractDomain("http://[::1]:3000")).toBe("localhost")
+    })
+
+    it("should handle IPv4 loopback 127.0.0.1", () => {
+      expect(extractDomain("http://127.0.0.1")).toBe("127.0.0.1")
+    })
+
+    it("should handle IPv4 loopback with port", () => {
+      expect(extractDomain("http://127.0.0.1:8080")).toBe("127.0.0.1")
+    })
+
+    it("should handle 0.0.0.0", () => {
+      expect(extractDomain("http://0.0.0.0:3000")).toBe("0.0.0.0")
+    })
+
+    it("should handle other IP addresses", () => {
+      expect(extractDomain("http://192.168.1.100:9090")).toBe("192.168.1.100")
     })
   })
 
@@ -113,6 +141,14 @@ describe("DomainUtils", () => {
     it("should return domain if only TLD after removal", () => {
       // Edge case: when domain is just tld.tld
       expect(getDomainDisplayName("co.uk")).toBe("co.uk")
+    })
+
+    it("should return IP address as-is for IPv4", () => {
+      expect(getDomainDisplayName("127.0.0.1")).toBe("127.0.0.1")
+    })
+
+    it("should return IP address as-is for other IPv4", () => {
+      expect(getDomainDisplayName("192.168.1.100")).toBe("192.168.1.100")
     })
   })
 
