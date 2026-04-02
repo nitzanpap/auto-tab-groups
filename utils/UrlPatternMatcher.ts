@@ -517,6 +517,18 @@ class UrlPatternMatcher {
       }
     }
 
+    // Reject wildcards after ** (e.g., docs.**.* ) — ** must be the final segment
+    if (domainPattern.includes("**")) {
+      const afterDoubleStar = domainPattern.split("**")[1]
+      if (afterDoubleStar && /[*]/.test(afterDoubleStar)) {
+        return {
+          isValid: false,
+          error: `Cannot use wildcards after **, use ${domainPattern.split("**")[0]}** instead`,
+          type: PATTERN_TYPES.SIMPLE_WILDCARD
+        }
+      }
+    }
+
     if (!/^[a-zA-Z0-9.*-]+$/.test(domainPattern)) {
       return {
         isValid: false,

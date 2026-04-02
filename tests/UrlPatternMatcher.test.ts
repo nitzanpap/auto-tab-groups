@@ -707,6 +707,24 @@ describe("UrlPatternMatcher", () => {
       expect(result.isValid).toBe(false)
     })
 
+    it("should reject wildcards after ** in domain pattern", () => {
+      const result = urlPatternMatcher.validatePattern("docs.**.*")
+      expect(result.isValid).toBe(false)
+      expect(result.error).toContain("Cannot use wildcards after **")
+      expect(result.error).toContain("docs.**")
+    })
+
+    it("should accept valid ** pattern without trailing wildcards", () => {
+      expect(urlPatternMatcher.validatePattern("docs.**").isValid).toBe(true)
+      expect(urlPatternMatcher.validatePattern("google.**").isValid).toBe(true)
+    })
+
+    it("should reject wildcards after ** in exclusion patterns too", () => {
+      const result = urlPatternMatcher.validatePattern("!docs.**.*")
+      expect(result.isValid).toBe(false)
+      expect(result.error).toContain("Cannot use wildcards after **")
+    })
+
     it("should detect exclusion patterns via isExclusionPattern", () => {
       expect(urlPatternMatcher.isExclusionPattern("!docs.google.com")).toBe(true)
       expect(urlPatternMatcher.isExclusionPattern("docs.google.com")).toBe(false)
