@@ -24,10 +24,12 @@
     "format:check": "biome format .",
     "code:check": "biome check . && bun run typecheck",
     "code:fix": "biome check --write .",
-    "postinstall": "wxt prepare"
+    "copy:wasm": "mkdir -p public/wasm && cp node_modules/@wllama/wllama/esm/single-thread/wllama.wasm public/wasm/wllama-single.wasm && cp node_modules/@wllama/wllama/esm/multi-thread/wllama.wasm public/wasm/wllama-multi.wasm",
+    "postinstall": "wxt prepare && bun run copy:wasm"
   },
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.80"
+    "@mlc-ai/web-llm": "^0.2.80",
+    "@wllama/wllama": "^2.3.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
