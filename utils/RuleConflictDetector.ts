@@ -55,10 +55,16 @@ export function detectConflicts(
   const conflicts: PatternConflict[] = []
 
   for (const srcPattern of sourcePatterns) {
+    // Skip exclusion patterns — they don't create positive matches
+    if (srcPattern.trim().startsWith("!")) continue
+
     for (const rule of existingRules) {
       if (rule.id === excludeRuleId) continue
 
       for (const tgtPattern of rule.domains) {
+        // Skip exclusion patterns in target rules too
+        if (tgtPattern.trim().startsWith("!")) continue
+
         const conflictType = checkPatternOverlap(srcPattern, tgtPattern)
         if (conflictType !== null) {
           conflicts.push({

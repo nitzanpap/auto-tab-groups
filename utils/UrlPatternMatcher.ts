@@ -77,6 +77,12 @@ class UrlPatternMatcher {
       return { matched: false, extractedValues: {}, groupName: null }
     }
 
+    // Exclusion patterns must be handled by the caller (RulesService).
+    // If one slips through, treat as non-match to avoid false positives.
+    if (this.isExclusionPattern(pattern)) {
+      return { matched: false, extractedValues: {}, groupName: null }
+    }
+
     const patternType = this.detectPatternType(pattern)
 
     switch (patternType) {
@@ -462,16 +468,30 @@ class UrlPatternMatcher {
       }
     }
 
-    const patternType = this.detectPatternType(cleanPattern)
+    // Strip negation prefix before validating the inner pattern
+    const inner = cleanPattern.startsWith("!") ? cleanPattern.substring(1) : cleanPattern
+
+    if (inner.length === 0) {
+      return { isValid: false, error: "Exclusion pattern cannot be empty after '!'", type: null }
+    }
+
+    const patternType = this.detectPatternType(inner)
 
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return this.validateSegmentPattern(cleanPattern)
+        return this.validateSegmentPattern(inner)
       case PATTERN_TYPES.REGEX:
-        return this.validateRegexPattern(cleanPattern)
+        return this.validateRegexPattern(inner)
       default:
-        return this.validateSimpleWildcardPattern(cleanPattern)
+        return this.validateSimpleWildcardPattern(inner)
     }
+  }
+
+  /**
+   * Checks if a pattern is an exclusion (negation) pattern
+   */
+  isExclusionPattern(pattern: string): boolean {
+    return pattern.trim().startsWith("!")
   }
 
   /**
@@ -494,6 +514,18 @@ class UrlPatternMatcher {
         isValid: false,
         error: "Invalid wildcard pattern (too many asterisks)",
         type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
+    }
+
+    // Reject wildcards after ** (e.g., docs.**.* ) — ** must be the final segment
+    if (domainPattern.includes("**")) {
+      const afterDoubleStar = domainPattern.split("**")[1]
+      if (afterDoubleStar && /[*]/.test(afterDoubleStar)) {
+        return {
+          isValid: false,
+          error: `Cannot use wildcards after **, use ${domainPattern.split("**")[0]}** instead`,
+          type: PATTERN_TYPES.SIMPLE_WILDCARD
+        }
       }
     }
 
