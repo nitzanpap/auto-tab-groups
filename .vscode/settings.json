@@ -32,5 +32,6 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "snyk.advanced.organization": "6a8af82f-bfb7-401e-8baa-27b0d74276e3"
 }
