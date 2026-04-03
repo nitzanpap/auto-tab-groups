@@ -731,4 +731,148 @@ describe("UrlPatternMatcher", () => {
       expect(urlPatternMatcher.isExclusionPattern("  !trimmed.com")).toBe(true)
     })
   })
+
+  describe("port pattern validation", () => {
+    it("should accept pattern with numeric port", () => {
+      expect(urlPatternMatcher.validatePattern("localhost:3000").isValid).toBe(true)
+    })
+
+    it("should accept wildcard domain with port", () => {
+      expect(urlPatternMatcher.validatePattern("*:8080").isValid).toBe(true)
+    })
+
+    it("should accept subdomain wildcard with port", () => {
+      expect(urlPatternMatcher.validatePattern("*.example.com:443").isValid).toBe(true)
+    })
+
+    it("should accept wildcard port", () => {
+      expect(urlPatternMatcher.validatePattern("localhost:*").isValid).toBe(true)
+    })
+
+    it("should reject non-numeric port", () => {
+      const result = urlPatternMatcher.validatePattern("localhost:abc")
+      expect(result.isValid).toBe(false)
+      // "abc" isn't recognized as a port, so colon falls into domain validation
+      expect(result.error).toContain("invalid characters")
+    })
+
+    it("should reject port 0", () => {
+      expect(urlPatternMatcher.validatePattern("localhost:0").isValid).toBe(false)
+    })
+
+    it("should reject port above 65535", () => {
+      expect(urlPatternMatcher.validatePattern("localhost:99999").isValid).toBe(false)
+    })
+
+    it("should accept port with exclusion prefix", () => {
+      expect(urlPatternMatcher.validatePattern("!localhost:3000").isValid).toBe(true)
+    })
+
+    it("should accept pattern without port (backward compatible)", () => {
+      expect(urlPatternMatcher.validatePattern("localhost").isValid).toBe(true)
+      expect(urlPatternMatcher.validatePattern("example.com").isValid).toBe(true)
+    })
+
+    it("should accept port with path", () => {
+      expect(urlPatternMatcher.validatePattern("localhost:3000/api").isValid).toBe(true)
+    })
+  })
+
+  describe("port pattern matching", () => {
+    it("should match exact port", () => {
+      const result = urlPatternMatcher.match("http://localhost:3000/page", "localhost:3000")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should not match different port", () => {
+      const result = urlPatternMatcher.match("http://localhost:8080/page", "localhost:3000")
+      expect(result.matched).toBe(false)
+    })
+
+    it("should match subdomain wildcard with port", () => {
+      expect(
+        urlPatternMatcher.match("https://app.example.com:8080", "*.example.com:8080").matched
+      ).toBe(true)
+      expect(
+        urlPatternMatcher.match("https://app.example.com:9090", "*.example.com:8080").matched
+      ).toBe(false)
+    })
+
+    it("should match wildcard port", () => {
+      expect(urlPatternMatcher.match("http://localhost:3000", "localhost:*").matched).toBe(true)
+      expect(urlPatternMatcher.match("http://localhost:8080", "localhost:*").matched).toBe(true)
+    })
+
+    it("should match any port when pattern has no port", () => {
+      expect(urlPatternMatcher.match("http://localhost:3000", "localhost").matched).toBe(true)
+      expect(urlPatternMatcher.match("http://localhost:8080", "localhost").matched).toBe(true)
+      expect(urlPatternMatcher.match("http://localhost", "localhost").matched).toBe(true)
+    })
+
+    it("should match port with subdomain wildcard", () => {
+      const result = urlPatternMatcher.match("https://app.example.com:8080", "*.example.com:8080")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should not match port with subdomain wildcard when port differs", () => {
+      const result = urlPatternMatcher.match("https://app.example.com:9090", "*.example.com:8080")
+      expect(result.matched).toBe(false)
+    })
+
+    it("should match port with path pattern", () => {
+      const result = urlPatternMatcher.match("http://localhost:3000/api/v1", "localhost:3000/api")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should handle default HTTPS port 443", () => {
+      // https://example.com has port "" (default 443)
+      const result = urlPatternMatcher.match("https://example.com/page", "example.com:443")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should handle default HTTP port 80", () => {
+      const result = urlPatternMatcher.match("http://example.com/page", "example.com:80")
+      expect(result.matched).toBe(true)
+    })
+
+    it("should not match default port when explicit non-default port specified", () => {
+      const result = urlPatternMatcher.match("https://example.com", "example.com:8080")
+      expect(result.matched).toBe(false)
+    })
+  })
+
+  describe("splitDomainPort helper", () => {
+    it("should split domain and port", () => {
+      expect(urlPatternMatcher.splitDomainPort("localhost:3000")).toEqual({
+        domainPattern: "localhost",
+        portPattern: "3000"
+      })
+    })
+
+    it("should handle pattern without port", () => {
+      expect(urlPatternMatcher.splitDomainPort("example.com")).toEqual({
+        domainPattern: "example.com",
+        portPattern: null
+      })
+    })
+
+    it("should handle wildcard port", () => {
+      expect(urlPatternMatcher.splitDomainPort("localhost:*")).toEqual({
+        domainPattern: "localhost",
+        portPattern: "*"
+      })
+    })
+
+    it("should handle wildcard domain with port", () => {
+      expect(urlPatternMatcher.splitDomainPort("*.example.com:8080")).toEqual({
+        domainPattern: "*.example.com",
+        portPattern: "8080"
+      })
+    })
+
+    it("should not split on non-port suffix", () => {
+      // "co" is not a valid port, so treat whole thing as domain
+      expect(urlPatternMatcher.splitDomainPort("example.co").portPattern).toBeNull()
+    })
+  })
 })

@@ -127,12 +127,20 @@ class UrlPatternMatcher {
       const hasPath = cleanPattern.includes("/")
       // Split only on first "/" to separate domain from full path
       const firstSlashIndex = cleanPattern.indexOf("/")
-      const domainPattern = hasPath ? cleanPattern.substring(0, firstSlashIndex) : cleanPattern
+      const fullDomainPattern = hasPath ? cleanPattern.substring(0, firstSlashIndex) : cleanPattern
       const pathPattern = hasPath ? cleanPattern.substring(firstSlashIndex + 1) : ""
+
+      // Split domain from optional port (e.g., "localhost:3000")
+      const { domainPattern, portPattern } = this.splitDomainPort(fullDomainPattern)
 
       // Match domain part
       const domainMatch = this.matchDomainWildcard(hostname, domainPattern, options)
       if (!domainMatch) {
+        return { matched: false, extractedValues: {}, groupName: null }
+      }
+
+      // Match port if pattern specifies one
+      if (portPattern && !this.matchPort(urlObj.port, portPattern, urlObj.protocol)) {
         return { matched: false, extractedValues: {}, groupName: null }
       }
 
@@ -495,11 +503,71 @@ class UrlPatternMatcher {
   }
 
   /**
+   * Splits a domain pattern into domain and optional port parts.
+   * Handles patterns like "localhost:3000", "*.example.com:8080", "*:3000".
+   */
+  splitDomainPort(pattern: string): { domainPattern: string; portPattern: string | null } {
+    // No colon means no port
+    if (!pattern.includes(":")) {
+      return { domainPattern: pattern, portPattern: null }
+    }
+
+    const lastColon = pattern.lastIndexOf(":")
+    const beforeColon = pattern.substring(0, lastColon)
+    const afterColon = pattern.substring(lastColon + 1)
+
+    // If afterColon looks like a port (digits or wildcard *), treat as port
+    if (/^\d+$/.test(afterColon) || afterColon === "*") {
+      return { domainPattern: beforeColon, portPattern: afterColon }
+    }
+
+    // Otherwise treat the whole thing as a domain (e.g. IPv6-like patterns)
+    return { domainPattern: pattern, portPattern: null }
+  }
+
+  /**
+   * Matches a URL port against a pattern port.
+   * Handles default ports (80 for HTTP, 443 for HTTPS) where urlObj.port is "".
+   */
+  matchPort(urlPort: string, patternPort: string, protocol: string): boolean {
+    if (patternPort === "*") return true
+
+    // Resolve the effective URL port (default ports are "" in URL API)
+    const effectiveUrlPort =
+      urlPort || (protocol === "https:" ? "443" : protocol === "http:" ? "80" : "")
+
+    return effectiveUrlPort === patternPort
+  }
+
+  /**
    * Validates a simple wildcard pattern
    */
   validateSimpleWildcardPattern(pattern: string): PatternValidationResultWithType {
     const hasPath = pattern.includes("/")
-    const [domainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
+    const [fullDomainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
+
+    if (!fullDomainPattern) {
+      return {
+        isValid: false,
+        error: "Domain pattern cannot be empty",
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
+    }
+
+    // Split domain from optional port (e.g., "localhost:3000" → "localhost" + "3000")
+    const { domainPattern, portPattern } = this.splitDomainPort(fullDomainPattern)
+
+    // Validate port if present
+    if (portPattern !== null && portPattern !== "*") {
+      const portNum = Number(portPattern)
+      if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+        return {
+          isValid: false,
+          error: "Port must be a number between 1 and 65535",
+          type: PATTERN_TYPES.SIMPLE_WILDCARD
+        }
+      }
+    }
 
     if (!domainPattern) {
       return {
