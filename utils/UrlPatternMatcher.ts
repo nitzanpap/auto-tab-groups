@@ -168,6 +168,9 @@ class UrlPatternMatcher {
     const cleanDomain = domain.toLowerCase().trim()
     const cleanPattern = pattern.toLowerCase().trim()
 
+    // Handle lone * — matches any domain
+    if (cleanPattern === "*") return true
+
     // Handle ** wildcard for TLD (e.g., google.** matches google.com)
     if (cleanPattern.includes("**")) {
       const parts = cleanPattern.split("**")
@@ -188,17 +191,19 @@ class UrlPatternMatcher {
     }
 
     // Handle * wildcard for subdomains (*.domain.com)
+    // Only applies when base domain is a literal (no wildcards)
+    // For patterns like *.*.*.*, fall through to middle wildcard handler
     if (cleanPattern.startsWith("*.")) {
       const baseDomain = cleanPattern.substring(2)
 
-      if (!baseDomain || !baseDomain.includes(".")) return false
-
-      // Check for exact match or subdomain match
-      return cleanDomain === baseDomain || cleanDomain.endsWith(`.${baseDomain}`)
+      if (baseDomain && !baseDomain.includes("*") && baseDomain.includes(".")) {
+        // Check for exact match or subdomain match
+        return cleanDomain === baseDomain || cleanDomain.endsWith(`.${baseDomain}`)
+      }
     }
 
-    // Handle middle wildcards
-    if (cleanPattern.includes("*") && !cleanPattern.startsWith("*")) {
+    // Handle wildcard patterns (including patterns starting with * like *.*.*.*)
+    if (cleanPattern.includes("*")) {
       return this.matchMiddleWildcard(cleanDomain, cleanPattern)
     }
 
