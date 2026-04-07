@@ -839,6 +839,36 @@ describe("UrlPatternMatcher", () => {
       const result = urlPatternMatcher.match("https://example.com", "example.com:8080")
       expect(result.matched).toBe(false)
     })
+
+    it("should match lone * wildcard domain with port", () => {
+      expect(urlPatternMatcher.match("http://192.168.1.100:8403", "*:8403").matched).toBe(true)
+    })
+
+    it("should not match lone * wildcard domain when port differs", () => {
+      expect(urlPatternMatcher.match("http://192.168.1.100:9999", "*:8403").matched).toBe(false)
+    })
+
+    it("should match *.*.*.* IP pattern with port", () => {
+      expect(urlPatternMatcher.match("http://192.168.1.100:8403", "*.*.*.*:8403").matched).toBe(
+        true
+      )
+    })
+
+    it("should match IP segment wildcard with port", () => {
+      expect(urlPatternMatcher.match("http://192.168.1.100:8403", "192.168.1.*:8403").matched).toBe(
+        true
+      )
+    })
+
+    it("should match IP range wildcard with port", () => {
+      expect(urlPatternMatcher.match("http://192.168.1.100:8403", "192.168.*.*:8403").matched).toBe(
+        true
+      )
+    })
+
+    it("should match lone * without port (any domain)", () => {
+      expect(urlPatternMatcher.match("http://anything.example.com", "*").matched).toBe(true)
+    })
   })
 
   describe("splitDomainPort helper", () => {
