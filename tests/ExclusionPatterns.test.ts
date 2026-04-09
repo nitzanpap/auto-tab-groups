@@ -181,5 +181,80 @@ describe("Exclusion Patterns", () => {
       const exclusionConflicts = conflicts.filter(c => c.targetPattern.startsWith("!"))
       expect(exclusionConflicts).toHaveLength(0)
     })
+
+    it("should suppress conflict when source pattern is excluded by target rule (#59)", () => {
+      const existingRules: CustomRule[] = [
+        {
+          id: "rule-1",
+          name: "Docs",
+          domains: ["docs.*.*", "!docs.google.com"],
+          color: "blue",
+          enabled: true,
+          priority: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]
+
+      const conflicts = detectConflicts(["docs.google.com"], existingRules)
+
+      // docs.google.com is explicitly excluded from the Docs rule, so no conflict
+      expect(conflicts).toHaveLength(0)
+    })
+
+    it("should suppress conflict when target pattern is excluded by source exclusions", () => {
+      const existingRules: CustomRule[] = [
+        {
+          id: "rule-1",
+          name: "Google Docs",
+          domains: ["docs.google.com"],
+          color: "red",
+          enabled: true,
+          priority: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]
+
+      const conflicts = detectConflicts(["*.google.com", "!docs.google.com"], existingRules)
+
+      // docs.google.com is excluded from the source rule, so no conflict
+      expect(conflicts).toHaveLength(0)
+    })
+
+    it("should suppress conflict when subdomain is excluded by wildcard exclusion", () => {
+      const existingRules: CustomRule[] = [
+        {
+          id: "rule-1",
+          name: "Example",
+          domains: ["*.example.com", "!sub.example.com"],
+          color: "green",
+          enabled: true,
+          priority: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]
+
+      const conflicts = detectConflicts(["sub.example.com"], existingRules)
+
+      expect(conflicts).toHaveLength(0)
+    })
+
+    it("should still detect conflicts when no exclusion negates the overlap", () => {
+      const existingRules: CustomRule[] = [
+        {
+          id: "rule-1",
+          name: "Example",
+          domains: ["*.example.com"],
+          color: "blue",
+          enabled: true,
+          priority: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]
+
+      const conflicts = detectConflicts(["sub.example.com"], existingRules)
+
+      // No exclusion pattern, so the conflict should still be detected
+      expect(conflicts.length).toBeGreaterThan(0)
+    })
   })
 })

@@ -45,7 +45,25 @@ export function checkPatternOverlap(
 }
 
 /**
+ * Check whether a pattern is negated (excluded) by any exclusion pattern.
+ * A pattern is negated if an exclusion exactly matches it or subsumes it.
+ */
+function isNegatedByExclusions(pattern: string, exclusionPatterns: readonly string[]): boolean {
+  const pat = pattern.toLowerCase().trim()
+
+  return exclusionPatterns.some(exclRaw => {
+    const excl = exclRaw.trim().substring(1).toLowerCase()
+    if (pat === excl) return true
+
+    const overlap = checkPatternOverlap(pat, excl)
+    return overlap === "subsumed_by_wildcard" || overlap === "exact_duplicate"
+  })
+}
+
+/**
  * Detect all conflicts between source patterns and existing rules.
+ * Accounts for exclusion patterns: a conflict is suppressed when the
+ * overlapping pattern is explicitly excluded by either side.
  */
 export function detectConflicts(
   sourcePatterns: readonly string[],
@@ -54,6 +72,8 @@ export function detectConflicts(
 ): PatternConflict[] {
   const conflicts: PatternConflict[] = []
 
+  const sourceExclusions = sourcePatterns.filter(p => p.trim().startsWith("!"))
+
   for (const srcPattern of sourcePatterns) {
     // Skip exclusion patterns — they don't create positive matches
     if (srcPattern.trim().startsWith("!")) continue
@@ -61,12 +81,19 @@ export function detectConflicts(
     for (const rule of existingRules) {
       if (rule.id === excludeRuleId) continue
 
+      const targetExclusions = rule.domains.filter(d => d.trim().startsWith("!"))
+
       for (const tgtPattern of rule.domains) {
         // Skip exclusion patterns in target rules too
         if (tgtPattern.trim().startsWith("!")) continue
 
         const conflictType = checkPatternOverlap(srcPattern, tgtPattern)
         if (conflictType !== null) {
+          // Suppress conflict if the source pattern is excluded by the target rule
+          if (isNegatedByExclusions(srcPattern, targetExclusions)) continue
+          // Suppress conflict if the target pattern is excluded by the source rule
+          if (isNegatedByExclusions(tgtPattern, sourceExclusions)) continue
+
           conflicts.push({
             sourcePattern: srcPattern,
             targetPattern: tgtPattern,
