@@ -57,46 +57,46 @@ class RulesService {
     console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
 
     // First pass: exact matches only (no auto-subdomain)
-    for (const rule of Object.values(customRules)) {
-      if (!rule.enabled) {
-        continue
-      }
-
-      for (const rulePattern of rule.domains) {
-        const matchResult = urlPatternMatcher.match(url, rulePattern, {
-          ruleName: rule.name,
-          allowAutoSubdomain: false
-        })
-
-        if (matchResult.matched) {
-          console.log(
-            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"`
-          )
-
-          return {
-            ...rule,
-            matchInfo: matchResult,
-            effectiveGroupName: matchResult.groupName || rule.name
-          }
-        }
-      }
-    }
+    const exactMatch = this.findMatchInRules(url, Object.values(customRules), false)
+    if (exactMatch) return exactMatch
 
     // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
-    for (const rule of Object.values(customRules)) {
-      if (!rule.enabled) {
-        continue
-      }
+    return this.findMatchInRules(url, Object.values(customRules), true)
+  }
 
-      for (const rulePattern of rule.domains) {
+  /**
+   * Searches rules for a matching URL, respecting exclusion patterns.
+   * Exclusion patterns (prefixed with !) prevent a URL from matching a rule
+   * even when it matches an include pattern.
+   */
+  private findMatchInRules(
+    url: string,
+    rules: CustomRule[],
+    allowAutoSubdomain: boolean
+  ): MatchedRule | null {
+    const passLabel = allowAutoSubdomain ? " (auto-subdomain)" : ""
+
+    for (const rule of rules) {
+      if (!rule.enabled) continue
+
+      const { includePatterns, excludePatterns } = this.splitPatterns(rule.domains)
+
+      for (const rulePattern of includePatterns) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
           ruleName: rule.name,
-          allowAutoSubdomain: true
+          allowAutoSubdomain
         })
 
         if (matchResult.matched) {
+          if (this.isExcludedByRule(url, excludePatterns, allowAutoSubdomain)) {
+            console.log(
+              `[RulesService] URL "${url}" matches rule "${rule.name}" but is excluded${passLabel}`
+            )
+            break
+          }
+
           console.log(
-            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}" (auto-subdomain)`
+            `[RulesService] URL "${url}" matches rule "${rule.name}" with pattern "${rulePattern}"${passLabel}`
           )
 
           return {
@@ -109,6 +109,40 @@ class RulesService {
     }
 
     return null
+  }
+
+  /**
+   * Splits a rule's domain patterns into include and exclude lists
+   */
+  private splitPatterns(domains: string[]): {
+    includePatterns: string[]
+    excludePatterns: string[]
+  } {
+    const includePatterns: string[] = []
+    const excludePatterns: string[] = []
+
+    for (const pattern of domains) {
+      if (urlPatternMatcher.isExclusionPattern(pattern)) {
+        excludePatterns.push(pattern.trim().substring(1))
+      } else {
+        includePatterns.push(pattern)
+      }
+    }
+
+    return { includePatterns, excludePatterns }
+  }
+
+  /**
+   * Checks if a URL matches any of the exclusion patterns
+   */
+  private isExcludedByRule(
+    url: string,
+    excludePatterns: string[],
+    allowAutoSubdomain: boolean
+  ): boolean {
+    return excludePatterns.some(
+      exclPattern => urlPatternMatcher.match(url, exclPattern, { allowAutoSubdomain }).matched
+    )
   }
 
   /**

@@ -212,6 +212,56 @@ export default defineBackground(() => {
             result = { minimumTabs: tabGroupState.minimumTabsForGroup }
             break
 
+          case "getOpenTabNextToCurrent":
+            result = { enabled: tabGroupState.openTabNextToCurrent }
+            break
+
+          case "toggleOpenTabNextToCurrent":
+            tabGroupState.openTabNextToCurrent = msg.enabled
+            await saveState()
+            result = { enabled: tabGroupState.openTabNextToCurrent }
+            break
+
+          case "getSortGroupsAlphabetically":
+            result = { enabled: tabGroupState.sortGroupsAlphabetically }
+            break
+
+          case "toggleSortGroupsAlphabetically": {
+            tabGroupState.sortGroupsAlphabetically = msg.enabled
+            await saveState()
+            if (msg.enabled) {
+              const { tabSortService } = await import("../services/TabSortService")
+              await tabSortService.sortGroups()
+            } else {
+              // Sorting disabled — also disable indexing and strip prefixes
+              if (tabGroupState.indexGroupTitles) {
+                tabGroupState.indexGroupTitles = false
+                await saveState()
+                const { tabSortService } = await import("../services/TabSortService")
+                await tabSortService.stripAllIndexPrefixes()
+              }
+            }
+            result = { enabled: tabGroupState.sortGroupsAlphabetically }
+            break
+          }
+
+          case "getIndexGroupTitles":
+            result = { enabled: tabGroupState.indexGroupTitles }
+            break
+
+          case "toggleIndexGroupTitles": {
+            tabGroupState.indexGroupTitles = msg.enabled
+            await saveState()
+            const { tabSortService } = await import("../services/TabSortService")
+            if (msg.enabled) {
+              await tabSortService.sortGroups()
+            } else {
+              await tabSortService.stripAllIndexPrefixes()
+            }
+            result = { enabled: tabGroupState.indexGroupTitles }
+            break
+          }
+
           // Custom Rules Management
           case "getCustomRules": {
             const rules = await rulesService.getCustomRules()
@@ -229,6 +279,8 @@ export default defineBackground(() => {
               if (tabGroupState.autoGroupingEnabled) {
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -243,6 +295,8 @@ export default defineBackground(() => {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -257,6 +311,24 @@ export default defineBackground(() => {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
               }
+
+              await contextMenuService.refreshRuleSubMenuItems()
+            } catch (error) {
+              result = { success: false, error: (error as Error).message }
+            }
+            break
+
+          case "addDomainToRule":
+            try {
+              const addResult = await contextMenuService.addDomainToRule(msg.ruleId, msg.domain)
+
+              if (addResult.success && !addResult.alreadyExists) {
+                // Always re-group after adding a domain — user explicitly took this action
+                await tabGroupService.ungroupAllTabs()
+                await tabGroupService.groupAllTabsManually()
+              }
+
+              result = { ...addResult }
             } catch (error) {
               result = { success: false, error: (error as Error).message }
             }
@@ -285,6 +357,10 @@ export default defineBackground(() => {
               if (importResult.success && tabGroupState.autoGroupingEnabled) {
                 await tabGroupService.ungroupAllTabs()
                 await tabGroupService.groupTabsWithRules()
+              }
+
+              if (importResult.success) {
+                await contextMenuService.refreshRuleSubMenuItems()
               }
             } catch (error) {
               result = { success: false, error: (error as Error).message }
@@ -683,10 +759,17 @@ export default defineBackground(() => {
       if (tab.id) {
         tabGroupService.markAsNewTab(tab.id)
       }
-      // Firefox fires onCreated with about:blank for tabs pending navigation.
-      // The real URL arrives later via onUpdated. Skip immediate grouping to
+      // When a tab is opened via "Open link in new tab" (has openerTabId),
+      // the browser may initially report a system URL (about:blank, chrome://newtab, etc.)
+      // before the real destination URL arrives via onUpdated. Defer grouping to
       // avoid bouncing the tab through the System group.
-      if (tab.url === "about:blank" && tab.openerTabId) {
+      if (tab.openerTabId && tab.url && tabGroupService.isNewTabUrl(tab.url)) {
+        console.log(
+          `[tabs.onCreated] Tab ${tab.id} has opener and system URL "${tab.url}", deferring to onUpdated`
+        )
+        return
+      }
+      if (tab.openerTabId && tab.url === "about:blank") {
         console.log(
           `[tabs.onCreated] Tab ${tab.id} is pending navigation (about:blank with opener), deferring to onUpdated`
         )
@@ -713,6 +796,10 @@ export default defineBackground(() => {
         await new Promise(resolve => setTimeout(resolve, 100))
         await tabGroupService.checkAllGroupsThreshold()
       }
+
+      // Re-sort to update index prefixes after group count may have changed
+      const { tabSortService } = await import("../services/TabSortService")
+      await tabSortService.applySorting()
     } catch (error) {
       console.error(`[tabs.onRemoved] Error handling tab ${tabId} removal:`, error)
     }
@@ -720,8 +807,18 @@ export default defineBackground(() => {
 
   browser.tabs.onMoved.addListener(async tabId => {
     try {
-      console.log(`[tabs.onMoved] Tab ${tabId} moved`)
       await ensureStateLoaded()
+
+      // Skip tabs already in a group — this move was likely triggered by
+      // our own tabs.group() call. Re-triggering handleTabUpdate here
+      // would race with the in-progress title update and could create
+      // duplicate untitled groups.
+      const tab = await browser.tabs.get(tabId)
+      if (tab.groupId && tab.groupId !== -1) {
+        return
+      }
+
+      console.log(`[tabs.onMoved] Tab ${tabId} moved (ungrouped), re-evaluating`)
       await tabGroupService.moveTabToGroup(tabId)
     } catch (error) {
       console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
@@ -778,11 +875,16 @@ export default defineBackground(() => {
     })
   }
 
-  // Listen for tab group removal
+  // Listen for tab group removal — re-sort to update index prefixes
   if (browser.tabGroups?.onRemoved) {
     browser.tabGroups.onRemoved.addListener(async group => {
       try {
         console.log(`[tabGroups.onRemoved] Group ${group.id} was removed`)
+        await ensureStateLoaded()
+        // Small delay to let browser fully remove the group before re-querying
+        await new Promise(resolve => setTimeout(resolve, 100))
+        const { tabSortService } = await import("../services/TabSortService")
+        await tabSortService.applySorting()
       } catch (error) {
         console.error("[tabGroups.onRemoved] Error handling group removal:", error)
       }

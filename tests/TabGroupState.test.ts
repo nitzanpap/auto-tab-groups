@@ -61,6 +61,24 @@ describe("TabGroupState", () => {
       expect(tabGroupState.minimumTabsForGroup).toBe(3)
     })
 
+    it("should update sortGroupsAlphabetically", () => {
+      tabGroupState.updateFromStorage({ sortGroupsAlphabetically: true })
+      expect(tabGroupState.sortGroupsAlphabetically).toBe(true)
+    })
+
+    it("should default sortGroupsAlphabetically to false", () => {
+      expect(tabGroupState.sortGroupsAlphabetically).toBe(false)
+    })
+
+    it("should update indexGroupTitles", () => {
+      tabGroupState.updateFromStorage({ indexGroupTitles: true })
+      expect(tabGroupState.indexGroupTitles).toBe(true)
+    })
+
+    it("should default indexGroupTitles to false", () => {
+      expect(tabGroupState.indexGroupTitles).toBe(false)
+    })
+
     it("should update customRules", () => {
       const rules: Record<string, CustomRule> = {
         "rule-1": {
@@ -123,6 +141,8 @@ describe("TabGroupState", () => {
       expect(data).toHaveProperty("customRules")
       expect(data).toHaveProperty("groupColorMapping")
       expect(data).toHaveProperty("minimumTabsForGroup")
+      expect(data).toHaveProperty("sortGroupsAlphabetically")
+      expect(data).toHaveProperty("indexGroupTitles")
     })
 
     it("should return current state values", () => {

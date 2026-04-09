@@ -1,95 +1,92 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { AiProviderInterface } from "../services/ai/AiProviderInterface"
-import type {
-  AiCompletionRequest,
-  AiCompletionResponse,
-  AiModelConfig,
-  AiModelStatus
-} from "../types"
+import type { MockInstance } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-// Hoist mock functions so they're available when vi.mock factories execute
-const { mockProvider, mockWllamaProvider, mockSetAiEnabled, mockSetAiProvider, mockSetAiModelId } =
-  vi.hoisted(() => {
-    const mockSetAiEnabled = vi.fn().mockResolvedValue(undefined)
-    const mockSetAiProvider = vi.fn().mockResolvedValue(undefined)
-    const mockSetAiModelId = vi.fn().mockResolvedValue(undefined)
+/**
+ * NOTE: vi.mock module interception does not work under Bun's runtime.
+ * These tests use vi.spyOn on the actual singleton instances instead.
+ */
 
-    const mockProvider: AiProviderInterface = {
-      getStatus: vi.fn().mockReturnValue("idle" as AiModelStatus),
-      getProgress: vi.fn().mockReturnValue(0),
-      getError: vi.fn().mockReturnValue(null),
-      getAvailableModels: vi
-        .fn()
-        .mockReturnValue([
-          { id: "test-model", displayName: "Test Model", sizeInMb: 100, vramRequiredMb: 256 }
-        ] as readonly AiModelConfig[]),
-      loadModel: vi.fn().mockResolvedValue(undefined),
-      unloadModel: vi.fn().mockResolvedValue(undefined),
-      complete: vi.fn().mockResolvedValue({
-        content: "test response",
-        finishReason: "stop"
-      } as AiCompletionResponse),
-      isAvailable: vi.fn().mockResolvedValue(true)
-    }
-
-    const mockWllamaProvider: AiProviderInterface = {
-      getStatus: vi.fn().mockReturnValue("idle" as AiModelStatus),
-      getProgress: vi.fn().mockReturnValue(0),
-      getError: vi.fn().mockReturnValue(null),
-      getAvailableModels: vi
-        .fn()
-        .mockReturnValue([
-          { id: "wllama-test-model", displayName: "Wllama Test Model", sizeInMb: 1000 }
-        ] as readonly AiModelConfig[]),
-      loadModel: vi.fn().mockResolvedValue(undefined),
-      unloadModel: vi.fn().mockResolvedValue(undefined),
-      complete: vi.fn().mockResolvedValue({
-        content: "wllama test response",
-        finishReason: "stop"
-      } as AiCompletionResponse),
-      isAvailable: vi.fn().mockResolvedValue(true)
-    }
-
-    return {
-      mockProvider,
-      mockWllamaProvider,
-      mockSetAiEnabled,
-      mockSetAiProvider,
-      mockSetAiModelId
-    }
-  })
-
-// Mock all dependencies before importing AiService
-vi.mock("../utils/storage", () => ({
-  aiEnabled: { setValue: mockSetAiEnabled, getValue: vi.fn() },
-  aiProvider: { setValue: mockSetAiProvider, getValue: vi.fn() },
-  aiModelId: { setValue: mockSetAiModelId, getValue: vi.fn() }
-}))
-
-vi.mock("../utils/WebGpuUtils", () => ({
-  checkWebGpuCapability: vi.fn().mockResolvedValue({ available: true, reason: null })
-}))
-
-vi.mock("../services/ai/WebLlmProvider", () => ({
-  webLlmProvider: mockProvider
-}))
-
-vi.mock("../services/ai/WllamaProvider", () => ({
-  wllamaProvider: mockWllamaProvider
-}))
-
-// Import the singleton after all mocks are set up
 import { aiService } from "../services/ai/AiService"
+import { webLlmProvider } from "../services/ai/WebLlmProvider"
+import { wllamaProvider } from "../services/ai/WllamaProvider"
+import { aiEnabled, aiModelId, aiProvider } from "../utils/storage"
+import * as WebGpuUtils from "../utils/WebGpuUtils"
+
+const TEST_MODEL = {
+  id: "test-model",
+  displayName: "Test Model",
+  sizeInMb: 100,
+  vramRequiredMb: 256
+} as const
+
+const WLLAMA_TEST_MODEL = {
+  id: "wllama-test-model",
+  displayName: "Wllama Test Model",
+  sizeInMb: 1000
+} as const
 
 describe("AiService", () => {
+  // biome-ignore lint/suspicious/noExplicitAny: vi.spyOn returns heterogeneous mock types
+  type Spy = MockInstance<(...args: any[]) => any>
+  let spyGetAvailableModels: Spy
+  let spyGetStatus: Spy
+  let spyGetProgress: Spy
+  let spyGetError: Spy
+  let spyLoadModel: Spy
+  let spyUnloadModel: Spy
+  let spyComplete: Spy
+  let spyIsAvailable: Spy
+  let spySetAiEnabled: Spy
+  let spySetAiProvider: Spy
+  let spySetAiModelId: Spy
+
   beforeEach(() => {
-    vi.clearAllMocks()
+    // Spy on the shared webLlmProvider singleton
+    spyGetAvailableModels = vi
+      .spyOn(webLlmProvider, "getAvailableModels")
+      .mockReturnValue([TEST_MODEL])
+    spyGetStatus = vi.spyOn(webLlmProvider, "getStatus").mockReturnValue("idle")
+    spyGetProgress = vi.spyOn(webLlmProvider, "getProgress").mockReturnValue(0)
+    spyGetError = vi.spyOn(webLlmProvider, "getError").mockReturnValue(null)
+    spyLoadModel = vi.spyOn(webLlmProvider, "loadModel").mockResolvedValue(undefined)
+    spyUnloadModel = vi.spyOn(webLlmProvider, "unloadModel").mockResolvedValue(undefined)
+    spyComplete = vi.spyOn(webLlmProvider, "complete").mockResolvedValue({
+      content: "test response",
+      finishReason: "stop"
+    })
+    spyIsAvailable = vi.spyOn(webLlmProvider, "isAvailable").mockResolvedValue(true)
+
+    // Spy on WXT storage items
+    spySetAiEnabled = vi.spyOn(aiEnabled, "setValue").mockResolvedValue(undefined)
+    spySetAiProvider = vi.spyOn(aiProvider, "setValue").mockResolvedValue(undefined)
+    spySetAiModelId = vi.spyOn(aiModelId, "setValue").mockResolvedValue(undefined)
+
     // Reset to defaults (use "test-model" which matches mock's available models)
     aiService.updateFromStorage({
       aiEnabled: false,
       aiProvider: "webllm",
       aiModelId: "test-model"
     })
+
+    // Clear call counts from the setup phase
+    vi.clearAllMocks()
+
+    // Re-apply spies after clearAllMocks (clearAllMocks resets mock implementations)
+    spyGetAvailableModels.mockReturnValue([TEST_MODEL])
+    spyGetStatus.mockReturnValue("idle")
+    spyGetProgress.mockReturnValue(0)
+    spyGetError.mockReturnValue(null)
+    spyLoadModel.mockResolvedValue(undefined)
+    spyUnloadModel.mockResolvedValue(undefined)
+    spyComplete.mockResolvedValue({ content: "test response", finishReason: "stop" })
+    spyIsAvailable.mockResolvedValue(true)
+    spySetAiEnabled.mockResolvedValue(undefined)
+    spySetAiProvider.mockResolvedValue(undefined)
+    spySetAiModelId.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe("settings management", () => {
@@ -120,19 +117,19 @@ describe("AiService", () => {
     it("should set enabled and persist to storage", async () => {
       await aiService.setEnabled(true)
       expect(aiService.isEnabled()).toBe(true)
-      expect(mockSetAiEnabled).toHaveBeenCalledWith(true)
+      expect(spySetAiEnabled).toHaveBeenCalledWith(true)
     })
 
     it("should set provider and persist to storage", async () => {
       await aiService.setProvider("external")
       expect(aiService.getSelectedProvider()).toBe("external")
-      expect(mockSetAiProvider).toHaveBeenCalledWith("external")
+      expect(spySetAiProvider).toHaveBeenCalledWith("external")
     })
 
     it("should set model ID and persist to storage", async () => {
       await aiService.setModelId("new-model")
       expect(aiService.getSelectedModelId()).toBe("new-model")
-      expect(mockSetAiModelId).toHaveBeenCalledWith("new-model")
+      expect(spySetAiModelId).toHaveBeenCalledWith("new-model")
     })
 
     it("should return full settings object", () => {
@@ -166,28 +163,28 @@ describe("AiService", () => {
   describe("model operations", () => {
     it("should delegate loadModel to the active provider", async () => {
       await aiService.loadModel()
-      expect(mockProvider.loadModel).toHaveBeenCalled()
+      expect(spyLoadModel).toHaveBeenCalled()
     })
 
     it("should delegate unloadModel to the active provider", async () => {
       await aiService.unloadModel()
-      expect(mockProvider.unloadModel).toHaveBeenCalled()
+      expect(spyUnloadModel).toHaveBeenCalled()
     })
 
     it("should delegate complete to the active provider when enabled", async () => {
       aiService.updateFromStorage({ aiEnabled: true })
-      const request: AiCompletionRequest = {
-        messages: [{ role: "user", content: "hello" }]
+      const request = {
+        messages: [{ role: "user" as const, content: "hello" }]
       }
       const result = await aiService.complete(request)
       expect(result.content).toBe("test response")
-      expect(mockProvider.complete).toHaveBeenCalledWith(request)
+      expect(spyComplete).toHaveBeenCalledWith(request)
     })
 
     it("should throw when completing with AI disabled", async () => {
       aiService.updateFromStorage({ aiEnabled: false })
-      const request: AiCompletionRequest = {
-        messages: [{ role: "user", content: "hello" }]
+      const request = {
+        messages: [{ role: "user" as const, content: "hello" }]
       }
       await expect(aiService.complete(request)).rejects.toThrow("AI features are disabled")
     })
@@ -202,7 +199,7 @@ describe("AiService", () => {
   })
 
   describe("external provider fallback", () => {
-    it("should still delegate to webllm provider when set to external (future placeholder)", async () => {
+    it("should still delegate to webllm provider when set to external (future placeholder)", () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       const status = aiService.getModelStatus()
       // The external provider fallback currently returns webLlmProvider
@@ -212,12 +209,29 @@ describe("AiService", () => {
     it("should delegate loadModel even with external provider", async () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       await aiService.loadModel()
-      expect(mockProvider.loadModel).toHaveBeenCalled()
+      expect(spyLoadModel).toHaveBeenCalled()
     })
   })
 
   describe("wllama provider routing", () => {
+    let spyWllamaGetStatus: Spy
+    let spyWllamaGetProgress: Spy
+    let spyWllamaLoadModel: Spy
+    let spyWllamaUnloadModel: Spy
+    let spyWllamaComplete: Spy
+
     beforeEach(() => {
+      vi.spyOn(wllamaProvider, "getAvailableModels").mockReturnValue([WLLAMA_TEST_MODEL])
+      spyWllamaGetStatus = vi.spyOn(wllamaProvider, "getStatus").mockReturnValue("idle")
+      spyWllamaGetProgress = vi.spyOn(wllamaProvider, "getProgress").mockReturnValue(0)
+      vi.spyOn(wllamaProvider, "getError").mockReturnValue(null)
+      spyWllamaLoadModel = vi.spyOn(wllamaProvider, "loadModel").mockResolvedValue(undefined)
+      spyWllamaUnloadModel = vi.spyOn(wllamaProvider, "unloadModel").mockResolvedValue(undefined)
+      spyWllamaComplete = vi.spyOn(wllamaProvider, "complete").mockResolvedValue({
+        content: "wllama test response",
+        finishReason: "stop"
+      })
+
       aiService.updateFromStorage({
         aiEnabled: true,
         aiProvider: "wllama",
@@ -233,28 +247,28 @@ describe("AiService", () => {
 
     it("should delegate loadModel to wllama provider", async () => {
       await aiService.loadModel()
-      expect(mockWllamaProvider.loadModel).toHaveBeenCalledWith("wllama-test-model")
-      expect(mockProvider.loadModel).not.toHaveBeenCalled()
+      expect(spyWllamaLoadModel).toHaveBeenCalledWith("wllama-test-model")
+      expect(spyLoadModel).not.toHaveBeenCalled()
     })
 
     it("should delegate complete to wllama provider", async () => {
-      const request: AiCompletionRequest = {
-        messages: [{ role: "user", content: "hello" }]
+      const request = {
+        messages: [{ role: "user" as const, content: "hello" }]
       }
       const result = await aiService.complete(request)
       expect(result.content).toBe("wllama test response")
-      expect(mockWllamaProvider.complete).toHaveBeenCalledWith(request)
+      expect(spyWllamaComplete).toHaveBeenCalledWith(request)
     })
 
     it("should delegate unloadModel to wllama provider", async () => {
       await aiService.unloadModel()
-      expect(mockWllamaProvider.unloadModel).toHaveBeenCalled()
-      expect(mockProvider.unloadModel).not.toHaveBeenCalled()
+      expect(spyWllamaUnloadModel).toHaveBeenCalled()
+      expect(spyUnloadModel).not.toHaveBeenCalled()
     })
 
     it("should return model status from wllama provider", () => {
-      ;(mockWllamaProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("ready")
-      ;(mockWllamaProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(100)
+      spyWllamaGetStatus.mockReturnValueOnce("ready")
+      spyWllamaGetProgress.mockReturnValueOnce(100)
       const status = aiService.getModelStatus()
       expect(status.status).toBe("ready")
       expect(status.progress).toBe(100)
@@ -266,37 +280,37 @@ describe("AiService", () => {
       aiService.updateFromStorage({ aiEnabled: true })
       await aiService.setEnabled(false)
       expect(aiService.isEnabled()).toBe(false)
-      expect(mockSetAiEnabled).toHaveBeenCalledWith(false)
+      expect(spySetAiEnabled).toHaveBeenCalledWith(false)
     })
 
     it("should switch provider back to webllm", async () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       await aiService.setProvider("webllm")
       expect(aiService.getSelectedProvider()).toBe("webllm")
-      expect(mockSetAiProvider).toHaveBeenCalledWith("webllm")
+      expect(spySetAiProvider).toHaveBeenCalledWith("webllm")
     })
   })
 
   describe("model status with different provider states", () => {
     it("should reflect provider error state in model status", () => {
-      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("error")
-      ;(mockProvider.getError as ReturnType<typeof vi.fn>).mockReturnValueOnce("Something broke")
+      spyGetStatus.mockReturnValueOnce("error")
+      spyGetError.mockReturnValueOnce("Something broke")
       const status = aiService.getModelStatus()
       expect(status.status).toBe("error")
       expect(status.error).toBe("Something broke")
     })
 
     it("should reflect provider loading state in model status", () => {
-      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("loading")
-      ;(mockProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(42)
+      spyGetStatus.mockReturnValueOnce("loading")
+      spyGetProgress.mockReturnValueOnce(42)
       const status = aiService.getModelStatus()
       expect(status.status).toBe("loading")
       expect(status.progress).toBe(42)
     })
 
     it("should reflect provider ready state in model status", () => {
-      ;(mockProvider.getStatus as ReturnType<typeof vi.fn>).mockReturnValueOnce("ready")
-      ;(mockProvider.getProgress as ReturnType<typeof vi.fn>).mockReturnValueOnce(100)
+      spyGetStatus.mockReturnValueOnce("ready")
+      spyGetProgress.mockReturnValueOnce(100)
       const status = aiService.getModelStatus()
       expect(status.status).toBe("ready")
       expect(status.progress).toBe(100)
@@ -317,17 +331,21 @@ describe("AiService", () => {
 
     it("should persist corrected model ID to storage", () => {
       aiService.updateFromStorage({ aiModelId: "removed-model-id" })
-      expect(mockSetAiModelId).toHaveBeenCalledWith("test-model")
+      expect(spySetAiModelId).toHaveBeenCalledWith("test-model")
     })
 
     it("should not persist when stored ID is valid", () => {
       aiService.updateFromStorage({ aiModelId: "test-model" })
-      expect(mockSetAiModelId).not.toHaveBeenCalled()
+      expect(spySetAiModelId).not.toHaveBeenCalled()
     })
   })
 
   describe("WebGPU support", () => {
     it("should check WebGPU capability", async () => {
+      vi.spyOn(WebGpuUtils, "checkWebGpuCapability").mockResolvedValue({
+        available: true,
+        reason: null
+      })
       const result = await aiService.checkWebGpuSupport()
       expect(result).toEqual({ available: true, reason: null })
     })

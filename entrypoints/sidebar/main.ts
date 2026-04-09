@@ -2,6 +2,7 @@
 import "../popup/style.css"
 import type { CustomRule } from "../../types"
 import type { AiGroupSuggestion } from "../../types/ai-messages"
+import { extractDomain } from "../../utils/DomainUtils"
 import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
@@ -20,6 +21,19 @@ const autoCollapseToggle = document.getElementById("autoCollapseToggle") as HTML
 const collapseDelayContainer = document.getElementById("collapseDelayContainer") as HTMLDivElement
 const collapseDelayInput = document.getElementById("collapseDelayInput") as HTMLInputElement
 const collapseHelp = document.getElementById("collapseHelp") as HTMLDivElement
+
+// Tab Positioning Elements
+const openTabNextToCurrentToggle = document.getElementById(
+  "openTabNextToCurrentToggle"
+) as HTMLInputElement
+
+// Sorting Elements
+const sortingToggle = document.querySelector(".sorting-toggle") as HTMLButtonElement
+const sortingContent = document.querySelector(".sorting-content") as HTMLDivElement
+const sortGroupsToggle = document.getElementById("sortGroupsToggle") as HTMLInputElement
+const sortingIndexContainer = document.getElementById("sortingIndexContainer") as HTMLDivElement
+const indexGroupTitlesToggle = document.getElementById("indexGroupTitlesToggle") as HTMLInputElement
+const sortingHelp = document.getElementById("sortingHelp") as HTMLDivElement
 
 // Custom Rules Elements
 const rulesToggle = document.querySelector(".rules-toggle") as HTMLButtonElement
@@ -52,6 +66,7 @@ const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer")
 // State
 let aiSectionExpanded = false
 let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
+let sortingSectionExpanded = false
 let customRulesExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
@@ -240,6 +255,12 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   const ruleActions = document.createElement("div")
   ruleActions.className = "rule-actions"
 
+  const addTabBtn = document.createElement("button")
+  addTabBtn.className = "rule-action-btn add-tab"
+  addTabBtn.title = "Add Tab to Existing Rule"
+  addTabBtn.setAttribute("data-rule-id", rule.id)
+  addTabBtn.textContent = "+"
+
   const editBtn = document.createElement("button")
   editBtn.className = "rule-action-btn edit"
   editBtn.title = "Edit rule"
@@ -252,6 +273,7 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   deleteBtn.setAttribute("data-rule-id", rule.id)
   deleteBtn.textContent = "Delete"
 
+  ruleActions.appendChild(addTabBtn)
   ruleActions.appendChild(editBtn)
   ruleActions.appendChild(deleteBtn)
 
@@ -259,6 +281,7 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   ruleItem.appendChild(ruleInfo)
   ruleItem.appendChild(ruleActions)
 
+  addTabBtn.addEventListener("click", () => addCurrentTabToRule(rule.id, addTabBtn))
   editBtn.addEventListener("click", () => editRule(rule.id))
   deleteBtn.addEventListener("click", () => deleteRule(rule.id, rule.name))
 
@@ -305,6 +328,66 @@ function toggleRulesSection(): void {
       stopAiStatusPolling()
     }
   }
+}
+
+// Add current tab's domain to an existing rule
+async function addCurrentTabToRule(ruleId: string, button: HTMLButtonElement): Promise<void> {
+  const originalText = button.textContent
+  const originalTitle = button.title
+  button.disabled = true
+
+  const resetButton = (): void => {
+    button.textContent = originalText
+    button.title = originalTitle
+    button.disabled = false
+  }
+
+  try {
+    const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true })
+    if (!activeTab?.url) {
+      button.textContent = "!"
+      button.title = "No active tab found"
+      setTimeout(resetButton, 1500)
+      return
+    }
+
+    const domain = extractDomain(activeTab.url)
+    if (!domain || domain === "system") {
+      button.textContent = "!"
+      button.title = "Cannot extract domain from this tab"
+      setTimeout(resetButton, 1500)
+      return
+    }
+
+    const response = await sendMessage<{
+      success?: boolean
+      alreadyExists?: boolean
+      error?: string
+    }>({
+      action: "addDomainToRule",
+      ruleId,
+      domain
+    })
+
+    if (response?.success) {
+      if (response.alreadyExists) {
+        button.textContent = "="
+        button.title = "Domain already in this rule"
+      } else {
+        button.textContent = "\u2713"
+        button.title = "Added!"
+        await loadCustomRules()
+      }
+    } else {
+      button.textContent = "!"
+      button.title = response?.error || "Failed to add domain"
+    }
+  } catch {
+    button.textContent = "!"
+    button.title = "Failed to add domain"
+  }
+
+  setTimeout(resetButton, 1500)
 }
 
 // Open add rule modal
@@ -484,6 +567,22 @@ sendMessage<{ enabled?: boolean; delayMs?: number }>({
   updateCollapseDelayVisibility(enabled)
 })
 
+// Initialize open tab next to current state
+sendMessage<{ enabled?: boolean }>({ action: "getOpenTabNextToCurrent" }).then(response => {
+  openTabNextToCurrentToggle.checked = response?.enabled ?? false
+})
+
+// Initialize sort groups and index state
+sendMessage<{ enabled?: boolean }>({ action: "getSortGroupsAlphabetically" }).then(response => {
+  const enabled = response?.enabled ?? false
+  sortGroupsToggle.checked = enabled
+  updateSortingSubOptions(enabled)
+})
+
+sendMessage<{ enabled?: boolean }>({ action: "getIndexGroupTitles" }).then(response => {
+  indexGroupTitlesToggle.checked = response?.enabled ?? false
+})
+
 // Toggle event listeners
 autoGroupToggle.addEventListener("change", event => {
   sendMessage({
@@ -541,6 +640,52 @@ collapseDelayInput.addEventListener("change", async () => {
     action: "updateAutoCollapse",
     autoCollapseEnabled: autoCollapseToggle.checked,
     autoCollapseDelayMs: delayMs
+  })
+})
+
+// Open tab next to current event listener
+openTabNextToCurrentToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleOpenTabNextToCurrent",
+    enabled: (event.target as HTMLInputElement).checked
+  })
+})
+
+// Sorting section toggle
+function toggleSortingSection(): void {
+  sortingSectionExpanded = !sortingSectionExpanded
+  sortingToggle.classList.toggle("expanded", sortingSectionExpanded)
+  sortingContent.classList.toggle("expanded", sortingSectionExpanded)
+}
+
+function updateSortingSubOptions(sortEnabled: boolean): void {
+  if (sortEnabled) {
+    sortingIndexContainer.classList.add("visible")
+    sortingHelp.classList.add("visible")
+  } else {
+    sortingIndexContainer.classList.remove("visible")
+    sortingHelp.classList.remove("visible")
+    indexGroupTitlesToggle.checked = false
+  }
+}
+
+sortingToggle?.addEventListener("click", toggleSortingSection)
+
+// Sort groups event listener
+sortGroupsToggle.addEventListener("change", event => {
+  const enabled = (event.target as HTMLInputElement).checked
+  updateSortingSubOptions(enabled)
+  sendMessage({
+    action: "toggleSortGroupsAlphabetically",
+    enabled
+  })
+})
+
+// Index group titles event listener
+indexGroupTitlesToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleIndexGroupTitles",
+    enabled: (event.target as HTMLInputElement).checked
   })
 })
 

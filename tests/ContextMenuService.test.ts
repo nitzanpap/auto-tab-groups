@@ -1,14 +1,201 @@
-import { describe, expect, it } from "vitest"
+import type { MockInstance } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { Browser } from "wxt/browser"
+import type { CustomRule } from "../types"
+
+/**
+ * NOTE: vi.mock module interception does not work under Bun's runtime.
+ * These tests use vi.spyOn on the actual singleton instances instead.
+ */
 
 import { contextMenuService } from "../services/ContextMenuService"
+import { rulesService } from "../services/RulesService"
 
 // Helper to create mock tabs with just the url property
 function createMockTabs(urls: (string | undefined)[]): Browser.tabs.Tab[] {
   return urls.map(url => ({ url }) as unknown as Browser.tabs.Tab)
 }
 
+function createMockRule(overrides: Partial<CustomRule> = {}): CustomRule {
+  return {
+    id: "rule-1",
+    name: "Shopping",
+    domains: ["amazon.com", "ebay.com"],
+    color: "blue",
+    enabled: true,
+    priority: 0,
+    minimumTabs: 1,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    ...overrides
+  }
+}
+
 describe("ContextMenuService", () => {
+  // biome-ignore lint/suspicious/noExplicitAny: vi.spyOn returns heterogeneous mock types
+  type Spy = MockInstance<(...args: any[]) => any>
+  let spyGetCustomRules: Spy
+  let spyUpdateRule: Spy
+
+  beforeEach(() => {
+    spyGetCustomRules = vi.spyOn(rulesService, "getCustomRules").mockResolvedValue({})
+    spyUpdateRule = vi.spyOn(rulesService, "updateRule").mockResolvedValue(true)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe("addDomainToRule", () => {
+    it("should add a new domain to an existing rule", async () => {
+      const rule = createMockRule()
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(spyUpdateRule).toHaveBeenCalledWith("rule-1", {
+        name: "Shopping",
+        domains: ["amazon.com", "ebay.com", "walmart.com"],
+        color: "blue",
+        enabled: true,
+        priority: 0,
+        minimumTabs: 1
+      })
+    })
+
+    it("should return alreadyExists when domain is already in the rule", async () => {
+      const rule = createMockRule()
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "amazon.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: true })
+      expect(spyUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should match existing domains case-insensitively", async () => {
+      const rule = createMockRule()
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "Amazon.COM")
+
+      expect(result).toEqual({ success: true, alreadyExists: true })
+      expect(spyUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should normalize domain to lowercase and trim whitespace", async () => {
+      const rule = createMockRule()
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "  Walmart.COM  ")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(spyUpdateRule).toHaveBeenCalledWith(
+        "rule-1",
+        expect.objectContaining({
+          domains: ["amazon.com", "ebay.com", "walmart.com"]
+        })
+      )
+    })
+
+    it("should return error when rule is not found", async () => {
+      spyGetCustomRules.mockResolvedValue({})
+
+      const result = await contextMenuService.addDomainToRule("nonexistent", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Rule with ID nonexistent not found"
+      })
+      expect(spyUpdateRule).not.toHaveBeenCalled()
+    })
+
+    it("should return error when rulesService throws", async () => {
+      spyGetCustomRules.mockRejectedValue(new Error("Storage read failed"))
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Storage read failed"
+      })
+    })
+
+    it("should return error when updateRule throws", async () => {
+      const rule = createMockRule()
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockRejectedValue(new Error("Storage write failed"))
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Storage write failed"
+      })
+    })
+
+    it("should not mutate the original rule domains array", async () => {
+      const originalDomains = ["amazon.com", "ebay.com"]
+      const rule = createMockRule({ domains: originalDomains })
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockResolvedValue(true)
+
+      await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(originalDomains).toEqual(["amazon.com", "ebay.com"])
+    })
+
+    it("should handle rule with empty domains array", async () => {
+      const rule = createMockRule({ domains: [] })
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockResolvedValue(true)
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "amazon.com")
+
+      expect(result).toEqual({ success: true, alreadyExists: false })
+      expect(spyUpdateRule).toHaveBeenCalledWith(
+        "rule-1",
+        expect.objectContaining({ domains: ["amazon.com"] })
+      )
+    })
+
+    it("should handle non-Error exceptions gracefully", async () => {
+      spyGetCustomRules.mockRejectedValue("string error")
+
+      const result = await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(result).toEqual({
+        success: false,
+        error: "Unknown error"
+      })
+    })
+
+    it("should preserve all rule properties when updating", async () => {
+      const rule = createMockRule({
+        name: "Custom Rule",
+        color: "red",
+        enabled: false,
+        priority: 5,
+        minimumTabs: 3
+      })
+      spyGetCustomRules.mockResolvedValue({ "rule-1": rule })
+      spyUpdateRule.mockResolvedValue(true)
+
+      await contextMenuService.addDomainToRule("rule-1", "walmart.com")
+
+      expect(spyUpdateRule).toHaveBeenCalledWith("rule-1", {
+        name: "Custom Rule",
+        domains: ["amazon.com", "ebay.com", "walmart.com"],
+        color: "red",
+        enabled: false,
+        priority: 5,
+        minimumTabs: 3
+      })
+    })
+  })
+
   describe("extractUniqueDomains", () => {
     it("should extract unique domains from tabs", () => {
       const tabs = createMockTabs([

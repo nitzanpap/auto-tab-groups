@@ -77,6 +77,12 @@ class UrlPatternMatcher {
       return { matched: false, extractedValues: {}, groupName: null }
     }
 
+    // Exclusion patterns must be handled by the caller (RulesService).
+    // If one slips through, treat as non-match to avoid false positives.
+    if (this.isExclusionPattern(pattern)) {
+      return { matched: false, extractedValues: {}, groupName: null }
+    }
+
     const patternType = this.detectPatternType(pattern)
 
     switch (patternType) {
@@ -121,12 +127,20 @@ class UrlPatternMatcher {
       const hasPath = cleanPattern.includes("/")
       // Split only on first "/" to separate domain from full path
       const firstSlashIndex = cleanPattern.indexOf("/")
-      const domainPattern = hasPath ? cleanPattern.substring(0, firstSlashIndex) : cleanPattern
+      const fullDomainPattern = hasPath ? cleanPattern.substring(0, firstSlashIndex) : cleanPattern
       const pathPattern = hasPath ? cleanPattern.substring(firstSlashIndex + 1) : ""
+
+      // Split domain from optional port (e.g., "localhost:3000")
+      const { domainPattern, portPattern } = this.splitDomainPort(fullDomainPattern)
 
       // Match domain part
       const domainMatch = this.matchDomainWildcard(hostname, domainPattern, options)
       if (!domainMatch) {
+        return { matched: false, extractedValues: {}, groupName: null }
+      }
+
+      // Match port if pattern specifies one
+      if (portPattern && !this.matchPort(urlObj.port, portPattern, urlObj.protocol)) {
         return { matched: false, extractedValues: {}, groupName: null }
       }
 
@@ -154,6 +168,9 @@ class UrlPatternMatcher {
     const cleanDomain = domain.toLowerCase().trim()
     const cleanPattern = pattern.toLowerCase().trim()
 
+    // Handle lone * — matches any domain
+    if (cleanPattern === "*") return true
+
     // Handle ** wildcard for TLD (e.g., google.** matches google.com)
     if (cleanPattern.includes("**")) {
       const parts = cleanPattern.split("**")
@@ -174,17 +191,19 @@ class UrlPatternMatcher {
     }
 
     // Handle * wildcard for subdomains (*.domain.com)
+    // Only applies when base domain is a literal (no wildcards)
+    // For patterns like *.*.*.*, fall through to middle wildcard handler
     if (cleanPattern.startsWith("*.")) {
       const baseDomain = cleanPattern.substring(2)
 
-      if (!baseDomain || !baseDomain.includes(".")) return false
-
-      // Check for exact match or subdomain match
-      return cleanDomain === baseDomain || cleanDomain.endsWith(`.${baseDomain}`)
+      if (baseDomain && !baseDomain.includes("*") && baseDomain.includes(".")) {
+        // Check for exact match or subdomain match
+        return cleanDomain === baseDomain || cleanDomain.endsWith(`.${baseDomain}`)
+      }
     }
 
-    // Handle middle wildcards
-    if (cleanPattern.includes("*") && !cleanPattern.startsWith("*")) {
+    // Handle wildcard patterns (including patterns starting with * like *.*.*.*)
+    if (cleanPattern.includes("*")) {
       return this.matchMiddleWildcard(cleanDomain, cleanPattern)
     }
 
@@ -462,16 +481,67 @@ class UrlPatternMatcher {
       }
     }
 
-    const patternType = this.detectPatternType(cleanPattern)
+    // Strip negation prefix before validating the inner pattern
+    const inner = cleanPattern.startsWith("!") ? cleanPattern.substring(1) : cleanPattern
+
+    if (inner.length === 0) {
+      return { isValid: false, error: "Exclusion pattern cannot be empty after '!'", type: null }
+    }
+
+    const patternType = this.detectPatternType(inner)
 
     switch (patternType) {
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
-        return this.validateSegmentPattern(cleanPattern)
+        return this.validateSegmentPattern(inner)
       case PATTERN_TYPES.REGEX:
-        return this.validateRegexPattern(cleanPattern)
+        return this.validateRegexPattern(inner)
       default:
-        return this.validateSimpleWildcardPattern(cleanPattern)
+        return this.validateSimpleWildcardPattern(inner)
     }
+  }
+
+  /**
+   * Checks if a pattern is an exclusion (negation) pattern
+   */
+  isExclusionPattern(pattern: string): boolean {
+    return pattern.trim().startsWith("!")
+  }
+
+  /**
+   * Splits a domain pattern into domain and optional port parts.
+   * Handles patterns like "localhost:3000", "*.example.com:8080", "*:3000".
+   */
+  splitDomainPort(pattern: string): { domainPattern: string; portPattern: string | null } {
+    // No colon means no port
+    if (!pattern.includes(":")) {
+      return { domainPattern: pattern, portPattern: null }
+    }
+
+    const lastColon = pattern.lastIndexOf(":")
+    const beforeColon = pattern.substring(0, lastColon)
+    const afterColon = pattern.substring(lastColon + 1)
+
+    // If afterColon looks like a port (digits or wildcard *), treat as port
+    if (/^\d+$/.test(afterColon) || afterColon === "*") {
+      return { domainPattern: beforeColon, portPattern: afterColon }
+    }
+
+    // Otherwise treat the whole thing as a domain (e.g. IPv6-like patterns)
+    return { domainPattern: pattern, portPattern: null }
+  }
+
+  /**
+   * Matches a URL port against a pattern port.
+   * Handles default ports (80 for HTTP, 443 for HTTPS) where urlObj.port is "".
+   */
+  matchPort(urlPort: string, patternPort: string, protocol: string): boolean {
+    if (patternPort === "*") return true
+
+    // Resolve the effective URL port (default ports are "" in URL API)
+    const effectiveUrlPort =
+      urlPort || (protocol === "https:" ? "443" : protocol === "http:" ? "80" : "")
+
+    return effectiveUrlPort === patternPort
   }
 
   /**
@@ -479,7 +549,30 @@ class UrlPatternMatcher {
    */
   validateSimpleWildcardPattern(pattern: string): PatternValidationResultWithType {
     const hasPath = pattern.includes("/")
-    const [domainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
+    const [fullDomainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
+
+    if (!fullDomainPattern) {
+      return {
+        isValid: false,
+        error: "Domain pattern cannot be empty",
+        type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
+    }
+
+    // Split domain from optional port (e.g., "localhost:3000" → "localhost" + "3000")
+    const { domainPattern, portPattern } = this.splitDomainPort(fullDomainPattern)
+
+    // Validate port if present
+    if (portPattern !== null && portPattern !== "*") {
+      const portNum = Number(portPattern)
+      if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+        return {
+          isValid: false,
+          error: "Port must be a number between 1 and 65535",
+          type: PATTERN_TYPES.SIMPLE_WILDCARD
+        }
+      }
+    }
 
     if (!domainPattern) {
       return {
@@ -494,6 +587,18 @@ class UrlPatternMatcher {
         isValid: false,
         error: "Invalid wildcard pattern (too many asterisks)",
         type: PATTERN_TYPES.SIMPLE_WILDCARD
+      }
+    }
+
+    // Reject wildcards after ** (e.g., docs.**.* ) — ** must be the final segment
+    if (domainPattern.includes("**")) {
+      const afterDoubleStar = domainPattern.split("**")[1]
+      if (afterDoubleStar && /[*]/.test(afterDoubleStar)) {
+        return {
+          isValid: false,
+          error: `Cannot use wildcards after **, use ${domainPattern.split("**")[0]}** instead`,
+          type: PATTERN_TYPES.SIMPLE_WILDCARD
+        }
       }
     }
 

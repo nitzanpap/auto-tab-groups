@@ -67,6 +67,19 @@ export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
 
+export const openTabNextToCurrent = storage.defineItem<boolean>("local:openTabNextToCurrent", {
+  fallback: DEFAULT_STATE.openTabNextToCurrent
+})
+
+export const sortGroupsAlphabetically = storage.defineItem<boolean>(
+  "local:sortGroupsAlphabetically",
+  { fallback: DEFAULT_STATE.sortGroupsAlphabetically }
+)
+
+export const indexGroupTitles = storage.defineItem<boolean>("local:indexGroupTitles", {
+  fallback: DEFAULT_STATE.indexGroupTitles
+})
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -91,7 +104,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMsValue,
     aiEnabledValue,
     aiProviderValue,
-    aiModelIdValue
+    aiModelIdValue,
+    openTabNextToCurrentValue,
+    sortGroupsAlphabeticallyValue,
+    indexGroupTitlesValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -104,7 +120,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs.getValue(),
     aiEnabled.getValue(),
     aiProvider.getValue(),
-    aiModelId.getValue()
+    aiModelId.getValue(),
+    openTabNextToCurrent.getValue(),
+    sortGroupsAlphabetically.getValue(),
+    indexGroupTitles.getValue()
   ])
 
   return {
@@ -119,7 +138,10 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     autoCollapseDelayMs: autoCollapseDelayMsValue,
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
-    aiModelId: aiModelIdValue
+    aiModelId: aiModelIdValue,
+    openTabNextToCurrent: openTabNextToCurrentValue,
+    sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
+    indexGroupTitles: indexGroupTitlesValue
   }
 }
 
@@ -164,6 +186,15 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.aiModelId !== undefined) {
     promises.push(aiModelId.setValue(data.aiModelId))
+  }
+  if (data.openTabNextToCurrent !== undefined) {
+    promises.push(openTabNextToCurrent.setValue(data.openTabNextToCurrent))
+  }
+  if (data.sortGroupsAlphabetically !== undefined) {
+    promises.push(sortGroupsAlphabetically.setValue(data.sortGroupsAlphabetically))
+  }
+  if (data.indexGroupTitles !== undefined) {
+    promises.push(indexGroupTitles.setValue(data.indexGroupTitles))
   }
   await Promise.all(promises)
 }

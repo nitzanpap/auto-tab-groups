@@ -27,10 +27,17 @@ export type MessageAction =
   | "setGroupByMode"
   | "getMinimumTabsForGroup"
   | "setMinimumTabsForGroup"
+  | "getOpenTabNextToCurrent"
+  | "toggleOpenTabNextToCurrent"
+  | "getSortGroupsAlphabetically"
+  | "toggleSortGroupsAlphabetically"
+  | "getIndexGroupTitles"
+  | "toggleIndexGroupTitles"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
   | "deleteCustomRule"
+  | "addDomainToRule"
   | "getRulesStats"
   | "exportRules"
   | "importRules"
@@ -62,6 +69,9 @@ export interface SimpleMessage extends BaseMessage {
     | "getOnlyApplyToNewTabs"
     | "getGroupByMode"
     | "getMinimumTabsForGroup"
+    | "getOpenTabNextToCurrent"
+    | "getSortGroupsAlphabetically"
+    | "getIndexGroupTitles"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -107,6 +117,30 @@ export interface SetMinimumTabsMessage extends BaseMessage {
 }
 
 /**
+ * Toggle open tab next to current message
+ */
+export interface ToggleOpenTabNextToCurrentMessage extends BaseMessage {
+  action: "toggleOpenTabNextToCurrent"
+  enabled: boolean
+}
+
+/**
+ * Toggle sort groups alphabetically message
+ */
+export interface ToggleSortGroupsMessage extends BaseMessage {
+  action: "toggleSortGroupsAlphabetically"
+  enabled: boolean
+}
+
+/**
+ * Toggle index group titles message
+ */
+export interface ToggleIndexGroupTitlesMessage extends BaseMessage {
+  action: "toggleIndexGroupTitles"
+  enabled: boolean
+}
+
+/**
  * Add custom rule message
  */
 export interface AddCustomRuleMessage extends BaseMessage {
@@ -132,6 +166,15 @@ export interface DeleteCustomRuleMessage extends BaseMessage {
 }
 
 /**
+ * Add a domain to an existing rule message
+ */
+export interface AddDomainToRuleMessage extends BaseMessage {
+  action: "addDomainToRule"
+  ruleId: string
+  domain: string
+}
+
+/**
  * Import rules message
  */
 export interface ImportRulesMessage extends BaseMessage {
@@ -149,9 +192,13 @@ export type Message =
   | ToggleGroupNewTabsMessage
   | SetGroupByModeMessage
   | SetMinimumTabsMessage
+  | ToggleOpenTabNextToCurrentMessage
+  | ToggleSortGroupsMessage
+  | ToggleIndexGroupTitlesMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage
+  | AddDomainToRuleMessage
   | ImportRulesMessage
   | AiMessage
 

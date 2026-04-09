@@ -8,8 +8,10 @@ import type { CustomRule, TabGroupColor } from "../types"
 import { getRandomTabGroupColor } from "../utils/Constants"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
 import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/storage"
+import { withTabEditRetry } from "../utils/withTabEditRetry"
 import { type MatchedRule, rulesService } from "./RulesService"
 import { tabGroupState } from "./TabGroupState"
+import { stripIndexPrefix, tabSortService } from "./TabSortService"
 
 /**
  * Collapse state result
@@ -20,6 +22,8 @@ interface CollapseState {
 
 class TabGroupServiceSimplified {
   private recentlyCreatedTabIds = new Set<number>()
+  private processingTabs = new Set<number>()
+  private bulkOperationInProgress = false
 
   markAsNewTab(tabId: number): void {
     this.recentlyCreatedTabIds.add(tabId)
@@ -58,6 +62,26 @@ class TabGroupServiceSimplified {
       return false
     }
 
+    // Prevent concurrent processing of the same tab (e.g. onMoved firing
+    // while we are still setting the group title after tabs.group())
+    if (this.processingTabs.has(tabId)) {
+      console.log(`[TabGroupService] Tab ${tabId} already being processed, skipping`)
+      return false
+    }
+
+    this.processingTabs.add(tabId)
+    try {
+      const result = await this._doHandleTabUpdate(tabId, forceGrouping)
+      if (result && !this.bulkOperationInProgress) {
+        await tabSortService.applySorting()
+      }
+      return result
+    } finally {
+      this.processingTabs.delete(tabId)
+    }
+  }
+
+  private async _doHandleTabUpdate(tabId: number, forceGrouping: boolean): Promise<boolean> {
     try {
       console.log(`[TabGroupService] Processing tab ${tabId}`)
 
@@ -205,14 +229,15 @@ class TabGroupServiceSimplified {
     if (existingGroup) {
       if (tab.groupId === existingGroup.id) {
         console.log(`[TabGroupService] Tab ${tabId} already in correct group`)
-        if (this.consumeNewTabFlag(tabId)) {
+        if (this.consumeNewTabFlag(tabId) && tabGroupState.openTabNextToCurrent) {
           await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
         }
-        return true
+        // Return false — no group change occurred, so no re-sorting needed
+        return false
       }
 
       console.log(`[TabGroupService] Moving tab ${tabId} to existing group ${existingGroup.id}`)
-      await this.withTabEditRetry(() =>
+      await withTabEditRetry(() =>
         browser.tabs.group({
           tabIds: [tabId],
           groupId: existingGroup.id
@@ -220,14 +245,18 @@ class TabGroupServiceSimplified {
       )
 
       this.consumeNewTabFlag(tabId)
-      await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
+      if (tabGroupState.openTabNextToCurrent) {
+        await this.repositionTabNextToOpener(tabId, tab, existingGroup.id)
+      }
 
       // Update color if from custom rule
       if (customRule?.color && existingGroup.color !== customRule.color) {
         try {
-          await browser.tabGroups.update(existingGroup.id, {
-            color: customRule.color
-          })
+          await withTabEditRetry(() =>
+            browser.tabGroups.update(existingGroup.id, {
+              color: customRule.color
+            })
+          )
         } catch (error) {
           console.warn(`[TabGroupService] Failed to update group color:`, error)
         }
@@ -248,7 +277,7 @@ class TabGroupServiceSimplified {
       console.log(`[TabGroupService] Not enough tabs to create group "${expectedTitle}"`)
 
       if (tab.groupId && tab.groupId !== -1) {
-        await this.withTabEditRetry(() => browser.tabs.ungroup([tabId]))
+        await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
       }
 
       return false
@@ -257,7 +286,7 @@ class TabGroupServiceSimplified {
     // Create new group
     console.log(`[TabGroupService] Creating new group "${expectedTitle}"`)
 
-    const groupId = await this.withTabEditRetry(() => browser.tabs.group({ tabIds: [tabId] }))
+    const groupId = await withTabEditRetry(() => browser.tabs.group({ tabIds: [tabId] }))
 
     try {
       const updateOptions: Browser.tabGroups.UpdateProperties = {
@@ -276,7 +305,7 @@ class TabGroupServiceSimplified {
         }
       }
 
-      await browser.tabGroups.update(groupId, updateOptions)
+      await withTabEditRetry(() => browser.tabGroups.update(groupId, updateOptions))
 
       if (updateOptions.color) {
         await updateGroupColor(expectedTitle, updateOptions.color)
@@ -284,7 +313,7 @@ class TabGroupServiceSimplified {
 
       console.log(`[TabGroupService] Created group ${groupId} with title "${expectedTitle}"`)
     } catch (error) {
-      console.warn(`[TabGroupService] Failed to update group ${groupId}:`, error)
+      console.error(`[TabGroupService] Failed to update group ${groupId} title:`, error)
     }
 
     // Group matching ungrouped tabs
@@ -330,7 +359,7 @@ class TabGroupServiceSimplified {
       }
 
       if (tabsToGroup.length > 0) {
-        await this.withTabEditRetry(() =>
+        await withTabEditRetry(() =>
           browser.tabs.group({
             tabIds: tabsToGroup as [number, ...number[]],
             groupId: existingGroup.id
@@ -356,7 +385,15 @@ class TabGroupServiceSimplified {
       if (!browser.tabGroups) return null
 
       const groups = await browser.tabGroups.query({ windowId })
-      return groups.find(group => group.title === title) || null
+      return (
+        groups.find(group => {
+          if (group.title === title) return true
+          if (tabGroupState.indexGroupTitles) {
+            return stripIndexPrefix(group.title || "") === title
+          }
+          return false
+        }) || null
+      )
     } catch (error) {
       console.error(`[TabGroupService] Error finding group:`, error)
       return null
@@ -371,6 +408,7 @@ class TabGroupServiceSimplified {
       return false
     }
 
+    this.bulkOperationInProgress = true
     try {
       console.log(`[TabGroupService] Starting bulk grouping`)
 
@@ -397,10 +435,13 @@ class TabGroupServiceSimplified {
       }
 
       console.log(`[TabGroupService] Bulk grouping completed`)
+      await tabSortService.applySorting()
       return true
     } catch (error) {
       console.error(`[TabGroupService] Error during bulk grouping:`, error)
       return false
+    } finally {
+      this.bulkOperationInProgress = false
     }
   }
 
@@ -408,6 +449,7 @@ class TabGroupServiceSimplified {
    * Manually groups all tabs (ignores auto-group setting but respects groupNewTabs)
    */
   async groupAllTabsManually(): Promise<boolean> {
+    this.bulkOperationInProgress = true
     try {
       console.log(`[TabGroupService] Starting manual bulk grouping`)
 
@@ -441,10 +483,13 @@ class TabGroupServiceSimplified {
       }
 
       console.log(`[TabGroupService] Manual bulk grouping completed`)
+      await tabSortService.applySorting()
       return true
     } catch (error) {
       console.error(`[TabGroupService] Error during manual bulk grouping:`, error)
       return false
+    } finally {
+      this.bulkOperationInProgress = false
     }
   }
 
@@ -460,7 +505,7 @@ class TabGroupServiceSimplified {
       if (groupedTabs.length > 0) {
         const tabIds = groupedTabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
+          await withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
         }
         console.log(`[TabGroupService] Ungrouped ${groupedTabs.length} tabs`)
       }
@@ -510,7 +555,7 @@ class TabGroupServiceSimplified {
         console.log(`[TabGroupService] Group "${group.title}" below threshold, ungrouping`)
         const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
+          await withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
         }
         return true
       }
@@ -559,7 +604,7 @@ class TabGroupServiceSimplified {
       if (tabs.length > 0) {
         const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
-          await this.withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
+          await withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))
           console.log(`[TabGroupService] Ungrouped ${tabIds.length} tabs from System group`)
         }
       }
@@ -794,40 +839,6 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Generic retry wrapper for Chrome tab operations that may throw
-   * "Tabs cannot be edited right now (user may be dragging a tab)".
-   * Uses exponential backoff: 25 → 50 → 100 → 200 → 400ms (~775ms total).
-   * Re-throws non-transient errors immediately.
-   */
-  private async withTabEditRetry<T>(
-    operation: () => Promise<T>,
-    maxRetries = 5,
-    initialDelayMs = 25
-  ): Promise<T> {
-    let delayMs = initialDelayMs
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await operation()
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        const isTransientError = errorMessage.includes("cannot be edited right now")
-
-        if (isTransientError && attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, delayMs))
-          delayMs *= 2
-          continue
-        }
-
-        throw error
-      }
-    }
-
-    // Unreachable, but TypeScript requires it
-    throw new Error("Max retries exceeded")
-  }
-
-  /**
    * Repositions a tab directly after its opener tab within the same group.
    * Only acts when the tab has an openerTabId and the opener is in the same group.
    * Fails silently since positioning is a best-effort enhancement.
@@ -844,7 +855,7 @@ class TabGroupServiceSimplified {
       if (openerTab.groupId !== groupId) return
       if (typeof openerTab.index !== "number") return
 
-      await this.withTabEditRetry(() => browser.tabs.move(tabId, { index: openerTab.index + 1 }))
+      await withTabEditRetry(() => browser.tabs.move(tabId, { index: openerTab.index + 1 }))
     } catch {
       // Best-effort — opener may have been closed
     }
@@ -859,7 +870,7 @@ class TabGroupServiceSimplified {
     updateProperties: { collapsed?: boolean; title?: string; color?: TabGroupColor }
   ): Promise<boolean> {
     try {
-      await this.withTabEditRetry(() => browser.tabGroups.update(groupId, updateProperties))
+      await withTabEditRetry(() => browser.tabGroups.update(groupId, updateProperties))
       return true
     } catch {
       return false

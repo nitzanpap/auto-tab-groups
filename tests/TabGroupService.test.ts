@@ -845,7 +845,11 @@ describe("TabGroupService", () => {
   describe("tab positioning next to opener", () => {
     beforeEach(() => {
       vi.clearAllMocks()
-      tabGroupState.updateFromStorage({ ...DEFAULT_STATE, autoGroupingEnabled: true })
+      tabGroupState.updateFromStorage({
+        ...DEFAULT_STATE,
+        autoGroupingEnabled: true,
+        openTabNextToCurrent: true
+      })
     })
 
     it("should position tab next to opener when opener is in the same group", async () => {
@@ -1065,6 +1069,42 @@ describe("TabGroupService", () => {
       expect(mockBrowser.tabs.move).toHaveBeenCalledWith(2, { index: 4 })
     })
 
+    it("should NOT reposition when openTabNextToCurrent is disabled", async () => {
+      tabGroupState.openTabNextToCurrent = false
+      tabGroupService.markAsNewTab(2)
+      mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
+        if (tabId === 2) {
+          return {
+            id: 2,
+            url: "https://youtube.com/watch?v=new",
+            pinned: false,
+            windowId: 1,
+            groupId: -1,
+            openerTabId: 1
+          }
+        }
+        if (tabId === 1) {
+          return {
+            id: 1,
+            url: "https://youtube.com/watch?v=old",
+            pinned: false,
+            windowId: 1,
+            groupId: 100,
+            index: 3
+          }
+        }
+        return {}
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Youtube", windowId: 1 }])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabGroupService.handleTabUpdate(2)
+
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+
     it("should NOT reposition on manual move (tab not marked as new)", async () => {
       mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
         if (tabId === 2) {
@@ -1095,6 +1135,106 @@ describe("TabGroupService", () => {
 
       expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
       expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("concurrent processing guard", () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      tabGroupState.updateFromStorage({ ...DEFAULT_STATE, autoGroupingEnabled: true })
+    })
+
+    it("should skip second handleTabUpdate while first is still processing", async () => {
+      // Simulate a slow tabs.group call that gives onMoved time to re-trigger
+      let resolveGroup: (value: number) => void
+      const slowGroup = new Promise<number>(resolve => {
+        resolveGroup = resolve
+      })
+
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockReturnValue(slowGroup)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      // Start first call (will block on tabs.group)
+      const firstCall = tabGroupService.handleTabUpdate(1)
+
+      // Give microtasks a tick so the guard is set
+      await Promise.resolve()
+
+      // Second call (simulates onMoved re-trigger) should be skipped
+      const secondResult = await tabGroupService.handleTabUpdate(1)
+      expect(secondResult).toBe(false)
+
+      // Unblock first call
+      resolveGroup!(100)
+      const firstResult = await firstCall
+      expect(firstResult).toBe(true)
+
+      // tabs.group should only have been called once (from the first call)
+      expect(mockBrowser.tabs.group).toHaveBeenCalledTimes(1)
+    })
+
+    it("should allow processing after first call completes", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      // First call completes
+      await tabGroupService.handleTabUpdate(1)
+
+      // Reset mocks to count second call
+      mockBrowser.tabs.group.mockClear()
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 100, title: "Example", windowId: 1 }])
+
+      // Second call should proceed (guard was released)
+      const result = await tabGroupService.handleTabUpdate(1)
+      expect(result).toBe(true)
+    })
+
+    it("should release guard even when processing throws", async () => {
+      mockBrowser.tabs.get.mockRejectedValueOnce(new Error("Tab not found"))
+
+      // First call fails
+      const result1 = await tabGroupService.handleTabUpdate(1)
+      expect(result1).toBe(false)
+
+      // Second call should still proceed (guard was released in finally)
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      const result2 = await tabGroupService.handleTabUpdate(1)
+      expect(result2).toBe(true)
     })
   })
 })

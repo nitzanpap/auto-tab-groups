@@ -103,6 +103,16 @@ export function extractDomain(url: string, includeSubDomain = false): string | n
     const urlObj = new URL(url)
     const { protocol, hostname } = urlObj
 
+    // Handle localhost and IPv6 loopback
+    if (hostname === "localhost" || hostname === "[::1]") {
+      return "localhost"
+    }
+
+    // Handle IP addresses — return full IP as domain
+    if (isIPAddress(hostname)) {
+      return hostname
+    }
+
     // Handle browser-specific and extension URLs
     if (
       protocol === "chrome:" ||
@@ -152,6 +162,11 @@ export function getDomainDisplayName(domain: string): string {
     // Handle system/browser URLs - group them all together
     if (domain === "system") {
       return "System"
+    }
+
+    // Handle IP addresses — display as-is
+    if (isIPAddress(domain)) {
+      return domain
     }
 
     const parts = domain.split(".")

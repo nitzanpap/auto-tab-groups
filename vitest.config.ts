@@ -11,6 +11,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: [
+        "services/ContextMenuService.ts",
         "services/TabGroupState.ts",
         "services/TabGroupService.ts",
         "services/ai/AiService.ts",
@@ -22,7 +23,9 @@ export default defineConfig({
         "utils/RuleConflictDetector.ts",
         "utils/RulesUtils.ts",
         "utils/UrlPatternMatcher.ts",
-        "utils/WebGpuUtils.ts"
+        "utils/WebGpuUtils.ts",
+        "utils/withTabEditRetry.ts",
+        "services/TabSortService.ts"
       ],
       exclude: [
         "**/node_modules/**",
