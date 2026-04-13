@@ -259,6 +259,17 @@ class ContextMenuService {
     if (!domain || domain === "system") return
 
     try {
+      // Check if domain is already blacklisted
+      const rules = tabGroupState.getCustomRulesObject()
+      const alreadyBlacklisted = Object.values(rules).some(
+        rule => rule.isBlacklist && rule.domains.some(d => d.toLowerCase() === domain.toLowerCase())
+      )
+
+      if (alreadyBlacklisted) {
+        console.log(`[ContextMenuService] "${domain}" is already blacklisted`)
+        return
+      }
+
       await rulesService.addRule({
         name: "",
         domains: [domain],
