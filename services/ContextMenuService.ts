@@ -46,6 +46,7 @@ const isFirefox = (): boolean => {
 class ContextMenuService {
   private readonly MENU_ID_CREATE_RULE = "create-rule-from-group"
   private readonly MENU_ID_ADD_TO_RULE_PARENT = "add-tab-to-rule"
+  private readonly MENU_ID_ADD_TO_BLACKLIST = "add-to-blacklist"
   private readonly MENU_ID_NO_RULES = "add-to-rule-none"
   private initialized = false
   /** Track current sub-menu rule IDs for cleanup */
@@ -78,6 +79,13 @@ class ContextMenuService {
       await browser.contextMenus.create({
         id: this.MENU_ID_ADD_TO_RULE_PARENT,
         title: "Add Tab to Existing Rule",
+        contexts
+      })
+
+      // Create "Add to Blacklist" menu item
+      await browser.contextMenus.create({
+        id: this.MENU_ID_ADD_TO_BLACKLIST,
+        title: "Add to Blacklist",
         contexts
       })
 
@@ -175,6 +183,11 @@ class ContextMenuService {
       return
     }
 
+    if (menuId === this.MENU_ID_ADD_TO_BLACKLIST) {
+      await this.handleAddToBlacklist(tab)
+      return
+    }
+
     if (menuId.startsWith(ADD_TO_RULE_PREFIX)) {
       const ruleId = menuId.slice(ADD_TO_RULE_PREFIX.length)
       await this.handleAddTabToRule(ruleId, tab)
@@ -233,6 +246,33 @@ class ContextMenuService {
       // Re-group all tabs so the new domain takes effect immediately
       await tabGroupService.ungroupAllTabs()
       await tabGroupService.groupAllTabsManually()
+    }
+  }
+
+  /**
+   * Handles adding the current tab's domain to the blacklist
+   */
+  private async handleAddToBlacklist(tab?: Browser.tabs.Tab): Promise<void> {
+    if (!tab?.url) return
+
+    const domain = extractDomain(tab.url)
+    if (!domain || domain === "system") return
+
+    try {
+      await rulesService.addRule({
+        name: "",
+        domains: [domain],
+        isBlacklist: true,
+        enabled: true
+      })
+
+      // Ungroup and re-group so the blacklist takes effect
+      await tabGroupService.ungroupAllTabs()
+      await tabGroupService.groupAllTabsManually()
+
+      console.log(`[ContextMenuService] Added "${domain}" to blacklist`)
+    } catch (error) {
+      console.error("[ContextMenuService] Error adding to blacklist:", error)
     }
   }
 
