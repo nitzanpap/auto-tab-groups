@@ -126,7 +126,9 @@ class ContextMenuService {
     this.currentRuleMenuIds = []
 
     const rules = tabGroupState.getCustomRulesObject()
-    const enabledRules = Object.values(rules).filter((rule: CustomRule) => rule.enabled)
+    const enabledRules = Object.values(rules).filter(
+      (rule: CustomRule) => rule.enabled && !rule.isBlacklist
+    )
 
     if (enabledRules.length === 0) {
       // Show a disabled placeholder
