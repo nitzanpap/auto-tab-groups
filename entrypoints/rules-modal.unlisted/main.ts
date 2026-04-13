@@ -21,7 +21,9 @@ const ruleNameInput = document.getElementById("ruleName") as HTMLInputElement
 const rulePatternsInput = document.getElementById("rulePatterns") as HTMLTextAreaElement
 const ruleColorInput = document.getElementById("ruleColor") as HTMLInputElement
 const colorPicker = document.getElementById("colorPicker") as HTMLDivElement
+const ruleBlacklistCheckbox = document.getElementById("ruleBlacklist") as HTMLInputElement
 const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputElement
+const colorGroup = document.getElementById("colorGroup") as HTMLDivElement
 const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
 const patternFeedback = document.getElementById("patternFeedback") as HTMLDivElement
@@ -110,6 +112,8 @@ async function loadExistingRule(): Promise<void> {
       rulePatternsInput.value = rule.domains.join("\n")
       setColorPickerValue(rule.color || "blue")
       ruleEnabledCheckbox.checked = rule.enabled !== false
+      ruleBlacklistCheckbox.checked = rule.isBlacklist === true
+      updateBlacklistUI()
     }
   } catch (error) {
     console.error("Error loading rule:", error)
@@ -137,7 +141,9 @@ function buildRuleData(): RuleData | null {
     return null
   }
 
-  return { name, domains: patterns, color, enabled, priority: 1 }
+  const isBlacklist = ruleBlacklistCheckbox.checked
+
+  return { name, domains: patterns, color, enabled, priority: 1, isBlacklist }
 }
 
 // Persist rule to background
@@ -270,6 +276,15 @@ function cancel(): void {
 }
 
 // Color picker helpers
+// Toggle color picker visibility based on blacklist state
+function updateBlacklistUI(): void {
+  if (ruleBlacklistCheckbox.checked) {
+    colorGroup.style.display = "none"
+  } else {
+    colorGroup.style.display = ""
+  }
+}
+
 function setColorPickerValue(color: string): void {
   ruleColorInput.value = color
 
@@ -433,5 +448,6 @@ if (isAiAssist) {
 ruleForm.addEventListener("submit", saveRule)
 cancelButton.addEventListener("click", cancel)
 rulePatternsInput.addEventListener("input", validatePatterns)
+ruleBlacklistCheckbox.addEventListener("change", updateBlacklistUI)
 aiGenerateBtn.addEventListener("click", generateRuleFromDescription)
 aiDescription.addEventListener("focus", checkAiAvailability)

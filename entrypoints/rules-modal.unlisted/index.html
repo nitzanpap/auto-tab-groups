@@ -56,7 +56,7 @@ example.com/admin/*
           <div class="help-text pattern-help">Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses</div>
           <div id="patternFeedback" class="pattern-feedback"></div>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="colorGroup">
           <label>Group Color</label>
           <div id="colorPicker" class="color-picker">
             <button type="button" class="color-btn active" data-color="blue" title="Blue"></button>
@@ -70,6 +70,13 @@ example.com/admin/*
             <button type="button" class="color-btn" data-color="grey" title="Grey"></button>
           </div>
           <input type="hidden" id="ruleColor" value="blue" />
+        </div>
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="ruleBlacklist" />
+            Blacklist (prevent grouping)
+          </label>
+          <div class="help-text">Matching tabs will never be grouped and will be removed from existing groups</div>
         </div>
         <div class="form-group checkbox-group">
           <label>

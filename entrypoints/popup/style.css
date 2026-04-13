@@ -528,6 +528,30 @@ input:checked + .slider:before {
   flex-shrink: 0;
 }
 
+.rule-item.blacklist {
+  background: #fff5f5;
+}
+
+.rule-item.blacklist:hover {
+  background: #ffe3e3;
+}
+
+.rule-color-indicator.blacklist-indicator {
+  background: repeating-linear-gradient(-45deg, #e03131, #e03131 2px, #fff5f5 2px, #fff5f5 4px);
+}
+
+.blacklist-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e03131;
+  background: #ffe3e3;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .rule-actions {
   display: flex;
   gap: 4px;

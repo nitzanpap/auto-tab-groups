@@ -267,6 +267,10 @@ export default defineBackground(() => {
               result = { success: true, ruleId }
 
               if (tabGroupState.autoGroupingEnabled) {
+                if (msg.ruleData?.isBlacklist) {
+                  // Blacklist rules need to ungroup currently grouped tabs that match
+                  await tabGroupService.ungroupAllTabs()
+                }
                 await tabGroupService.groupTabsWithRules()
               }
 

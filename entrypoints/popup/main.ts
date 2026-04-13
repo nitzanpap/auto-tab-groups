@@ -226,15 +226,21 @@ function updateRulesDisplay(): void {
 
 // Create a rule element
 function createRuleElement(rule: CustomRule): HTMLDivElement {
+  const isBlacklist = rule.isBlacklist === true
   const ruleItem = document.createElement("div")
-  ruleItem.className = `rule-item ${!rule.enabled ? "disabled" : ""}`
+  ruleItem.className = `rule-item${!rule.enabled ? " disabled" : ""}${isBlacklist ? " blacklist" : ""}`
 
-  const colorHex = RULE_COLORS[rule.color] || RULE_COLORS.blue
   const domainsDisplay = formatDomainsDisplay(rule.domains)
 
   const colorIndicator = document.createElement("div")
   colorIndicator.className = "rule-color-indicator"
-  colorIndicator.style.backgroundColor = colorHex
+  if (isBlacklist) {
+    colorIndicator.classList.add("blacklist-indicator")
+    colorIndicator.title = "Blacklist rule"
+  } else {
+    const colorHex = RULE_COLORS[rule.color] || RULE_COLORS.blue
+    colorIndicator.style.backgroundColor = colorHex
+  }
 
   const ruleInfo = document.createElement("div")
   ruleInfo.className = "rule-info"
@@ -242,6 +248,13 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   const ruleName = document.createElement("div")
   ruleName.className = "rule-name"
   ruleName.textContent = rule.name
+
+  if (isBlacklist) {
+    const badge = document.createElement("span")
+    badge.className = "blacklist-badge"
+    badge.textContent = "Blacklist"
+    ruleName.appendChild(badge)
+  }
 
   const ruleDomains = document.createElement("div")
   ruleDomains.className = "rule-domains"
@@ -253,11 +266,16 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   const ruleActions = document.createElement("div")
   ruleActions.className = "rule-actions"
 
-  const addTabBtn = document.createElement("button")
-  addTabBtn.className = "rule-action-btn add-tab"
-  addTabBtn.title = "Add Tab to Existing Rule"
-  addTabBtn.setAttribute("data-rule-id", rule.id)
-  addTabBtn.textContent = "+"
+  // Hide "Add Tab" button for blacklist rules (they don't create groups)
+  if (!isBlacklist) {
+    const addTabBtn = document.createElement("button")
+    addTabBtn.className = "rule-action-btn add-tab"
+    addTabBtn.title = "Add Tab to Existing Rule"
+    addTabBtn.setAttribute("data-rule-id", rule.id)
+    addTabBtn.textContent = "+"
+    ruleActions.appendChild(addTabBtn)
+    addTabBtn.addEventListener("click", () => addCurrentTabToRule(rule.id, addTabBtn))
+  }
 
   const editBtn = document.createElement("button")
   editBtn.className = "rule-action-btn edit"
@@ -271,7 +289,6 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   deleteBtn.setAttribute("data-rule-id", rule.id)
   deleteBtn.textContent = "Delete"
 
-  ruleActions.appendChild(addTabBtn)
   ruleActions.appendChild(editBtn)
   ruleActions.appendChild(deleteBtn)
 
@@ -279,7 +296,6 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
   ruleItem.appendChild(ruleInfo)
   ruleItem.appendChild(ruleActions)
 
-  addTabBtn.addEventListener("click", () => addCurrentTabToRule(rule.id, addTabBtn))
   editBtn.addEventListener("click", () => editRule(rule.id))
   deleteBtn.addEventListener("click", () => deleteRule(rule.id, rule.name))
 
