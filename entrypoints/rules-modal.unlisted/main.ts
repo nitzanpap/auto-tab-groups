@@ -21,9 +21,11 @@ const ruleNameInput = document.getElementById("ruleName") as HTMLInputElement
 const rulePatternsInput = document.getElementById("rulePatterns") as HTMLTextAreaElement
 const ruleColorInput = document.getElementById("ruleColor") as HTMLInputElement
 const colorPicker = document.getElementById("colorPicker") as HTMLDivElement
-const ruleBlacklistCheckbox = document.getElementById("ruleBlacklist") as HTMLInputElement
 const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputElement
 const colorGroup = document.getElementById("colorGroup") as HTMLDivElement
+
+// Blacklist mode — determined by URL param, not a checkbox
+const isBlacklistMode = urlParams.get("blacklist") === "true"
 const saveButton = document.getElementById("saveButton") as HTMLButtonElement
 const cancelButton = document.getElementById("cancelButton") as HTMLButtonElement
 const patternFeedback = document.getElementById("patternFeedback") as HTMLDivElement
@@ -112,8 +114,6 @@ async function loadExistingRule(): Promise<void> {
       rulePatternsInput.value = rule.domains.join("\n")
       setColorPickerValue(rule.color || "blue")
       ruleEnabledCheckbox.checked = rule.enabled !== false
-      ruleBlacklistCheckbox.checked = rule.isBlacklist === true
-      updateBlacklistUI()
     }
   } catch (error) {
     console.error("Error loading rule:", error)
@@ -123,7 +123,6 @@ async function loadExistingRule(): Promise<void> {
 
 // Build RuleData from form inputs
 function buildRuleData(): RuleData | null {
-  const name = ruleNameInput.value.trim()
   const patterns = rulePatternsInput.value
     .split("\n")
     .map(p => p.trim())
@@ -131,19 +130,18 @@ function buildRuleData(): RuleData | null {
   const color = ruleColorInput.value as TabGroupColor
   const enabled = ruleEnabledCheckbox.checked
 
-  if (!name) {
-    alert("Please enter a rule name")
-    return null
-  }
-
   if (patterns.length === 0) {
     alert("Please enter at least one URL pattern")
     return null
   }
 
-  const isBlacklist = ruleBlacklistCheckbox.checked
+  const name = isBlacklistMode ? "" : ruleNameInput.value.trim()
+  if (!isBlacklistMode && !name) {
+    alert("Please enter a rule name")
+    return null
+  }
 
-  return { name, domains: patterns, color, enabled, priority: 1, isBlacklist }
+  return { name, domains: patterns, color, enabled, priority: 1, isBlacklist: isBlacklistMode }
 }
 
 // Persist rule to background
@@ -276,13 +274,17 @@ function cancel(): void {
 }
 
 // Color picker helpers
-// Toggle color picker visibility based on blacklist state
-function updateBlacklistUI(): void {
-  if (ruleBlacklistCheckbox.checked) {
-    colorGroup.style.display = "none"
-  } else {
-    colorGroup.style.display = ""
-  }
+// Apply blacklist mode UI adjustments
+function applyBlacklistMode(): void {
+  if (!isBlacklistMode) return
+  modalTitle.textContent = isEditMode ? "Edit Blacklist Rule" : "Add to Blacklist"
+  saveButton.textContent = isEditMode ? "Update Rule" : "Save Blacklist Rule"
+  colorGroup.style.display = "none"
+  ruleNameInput.required = false
+  const ruleNameGroup = ruleNameInput.closest(".form-group")
+  if (ruleNameGroup) (ruleNameGroup as HTMLElement).style.display = "none"
+  const aiAssistSection = document.getElementById("aiAssistSection")
+  if (aiAssistSection) aiAssistSection.style.display = "none"
 }
 
 function setColorPickerValue(color: string): void {
@@ -448,6 +450,8 @@ if (isAiAssist) {
 ruleForm.addEventListener("submit", saveRule)
 cancelButton.addEventListener("click", cancel)
 rulePatternsInput.addEventListener("input", validatePatterns)
-ruleBlacklistCheckbox.addEventListener("change", updateBlacklistUI)
 aiGenerateBtn.addEventListener("click", generateRuleFromDescription)
 aiDescription.addEventListener("focus", checkAiAvailability)
+
+// Apply blacklist mode UI if opened via blacklist param
+applyBlacklistMode()

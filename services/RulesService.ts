@@ -271,13 +271,15 @@ class RulesService {
   validateRule(ruleData: RuleData): RuleValidation {
     const errors: string[] = []
 
-    // Validate name
-    if (!ruleData.name || typeof ruleData.name !== "string") {
-      errors.push("Rule name is required")
-    } else if (ruleData.name.trim().length < 1) {
-      errors.push("Rule name cannot be empty")
-    } else if (ruleData.name.trim().length > 50) {
-      errors.push("Rule name cannot exceed 50 characters")
+    // Validate name (not required for blacklist rules)
+    if (!ruleData.isBlacklist) {
+      if (!ruleData.name || typeof ruleData.name !== "string") {
+        errors.push("Rule name is required")
+      } else if (ruleData.name.trim().length < 1) {
+        errors.push("Rule name cannot be empty")
+      } else if (ruleData.name.trim().length > 50) {
+        errors.push("Rule name cannot exceed 50 characters")
+      }
     }
 
     // Validate patterns
