@@ -52,16 +52,36 @@ class RulesService {
     if (!url) return null
 
     const customRules = tabGroupState.getCustomRulesObject()
-    const ruleCount = Object.keys(customRules).length
+    const groupingRules = Object.values(customRules).filter(r => !r.isBlacklist)
 
-    console.log(`[RulesService] Found ${ruleCount} custom rules to check`)
+    console.log(`[RulesService] Found ${groupingRules.length} grouping rules to check`)
 
     // First pass: exact matches only (no auto-subdomain)
-    const exactMatch = this.findMatchInRules(url, Object.values(customRules), false)
+    const exactMatch = this.findMatchInRules(url, groupingRules, false)
     if (exactMatch) return exactMatch
 
     // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
-    return this.findMatchInRules(url, Object.values(customRules), true)
+    return this.findMatchInRules(url, groupingRules, true)
+  }
+
+  /**
+   * Finds a matching blacklist rule for a given URL.
+   * Blacklist rules prevent tabs from being grouped entirely.
+   */
+  async findBlacklistMatch(url: string): Promise<MatchedRule | null> {
+    if (!url) return null
+
+    const customRules = tabGroupState.getCustomRulesObject()
+    const blacklistRules = Object.values(customRules).filter(r => r.isBlacklist === true)
+
+    if (blacklistRules.length === 0) return null
+
+    // First pass: exact matches only
+    const exactMatch = this.findMatchInRules(url, blacklistRules, false)
+    if (exactMatch) return exactMatch
+
+    // Second pass: auto-subdomain matches
+    return this.findMatchInRules(url, blacklistRules, true)
   }
 
   /**
@@ -181,13 +201,16 @@ class RulesService {
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
       minimumTabs: ruleData.minimumTabs,
+      isBlacklist: ruleData.isBlacklist ?? false,
       createdAt: new Date().toISOString()
     }
 
     tabGroupState.addCustomRule(ruleId, rule)
     await this.saveState()
 
-    console.log(`[RulesService] Added new rule: ${rule.name} (${ruleId})`)
+    console.log(
+      `[RulesService] Added new rule: ${rule.name} (${ruleId})${rule.isBlacklist ? " [blacklist]" : ""}`
+    )
     return ruleId
   }
 
@@ -215,7 +238,8 @@ class RulesService {
         : existingRule.color) as TabGroupColor,
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || existingRule.priority,
-      minimumTabs: ruleData.minimumTabs ?? existingRule.minimumTabs
+      minimumTabs: ruleData.minimumTabs ?? existingRule.minimumTabs,
+      isBlacklist: ruleData.isBlacklist ?? existingRule.isBlacklist ?? false
     }
 
     tabGroupState.updateCustomRule(ruleId, updatedRule)
@@ -247,13 +271,15 @@ class RulesService {
   validateRule(ruleData: RuleData): RuleValidation {
     const errors: string[] = []
 
-    // Validate name
-    if (!ruleData.name || typeof ruleData.name !== "string") {
-      errors.push("Rule name is required")
-    } else if (ruleData.name.trim().length < 1) {
-      errors.push("Rule name cannot be empty")
-    } else if (ruleData.name.trim().length > 50) {
-      errors.push("Rule name cannot exceed 50 characters")
+    // Validate name (not required for blacklist rules)
+    if (!ruleData.isBlacklist) {
+      if (!ruleData.name || typeof ruleData.name !== "string") {
+        errors.push("Rule name is required")
+      } else if (ruleData.name.trim().length < 1) {
+        errors.push("Rule name cannot be empty")
+      } else if (ruleData.name.trim().length > 50) {
+        errors.push("Rule name cannot exceed 50 characters")
+      }
     }
 
     // Validate patterns
@@ -372,6 +398,7 @@ class RulesService {
               : "blue") as TabGroupColor,
             enabled: ruleData.enabled !== false,
             priority: ruleData.priority || 1,
+            isBlacklist: ruleData.isBlacklist ?? false,
             createdAt: ruleData.createdAt || new Date().toISOString()
           }
         } else {

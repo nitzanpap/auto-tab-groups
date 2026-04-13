@@ -43,6 +43,13 @@ const addRuleButton = document.getElementById("addRuleButton") as HTMLButtonElem
 const exportRulesButton = document.getElementById("exportRulesButton") as HTMLButtonElement
 const importRulesButton = document.getElementById("importRulesButton") as HTMLButtonElement
 
+// Blacklist Elements
+const blacklistToggle = document.querySelector(".blacklist-toggle") as HTMLButtonElement
+const blacklistContent = document.querySelector(".blacklist-content") as HTMLDivElement
+const blacklistCount = document.getElementById("blacklistCount") as HTMLSpanElement
+const blacklistList = document.getElementById("blacklistList") as HTMLDivElement
+const addBlacklistButton = document.getElementById("addBlacklistButton") as HTMLButtonElement
+
 // AI Elements
 const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
 const aiContent = document.querySelector(".ai-content") as HTMLDivElement
@@ -66,6 +73,7 @@ let aiSectionExpanded = false
 let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
 let sortingSectionExpanded = false
 let customRulesExpanded = false
+let blacklistExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
 // Color mapping for display
@@ -187,47 +195,122 @@ async function loadCustomRules(): Promise<void> {
   }
 }
 
-// Update the rules display
+// Update the rules display (excludes blacklist rules)
 function updateRulesDisplay(): void {
-  const rulesArray = Object.values(currentRules)
-  const enabledRules = rulesArray.filter(rule => rule.enabled)
+  const allRules = Object.values(currentRules)
+  const groupingRules = allRules.filter(rule => !rule.isBlacklist)
+  const enabledGroupingRules = groupingRules.filter(rule => rule.enabled)
 
-  rulesCount.textContent = `(${enabledRules.length})`
+  rulesCount.textContent = `(${enabledGroupingRules.length})`
 
   if (exportRulesButton) {
-    exportRulesButton.disabled = rulesArray.length === 0
+    exportRulesButton.disabled = allRules.length === 0
     exportRulesButton.title =
-      rulesArray.length === 0 ? "No rules to export" : "Export all rules to JSON file"
+      allRules.length === 0 ? "No rules to export" : "Export all rules to JSON file"
   }
 
-  rulesList.innerHTML = ""
+  while (rulesList.firstChild) rulesList.removeChild(rulesList.firstChild)
 
-  if (rulesArray.length === 0) {
+  if (groupingRules.length === 0) {
     const emptyDiv = document.createElement("div")
     emptyDiv.className = "empty-rules"
     emptyDiv.textContent =
       "No custom rules yet. Create your first rule to group tabs by your preferences!"
     rulesList.appendChild(emptyDiv)
+  } else {
+    groupingRules.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority
+      }
+      return a.name.localeCompare(b.name)
+    })
+
+    groupingRules.forEach(rule => {
+      const ruleElement = createRuleElement(rule)
+      rulesList.appendChild(ruleElement)
+    })
+  }
+
+  // Also update blacklist display since they share the same data source
+  updateBlacklistDisplay()
+}
+
+// Update the blacklist display
+function updateBlacklistDisplay(): void {
+  const blacklistRules = Object.values(currentRules).filter(rule => rule.isBlacklist === true)
+  const enabledBlacklist = blacklistRules.filter(rule => rule.enabled)
+
+  blacklistCount.textContent = `(${enabledBlacklist.length})`
+
+  while (blacklistList.firstChild) blacklistList.removeChild(blacklistList.firstChild)
+
+  if (blacklistRules.length === 0) {
+    const emptyDiv = document.createElement("div")
+    emptyDiv.className = "empty-rules"
+    emptyDiv.textContent = "No blacklisted domains yet."
+    blacklistList.appendChild(emptyDiv)
     return
   }
 
-  rulesArray.sort((a, b) => {
-    if (a.priority !== b.priority) {
-      return a.priority - b.priority
-    }
-    return a.name.localeCompare(b.name)
-  })
+  blacklistRules.sort((a, b) => a.name.localeCompare(b.name))
 
-  rulesArray.forEach(rule => {
-    const ruleElement = createRuleElement(rule)
-    rulesList.appendChild(ruleElement)
+  blacklistRules.forEach(rule => {
+    const ruleElement = createBlacklistElement(rule)
+    blacklistList.appendChild(ruleElement)
   })
+}
+
+// Create a blacklist rule element
+function createBlacklistElement(rule: CustomRule): HTMLDivElement {
+  const ruleItem = document.createElement("div")
+  ruleItem.className = `rule-item${!rule.enabled ? " disabled" : ""} blacklist`
+
+  const domainsDisplay = formatDomainsDisplay(rule.domains)
+
+  const colorIndicator = document.createElement("div")
+  colorIndicator.className = "rule-color-indicator blacklist-indicator"
+
+  const ruleInfo = document.createElement("div")
+  ruleInfo.className = "rule-info"
+
+  const ruleDomains = document.createElement("div")
+  ruleDomains.className = "rule-domains blacklist-domains"
+  ruleDomains.textContent = domainsDisplay
+
+  ruleInfo.appendChild(ruleDomains)
+
+  const ruleActions = document.createElement("div")
+  ruleActions.className = "rule-actions"
+
+  const editBtn = document.createElement("button")
+  editBtn.className = "rule-action-btn edit"
+  editBtn.title = "Edit blacklist rule"
+  editBtn.setAttribute("data-rule-id", rule.id)
+  editBtn.textContent = "Edit"
+
+  const deleteBtn = document.createElement("button")
+  deleteBtn.className = "rule-action-btn delete"
+  deleteBtn.title = "Delete blacklist rule"
+  deleteBtn.setAttribute("data-rule-id", rule.id)
+  deleteBtn.textContent = "Delete"
+
+  ruleActions.appendChild(editBtn)
+  ruleActions.appendChild(deleteBtn)
+
+  ruleItem.appendChild(colorIndicator)
+  ruleItem.appendChild(ruleInfo)
+  ruleItem.appendChild(ruleActions)
+
+  editBtn.addEventListener("click", () => editBlacklistRule(rule.id))
+  deleteBtn.addEventListener("click", () => deleteRule(rule.id, rule.name))
+
+  return ruleItem
 }
 
 // Create a rule element
 function createRuleElement(rule: CustomRule): HTMLDivElement {
   const ruleItem = document.createElement("div")
-  ruleItem.className = `rule-item ${!rule.enabled ? "disabled" : ""}`
+  ruleItem.className = `rule-item${!rule.enabled ? " disabled" : ""}`
 
   const colorHex = RULE_COLORS[rule.color] || RULE_COLORS.blue
   const domainsDisplay = formatDomainsDisplay(rule.domains)
@@ -405,6 +488,41 @@ async function editRule(ruleId: string): Promise<void> {
     await browser.tabs.create({ url, active: true })
   } catch (error) {
     console.error("Error opening edit rule modal:", error)
+  }
+}
+
+// Open add blacklist rule modal
+async function addBlacklistRule(): Promise<void> {
+  try {
+    const url = browser.runtime.getURL("/rules-modal.html?blacklist=true")
+    await browser.tabs.create({ url, active: true })
+  } catch (error) {
+    console.error("Error opening blacklist modal:", error)
+  }
+}
+
+// Open edit blacklist rule modal
+async function editBlacklistRule(ruleId: string): Promise<void> {
+  try {
+    const url = browser.runtime.getURL(
+      `/rules-modal.html?edit=true&ruleId=${ruleId}&blacklist=true`
+    )
+    await browser.tabs.create({ url, active: true })
+  } catch (error) {
+    console.error("Error opening edit blacklist modal:", error)
+  }
+}
+
+// Toggle blacklist section
+function toggleBlacklistSection(): void {
+  blacklistExpanded = !blacklistExpanded
+  blacklistToggle.classList.toggle("expanded", blacklistExpanded)
+  blacklistContent.classList.toggle("expanded", blacklistExpanded)
+
+  if (blacklistExpanded) {
+    if (Object.keys(currentRules).length === 0) {
+      loadCustomRules()
+    }
   }
 }
 
@@ -1047,6 +1165,10 @@ rulesToggle?.addEventListener("click", toggleRulesSection)
 addRuleButton?.addEventListener("click", addRule)
 exportRulesButton?.addEventListener("click", exportRules)
 importRulesButton?.addEventListener("click", importRules)
+
+// Blacklist event listeners
+blacklistToggle?.addEventListener("click", toggleBlacklistSection)
+addBlacklistButton?.addEventListener("click", addBlacklistRule)
 
 // Initialize AI badge on popup open
 sendMessage<{

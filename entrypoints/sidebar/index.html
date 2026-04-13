@@ -238,6 +238,34 @@
             </div>
           </div>
         </div>
+
+        <!-- Blacklist Section -->
+        <div class="blacklist-section">
+          <button class="blacklist-toggle">
+            <span class="noselect">Blacklist</span>
+            <span class="blacklist-count" id="blacklistCount">(0)</span>
+            <span class="up-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                <path
+                  d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
+                  style="fill: #e03131"
+                  data-name="Up"
+                />
+              </svg>
+            </span>
+          </button>
+          <div class="blacklist-content">
+            <div class="blacklist-list" id="blacklistList">
+              <!-- Blacklist rules will be dynamically added here -->
+            </div>
+            <div class="blacklist-actions">
+              <button id="addBlacklistButton" class="button blacklist-button">Add to Blacklist</button>
+            </div>
+            <div class="help-text blacklist-help">
+              Blacklisted domains will never be grouped
+            </div>
+          </div>
+        </div>
       </main>
       <footer class="footer-container">
         <div class="separator"></div>

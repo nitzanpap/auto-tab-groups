@@ -46,6 +46,8 @@ export interface CustomRule {
   priority: number
   /** Minimum tabs required to form this group (optional, overrides global) */
   minimumTabs?: number
+  /** Whether this rule is a blacklist (prevents grouping instead of creating groups) */
+  isBlacklist?: boolean
   /** ISO date string when rule was created */
   createdAt: string
 }
@@ -60,6 +62,7 @@ export interface RuleData {
   enabled?: boolean
   priority?: number
   minimumTabs?: number
+  isBlacklist?: boolean
   id?: string
   createdAt?: string
 }

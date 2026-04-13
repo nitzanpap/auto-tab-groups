@@ -105,6 +105,18 @@ class TabGroupServiceSimplified {
         return false
       }
 
+      // Check blacklist rules — if matched, ungroup the tab and skip all grouping
+      const blacklistMatch = await rulesService.findBlacklistMatch(tab.url || "")
+      if (blacklistMatch) {
+        console.log(
+          `[TabGroupService] Tab ${tabId} matches blacklist rule "${blacklistMatch.name}", skipping grouping`
+        )
+        if (tab.groupId && tab.groupId !== -1) {
+          await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
+        }
+        return false
+      }
+
       // Handle rules-only mode
       if (tabGroupState.groupByMode === "rules-only") {
         const customRule = await rulesService.findMatchingRule(tab.url || "")
@@ -171,6 +183,10 @@ class TabGroupServiceSimplified {
 
       for (const tab of tabs) {
         if (tab.pinned) continue
+
+        // Skip blacklisted tabs from count
+        const blacklisted = await rulesService.findBlacklistMatch(tab.url || "")
+        if (blacklisted) continue
 
         if (customRule) {
           const matchingRule = await rulesService.findMatchingRule(tab.url || "")
@@ -341,6 +357,10 @@ class TabGroupServiceSimplified {
         if (otherTab.pinned || (otherTab.groupId && otherTab.groupId !== -1)) {
           continue
         }
+
+        // Skip blacklisted tabs
+        const blacklisted = await rulesService.findBlacklistMatch(otherTab.url || "")
+        if (blacklisted) continue
 
         let shouldGroup = false
         if (customRule) {

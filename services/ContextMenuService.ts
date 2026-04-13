@@ -46,6 +46,7 @@ const isFirefox = (): boolean => {
 class ContextMenuService {
   private readonly MENU_ID_CREATE_RULE = "create-rule-from-group"
   private readonly MENU_ID_ADD_TO_RULE_PARENT = "add-tab-to-rule"
+  private readonly MENU_ID_ADD_TO_BLACKLIST = "add-to-blacklist"
   private readonly MENU_ID_NO_RULES = "add-to-rule-none"
   private initialized = false
   /** Track current sub-menu rule IDs for cleanup */
@@ -78,6 +79,13 @@ class ContextMenuService {
       await browser.contextMenus.create({
         id: this.MENU_ID_ADD_TO_RULE_PARENT,
         title: "Add Tab to Existing Rule",
+        contexts
+      })
+
+      // Create "Add to Blacklist" menu item
+      await browser.contextMenus.create({
+        id: this.MENU_ID_ADD_TO_BLACKLIST,
+        title: "Add to Blacklist",
         contexts
       })
 
@@ -126,7 +134,9 @@ class ContextMenuService {
     this.currentRuleMenuIds = []
 
     const rules = tabGroupState.getCustomRulesObject()
-    const enabledRules = Object.values(rules).filter((rule: CustomRule) => rule.enabled)
+    const enabledRules = Object.values(rules).filter(
+      (rule: CustomRule) => rule.enabled && !rule.isBlacklist
+    )
 
     if (enabledRules.length === 0) {
       // Show a disabled placeholder
@@ -170,6 +180,11 @@ class ContextMenuService {
 
     if (menuId === this.MENU_ID_CREATE_RULE) {
       await this.handleCreateRuleFromGroup(tab)
+      return
+    }
+
+    if (menuId === this.MENU_ID_ADD_TO_BLACKLIST) {
+      await this.handleAddToBlacklist(tab)
       return
     }
 
@@ -231,6 +246,44 @@ class ContextMenuService {
       // Re-group all tabs so the new domain takes effect immediately
       await tabGroupService.ungroupAllTabs()
       await tabGroupService.groupAllTabsManually()
+    }
+  }
+
+  /**
+   * Handles adding the current tab's domain to the blacklist
+   */
+  private async handleAddToBlacklist(tab?: Browser.tabs.Tab): Promise<void> {
+    if (!tab?.url) return
+
+    const domain = extractDomain(tab.url)
+    if (!domain || domain === "system") return
+
+    try {
+      // Check if domain is already blacklisted
+      const rules = tabGroupState.getCustomRulesObject()
+      const alreadyBlacklisted = Object.values(rules).some(
+        rule => rule.isBlacklist && rule.domains.some(d => d.toLowerCase() === domain.toLowerCase())
+      )
+
+      if (alreadyBlacklisted) {
+        console.log(`[ContextMenuService] "${domain}" is already blacklisted`)
+        return
+      }
+
+      await rulesService.addRule({
+        name: "",
+        domains: [domain],
+        isBlacklist: true,
+        enabled: true
+      })
+
+      // Ungroup and re-group so the blacklist takes effect
+      await tabGroupService.ungroupAllTabs()
+      await tabGroupService.groupAllTabsManually()
+
+      console.log(`[ContextMenuService] Added "${domain}" to blacklist`)
+    } catch (error) {
+      console.error("[ContextMenuService] Error adding to blacklist:", error)
     }
   }
 

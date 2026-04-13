@@ -528,6 +528,18 @@ input:checked + .slider:before {
   flex-shrink: 0;
 }
 
+.rule-item.blacklist {
+  background: #fff5f5;
+}
+
+.rule-item.blacklist:hover {
+  background: #ffe3e3;
+}
+
+.rule-color-indicator.blacklist-indicator {
+  background: repeating-linear-gradient(-45deg, #e03131, #e03131 2px, #fff5f5 2px, #fff5f5 4px);
+}
+
 .rule-actions {
   display: flex;
   gap: 4px;
@@ -1295,4 +1307,113 @@ input:checked + .slider:before {
   color: #555;
   border-color: #ccc;
   background: #f5f5f5;
+}
+
+/* Blacklist Section */
+.blacklist-section {
+  margin-top: 12px;
+}
+
+.blacklist-toggle {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.blacklist-toggle:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.blacklist-toggle.expanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+  background: #e9ecef;
+}
+
+.blacklist-toggle .noselect {
+  flex: 1;
+  text-align: left;
+}
+
+.blacklist-count {
+  color: #6c757d;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.blacklist-toggle .up-arrow {
+  transition: transform 0.2s ease;
+}
+
+.blacklist-toggle.expanded .up-arrow {
+  transform: rotate(180deg);
+}
+
+.blacklist-content {
+  display: none;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+}
+
+.blacklist-content.expanded {
+  display: block;
+}
+
+.blacklist-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blacklist-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.blacklist-button {
+  background: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.blacklist-button:hover {
+  background: #dee2e6;
+  border-color: #adb5bd;
+}
+
+.blacklist-domains {
+  font-size: 13px;
+  color: #495057;
+}
+
+.blacklist-help {
+  padding-top: 4px;
+  font-size: 11px;
+  color: #6c757d;
+  text-align: center;
 }
