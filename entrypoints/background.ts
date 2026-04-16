@@ -239,6 +239,17 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.indexGroupTitles }
             break
 
+          case "getHideContextMenu":
+            result = { enabled: tabGroupState.hideContextMenu }
+            break
+
+          case "toggleHideContextMenu":
+            tabGroupState.hideContextMenu = msg.enabled
+            await saveState()
+            await contextMenuService.applyVisibility()
+            result = { enabled: tabGroupState.hideContextMenu }
+            break
+
           case "toggleIndexGroupTitles": {
             tabGroupState.indexGroupTitles = msg.enabled
             await saveState()

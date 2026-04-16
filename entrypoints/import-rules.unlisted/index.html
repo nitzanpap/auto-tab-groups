@@ -8,15 +8,15 @@
   </head>
   <body>
     <div class="modal-container">
-      <h1>Import Rules</h1>
+      <h1 data-i18n="importPageTitle">Import Rules</h1>
 
       <!-- File Selection Area -->
       <div class="drop-zone" id="dropZone">
         <div class="drop-zone-content">
           <span class="drop-icon">📁</span>
-          <p>Drag & drop a JSON file here</p>
-          <p class="drop-zone-separator">or</p>
-          <button type="button" class="button secondary" id="selectFileButton">
+          <p data-i18n="importDropInstruction">Drag &amp; drop a JSON file here</p>
+          <p class="drop-zone-separator" data-i18n="importOr">or</p>
+          <button type="button" class="button secondary" id="selectFileButton" data-i18n="importBrowseFiles">
             Browse Files
           </button>
           <input type="file" id="fileInput" accept=".json" style="display: none" />
@@ -31,7 +31,7 @@
 
       <!-- Preview Section (shown after file parsed) -->
       <div class="preview-section" id="previewSection">
-        <h2>Preview</h2>
+        <h2 data-i18n="importPreviewHeading">Preview</h2>
         <div class="preview-stats" id="previewStats"></div>
         <div class="preview-list" id="previewList"></div>
         <div class="preview-errors" id="previewErrors"></div>
@@ -39,25 +39,25 @@
 
       <!-- Import Options -->
       <div class="form-group import-options" id="importOptions">
-        <label>Import Mode</label>
+        <label data-i18n="importModeLabel">Import Mode</label>
         <div class="radio-group">
           <label class="radio-option">
             <input type="radio" name="importMode" value="merge" checked />
-            <span>Merge with existing rules</span>
+            <span data-i18n="importMerge">Merge with existing rules</span>
           </label>
           <label class="radio-option">
             <input type="radio" name="importMode" value="replace" />
-            <span>Replace all existing rules</span>
+            <span data-i18n="importReplace">Replace all existing rules</span>
           </label>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="button-group">
-        <button type="button" class="button primary" id="importButton" disabled>
+        <button type="button" class="button primary" id="importButton" disabled data-i18n="importButton">
           Import Rules
         </button>
-        <button type="button" class="button secondary" id="cancelButton">Cancel</button>
+        <button type="button" class="button secondary" id="cancelButton" data-i18n="importCancel">Cancel</button>
       </div>
 
       <!-- Result Message -->

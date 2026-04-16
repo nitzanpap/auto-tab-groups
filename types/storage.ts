@@ -59,6 +59,8 @@ export interface StorageSchema {
   sortGroupsAlphabetically: boolean
   /** Whether to prefix group titles with their sort position (e.g., "1. AI") */
   indexGroupTitles: boolean
+  /** Whether to hide the extension's right-click context menu items */
+  hideContextMenu: boolean
 }
 
 /**
@@ -79,7 +81,8 @@ export const DEFAULT_STATE: StorageSchema = {
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
   openTabNextToCurrent: false,
   sortGroupsAlphabetically: false,
-  indexGroupTitles: false
+  indexGroupTitles: false,
+  hideContextMenu: false
 }
 
 /**

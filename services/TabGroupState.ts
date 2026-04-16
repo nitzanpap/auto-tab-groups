@@ -24,6 +24,7 @@ class TabGroupState {
   openTabNextToCurrent: boolean
   sortGroupsAlphabetically: boolean
   indexGroupTitles: boolean
+  hideContextMenu: boolean
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -37,6 +38,7 @@ class TabGroupState {
     this.openTabNextToCurrent = DEFAULT_STATE.openTabNextToCurrent
     this.sortGroupsAlphabetically = DEFAULT_STATE.sortGroupsAlphabetically
     this.indexGroupTitles = DEFAULT_STATE.indexGroupTitles
+    this.hideContextMenu = DEFAULT_STATE.hideContextMenu
   }
 
   /**
@@ -53,6 +55,7 @@ class TabGroupState {
     this.openTabNextToCurrent = data.openTabNextToCurrent ?? this.openTabNextToCurrent
     this.sortGroupsAlphabetically = data.sortGroupsAlphabetically ?? this.sortGroupsAlphabetically
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
+    this.hideContextMenu = data.hideContextMenu ?? this.hideContextMenu
 
     this.customRules.clear()
 
@@ -80,6 +83,7 @@ class TabGroupState {
       openTabNextToCurrent: this.openTabNextToCurrent,
       sortGroupsAlphabetically: this.sortGroupsAlphabetically,
       indexGroupTitles: this.indexGroupTitles,
+      hideContextMenu: this.hideContextMenu,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,

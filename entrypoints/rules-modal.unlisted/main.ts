@@ -1,5 +1,6 @@
 import "./style.css"
 import type { PatternConflict, RuleData, TabGroupColor } from "../../types"
+import { applyI18nToDom, t } from "../../utils/i18n"
 import { urlPatternMatcher } from "../../utils/UrlPatternMatcher"
 
 // Get URL parameters
@@ -98,8 +99,8 @@ function sendMessage<T = Record<string, unknown>>(message: Record<string, unknow
 async function loadExistingRule(): Promise<void> {
   if (!isEditMode || !ruleId) return
 
-  modalTitle.textContent = "Edit Custom Rule"
-  saveButton.textContent = "Update Rule"
+  modalTitle.textContent = t("ruleModalEditTitle", "Edit Custom Rule")
+  saveButton.textContent = t("ruleModalUpdate", "Update Rule")
 
   try {
     const response = await sendMessage<{
@@ -117,7 +118,7 @@ async function loadExistingRule(): Promise<void> {
     }
   } catch (error) {
     console.error("Error loading rule:", error)
-    alert("Failed to load rule for editing")
+    alert(t("ruleModalFailedToLoad", "Failed to load rule for editing"))
   }
 }
 
@@ -131,13 +132,13 @@ function buildRuleData(): RuleData | null {
   const enabled = ruleEnabledCheckbox.checked
 
   if (patterns.length === 0) {
-    alert("Please enter at least one URL pattern")
+    alert(t("ruleModalEnterPattern", "Please enter at least one URL pattern"))
     return null
   }
 
   const name = isBlacklistMode ? "" : ruleNameInput.value.trim()
   if (!isBlacklistMode && !name) {
-    alert("Please enter a rule name")
+    alert(t("ruleModalEnterName", "Please enter a rule name"))
     return null
   }
 
@@ -164,7 +165,7 @@ async function persistRule(ruleData: RuleData): Promise<void> {
   if (response?.success) {
     window.close()
   } else {
-    alert(response?.error || "Failed to save rule")
+    alert(response?.error || t("ruleModalFailedToSave", "Failed to save rule"))
   }
 }
 
@@ -217,7 +218,7 @@ async function saveRule(event: Event): Promise<void> {
   if (!ruleData) return
 
   saveButton.disabled = true
-  saveButton.textContent = "Checking..."
+  saveButton.textContent = t("ruleModalChecking", "Checking...")
 
   try {
     const analysis = await sendMessage<{
@@ -264,7 +265,9 @@ async function saveRule(event: Event): Promise<void> {
     alert(`Failed to save rule: ${(error as Error).message}`)
   } finally {
     saveButton.disabled = false
-    saveButton.textContent = isEditMode ? "Update Rule" : "Save Rule"
+    saveButton.textContent = isEditMode
+      ? t("ruleModalUpdate", "Update Rule")
+      : t("ruleModalSave", "Save Rule")
   }
 }
 
@@ -277,8 +280,12 @@ function cancel(): void {
 // Apply blacklist mode UI adjustments
 function applyBlacklistMode(): void {
   if (!isBlacklistMode) return
-  modalTitle.textContent = isEditMode ? "Edit Blacklist Rule" : "Add to Blacklist"
-  saveButton.textContent = isEditMode ? "Update Rule" : "Save Blacklist Rule"
+  modalTitle.textContent = isEditMode
+    ? t("blacklistEditTitle", "Edit Blacklist Rule")
+    : t("blacklistAddButton", "Add to Blacklist")
+  saveButton.textContent = isEditMode
+    ? t("ruleModalUpdate", "Update Rule")
+    : t("ruleModalSave", "Save Rule")
   colorGroup.style.display = "none"
   ruleNameInput.required = false
   const ruleNameGroup = ruleNameInput.closest(".form-group")
@@ -314,7 +321,7 @@ function setupColorPicker(): void {
 function loadFromGroup(): void {
   if (!isFromGroup) return
 
-  modalTitle.textContent = "Create Rule from Group"
+  modalTitle.textContent = t("contextMenuCreateRuleFromGroup", "Create Rule from Group")
 
   // Pre-populate form fields
   ruleNameInput.value = groupName
@@ -336,7 +343,7 @@ function setupPatternModeToggle(): void {
     rulePatternsInput.value = simpleDomains.join("\n")
     simpleModeBtn.classList.add("active")
     explicitModeBtn.classList.remove("active")
-    modeHint.textContent = "Groups all pages from these base domains"
+    modeHint.textContent = t("ruleModalSimpleModeHint", "Groups all pages from these base domains")
     validatePatterns()
   })
 
@@ -344,7 +351,7 @@ function setupPatternModeToggle(): void {
     rulePatternsInput.value = explicitUrls.join("\n")
     explicitModeBtn.classList.add("active")
     simpleModeBtn.classList.remove("active")
-    modeHint.textContent = "Only matches these exact URLs"
+    modeHint.textContent = t("ruleModalExplicitModeHint", "Only matches these exact URLs")
     validatePatterns()
   })
 }
@@ -360,8 +367,10 @@ async function checkAiAvailability(): Promise<void> {
     aiGenerateBtn.disabled = !isReady
 
     if (!isReady) {
-      aiAssistStatus.textContent =
+      aiAssistStatus.textContent = t(
+        "ruleModalAiNeedsModel",
         "Load an AI model from the popup's AI Features section to use AI Assist"
+      )
       aiAssistStatus.className = "ai-assist-status info"
     } else {
       aiAssistStatus.textContent = ""
@@ -384,15 +393,15 @@ function getCurrentPatterns(): string[] {
 async function generateRuleFromDescription(): Promise<void> {
   const description = aiDescription.value.trim()
   if (!description) {
-    aiAssistStatus.textContent = "Please enter a description"
+    aiAssistStatus.textContent = t("ruleModalAiEnterDescription", "Please enter a description")
     aiAssistStatus.className = "ai-assist-status error"
     return
   }
 
   aiGenerateBtn.disabled = true
-  aiGenerateBtn.textContent = "Generating..."
+  aiGenerateBtn.textContent = t("ruleModalGenerating", "Generating...")
   aiGenerateBtn.classList.add("generating")
-  aiAssistStatus.textContent = "AI is thinking..."
+  aiAssistStatus.textContent = t("ruleModalAiThinking", "AI is thinking...")
   aiAssistStatus.className = "ai-assist-status info"
 
   try {
@@ -417,24 +426,26 @@ async function generateRuleFromDescription(): Promise<void> {
         response.warnings && response.warnings.length > 0
           ? ` (${response.warnings.join("; ")})`
           : ""
-      aiAssistStatus.textContent = `Rule generated! Review and edit below, then save.${warningText}`
+      aiAssistStatus.textContent = `${t("ruleModalAiGenerated", "Rule generated! Review and edit below, then save.")}${warningText}`
       aiAssistStatus.className = "ai-assist-status success"
     } else {
       aiAssistStatus.textContent =
-        response?.error || "Failed to generate rule. Try rephrasing your description."
+        response?.error ||
+        t("ruleModalAiGenerateError", "Failed to generate rule. Try rephrasing your description.")
       aiAssistStatus.className = "ai-assist-status error"
     }
   } catch (error) {
-    aiAssistStatus.textContent = `Generation failed: ${(error as Error).message}`
+    aiAssistStatus.textContent = `${t("ruleModalAiGenerateError", "Failed to generate rule")}: ${(error as Error).message}`
     aiAssistStatus.className = "ai-assist-status error"
   } finally {
     aiGenerateBtn.disabled = false
-    aiGenerateBtn.textContent = "Generate"
+    aiGenerateBtn.textContent = t("ruleModalAiGenerate", "Generate")
     aiGenerateBtn.classList.remove("generating")
   }
 }
 
 // Initialize
+applyI18nToDom()
 setupColorPicker()
 loadExistingRule()
 loadFromGroup()

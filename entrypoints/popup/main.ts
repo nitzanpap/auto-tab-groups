@@ -2,6 +2,7 @@ import "./style.css"
 import type { CustomRule } from "../../types"
 import type { AiGroupSuggestion } from "../../types/ai-messages"
 import { extractDomain } from "../../utils/DomainUtils"
+import { applyI18nToDom, t } from "../../utils/i18n"
 import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
@@ -50,6 +51,11 @@ const blacklistCount = document.getElementById("blacklistCount") as HTMLSpanElem
 const blacklistList = document.getElementById("blacklistList") as HTMLDivElement
 const addBlacklistButton = document.getElementById("addBlacklistButton") as HTMLButtonElement
 
+// Advanced Elements
+const advancedToggle = document.querySelector(".advanced-toggle") as HTMLButtonElement
+const advancedContent = document.querySelector(".advanced-content") as HTMLDivElement
+const hideContextMenuToggle = document.getElementById("hideContextMenuToggle") as HTMLInputElement
+
 // AI Elements
 const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
 const aiContent = document.querySelector(".ai-content") as HTMLDivElement
@@ -74,6 +80,7 @@ let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
 let sortingSectionExpanded = false
 let customRulesExpanded = false
 let blacklistExpanded = false
+let advancedExpanded = false
 let currentRules: Record<string, CustomRule> = {}
 
 // Color mapping for display
@@ -115,10 +122,10 @@ function updateBrowserDisplay(): void {
   // Check if Firefox
   const isFirefox = navigator.userAgent.includes("Firefox")
   if (isFirefox) {
-    browserNameElement.textContent = "Firefox"
+    browserNameElement.textContent = t("footerBrowserFirefox", "Firefox")
     browserEmojiElement.textContent = ""
   } else {
-    browserNameElement.textContent = "Chrome"
+    browserNameElement.textContent = t("footerBrowserChrome", "Chrome")
     browserEmojiElement.textContent = ""
   }
 }
@@ -147,7 +154,7 @@ function updateGroupByToggle(mode: string): void {
 // Format domains display
 function formatDomainsDisplay(domains: string[], maxLength = 40): string {
   if (!Array.isArray(domains) || domains.length === 0) {
-    return "No domains"
+    return t("rulesNoDomains", "No domains")
   }
 
   if (domains.length === 1) {
@@ -174,7 +181,7 @@ function formatDomainsDisplay(domains: string[], maxLength = 40): string {
   }
 
   const remaining = domains.length - count
-  return `${truncated}${remaining > 0 ? ` and ${remaining} more` : ""}`
+  return `${truncated}${remaining > 0 ? t("rulesDomainsSeparator", ` and ${remaining} more`, String(remaining)) : ""}`
 }
 
 // Load and display custom rules
@@ -191,7 +198,7 @@ async function loadCustomRules(): Promise<void> {
     }
   } catch (error) {
     console.error("Error loading custom rules:", error)
-    showRulesError("Failed to load custom rules")
+    showRulesError(t("rulesFailedToLoad", "Failed to load custom rules"))
   }
 }
 
@@ -206,7 +213,9 @@ function updateRulesDisplay(): void {
   if (exportRulesButton) {
     exportRulesButton.disabled = allRules.length === 0
     exportRulesButton.title =
-      allRules.length === 0 ? "No rules to export" : "Export all rules to JSON file"
+      allRules.length === 0
+        ? t("rulesNoExport", "No rules to export")
+        : t("rulesExportTitle", "Export all rules to JSON file")
   }
 
   while (rulesList.firstChild) rulesList.removeChild(rulesList.firstChild)
@@ -214,8 +223,10 @@ function updateRulesDisplay(): void {
   if (groupingRules.length === 0) {
     const emptyDiv = document.createElement("div")
     emptyDiv.className = "empty-rules"
-    emptyDiv.textContent =
+    emptyDiv.textContent = t(
+      "rulesEmptyState",
       "No custom rules yet. Create your first rule to group tabs by your preferences!"
+    )
     rulesList.appendChild(emptyDiv)
   } else {
     groupingRules.sort((a, b) => {
@@ -247,7 +258,7 @@ function updateBlacklistDisplay(): void {
   if (blacklistRules.length === 0) {
     const emptyDiv = document.createElement("div")
     emptyDiv.className = "empty-rules"
-    emptyDiv.textContent = "No blacklisted domains yet."
+    emptyDiv.textContent = t("blacklistEmpty", "No blacklisted domains yet.")
     blacklistList.appendChild(emptyDiv)
     return
   }
@@ -284,15 +295,15 @@ function createBlacklistElement(rule: CustomRule): HTMLDivElement {
 
   const editBtn = document.createElement("button")
   editBtn.className = "rule-action-btn edit"
-  editBtn.title = "Edit blacklist rule"
+  editBtn.title = t("blacklistEditTitle", "Edit blacklist rule")
   editBtn.setAttribute("data-rule-id", rule.id)
-  editBtn.textContent = "Edit"
+  editBtn.textContent = t("rulesEdit", "Edit")
 
   const deleteBtn = document.createElement("button")
   deleteBtn.className = "rule-action-btn delete"
-  deleteBtn.title = "Delete blacklist rule"
+  deleteBtn.title = t("blacklistDeleteTitle", "Delete blacklist rule")
   deleteBtn.setAttribute("data-rule-id", rule.id)
-  deleteBtn.textContent = "Delete"
+  deleteBtn.textContent = t("rulesDelete", "Delete")
 
   ruleActions.appendChild(editBtn)
   ruleActions.appendChild(deleteBtn)
@@ -338,21 +349,21 @@ function createRuleElement(rule: CustomRule): HTMLDivElement {
 
   const addTabBtn = document.createElement("button")
   addTabBtn.className = "rule-action-btn add-tab"
-  addTabBtn.title = "Add Tab to Existing Rule"
+  addTabBtn.title = t("rulesAddTabTitle", "Add Tab to Existing Rule")
   addTabBtn.setAttribute("data-rule-id", rule.id)
   addTabBtn.textContent = "+"
 
   const editBtn = document.createElement("button")
   editBtn.className = "rule-action-btn edit"
-  editBtn.title = "Edit rule"
+  editBtn.title = t("rulesEditTitle", "Edit rule")
   editBtn.setAttribute("data-rule-id", rule.id)
-  editBtn.textContent = "Edit"
+  editBtn.textContent = t("rulesEdit", "Edit")
 
   const deleteBtn = document.createElement("button")
   deleteBtn.className = "rule-action-btn delete"
-  deleteBtn.title = "Delete rule"
+  deleteBtn.title = t("rulesDeleteTitle", "Delete rule")
   deleteBtn.setAttribute("data-rule-id", rule.id)
-  deleteBtn.textContent = "Delete"
+  deleteBtn.textContent = t("rulesDelete", "Delete")
 
   ruleActions.appendChild(addTabBtn)
   ruleActions.appendChild(editBtn)
@@ -427,7 +438,7 @@ async function addCurrentTabToRule(ruleId: string, button: HTMLButtonElement): P
     const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true })
     if (!activeTab?.url) {
       button.textContent = "!"
-      button.title = "No active tab found"
+      button.title = t("rulesAddTabNoTab", "No active tab found")
       setTimeout(resetButton, 1500)
       return
     }
@@ -435,7 +446,7 @@ async function addCurrentTabToRule(ruleId: string, button: HTMLButtonElement): P
     const domain = extractDomain(activeTab.url)
     if (!domain || domain === "system") {
       button.textContent = "!"
-      button.title = "Cannot extract domain from this tab"
+      button.title = t("rulesAddTabCantExtract", "Cannot extract domain from this tab")
       setTimeout(resetButton, 1500)
       return
     }
@@ -453,19 +464,19 @@ async function addCurrentTabToRule(ruleId: string, button: HTMLButtonElement): P
     if (response?.success) {
       if (response.alreadyExists) {
         button.textContent = "="
-        button.title = "Domain already in this rule"
+        button.title = t("rulesAddTabAlreadyExists", "Domain already in this rule")
       } else {
         button.textContent = "\u2713"
-        button.title = "Added!"
+        button.title = t("rulesAddTabAdded", "Added!")
         await loadCustomRules()
       }
     } else {
       button.textContent = "!"
-      button.title = response?.error || "Failed to add domain"
+      button.title = response?.error || t("rulesAddTabFailed", "Failed to add domain")
     }
   } catch {
     button.textContent = "!"
-    button.title = "Failed to add domain"
+    button.title = t("rulesAddTabFailed", "Failed to add domain")
   }
 
   setTimeout(resetButton, 1500)
@@ -528,7 +539,12 @@ function toggleBlacklistSection(): void {
 
 // Delete rule
 async function deleteRule(ruleId: string, ruleName: string): Promise<void> {
-  if (!confirm(`Are you sure you want to delete the rule "${ruleName}"?`)) {
+  const prompt = t(
+    "rulesDeleteConfirm",
+    `Are you sure you want to delete the rule "${ruleName}"?`,
+    ruleName
+  )
+  if (!confirm(prompt)) {
     return
   }
 
@@ -542,11 +558,11 @@ async function deleteRule(ruleId: string, ruleName: string): Promise<void> {
       delete currentRules[ruleId]
       updateRulesDisplay()
     } else {
-      alert(response?.error || "Failed to delete rule")
+      alert(response?.error || t("rulesFailedToDelete", "Failed to delete rule"))
     }
   } catch (error) {
     console.error("Error deleting rule:", error)
-    alert("Failed to delete rule")
+    alert(t("rulesFailedToDelete", "Failed to delete rule"))
   }
 }
 
@@ -571,13 +587,13 @@ async function exportRules(): Promise<void> {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      showRulesMessage("Rules exported successfully!", "success")
+      showRulesMessage(t("rulesExportSuccess", "Rules exported successfully!"), "success")
     } else {
-      alert(response?.error || "Failed to export rules")
+      alert(response?.error || t("rulesFailedToExport", "Failed to export rules"))
     }
   } catch (error) {
     console.error("Error exporting rules:", error)
-    alert("Failed to export rules")
+    alert(t("rulesFailedToExport", "Failed to export rules"))
   }
 }
 
@@ -593,6 +609,7 @@ async function importRules(): Promise<void> {
 }
 
 // Initialize
+applyI18nToDom()
 updateVersionDisplay()
 updateBrowserDisplay()
 
@@ -787,8 +804,13 @@ async function initializeAiSection(): Promise<void> {
   try {
     // AI features are Chrome-only for now (WebLLM's tokenizer exceeds Firefox store limits)
     if (navigator.userAgent.includes("Firefox")) {
-      aiContent.innerHTML =
-        '<div class="ai-firefox-notice">AI features are currently available on Chrome only. Firefox support is coming soon.</div>'
+      const notice = document.createElement("div")
+      notice.className = "ai-firefox-notice"
+      notice.textContent = t(
+        "aiFirefoxNotice",
+        "AI features are currently available on Chrome only. Firefox support is coming soon."
+      )
+      aiContent.replaceChildren(notice)
       return
     }
 
@@ -825,7 +847,8 @@ async function initializeAiSection(): Promise<void> {
 
     if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
       aiWebGpuWarning.classList.add("visible")
-      aiWebGpuWarning.textContent = webGpuResponse.webGpu.reason || "WebGPU is not available"
+      aiWebGpuWarning.textContent =
+        webGpuResponse.webGpu.reason || t("aiWebGpuUnavailable", "WebGPU is not available")
       aiLoadButton.disabled = true
     }
   } catch (error) {
@@ -843,7 +866,7 @@ function updateAiSettingsVisibility(enabled: boolean): void {
 }
 
 function updateAiBadge(enabled: boolean): void {
-  aiBadge.textContent = enabled ? "On" : "Off"
+  aiBadge.textContent = enabled ? t("aiBadgeOn", "On") : t("aiBadgeOff", "Off")
   aiBadge.classList.toggle("enabled", enabled)
 }
 
@@ -857,12 +880,12 @@ function updateAiModelStatus(modelStatus: {
   // Update status badge
   aiStatusBadge.textContent =
     status === "idle"
-      ? "Idle"
+      ? t("aiStatusIdle", "Idle")
       : status === "loading"
-        ? `Loading ${progress}%`
+        ? t("aiStatusLoading", `Loading ${progress}%`, String(progress))
         : status === "ready"
-          ? "Ready"
-          : "Error"
+          ? t("aiStatusReady", "Ready")
+          : t("aiStatusError", "Error")
 
   aiStatusBadge.className = "ai-status-badge"
   if (status !== "idle") {
@@ -879,20 +902,20 @@ function updateAiModelStatus(modelStatus: {
 
   // Update load button
   if (status === "ready") {
-    aiLoadButton.textContent = "Unload Model"
+    aiLoadButton.textContent = t("aiUnloadModel", "Unload Model")
     aiLoadButton.classList.add("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = true
     aiSuggestButton.disabled = false
     stopAiStatusPolling()
   } else if (status === "loading") {
-    aiLoadButton.textContent = "Loading..."
+    aiLoadButton.textContent = t("aiLoadingButton", "Loading...")
     aiLoadButton.disabled = true
     aiModelSelect.disabled = true
     aiSuggestButton.disabled = true
     startAiStatusPolling()
   } else if (status === "error") {
-    aiLoadButton.textContent = "Retry Load"
+    aiLoadButton.textContent = t("aiRetryLoad", "Retry Load")
     aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
@@ -902,7 +925,7 @@ function updateAiModelStatus(modelStatus: {
       console.error("AI model error:", error)
     }
   } else {
-    aiLoadButton.textContent = "Load Model"
+    aiLoadButton.textContent = t("aiLoadModel", "Load Model")
     aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
@@ -937,7 +960,7 @@ function stopAiStatusPolling(): void {
 
 async function handleSuggestGroups(): Promise<void> {
   aiSuggestButton.disabled = true
-  aiSuggestStatus.textContent = "Analyzing your tabs..."
+  aiSuggestStatus.textContent = t("aiAnalyzing", "Analyzing your tabs...")
   aiSuggestStatus.className = "ai-suggest-status loading"
   aiSuggestionsContainer.innerHTML = ""
 
@@ -954,12 +977,13 @@ async function handleSuggestGroups(): Promise<void> {
       aiSuggestStatus.className = "ai-suggest-status"
       renderSuggestions(response.suggestions, [])
     } else {
-      aiSuggestStatus.textContent = response?.error || "Failed to get suggestions"
+      aiSuggestStatus.textContent =
+        response?.error || t("aiFailedToGetSuggestions", "Failed to get suggestions")
       aiSuggestStatus.className = "ai-suggest-status error"
     }
   } catch (error) {
     console.error("Error suggesting groups:", error)
-    aiSuggestStatus.textContent = "Failed to get suggestions"
+    aiSuggestStatus.textContent = t("aiFailedToGetSuggestions", "Failed to get suggestions")
     aiSuggestStatus.className = "ai-suggest-status error"
   } finally {
     aiSuggestButton.disabled = false
@@ -973,14 +997,14 @@ function renderSuggestions(
   aiSuggestionsContainer.innerHTML = ""
 
   if (suggestions.length === 0) {
-    aiSuggestStatus.textContent = "No suggestions found"
+    aiSuggestStatus.textContent = t("aiNoSuggestions", "No suggestions found")
     aiSuggestStatus.className = "ai-suggest-status"
     return
   }
 
   const dismissBtn = document.createElement("button")
   dismissBtn.className = "suggestion-dismiss-btn"
-  dismissBtn.textContent = "Dismiss"
+  dismissBtn.textContent = t("aiDismiss", "Dismiss")
   dismissBtn.addEventListener("click", async () => {
     await cachedAiSuggestions.setValue(null)
     aiSuggestionsContainer.innerHTML = ""
@@ -1007,7 +1031,11 @@ function renderSuggestions(
 
     const tabCount = document.createElement("span")
     tabCount.className = "suggestion-tab-count"
-    tabCount.textContent = `${suggestion.tabs.length} tab${suggestion.tabs.length !== 1 ? "s" : ""}`
+    const plural = suggestion.tabs.length !== 1 ? "s" : ""
+    tabCount.textContent = t("aiTabsCount", `${suggestion.tabs.length} tab${plural}`, [
+      String(suggestion.tabs.length),
+      plural
+    ])
 
     header.appendChild(colorDot)
     header.appendChild(name)
@@ -1029,7 +1057,7 @@ function renderSuggestions(
 
     const applyBtn = document.createElement("button")
     applyBtn.className = `suggestion-apply-btn${isApplied ? " applied" : ""}`
-    applyBtn.textContent = isApplied ? "Applied!" : "Apply"
+    applyBtn.textContent = isApplied ? t("aiApplied", "Applied!") : t("aiApply", "Apply")
     applyBtn.disabled = isApplied
     if (!isApplied) {
       applyBtn.addEventListener("click", () => handleApplySuggestion(suggestion, applyBtn))
@@ -1037,7 +1065,7 @@ function renderSuggestions(
 
     const ruleBtn = document.createElement("button")
     ruleBtn.className = "suggestion-rule-btn"
-    ruleBtn.textContent = "Create Rule"
+    ruleBtn.textContent = t("aiCreateRule", "Create Rule")
     ruleBtn.addEventListener("click", () => createRuleFromSuggestion(suggestion))
 
     actions.appendChild(applyBtn)
@@ -1055,7 +1083,7 @@ async function handleApplySuggestion(
   button: HTMLButtonElement
 ): Promise<void> {
   button.disabled = true
-  button.textContent = "Applying..."
+  button.textContent = t("aiApplying", "Applying...")
 
   try {
     const response = await sendMessage<{
@@ -1069,19 +1097,24 @@ async function handleApplySuggestion(
     })
 
     if (response?.success) {
-      button.textContent = "Applied!"
+      button.textContent = t("aiApplied", "Applied!")
       button.classList.add("applied")
       if (response.staleTabIds && response.staleTabIds.length > 0) {
-        button.textContent = `Applied (${response.staleTabIds.length} tab${response.staleTabIds.length !== 1 ? "s" : ""} closed)`
+        const count = response.staleTabIds.length
+        const plural = count !== 1 ? "s" : ""
+        button.textContent = t("aiAppliedWithStale", `Applied (${count} tab${plural} closed)`, [
+          String(count),
+          plural
+        ])
       }
     } else {
-      button.textContent = "Failed"
+      button.textContent = t("aiFailed", "Failed")
       button.disabled = false
       console.error("Failed to apply suggestion:", response?.error)
     }
   } catch (error) {
     console.error("Error applying suggestion:", error)
-    button.textContent = "Failed"
+    button.textContent = t("aiFailed", "Failed")
     button.disabled = false
   }
 }
@@ -1169,6 +1202,28 @@ importRulesButton?.addEventListener("click", importRules)
 // Blacklist event listeners
 blacklistToggle?.addEventListener("click", toggleBlacklistSection)
 addBlacklistButton?.addEventListener("click", addBlacklistRule)
+
+// Advanced section toggle
+function toggleAdvancedSection(): void {
+  advancedExpanded = !advancedExpanded
+  advancedToggle.classList.toggle("expanded", advancedExpanded)
+  advancedContent.classList.toggle("expanded", advancedExpanded)
+}
+
+advancedToggle?.addEventListener("click", toggleAdvancedSection)
+
+// Initialize hide context menu state
+sendMessage<{ enabled?: boolean }>({ action: "getHideContextMenu" }).then(response => {
+  hideContextMenuToggle.checked = response?.enabled ?? false
+})
+
+// Hide context menu event listener
+hideContextMenuToggle?.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleHideContextMenu",
+    enabled: (event.target as HTMLInputElement).checked
+  })
+})
 
 // Initialize AI badge on popup open
 sendMessage<{

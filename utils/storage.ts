@@ -80,6 +80,10 @@ export const indexGroupTitles = storage.defineItem<boolean>("local:indexGroupTit
   fallback: DEFAULT_STATE.indexGroupTitles
 })
 
+export const hideContextMenu = storage.defineItem<boolean>("local:hideContextMenu", {
+  fallback: DEFAULT_STATE.hideContextMenu
+})
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -107,7 +111,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelIdValue,
     openTabNextToCurrentValue,
     sortGroupsAlphabeticallyValue,
-    indexGroupTitlesValue
+    indexGroupTitlesValue,
+    hideContextMenuValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -123,7 +128,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelId.getValue(),
     openTabNextToCurrent.getValue(),
     sortGroupsAlphabetically.getValue(),
-    indexGroupTitles.getValue()
+    indexGroupTitles.getValue(),
+    hideContextMenu.getValue()
   ])
 
   return {
@@ -141,7 +147,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelId: aiModelIdValue,
     openTabNextToCurrent: openTabNextToCurrentValue,
     sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
-    indexGroupTitles: indexGroupTitlesValue
+    indexGroupTitles: indexGroupTitlesValue,
+    hideContextMenu: hideContextMenuValue
   }
 }
 
@@ -195,6 +202,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.indexGroupTitles !== undefined) {
     promises.push(indexGroupTitles.setValue(data.indexGroupTitles))
+  }
+  if (data.hideContextMenu !== undefined) {
+    promises.push(hideContextMenu.setValue(data.hideContextMenu))
   }
   await Promise.all(promises)
 }
