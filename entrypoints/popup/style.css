@@ -829,6 +829,19 @@ input:checked + .slider:before {
   display: flex;
 }
 
+.sort-direction-container {
+  display: none;
+  padding-left: 16px;
+}
+
+.sort-direction-container.visible {
+  display: flex;
+}
+
+.sort-direction-toggle-bar {
+  gap: 2px;
+}
+
 .sorting-help {
   display: none;
   padding-left: 16px;

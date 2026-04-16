@@ -122,11 +122,18 @@
           </button>
           <div class="sorting-content">
             <div class="toggle-container">
-              <span>Keep groups sorted A-Z</span>
+              <span>Keep groups sorted alphabetically</span>
               <label class="switch">
                 <input type="checkbox" id="sortGroupsToggle" />
                 <span class="slider round"></span>
               </label>
+            </div>
+            <div class="toggle-container sort-direction-container" id="sortDirectionContainer">
+              <span>Direction</span>
+              <div class="group-by-toggle-bar sort-direction-toggle-bar">
+                <button class="toggle-option sort-direction-option active" data-value="asc">A - Z</button>
+                <button class="toggle-option sort-direction-option" data-value="desc">Z - A</button>
+              </div>
             </div>
             <div class="toggle-container sorting-index-container" id="sortingIndexContainer">
               <span>Number groups (1. AI, 2. Docs...)</span>

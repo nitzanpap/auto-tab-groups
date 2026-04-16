@@ -11,6 +11,7 @@ import type {
   GroupByMode,
   GroupColorMapping,
   RuleMatchingMode,
+  SortDirection,
   StorageSchema,
   TabGroupColor
 } from "../types"
@@ -76,6 +77,10 @@ export const sortGroupsAlphabetically = storage.defineItem<boolean>(
   { fallback: DEFAULT_STATE.sortGroupsAlphabetically }
 )
 
+export const sortGroupsDirection = storage.defineItem<SortDirection>("local:sortGroupsDirection", {
+  fallback: DEFAULT_STATE.sortGroupsDirection
+})
+
 export const indexGroupTitles = storage.defineItem<boolean>("local:indexGroupTitles", {
   fallback: DEFAULT_STATE.indexGroupTitles
 })
@@ -107,6 +112,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelIdValue,
     openTabNextToCurrentValue,
     sortGroupsAlphabeticallyValue,
+    sortGroupsDirectionValue,
     indexGroupTitlesValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
@@ -123,6 +129,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelId.getValue(),
     openTabNextToCurrent.getValue(),
     sortGroupsAlphabetically.getValue(),
+    sortGroupsDirection.getValue(),
     indexGroupTitles.getValue()
   ])
 
@@ -141,6 +148,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiModelId: aiModelIdValue,
     openTabNextToCurrent: openTabNextToCurrentValue,
     sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
+    sortGroupsDirection: sortGroupsDirectionValue,
     indexGroupTitles: indexGroupTitlesValue
   }
 }
@@ -192,6 +200,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.sortGroupsAlphabetically !== undefined) {
     promises.push(sortGroupsAlphabetically.setValue(data.sortGroupsAlphabetically))
+  }
+  if (data.sortGroupsDirection !== undefined) {
+    promises.push(sortGroupsDirection.setValue(data.sortGroupsDirection))
   }
   if (data.indexGroupTitles !== undefined) {
     promises.push(indexGroupTitles.setValue(data.indexGroupTitles))

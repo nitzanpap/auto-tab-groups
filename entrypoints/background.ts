@@ -235,6 +235,21 @@ export default defineBackground(() => {
             break
           }
 
+          case "getSortGroupsDirection":
+            result = { direction: tabGroupState.sortGroupsDirection }
+            break
+
+          case "setSortGroupsDirection": {
+            tabGroupState.sortGroupsDirection = msg.direction
+            await saveState()
+            if (tabGroupState.sortGroupsAlphabetically) {
+              const { tabSortService } = await import("../services/TabSortService")
+              await tabSortService.sortGroups()
+            }
+            result = { direction: tabGroupState.sortGroupsDirection }
+            break
+          }
+
           case "getIndexGroupTitles":
             result = { enabled: tabGroupState.indexGroupTitles }
             break

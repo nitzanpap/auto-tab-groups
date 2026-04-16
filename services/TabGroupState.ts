@@ -8,6 +8,7 @@ import type {
   CustomRulesMapping,
   GroupByMode,
   RuleMatchingMode,
+  SortDirection,
   StorageSchema
 } from "../types"
 import { DEFAULT_STATE } from "../types/storage"
@@ -23,6 +24,7 @@ class TabGroupState {
   autoCollapseDelayMs: number
   openTabNextToCurrent: boolean
   sortGroupsAlphabetically: boolean
+  sortGroupsDirection: SortDirection
   indexGroupTitles: boolean
 
   constructor() {
@@ -36,6 +38,7 @@ class TabGroupState {
     this.autoCollapseDelayMs = DEFAULT_STATE.autoCollapseDelayMs
     this.openTabNextToCurrent = DEFAULT_STATE.openTabNextToCurrent
     this.sortGroupsAlphabetically = DEFAULT_STATE.sortGroupsAlphabetically
+    this.sortGroupsDirection = DEFAULT_STATE.sortGroupsDirection
     this.indexGroupTitles = DEFAULT_STATE.indexGroupTitles
   }
 
@@ -52,6 +55,7 @@ class TabGroupState {
     this.autoCollapseDelayMs = data.autoCollapseDelayMs ?? this.autoCollapseDelayMs
     this.openTabNextToCurrent = data.openTabNextToCurrent ?? this.openTabNextToCurrent
     this.sortGroupsAlphabetically = data.sortGroupsAlphabetically ?? this.sortGroupsAlphabetically
+    this.sortGroupsDirection = data.sortGroupsDirection ?? this.sortGroupsDirection
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
 
     this.customRules.clear()
@@ -79,6 +83,7 @@ class TabGroupState {
       autoCollapseDelayMs: this.autoCollapseDelayMs,
       openTabNextToCurrent: this.openTabNextToCurrent,
       sortGroupsAlphabetically: this.sortGroupsAlphabetically,
+      sortGroupsDirection: this.sortGroupsDirection,
       indexGroupTitles: this.indexGroupTitles,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,

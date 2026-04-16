@@ -43,9 +43,9 @@ function isAlreadySorted(
 
 class TabSortService {
   /**
-   * Sorts tab groups alphabetically (A-Z by title) in the current window,
-   * then moves ungrouped non-pinned tabs to the end of the tab strip.
-   * When indexing is enabled, applies numbered prefixes to titles.
+   * Sorts tab groups alphabetically by title (A-Z or Z-A) in the current
+   * window, then moves ungrouped non-pinned tabs to the end of the tab
+   * strip. When indexing is enabled, applies numbered prefixes to titles.
    *
    * Optimized: compares current vs desired order and only moves groups
    * that are actually out of place to minimize visual flash.
@@ -71,11 +71,19 @@ class TabSortService {
         return
       }
 
-      // Compute desired alphabetical order by stripped title
-      const sorted = [...groups].sort((a, b) =>
-        stripIndexPrefix(a.title ?? "").localeCompare(stripIndexPrefix(b.title ?? ""), undefined, {
-          sensitivity: "base"
-        })
+      // Compute desired alphabetical order by stripped title, respecting
+      // the configured direction ("asc" = A-Z, "desc" = Z-A)
+      const directionFactor = tabGroupState.sortGroupsDirection === "desc" ? -1 : 1
+      const sorted = [...groups].sort(
+        (a, b) =>
+          directionFactor *
+          stripIndexPrefix(a.title ?? "").localeCompare(
+            stripIndexPrefix(b.title ?? ""),
+            undefined,
+            {
+              sensitivity: "base"
+            }
+          )
       )
 
       // Update index prefixes if enabled (title-only, no moves yet)
