@@ -444,7 +444,7 @@ input:checked + .slider:before {
 
 .rules-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .rules-count {
@@ -794,7 +794,7 @@ input:checked + .slider:before {
 
 .sorting-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .sorting-toggle .up-arrow {
@@ -890,7 +890,7 @@ input:checked + .slider:before {
 
 .ai-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1357,7 +1357,7 @@ input:checked + .slider:before {
 
 .blacklist-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .blacklist-count {
@@ -1466,7 +1466,7 @@ input:checked + .slider:before {
 
 .advanced-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .advanced-toggle .up-arrow {

@@ -59,7 +59,7 @@ export async function initI18n(locale: string): Promise<void> {
     const flattened: Catalog = {}
     for (const [key, value] of Object.entries(raw)) {
       if (value && typeof value.message === "string") {
-        flattened[key] = value.message
+        flattened[key] = resolveNamedPlaceholders(value.message, value.placeholders)
       }
     }
     activeCatalog = flattened
@@ -67,6 +67,29 @@ export async function initI18n(locale: string): Promise<void> {
     console.error(`[i18n] Failed to load locale "${locale}":`, error)
     activeCatalog = null
   }
+}
+
+/**
+ * Resolves WebExtensions-style named placeholders (`$count$`, `$name$`, …)
+ * to their positional form (`$1`, `$2`, …). Case-insensitive name match, per
+ * the spec. Unknown placeholders are left intact so `applySubstitutions` can
+ * still handle raw positional refs.
+ */
+function resolveNamedPlaceholders(
+  message: string,
+  placeholders: RawMessage["placeholders"]
+): string {
+  if (!placeholders) return message
+  const lookup: Record<string, string> = {}
+  for (const [name, def] of Object.entries(placeholders)) {
+    if (def && typeof def.content === "string") {
+      lookup[name.toLowerCase()] = def.content
+    }
+  }
+  return message.replace(/\$([A-Za-z0-9_@]+)\$/g, (match, name: string) => {
+    const replacement = lookup[name.toLowerCase()]
+    return replacement ?? match
+  })
 }
 
 /**

@@ -671,8 +671,10 @@ async function handleFileImport(event: Event): Promise<void> {
   }
 }
 // Initialize — resolve locale from background, load override catalog if any,
-// then translate the DOM and set text direction.
-;(async () => {
+// then translate the DOM and set text direction. Dynamic lists (rules, blacklist,
+// cached AI suggestions) are loaded AFTER i18n is ready so their dynamically
+// rendered strings (Edit/Delete buttons, empty states) pick up the right locale.
+const i18nReady: Promise<void> = (async () => {
   const resp = await sendMessage<{ locale?: UserLocale }>({ action: "getUserLocale" })
   const locale: UserLocale = resp?.locale ?? "auto"
   languageSelect.value = locale
@@ -683,13 +685,17 @@ async function handleFileImport(event: Event): Promise<void> {
 updateVersionDisplay()
 updateBrowserDisplay()
 
-// Language picker change handler
+// Language picker change handler — also re-renders dynamic lists so their
+// JS-rendered strings (Edit/Delete buttons, truncation suffix, empty states)
+// switch along with the static DOM.
 languageSelect.addEventListener("change", async () => {
   const locale = languageSelect.value as UserLocale
   await sendMessage({ action: "setUserLocale", locale })
   await initI18n(locale)
   applyI18nToDom()
   applyDirectionToDom(resolveEffectiveLocale(locale))
+  updateRulesDisplay()
+  updateBlacklistDisplay()
 })
 
 // Button event listeners
@@ -1346,7 +1352,12 @@ async function loadCachedSuggestions(): Promise<void> {
 
   renderSuggestions(cached.suggestions, cached.appliedIndices)
 }
-loadCachedSuggestions()
 
-// Load custom rules on sidebar open
-loadCustomRules()
+// Gate initial dynamic loads on i18n readiness so JS-rendered strings
+// (Edit/Delete buttons, empty state, truncation suffix, etc.) render in the
+// user's chosen locale on first paint. Subsequent calls (from event handlers)
+// already run after i18nReady has resolved.
+i18nReady.then(() => {
+  loadCachedSuggestions()
+  loadCustomRules()
+})
