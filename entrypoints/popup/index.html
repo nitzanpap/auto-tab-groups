@@ -123,11 +123,18 @@
         </button>
         <div class="sorting-content">
           <div class="toggle-container">
-            <span data-i18n="settingSortGroupsAlphabetically">Keep groups sorted A-Z</span>
+            <span data-i18n="settingSortGroupsAlphabetically">Keep groups sorted alphabetically</span>
             <label class="switch">
               <input type="checkbox" id="sortGroupsToggle" />
               <span class="slider round"></span>
             </label>
+          </div>
+          <div class="toggle-container sort-direction-container" id="sortDirectionContainer">
+            <span data-i18n="settingSortDirection">Direction</span>
+            <div class="group-by-toggle-bar sort-direction-toggle-bar">
+              <button class="toggle-option sort-direction-option active" data-value="asc" data-i18n="settingSortDirectionAsc">A - Z</button>
+              <button class="toggle-option sort-direction-option" data-value="desc" data-i18n="settingSortDirectionDesc">Z - A</button>
+            </div>
           </div>
           <div class="toggle-container sorting-index-container" id="sortingIndexContainer">
             <span data-i18n="settingNumberGroups">Number groups (1. AI, 2. Docs...)</span>

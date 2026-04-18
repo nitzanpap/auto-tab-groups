@@ -4,7 +4,7 @@
 
 import type { AiMessage, AiMessageAction } from "./ai-messages"
 import type { CustomRule, RuleData, RulesExportData, RulesStats } from "./rules"
-import type { GroupByMode } from "./storage"
+import type { GroupByMode, SortDirection } from "./storage"
 
 /**
  * All possible message actions
@@ -31,8 +31,12 @@ export type MessageAction =
   | "toggleOpenTabNextToCurrent"
   | "getSortGroupsAlphabetically"
   | "toggleSortGroupsAlphabetically"
+  | "getSortGroupsDirection"
+  | "setSortGroupsDirection"
   | "getIndexGroupTitles"
   | "toggleIndexGroupTitles"
+  | "getHideContextMenu"
+  | "toggleHideContextMenu"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -71,7 +75,9 @@ export interface SimpleMessage extends BaseMessage {
     | "getMinimumTabsForGroup"
     | "getOpenTabNextToCurrent"
     | "getSortGroupsAlphabetically"
+    | "getSortGroupsDirection"
     | "getIndexGroupTitles"
+    | "getHideContextMenu"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -133,10 +139,26 @@ export interface ToggleSortGroupsMessage extends BaseMessage {
 }
 
 /**
+ * Set sort groups direction message
+ */
+export interface SetSortGroupsDirectionMessage extends BaseMessage {
+  action: "setSortGroupsDirection"
+  direction: SortDirection
+}
+
+/**
  * Toggle index group titles message
  */
 export interface ToggleIndexGroupTitlesMessage extends BaseMessage {
   action: "toggleIndexGroupTitles"
+  enabled: boolean
+}
+
+/**
+ * Toggle hide context menu message
+ */
+export interface ToggleHideContextMenuMessage extends BaseMessage {
+  action: "toggleHideContextMenu"
   enabled: boolean
 }
 
@@ -194,7 +216,9 @@ export type Message =
   | SetMinimumTabsMessage
   | ToggleOpenTabNextToCurrentMessage
   | ToggleSortGroupsMessage
+  | SetSortGroupsDirectionMessage
   | ToggleIndexGroupTitlesMessage
+  | ToggleHideContextMenuMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage
@@ -252,6 +276,13 @@ export interface AutoGroupStateResponse {
  */
 export interface GroupByModeResponse {
   mode: GroupByMode
+}
+
+/**
+ * Response for get sort groups direction
+ */
+export interface SortGroupsDirectionResponse {
+  direction: SortDirection
 }
 
 /**

@@ -43,9 +43,9 @@ function isAlreadySorted(
 
 class TabSortService {
   /**
-   * Sorts tab groups alphabetically (A-Z by title) in the current window,
-   * then moves ungrouped non-pinned tabs to the end of the tab strip.
-   * When indexing is enabled, applies numbered prefixes to titles.
+   * Sorts tab groups alphabetically by title (A-Z or Z-A) in the current
+   * window, then moves ungrouped non-pinned tabs to the end of the tab
+   * strip. When indexing is enabled, applies numbered prefixes to titles.
    *
    * Optimized: compares current vs desired order and only moves groups
    * that are actually out of place to minimize visual flash.
@@ -56,6 +56,7 @@ class TabSortService {
     const tabGroups = browser.tabGroups as unknown as TabGroupsWithMove | undefined
 
     if (!tabGroups?.move) {
+      console.log("[TabSortService] tabGroups.move unavailable (Firefox?), skipping sort")
       return
     }
 
@@ -65,17 +66,57 @@ class TabSortService {
         return
       }
 
-      const groups = await tabGroups.query({ windowId: currentWindow.id })
+      const queriedGroups = await tabGroups.query({ windowId: currentWindow.id })
 
-      if (groups.length === 0) {
+      if (queriedGroups.length === 0) {
         return
       }
 
-      // Compute desired alphabetical order by stripped title
-      const sorted = [...groups].sort((a, b) =>
-        stripIndexPrefix(a.title ?? "").localeCompare(stripIndexPrefix(b.title ?? ""), undefined, {
-          sensitivity: "base"
-        })
+      // browser.tabGroups.query() does not return groups in visual tab-strip
+      // order (it's stable by creation/ID). To compare against the current
+      // layout, derive visual order from the first tab of each group in
+      // tab-index order. Falls back to queried order if no tabs resolve
+      // groups (e.g., in tests).
+      const allTabs = await browser.tabs.query({ windowId: currentWindow.id })
+      const tabsByIndex = [...allTabs].sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      const groupById = new Map(queriedGroups.map(g => [g.id, g]))
+      const visualGroupIds: number[] = []
+      const seenGroupIds = new Set<number>()
+      for (const tab of tabsByIndex) {
+        const gid = tab.groupId
+        if (gid && gid !== -1 && !seenGroupIds.has(gid) && groupById.has(gid)) {
+          seenGroupIds.add(gid)
+          visualGroupIds.push(gid)
+        }
+      }
+      const groups =
+        visualGroupIds.length > 0
+          ? visualGroupIds
+              .map(id => groupById.get(id))
+              .filter((g): g is NonNullable<typeof g> => g !== undefined)
+          : queriedGroups
+
+      // Compute desired alphabetical order by stripped title, respecting
+      // the configured direction ("asc" = A-Z, "desc" = Z-A)
+      const directionFactor = tabGroupState.sortGroupsDirection === "desc" ? -1 : 1
+      const sorted = [...groups].sort(
+        (a, b) =>
+          directionFactor *
+          stripIndexPrefix(a.title ?? "").localeCompare(
+            stripIndexPrefix(b.title ?? ""),
+            undefined,
+            {
+              sensitivity: "base"
+            }
+          )
+      )
+
+      console.log(
+        `[TabSortService] sortGroups: direction=${tabGroupState.sortGroupsDirection}`,
+        "current=",
+        groups.map(g => g.title),
+        "desired=",
+        sorted.map(g => g.title)
       )
 
       // Update index prefixes if enabled (title-only, no moves yet)

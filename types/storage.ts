@@ -16,6 +16,11 @@ export type GroupByMode = "rules-only" | "domain" | "subdomain"
 export type RuleMatchingMode = "exact" | "contains" | "regex"
 
 /**
+ * Direction for alphabetical sorting of tab groups
+ */
+export type SortDirection = "asc" | "desc"
+
+/**
  * Mapping of group titles to their colors
  */
 export type GroupColorMapping = Record<string, TabGroupColor>
@@ -55,8 +60,10 @@ export interface StorageSchema {
   aiModelId: string
   /** Whether to open new tabs next to the current tab (opt-in, default off) */
   openTabNextToCurrent: boolean
-  /** Whether to keep tab groups sorted alphabetically (A-Z) */
+  /** Whether to keep tab groups sorted alphabetically */
   sortGroupsAlphabetically: boolean
+  /** Sort direction when alphabetical sorting is enabled ("asc" = A-Z, "desc" = Z-A) */
+  sortGroupsDirection: SortDirection
   /** Whether to prefix group titles with their sort position (e.g., "1. AI") */
   indexGroupTitles: boolean
   /** Whether to hide the extension's right-click context menu items */
@@ -81,6 +88,7 @@ export const DEFAULT_STATE: StorageSchema = {
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
   openTabNextToCurrent: false,
   sortGroupsAlphabetically: false,
+  sortGroupsDirection: "asc",
   indexGroupTitles: false,
   hideContextMenu: false
 }

@@ -103,8 +103,20 @@
     "description": "Title for the collapsible sorting section."
   },
   "settingSortGroupsAlphabetically": {
-    "message": "Keep groups sorted A-Z",
+    "message": "Keep groups sorted alphabetically",
     "description": "Toggle that keeps tab groups sorted alphabetically."
+  },
+  "settingSortDirection": {
+    "message": "Direction",
+    "description": "Label for the sort direction toggle (A-Z vs Z-A)."
+  },
+  "settingSortDirectionAsc": {
+    "message": "A - Z",
+    "description": "Ascending alphabetical sort direction option."
+  },
+  "settingSortDirectionDesc": {
+    "message": "Z - A",
+    "description": "Descending alphabetical sort direction option."
   },
   "settingNumberGroups": {
     "message": "Number groups (1. AI, 2. Docs...)",

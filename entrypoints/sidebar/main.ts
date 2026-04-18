@@ -14,7 +14,9 @@ const collapseAllButton = document.getElementById("collapseAllButton") as HTMLBu
 const expandAllButton = document.getElementById("expandAllButton") as HTMLButtonElement
 const autoGroupToggle = document.getElementById("autoGroupToggle") as HTMLInputElement
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTMLInputElement
-const groupByToggleOptions = document.querySelectorAll<HTMLButtonElement>(".toggle-option")
+const groupByToggleOptions = document.querySelectorAll<HTMLButtonElement>(
+  ".group-by-toggle-bar:not(.sort-direction-toggle-bar) .toggle-option"
+)
 const minimumTabsInput = document.getElementById("minimumTabsInput") as HTMLInputElement
 
 // Auto-collapse Elements
@@ -32,6 +34,8 @@ const openTabNextToCurrentToggle = document.getElementById(
 const sortingToggle = document.querySelector(".sorting-toggle") as HTMLButtonElement
 const sortingContent = document.querySelector(".sorting-content") as HTMLDivElement
 const sortGroupsToggle = document.getElementById("sortGroupsToggle") as HTMLInputElement
+const sortDirectionContainer = document.getElementById("sortDirectionContainer") as HTMLDivElement
+const sortDirectionOptions = document.querySelectorAll<HTMLButtonElement>(".sort-direction-option")
 const sortingIndexContainer = document.getElementById("sortingIndexContainer") as HTMLDivElement
 const indexGroupTitlesToggle = document.getElementById("indexGroupTitlesToggle") as HTMLInputElement
 const sortingHelp = document.getElementById("sortingHelp") as HTMLDivElement
@@ -720,6 +724,10 @@ sendMessage<{ enabled?: boolean }>({ action: "getSortGroupsAlphabetically" }).th
   updateSortingSubOptions(enabled)
 })
 
+sendMessage<{ direction?: "asc" | "desc" }>({ action: "getSortGroupsDirection" }).then(response => {
+  updateSortDirectionButtons(response?.direction ?? "asc")
+})
+
 sendMessage<{ enabled?: boolean }>({ action: "getIndexGroupTitles" }).then(response => {
   indexGroupTitlesToggle.checked = response?.enabled ?? false
 })
@@ -801,13 +809,21 @@ function toggleSortingSection(): void {
 
 function updateSortingSubOptions(sortEnabled: boolean): void {
   if (sortEnabled) {
+    sortDirectionContainer.classList.add("visible")
     sortingIndexContainer.classList.add("visible")
     sortingHelp.classList.add("visible")
   } else {
+    sortDirectionContainer.classList.remove("visible")
     sortingIndexContainer.classList.remove("visible")
     sortingHelp.classList.remove("visible")
     indexGroupTitlesToggle.checked = false
   }
+}
+
+function updateSortDirectionButtons(direction: string): void {
+  sortDirectionOptions.forEach(option => {
+    option.classList.toggle("active", option.dataset.value === direction)
+  })
 }
 
 sortingToggle?.addEventListener("click", toggleSortingSection)
@@ -819,6 +835,17 @@ sortGroupsToggle.addEventListener("change", event => {
   sendMessage({
     action: "toggleSortGroupsAlphabetically",
     enabled
+  })
+})
+
+// Sort direction event listeners
+sortDirectionOptions.forEach(option => {
+  option.addEventListener("click", () => {
+    const direction = option.dataset.value
+    if (direction === "asc" || direction === "desc") {
+      updateSortDirectionButtons(direction)
+      sendMessage({ action: "setSortGroupsDirection", direction })
+    }
   })
 })
 
