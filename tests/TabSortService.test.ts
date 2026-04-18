@@ -200,6 +200,96 @@ describe("TabSortService", () => {
     })
   })
 
+  describe("sortGroups with Z-A direction", () => {
+    it("should sort groups in reverse alphabetical order when direction is desc", async () => {
+      tabGroupState.sortGroupsDirection = "desc"
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "Amazon", windowId: 1 },
+        { id: 2, title: "GitHub", windowId: 1 },
+        { id: 3, title: "Docs", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Z-A order: GitHub(2), Docs(3), Amazon(1)
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(3)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: -1 })
+    })
+
+    it("should apply index prefixes in Z-A order when indexing is enabled", async () => {
+      tabGroupState.sortGroupsDirection = "desc"
+      tabGroupState.indexGroupTitles = true
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "Amazon", windowId: 1 },
+        { id: 2, title: "GitHub", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // Z-A order means GitHub is 1, Amazon is 2
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(2, { title: "1. GitHub" })
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { title: "2. Amazon" })
+    })
+
+    it("should skip moves when groups are already in Z-A order", async () => {
+      tabGroupState.sortGroupsDirection = "desc"
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "GitHub", windowId: 1 },
+        { id: 2, title: "Docs", windowId: 1 },
+        { id: 3, title: "Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      expect(mockBrowser.tabGroups.move).not.toHaveBeenCalled()
+    })
+
+    it("should fall back to A-Z order when direction is asc", async () => {
+      tabGroupState.sortGroupsDirection = "asc"
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "GitHub", windowId: 1 },
+        { id: 2, title: "Amazon", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([])
+
+      await tabSortService.sortGroups()
+
+      // A-Z: Amazon(2), GitHub(1)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+    })
+
+    it("should flip A-Z to Z-A when tab-strip order differs from tabGroups.query order", async () => {
+      // Regression: tabGroups.query() is stable by creation/ID, not visual
+      // tab-strip order. Relying on it caused Z-A (and reverse flips) to no-op
+      // after an initial sort had already been applied.
+      tabGroupState.sortGroupsDirection = "desc"
+      // Chrome returned groups in creation order: Youtube(1) then Google(2)
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "Youtube", windowId: 1 },
+        { id: 2, title: "Google", windowId: 1 }
+      ])
+      // But visually (after a prior A-Z sort) the strip is Google, Youtube
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 100, groupId: 2, pinned: false, index: 0 },
+        { id: 101, groupId: 1, pinned: false, index: 1 }
+      ])
+
+      await tabSortService.sortGroups()
+
+      // Visual order is [Google(2), Youtube(1)], desired Z-A is [Youtube(1), Google(2)] —
+      // every position differs, so both groups get moved.
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: -1 })
+    })
+  })
+
   describe("sortGroups with indexing", () => {
     it("should apply index prefixes after sorting when indexGroupTitles is enabled", async () => {
       tabGroupState.indexGroupTitles = true

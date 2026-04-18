@@ -70,6 +70,15 @@ describe("TabGroupState", () => {
       expect(tabGroupState.sortGroupsAlphabetically).toBe(false)
     })
 
+    it("should update sortGroupsDirection", () => {
+      tabGroupState.updateFromStorage({ sortGroupsDirection: "desc" })
+      expect(tabGroupState.sortGroupsDirection).toBe("desc")
+    })
+
+    it("should default sortGroupsDirection to asc", () => {
+      expect(tabGroupState.sortGroupsDirection).toBe("asc")
+    })
+
     it("should update indexGroupTitles", () => {
       tabGroupState.updateFromStorage({ indexGroupTitles: true })
       expect(tabGroupState.indexGroupTitles).toBe(true)
@@ -142,6 +151,7 @@ describe("TabGroupState", () => {
       expect(data).toHaveProperty("groupColorMapping")
       expect(data).toHaveProperty("minimumTabsForGroup")
       expect(data).toHaveProperty("sortGroupsAlphabetically")
+      expect(data).toHaveProperty("sortGroupsDirection")
       expect(data).toHaveProperty("indexGroupTitles")
     })
 

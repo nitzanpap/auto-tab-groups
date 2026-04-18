@@ -4,7 +4,7 @@
 
 import type { AiMessage, AiMessageAction } from "./ai-messages"
 import type { CustomRule, RuleData, RulesExportData, RulesStats } from "./rules"
-import type { GroupByMode } from "./storage"
+import type { GroupByMode, SortDirection } from "./storage"
 
 /**
  * All possible message actions
@@ -31,6 +31,8 @@ export type MessageAction =
   | "toggleOpenTabNextToCurrent"
   | "getSortGroupsAlphabetically"
   | "toggleSortGroupsAlphabetically"
+  | "getSortGroupsDirection"
+  | "setSortGroupsDirection"
   | "getIndexGroupTitles"
   | "toggleIndexGroupTitles"
   | "getCustomRules"
@@ -71,6 +73,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getMinimumTabsForGroup"
     | "getOpenTabNextToCurrent"
     | "getSortGroupsAlphabetically"
+    | "getSortGroupsDirection"
     | "getIndexGroupTitles"
     | "getCustomRules"
     | "getRulesStats"
@@ -130,6 +133,14 @@ export interface ToggleOpenTabNextToCurrentMessage extends BaseMessage {
 export interface ToggleSortGroupsMessage extends BaseMessage {
   action: "toggleSortGroupsAlphabetically"
   enabled: boolean
+}
+
+/**
+ * Set sort groups direction message
+ */
+export interface SetSortGroupsDirectionMessage extends BaseMessage {
+  action: "setSortGroupsDirection"
+  direction: SortDirection
 }
 
 /**
@@ -194,6 +205,7 @@ export type Message =
   | SetMinimumTabsMessage
   | ToggleOpenTabNextToCurrentMessage
   | ToggleSortGroupsMessage
+  | SetSortGroupsDirectionMessage
   | ToggleIndexGroupTitlesMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
@@ -252,6 +264,13 @@ export interface AutoGroupStateResponse {
  */
 export interface GroupByModeResponse {
   mode: GroupByMode
+}
+
+/**
+ * Response for get sort groups direction
+ */
+export interface SortGroupsDirectionResponse {
+  direction: SortDirection
 }
 
 /**
