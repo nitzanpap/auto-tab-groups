@@ -1,0 +1,748 @@
+{
+  "extensionName": {
+    "message": "Auto Tab Groups",
+    "description": "The name of the extension as it appears in the browser store and toolbar."
+  },
+  "extensionDescription": {
+    "message": "按域名自动分组标签页。",
+    "description": "Short description shown in the extensions list."
+  },
+
+  "popupTitle": {
+    "message": "Auto Tab Groups",
+    "description": "Heading shown at the top of the popup/sidebar."
+  },
+  "popupGroupTabs": {
+    "message": "分组标签页",
+    "description": "Button that groups all open tabs immediately."
+  },
+  "popupUngroupAll": {
+    "message": "取消全部分组",
+    "description": "Button that removes every tab group."
+  },
+  "popupGenerateNewColors": {
+    "message": "生成新颜色",
+    "description": "Button that randomizes the colors of all groups."
+  },
+  "popupGenerateNewColorsTitle": {
+    "message": "随机生成分组颜色。颜色会自动保存并为每个域名/规则恢复。",
+    "description": "Tooltip for the Generate New Colors button."
+  },
+  "popupCollapseAll": {
+    "message": "全部折叠",
+    "description": "Button that collapses every group."
+  },
+  "popupExpandAll": {
+    "message": "全部展开",
+    "description": "Button that expands every group."
+  },
+
+  "settingsHeading": {
+    "message": "设置",
+    "description": "Heading for the main settings section."
+  },
+  "settingLanguage": {
+    "message": "语言",
+    "description": "Label for the UI language picker."
+  },
+  "settingLanguageAuto": {
+    "message": "自动(浏览器默认)",
+    "description": "Picker option that defers to the browser's UI language."
+  },
+  "settingAutoGroupMode": {
+    "message": "自动分组模式",
+    "description": "Label for the toggle that enables automatic grouping."
+  },
+  "settingGroupBy": {
+    "message": "分组方式",
+    "description": "Label for the group-by mode selector."
+  },
+  "settingGroupByRulesOnly": {
+    "message": "仅规则",
+    "description": "Option that groups only by custom rules."
+  },
+  "settingGroupByRulesAndDomain": {
+    "message": "规则和域名",
+    "description": "Option that groups by rules plus base domain (popup)."
+  },
+  "settingGroupByRulesAndSubdomain": {
+    "message": "规则和子域名",
+    "description": "Option that groups by rules plus subdomain (popup)."
+  },
+  "settingGroupByDomain": {
+    "message": "域名",
+    "description": "Option that groups by base domain (sidebar)."
+  },
+  "settingGroupBySubdomain": {
+    "message": "子域名",
+    "description": "Option that groups by subdomain (sidebar)."
+  },
+  "settingGroupNewEmptyTabs": {
+    "message": "将新的空白标签页归入“System”",
+    "description": "Label for the toggle that groups blank/new tabs under a System group."
+  },
+  "settingMinimumTabsForGroup": {
+    "message": "形成分组所需的最少标签页数",
+    "description": "Label for the numeric input that sets the minimum tab count required to create a group."
+  },
+  "settingAutoCollapseInactive": {
+    "message": "自动折叠非活动分组",
+    "description": "Label for the toggle that auto-collapses groups the user isn't looking at."
+  },
+  "settingCollapseDelay": {
+    "message": "折叠延迟",
+    "description": "Label for the numeric input that sets the auto-collapse delay."
+  },
+  "settingCollapseDelayHelp": {
+    "message": "0 = 立即,或设置折叠前的延迟 (100-5000 毫秒)",
+    "description": "Help text under the collapse-delay input."
+  },
+  "settingOpenNewTabsNextToCurrent": {
+    "message": "在当前标签页旁打开新标签页",
+    "description": "Label for the toggle that opens new tabs adjacent to the active tab."
+  },
+  "settingPinnedTabsNote": {
+    "message": "固定的标签页永远不会被自动分组",
+    "description": "Informational note about pinned tabs."
+  },
+
+  "sortingSectionTitle": {
+    "message": "排序",
+    "description": "Title for the collapsible sorting section."
+  },
+  "settingSortGroupsAlphabetically": {
+    "message": "按字母顺序保持分组排序",
+    "description": "Toggle that keeps tab groups sorted alphabetically."
+  },
+  "settingSortDirection": {
+    "message": "方向",
+    "description": "Label for the sort direction toggle (A-Z vs Z-A)."
+  },
+  "settingSortDirectionAsc": {
+    "message": "A - Z",
+    "description": "Ascending alphabetical sort direction option."
+  },
+  "settingSortDirectionDesc": {
+    "message": "Z - A",
+    "description": "Descending alphabetical sort direction option."
+  },
+  "settingNumberGroups": {
+    "message": "为分组编号 (1. AI, 2. Docs...)",
+    "description": "Toggle that prefixes group titles with their sort index."
+  },
+  "settingNumberGroupsHelp": {
+    "message": "为分组标题添加位置编号,便于快速引用",
+    "description": "Help text describing the Number Groups toggle."
+  },
+
+  "aiSectionTitle": {
+    "message": "AI 功能",
+    "description": "Title for the AI features section."
+  },
+  "aiExperimentalBadge": {
+    "message": "实验性",
+    "description": "Badge shown next to the AI Features title."
+  },
+  "aiHelpTooltip": {
+    "message": "由 AI 提供的标签页分组建议。此功能为实验性功能。所有处理都在您的浏览器本地运行 — 不会向外部服务器发送任何数据。",
+    "description": "Tooltip explaining the AI Features."
+  },
+  "aiBadgeOn": {
+    "message": "开",
+    "description": "Status badge shown when AI is enabled."
+  },
+  "aiBadgeOff": {
+    "message": "关",
+    "description": "Status badge shown when AI is disabled."
+  },
+  "aiEnable": {
+    "message": "启用 AI",
+    "description": "Toggle that enables or disables AI features."
+  },
+  "aiModelLabel": {
+    "message": "模型",
+    "description": "Label for the AI model selector."
+  },
+  "aiStatusLabel": {
+    "message": "状态:",
+    "description": "Label for the AI model status."
+  },
+  "aiStatusIdle": {
+    "message": "空闲",
+    "description": "AI model status: idle."
+  },
+  "aiStatusReady": {
+    "message": "就绪",
+    "description": "AI model status: ready."
+  },
+  "aiStatusLoading": {
+    "message": "加载中 $progress$%",
+    "description": "AI model status while loading, with a progress percentage.",
+    "placeholders": {
+      "progress": { "content": "$1", "example": "42" }
+    }
+  },
+  "aiStatusError": {
+    "message": "错误",
+    "description": "AI model status: error."
+  },
+  "aiLoadModel": {
+    "message": "加载模型",
+    "description": "Button that starts loading the AI model."
+  },
+  "aiUnloadModel": {
+    "message": "卸载模型",
+    "description": "Button that unloads the AI model."
+  },
+  "aiLoadingButton": {
+    "message": "加载中...",
+    "description": "Label shown on the load button while loading."
+  },
+  "aiRetryLoad": {
+    "message": "重试加载",
+    "description": "Button shown after an AI model load error."
+  },
+  "aiWebGpuUnavailable": {
+    "message": "WebGPU 不可用。AI 功能需要支持 WebGPU 的浏览器。",
+    "description": "Warning shown when WebGPU is not supported."
+  },
+  "aiDownloadNote": {
+    "message": "模型在您的浏览器本地运行。首次加载将下载模型 (约 250MB-900MB)。",
+    "description": "Help text beneath the load model button."
+  },
+  "aiSuggestGroups": {
+    "message": "建议分组",
+    "description": "Button that asks the AI to suggest tab groups."
+  },
+  "aiAnalyzing": {
+    "message": "正在分析您的标签页...",
+    "description": "Status text while the AI analyzes open tabs."
+  },
+  "aiNoSuggestions": {
+    "message": "未找到建议",
+    "description": "Status text shown when the AI returns zero suggestions."
+  },
+  "aiFailedToGetSuggestions": {
+    "message": "获取建议失败",
+    "description": "Error shown when AI suggestion fails."
+  },
+  "aiDismiss": {
+    "message": "忽略",
+    "description": "Button that dismisses AI suggestions."
+  },
+  "aiApply": {
+    "message": "应用",
+    "description": "Button that applies an AI suggestion."
+  },
+  "aiApplying": {
+    "message": "应用中...",
+    "description": "Button label while applying a suggestion."
+  },
+  "aiApplied": {
+    "message": "已应用!",
+    "description": "Button label after applying a suggestion."
+  },
+  "aiFailed": {
+    "message": "失败",
+    "description": "Button label after a suggestion fails."
+  },
+  "aiCreateRule": {
+    "message": "创建规则",
+    "description": "Button that creates a rule from a suggestion."
+  },
+  "aiTabsCount": {
+    "message": "$count$ 个标签页",
+    "description": "Tab count label for a suggestion.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiAppliedWithStale": {
+    "message": "已应用 ($count$ 个标签页已关闭)",
+    "description": "Shown when a suggestion is applied but some tabs were closed.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiFirefoxNotice": {
+    "message": "AI 功能目前仅在 Chrome 中可用。Firefox 支持即将推出。",
+    "description": "Notice shown to Firefox users."
+  },
+
+  "rulesSectionTitle": {
+    "message": "自定义规则",
+    "description": "Title for the custom rules section."
+  },
+  "rulesAddNewRule": {
+    "message": "添加新规则",
+    "description": "Button that opens the new rule dialog."
+  },
+  "rulesExport": {
+    "message": "导出",
+    "description": "Button that exports rules to JSON."
+  },
+  "rulesImport": {
+    "message": "导入",
+    "description": "Button that imports rules from JSON."
+  },
+  "rulesExportTitle": {
+    "message": "将所有规则导出为 JSON 文件",
+    "description": "Tooltip on the Export button."
+  },
+  "rulesImportTitle": {
+    "message": "从 JSON 文件导入规则",
+    "description": "Tooltip on the Import button."
+  },
+  "rulesExportImportHelp": {
+    "message": "以 JSON 文件的形式导出/导入规则,用于备份或分享",
+    "description": "Help text under the export/import buttons."
+  },
+  "rulesEmptyState": {
+    "message": "尚无自定义规则。创建您的第一条规则以按偏好对标签页进行分组!",
+    "description": "Shown when there are no custom rules."
+  },
+  "rulesEdit": {
+    "message": "编辑",
+    "description": "Edit button on a rule row."
+  },
+  "rulesDelete": {
+    "message": "删除",
+    "description": "Delete button on a rule row."
+  },
+  "rulesEditTitle": {
+    "message": "编辑规则",
+    "description": "Tooltip for the edit button."
+  },
+  "rulesDeleteTitle": {
+    "message": "删除规则",
+    "description": "Tooltip for the delete button."
+  },
+  "rulesAddTabTitle": {
+    "message": "将标签页添加到现有规则",
+    "description": "Tooltip for the + button that adds the current tab to a rule."
+  },
+  "rulesDeleteConfirm": {
+    "message": "确定要删除规则“$name$”吗?",
+    "description": "Confirmation prompt before deleting a rule.",
+    "placeholders": {
+      "name": { "content": "$1" }
+    }
+  },
+  "rulesFailedToLoad": {
+    "message": "加载自定义规则失败",
+    "description": "Error when loading rules fails."
+  },
+  "rulesFailedToDelete": {
+    "message": "删除规则失败",
+    "description": "Error when deleting a rule fails."
+  },
+  "rulesExportSuccess": {
+    "message": "规则导出成功!",
+    "description": "Confirmation after exporting rules."
+  },
+  "rulesFailedToExport": {
+    "message": "导出规则失败",
+    "description": "Error when export fails."
+  },
+  "rulesImportSuccess": {
+    "message": "规则导入成功!",
+    "description": "Confirmation after importing rules."
+  },
+  "rulesImportSummary": {
+    "message": "导入成功!\n已导入: $imported$ 条规则\n已跳过: $skipped$ 条规则",
+    "description": "Summary shown after rules are imported.",
+    "placeholders": {
+      "imported": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "rulesFailedToImport": {
+    "message": "导入规则失败",
+    "description": "Error when import fails."
+  },
+  "rulesImportReplacePrompt": {
+    "message": "是否要替换所有现有规则?\n\n点击“确定”以导入的规则替换所有现有规则\n点击“取消”将导入的规则与现有规则合并",
+    "description": "Prompt that asks whether to merge or replace on import."
+  },
+  "rulesNoExport": {
+    "message": "没有可导出的规则",
+    "description": "Tooltip shown on a disabled export button when there are no rules."
+  },
+  "rulesNoDomains": {
+    "message": "无域名",
+    "description": "Shown when a rule has no configured domains."
+  },
+  "rulesDomainsSeparator": {
+    "message": " 还有另外 $count$ 个",
+    "description": "Appended to truncated domain lists.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "rulesAddTabNoTab": {
+    "message": "未找到活动标签页",
+    "description": "Tooltip shown on the add-tab button when no active tab is available."
+  },
+  "rulesAddTabCantExtract": {
+    "message": "无法从此标签页中提取域名",
+    "description": "Tooltip when the current tab's URL has no domain."
+  },
+  "rulesAddTabAlreadyExists": {
+    "message": "此规则中已存在该域名",
+    "description": "Tooltip when the tab's domain is already part of the rule."
+  },
+  "rulesAddTabAdded": {
+    "message": "已添加!",
+    "description": "Tooltip shown briefly after adding a tab to a rule."
+  },
+  "rulesAddTabFailed": {
+    "message": "添加域名失败",
+    "description": "Tooltip when adding a domain fails."
+  },
+
+  "blacklistSectionTitle": {
+    "message": "黑名单",
+    "description": "Title for the blacklist section."
+  },
+  "blacklistAddButton": {
+    "message": "添加到黑名单",
+    "description": "Button to add a domain to the blacklist."
+  },
+  "blacklistHelp": {
+    "message": "黑名单中的域名永远不会被分组",
+    "description": "Help text under the blacklist section."
+  },
+  "blacklistEmpty": {
+    "message": "尚无黑名单域名。",
+    "description": "Shown when the blacklist is empty."
+  },
+  "blacklistEditTitle": {
+    "message": "编辑黑名单规则",
+    "description": "Tooltip for the blacklist edit button."
+  },
+  "blacklistDeleteTitle": {
+    "message": "删除黑名单规则",
+    "description": "Tooltip for the blacklist delete button."
+  },
+
+  "advancedSectionTitle": {
+    "message": "高级",
+    "description": "Title for the advanced settings section."
+  },
+  "advancedHideContextMenu": {
+    "message": "隐藏右键上下文菜单",
+    "description": "Toggle that hides the extension's context menu items."
+  },
+  "advancedHideContextMenuHelp": {
+    "message": "启用后,Auto Tab Groups 将不会把其选项添加到页面右键菜单中。",
+    "description": "Help text for the hide context menu toggle."
+  },
+
+  "footerMadeBy": {
+    "message": "作者",
+    "description": "Prefix for the author attribution in the footer."
+  },
+  "footerFor": {
+    "message": "适用于",
+    "description": "Connector text: 'Made by X, for Chrome'."
+  },
+  "footerBrowserChrome": {
+    "message": "Chrome",
+    "description": "Name of the Chrome browser in the footer."
+  },
+  "footerBrowserFirefox": {
+    "message": "Firefox",
+    "description": "Name of the Firefox browser in the footer."
+  },
+  "footerFeedback": {
+    "message": "反馈与请求与支持",
+    "description": "Text of the feedback link."
+  },
+  "footerVersion": {
+    "message": "版本:",
+    "description": "Prefix before the version number."
+  },
+
+  "contextMenuCreateRuleFromGroup": {
+    "message": "从分组创建规则",
+    "description": "Right-click menu: create a custom rule from the clicked tab's group."
+  },
+  "contextMenuAddTabToExistingRule": {
+    "message": "将标签页添加到现有规则",
+    "description": "Right-click menu: submenu to add the current tab's domain to an existing rule."
+  },
+  "contextMenuAddToBlacklist": {
+    "message": "添加到黑名单",
+    "description": "Right-click menu: add the current tab's domain to the blacklist."
+  },
+  "contextMenuNoRulesYet": {
+    "message": "尚无规则",
+    "description": "Disabled placeholder shown when the Add Tab submenu has no rules."
+  },
+
+  "ruleModalCreateTitle": {
+    "message": "创建自定义规则",
+    "description": "Title shown when creating a new rule."
+  },
+  "ruleModalEditTitle": {
+    "message": "编辑自定义规则",
+    "description": "Title shown when editing an existing rule."
+  },
+  "ruleModalNameLabel": {
+    "message": "规则名称",
+    "description": "Label for the rule name input."
+  },
+  "ruleModalNamePlaceholder": {
+    "message": "例如:工作应用",
+    "description": "Placeholder for the rule name input."
+  },
+  "ruleModalNameHelp": {
+    "message": "支持任何语言,包括中文、日文、韩文和表情符号",
+    "description": "Help text under the rule name input."
+  },
+  "ruleModalAiAssistLabel": {
+    "message": "AI 辅助",
+    "description": "Label for the AI assist section."
+  },
+  "ruleModalAiAssistPlaceholder": {
+    "message": "描述您的规则,例如:“分组所有 Google 服务”或“分组 AWS 控制台标签页”",
+    "description": "Placeholder for the AI assist input."
+  },
+  "ruleModalAiGenerate": {
+    "message": "生成",
+    "description": "Button that asks the AI to generate a rule."
+  },
+  "ruleModalAiAssistHelp": {
+    "message": "描述您想要分组的内容,AI 将建议名称、域名和颜色",
+    "description": "Help text under the AI assist input."
+  },
+  "ruleModalPatternModeLabel": {
+    "message": "模式匹配",
+    "description": "Label for the pattern mode toggle."
+  },
+  "ruleModalPatternModeSimple": {
+    "message": "简单 (域名)",
+    "description": "Simple pattern mode: matches whole domains."
+  },
+  "ruleModalPatternModeExplicit": {
+    "message": "精确 (完整 URL)",
+    "description": "Explicit pattern mode: matches full URLs."
+  },
+  "ruleModalSimpleModeHint": {
+    "message": "分组来自这些基础域名的所有页面",
+    "description": "Hint shown in simple pattern mode."
+  },
+  "ruleModalExplicitModeHint": {
+    "message": "仅分组匹配这些完整 URL 模式的页面",
+    "description": "Hint shown in explicit pattern mode."
+  },
+  "ruleModalPatternsLabel": {
+    "message": "URL 模式 (每行一个)",
+    "description": "Label for the patterns textarea."
+  },
+  "ruleModalPatternsHelp": {
+    "message": "支持:域名、通配符 (*.example.com)、路径 (example.com/api/*)、IP 地址",
+    "description": "Help text for the patterns textarea."
+  },
+  "ruleModalColorLabel": {
+    "message": "分组颜色",
+    "description": "Label for the color picker."
+  },
+  "ruleModalColorBlue": { "message": "蓝色", "description": "Color option: blue." },
+  "ruleModalColorRed": { "message": "红色", "description": "Color option: red." },
+  "ruleModalColorYellow": { "message": "黄色", "description": "Color option: yellow." },
+  "ruleModalColorGreen": { "message": "绿色", "description": "Color option: green." },
+  "ruleModalColorPink": { "message": "粉色", "description": "Color option: pink." },
+  "ruleModalColorPurple": { "message": "紫色", "description": "Color option: purple." },
+  "ruleModalColorCyan": { "message": "青色", "description": "Color option: cyan." },
+  "ruleModalColorOrange": { "message": "橙色", "description": "Color option: orange." },
+  "ruleModalColorGrey": { "message": "灰色", "description": "Color option: grey." },
+  "ruleModalEnabledLabel": {
+    "message": "已启用",
+    "description": "Checkbox: whether the rule is enabled."
+  },
+  "ruleModalSave": {
+    "message": "保存规则",
+    "description": "Submit button for the rule form."
+  },
+  "ruleModalUpdate": {
+    "message": "更新规则",
+    "description": "Submit button when editing an existing rule."
+  },
+  "ruleModalCancel": {
+    "message": "取消",
+    "description": "Cancel button for the rule form."
+  },
+  "ruleModalConflictTitle": {
+    "message": "检测到模式冲突",
+    "description": "Heading of the conflict warning box."
+  },
+  "ruleModalConflictSubtitle": {
+    "message": "这些模式与现有规则重叠。同时匹配两条规则的标签页将只被分配给其中一条。",
+    "description": "Subtitle of the conflict warning."
+  },
+  "ruleModalAiSuggestions": {
+    "message": "AI 建议",
+    "description": "Heading for the AI-generated resolution suggestions."
+  },
+  "ruleModalSaveAnyway": {
+    "message": "仍要保存",
+    "description": "Button that saves the rule despite conflicts."
+  },
+  "ruleModalGoBack": {
+    "message": "返回",
+    "description": "Button that returns to editing after a conflict warning."
+  },
+  "ruleModalChecking": {
+    "message": "检查中...",
+    "description": "Label shown on the save button while checking for conflicts."
+  },
+  "ruleModalGenerating": {
+    "message": "生成中...",
+    "description": "Label shown on the AI generate button while generating a rule."
+  },
+  "ruleModalAiThinking": {
+    "message": "AI 正在思考...",
+    "description": "Status text while the AI generates a rule."
+  },
+  "ruleModalAiNeedsModel": {
+    "message": "请从弹出窗口的 AI 功能部分加载 AI 模型以使用 AI 辅助",
+    "description": "Status shown when AI Assist is invoked but no model is loaded."
+  },
+  "ruleModalAiGenerated": {
+    "message": "规则已生成!请在下方查看和编辑,然后保存。",
+    "description": "Status after the AI generates a rule."
+  },
+  "ruleModalAiGenerateError": {
+    "message": "生成规则失败。请尝试重新表述您的描述。",
+    "description": "Error shown when AI rule generation fails."
+  },
+  "ruleModalAiEnterDescription": {
+    "message": "请输入描述",
+    "description": "Error shown when AI Assist is triggered with no description."
+  },
+  "ruleModalEnterPattern": {
+    "message": "请至少输入一个 URL 模式",
+    "description": "Alert shown when submitting with no patterns."
+  },
+  "ruleModalEnterName": {
+    "message": "请输入规则名称",
+    "description": "Alert shown when submitting a rule with no name."
+  },
+  "ruleModalFailedToLoad": {
+    "message": "加载要编辑的规则失败",
+    "description": "Alert when the rule modal can't load the rule."
+  },
+  "ruleModalFailedToSave": {
+    "message": "保存规则失败",
+    "description": "Alert when saving a rule fails."
+  },
+
+  "importPageTitle": {
+    "message": "导入规则",
+    "description": "Title for the import rules page."
+  },
+  "importDropInstruction": {
+    "message": "将 JSON 文件拖放到此处",
+    "description": "Instruction shown in the import drop zone."
+  },
+  "importOr": {
+    "message": "或",
+    "description": "Separator between drag-drop and button."
+  },
+  "importBrowseFiles": {
+    "message": "浏览文件",
+    "description": "Button that opens the file picker."
+  },
+  "importPreviewHeading": {
+    "message": "预览",
+    "description": "Heading above the import preview."
+  },
+  "importModeLabel": {
+    "message": "导入模式",
+    "description": "Label above the import mode radio buttons."
+  },
+  "importMerge": {
+    "message": "与现有规则合并",
+    "description": "Radio option: merge on import."
+  },
+  "importReplace": {
+    "message": "替换所有现有规则",
+    "description": "Radio option: replace on import."
+  },
+  "importButton": {
+    "message": "导入规则",
+    "description": "Button that performs the import."
+  },
+  "importCancel": {
+    "message": "取消",
+    "description": "Cancel button on the import page."
+  },
+  "importStatValid": {
+    "message": "有效规则",
+    "description": "Label for the valid rule count in the import preview."
+  },
+  "importStatInvalid": {
+    "message": "无效 (将被跳过)",
+    "description": "Label for the invalid rule count in the import preview."
+  },
+  "importPatternsSuffix": {
+    "message": "$count$ 个模式",
+    "description": "Label showing pattern count for an imported rule.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importMoreRules": {
+    "message": "...还有另外 $count$ 条规则",
+    "description": "Shown when more rules exist beyond the preview slice.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importUnnamed": {
+    "message": "未命名",
+    "description": "Placeholder name for rules with no name."
+  },
+  "importImporting": {
+    "message": "导入中...",
+    "description": "Label on the import button while importing."
+  },
+  "importSuccess": {
+    "message": "成功导入 $count$ 条规则",
+    "description": "Success message after import.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importSuccessWithSkipped": {
+    "message": "成功导入 $count$ 条规则 ($skipped$ 条已跳过)",
+    "description": "Success message when some rules are skipped.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "importFailed": {
+    "message": "导入失败",
+    "description": "Generic import failure message."
+  },
+  "importInvalidJson": {
+    "message": "无效的 JSON",
+    "description": "Error when file is not valid JSON."
+  },
+  "importInvalidFormat": {
+    "message": "文件格式无效:缺少“rules”属性",
+    "description": "Error when file has no 'rules' key."
+  },
+  "importNoRules": {
+    "message": "文件中未找到规则",
+    "description": "Error when file has no rules."
+  },
+  "importSelectJson": {
+    "message": "请选择一个 JSON 文件",
+    "description": "Error when a non-JSON file is selected."
+  }
+}

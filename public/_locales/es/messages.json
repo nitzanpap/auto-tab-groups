@@ -1,0 +1,748 @@
+{
+  "extensionName": {
+    "message": "Auto Tab Groups",
+    "description": "The name of the extension as it appears in the browser store and toolbar."
+  },
+  "extensionDescription": {
+    "message": "Agrupa automáticamente las pestañas por dominio.",
+    "description": "Short description shown in the extensions list."
+  },
+
+  "popupTitle": {
+    "message": "Auto Tab Groups",
+    "description": "Heading shown at the top of the popup/sidebar."
+  },
+  "popupGroupTabs": {
+    "message": "Agrupar pestañas",
+    "description": "Button that groups all open tabs immediately."
+  },
+  "popupUngroupAll": {
+    "message": "Desagrupar todo",
+    "description": "Button that removes every tab group."
+  },
+  "popupGenerateNewColors": {
+    "message": "Generar nuevos colores",
+    "description": "Button that randomizes the colors of all groups."
+  },
+  "popupGenerateNewColorsTitle": {
+    "message": "Aleatoriza los colores de los grupos. Los colores se guardan y restauran automáticamente para cada dominio o regla.",
+    "description": "Tooltip for the Generate New Colors button."
+  },
+  "popupCollapseAll": {
+    "message": "Contraer todo",
+    "description": "Button that collapses every group."
+  },
+  "popupExpandAll": {
+    "message": "Expandir todo",
+    "description": "Button that expands every group."
+  },
+
+  "settingsHeading": {
+    "message": "Ajustes",
+    "description": "Heading for the main settings section."
+  },
+  "settingLanguage": {
+    "message": "Idioma",
+    "description": "Label for the UI language picker."
+  },
+  "settingLanguageAuto": {
+    "message": "Automático (predeterminado del navegador)",
+    "description": "Picker option that defers to the browser's UI language."
+  },
+  "settingAutoGroupMode": {
+    "message": "Modo de agrupación automática",
+    "description": "Label for the toggle that enables automatic grouping."
+  },
+  "settingGroupBy": {
+    "message": "Agrupar por",
+    "description": "Label for the group-by mode selector."
+  },
+  "settingGroupByRulesOnly": {
+    "message": "Solo reglas",
+    "description": "Option that groups only by custom rules."
+  },
+  "settingGroupByRulesAndDomain": {
+    "message": "Reglas y dominio",
+    "description": "Option that groups by rules plus base domain (popup)."
+  },
+  "settingGroupByRulesAndSubdomain": {
+    "message": "Reglas y subdominio",
+    "description": "Option that groups by rules plus subdomain (popup)."
+  },
+  "settingGroupByDomain": {
+    "message": "Dominio",
+    "description": "Option that groups by base domain (sidebar)."
+  },
+  "settingGroupBySubdomain": {
+    "message": "Subdominio",
+    "description": "Option that groups by subdomain (sidebar)."
+  },
+  "settingGroupNewEmptyTabs": {
+    "message": "Agrupar nuevas pestañas vacías en «System»",
+    "description": "Label for the toggle that groups blank/new tabs under a System group."
+  },
+  "settingMinimumTabsForGroup": {
+    "message": "Mínimo de pestañas para formar un grupo",
+    "description": "Label for the numeric input that sets the minimum tab count required to create a group."
+  },
+  "settingAutoCollapseInactive": {
+    "message": "Contraer automáticamente los grupos inactivos",
+    "description": "Label for the toggle that auto-collapses groups the user isn't looking at."
+  },
+  "settingCollapseDelay": {
+    "message": "Retardo al contraer",
+    "description": "Label for the numeric input that sets the auto-collapse delay."
+  },
+  "settingCollapseDelayHelp": {
+    "message": "0 = inmediato, o establece el retardo (100-5000 ms) antes de contraer",
+    "description": "Help text under the collapse-delay input."
+  },
+  "settingOpenNewTabsNextToCurrent": {
+    "message": "Abrir pestañas nuevas junto a la pestaña actual",
+    "description": "Label for the toggle that opens new tabs adjacent to the active tab."
+  },
+  "settingPinnedTabsNote": {
+    "message": "Las pestañas ancladas nunca se agrupan automáticamente",
+    "description": "Informational note about pinned tabs."
+  },
+
+  "sortingSectionTitle": {
+    "message": "Ordenación",
+    "description": "Title for the collapsible sorting section."
+  },
+  "settingSortGroupsAlphabetically": {
+    "message": "Mantener los grupos ordenados alfabéticamente",
+    "description": "Toggle that keeps tab groups sorted alphabetically."
+  },
+  "settingSortDirection": {
+    "message": "Dirección",
+    "description": "Label for the sort direction toggle (A-Z vs Z-A)."
+  },
+  "settingSortDirectionAsc": {
+    "message": "A - Z",
+    "description": "Ascending alphabetical sort direction option."
+  },
+  "settingSortDirectionDesc": {
+    "message": "Z - A",
+    "description": "Descending alphabetical sort direction option."
+  },
+  "settingNumberGroups": {
+    "message": "Numerar grupos (1. AI, 2. Docs...)",
+    "description": "Toggle that prefixes group titles with their sort index."
+  },
+  "settingNumberGroupsHelp": {
+    "message": "Añade números de posición a los títulos de los grupos para una referencia rápida",
+    "description": "Help text describing the Number Groups toggle."
+  },
+
+  "aiSectionTitle": {
+    "message": "Funciones de IA",
+    "description": "Title for the AI features section."
+  },
+  "aiExperimentalBadge": {
+    "message": "Experimental",
+    "description": "Badge shown next to the AI Features title."
+  },
+  "aiHelpTooltip": {
+    "message": "Sugerencias de agrupación de pestañas con IA. Esta función es experimental. Todo el procesamiento se ejecuta localmente en tu navegador: no se envían datos a servidores externos.",
+    "description": "Tooltip explaining the AI Features."
+  },
+  "aiBadgeOn": {
+    "message": "Activado",
+    "description": "Status badge shown when AI is enabled."
+  },
+  "aiBadgeOff": {
+    "message": "Desactivado",
+    "description": "Status badge shown when AI is disabled."
+  },
+  "aiEnable": {
+    "message": "Activar IA",
+    "description": "Toggle that enables or disables AI features."
+  },
+  "aiModelLabel": {
+    "message": "Modelo",
+    "description": "Label for the AI model selector."
+  },
+  "aiStatusLabel": {
+    "message": "Estado:",
+    "description": "Label for the AI model status."
+  },
+  "aiStatusIdle": {
+    "message": "Inactivo",
+    "description": "AI model status: idle."
+  },
+  "aiStatusReady": {
+    "message": "Listo",
+    "description": "AI model status: ready."
+  },
+  "aiStatusLoading": {
+    "message": "Cargando $progress$%",
+    "description": "AI model status while loading, with a progress percentage.",
+    "placeholders": {
+      "progress": { "content": "$1", "example": "42" }
+    }
+  },
+  "aiStatusError": {
+    "message": "Error",
+    "description": "AI model status: error."
+  },
+  "aiLoadModel": {
+    "message": "Cargar modelo",
+    "description": "Button that starts loading the AI model."
+  },
+  "aiUnloadModel": {
+    "message": "Descargar modelo",
+    "description": "Button that unloads the AI model."
+  },
+  "aiLoadingButton": {
+    "message": "Cargando...",
+    "description": "Label shown on the load button while loading."
+  },
+  "aiRetryLoad": {
+    "message": "Reintentar carga",
+    "description": "Button shown after an AI model load error."
+  },
+  "aiWebGpuUnavailable": {
+    "message": "WebGPU no está disponible. Las funciones de IA requieren un navegador con soporte de WebGPU.",
+    "description": "Warning shown when WebGPU is not supported."
+  },
+  "aiDownloadNote": {
+    "message": "Los modelos se ejecutan localmente en tu navegador. La primera carga descarga el modelo (~250MB-900MB).",
+    "description": "Help text beneath the load model button."
+  },
+  "aiSuggestGroups": {
+    "message": "Sugerir grupos",
+    "description": "Button that asks the AI to suggest tab groups."
+  },
+  "aiAnalyzing": {
+    "message": "Analizando tus pestañas...",
+    "description": "Status text while the AI analyzes open tabs."
+  },
+  "aiNoSuggestions": {
+    "message": "No se encontraron sugerencias",
+    "description": "Status text shown when the AI returns zero suggestions."
+  },
+  "aiFailedToGetSuggestions": {
+    "message": "No se pudieron obtener sugerencias",
+    "description": "Error shown when AI suggestion fails."
+  },
+  "aiDismiss": {
+    "message": "Descartar",
+    "description": "Button that dismisses AI suggestions."
+  },
+  "aiApply": {
+    "message": "Aplicar",
+    "description": "Button that applies an AI suggestion."
+  },
+  "aiApplying": {
+    "message": "Aplicando...",
+    "description": "Button label while applying a suggestion."
+  },
+  "aiApplied": {
+    "message": "¡Aplicado!",
+    "description": "Button label after applying a suggestion."
+  },
+  "aiFailed": {
+    "message": "Falló",
+    "description": "Button label after a suggestion fails."
+  },
+  "aiCreateRule": {
+    "message": "Crear regla",
+    "description": "Button that creates a rule from a suggestion."
+  },
+  "aiTabsCount": {
+    "message": "$count$ pestaña$plural$",
+    "description": "Tab count label for a suggestion.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiAppliedWithStale": {
+    "message": "Aplicado ($count$ pestaña$plural$ cerrada)",
+    "description": "Shown when a suggestion is applied but some tabs were closed.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiFirefoxNotice": {
+    "message": "Las funciones de IA solo están disponibles actualmente en Chrome. El soporte para Firefox llegará pronto.",
+    "description": "Notice shown to Firefox users."
+  },
+
+  "rulesSectionTitle": {
+    "message": "Reglas personalizadas",
+    "description": "Title for the custom rules section."
+  },
+  "rulesAddNewRule": {
+    "message": "Añadir nueva regla",
+    "description": "Button that opens the new rule dialog."
+  },
+  "rulesExport": {
+    "message": "Exportar",
+    "description": "Button that exports rules to JSON."
+  },
+  "rulesImport": {
+    "message": "Importar",
+    "description": "Button that imports rules from JSON."
+  },
+  "rulesExportTitle": {
+    "message": "Exportar todas las reglas a un archivo JSON",
+    "description": "Tooltip on the Export button."
+  },
+  "rulesImportTitle": {
+    "message": "Importar reglas desde un archivo JSON",
+    "description": "Tooltip on the Import button."
+  },
+  "rulesExportImportHelp": {
+    "message": "Exporta/importa reglas como archivos JSON para respaldo o compartir",
+    "description": "Help text under the export/import buttons."
+  },
+  "rulesEmptyState": {
+    "message": "Aún no hay reglas personalizadas. ¡Crea tu primera regla para agrupar pestañas según tus preferencias!",
+    "description": "Shown when there are no custom rules."
+  },
+  "rulesEdit": {
+    "message": "Editar",
+    "description": "Edit button on a rule row."
+  },
+  "rulesDelete": {
+    "message": "Eliminar",
+    "description": "Delete button on a rule row."
+  },
+  "rulesEditTitle": {
+    "message": "Editar regla",
+    "description": "Tooltip for the edit button."
+  },
+  "rulesDeleteTitle": {
+    "message": "Eliminar regla",
+    "description": "Tooltip for the delete button."
+  },
+  "rulesAddTabTitle": {
+    "message": "Añadir pestaña a una regla existente",
+    "description": "Tooltip for the + button that adds the current tab to a rule."
+  },
+  "rulesDeleteConfirm": {
+    "message": "¿Seguro que quieres eliminar la regla «$name$»?",
+    "description": "Confirmation prompt before deleting a rule.",
+    "placeholders": {
+      "name": { "content": "$1" }
+    }
+  },
+  "rulesFailedToLoad": {
+    "message": "No se pudieron cargar las reglas personalizadas",
+    "description": "Error when loading rules fails."
+  },
+  "rulesFailedToDelete": {
+    "message": "No se pudo eliminar la regla",
+    "description": "Error when deleting a rule fails."
+  },
+  "rulesExportSuccess": {
+    "message": "¡Reglas exportadas correctamente!",
+    "description": "Confirmation after exporting rules."
+  },
+  "rulesFailedToExport": {
+    "message": "No se pudieron exportar las reglas",
+    "description": "Error when export fails."
+  },
+  "rulesImportSuccess": {
+    "message": "¡Reglas importadas correctamente!",
+    "description": "Confirmation after importing rules."
+  },
+  "rulesImportSummary": {
+    "message": "¡Importación exitosa!\nImportadas: $imported$ reglas\nOmitidas: $skipped$ reglas",
+    "description": "Summary shown after rules are imported.",
+    "placeholders": {
+      "imported": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "rulesFailedToImport": {
+    "message": "No se pudieron importar las reglas",
+    "description": "Error when import fails."
+  },
+  "rulesImportReplacePrompt": {
+    "message": "¿Quieres reemplazar todas las reglas existentes?\n\nPulsa Aceptar para REEMPLAZAR todas las reglas existentes por las importadas\nPulsa Cancelar para COMBINAR las reglas importadas con las existentes",
+    "description": "Prompt that asks whether to merge or replace on import."
+  },
+  "rulesNoExport": {
+    "message": "No hay reglas para exportar",
+    "description": "Tooltip shown on a disabled export button when there are no rules."
+  },
+  "rulesNoDomains": {
+    "message": "Sin dominios",
+    "description": "Shown when a rule has no configured domains."
+  },
+  "rulesDomainsSeparator": {
+    "message": " y $count$ más",
+    "description": "Appended to truncated domain lists.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "rulesAddTabNoTab": {
+    "message": "No se encontró ninguna pestaña activa",
+    "description": "Tooltip shown on the add-tab button when no active tab is available."
+  },
+  "rulesAddTabCantExtract": {
+    "message": "No se puede extraer el dominio de esta pestaña",
+    "description": "Tooltip when the current tab's URL has no domain."
+  },
+  "rulesAddTabAlreadyExists": {
+    "message": "El dominio ya está en esta regla",
+    "description": "Tooltip when the tab's domain is already part of the rule."
+  },
+  "rulesAddTabAdded": {
+    "message": "¡Añadido!",
+    "description": "Tooltip shown briefly after adding a tab to a rule."
+  },
+  "rulesAddTabFailed": {
+    "message": "No se pudo añadir el dominio",
+    "description": "Tooltip when adding a domain fails."
+  },
+
+  "blacklistSectionTitle": {
+    "message": "Lista negra",
+    "description": "Title for the blacklist section."
+  },
+  "blacklistAddButton": {
+    "message": "Añadir a la lista negra",
+    "description": "Button to add a domain to the blacklist."
+  },
+  "blacklistHelp": {
+    "message": "Los dominios en la lista negra nunca se agruparán",
+    "description": "Help text under the blacklist section."
+  },
+  "blacklistEmpty": {
+    "message": "Aún no hay dominios en la lista negra.",
+    "description": "Shown when the blacklist is empty."
+  },
+  "blacklistEditTitle": {
+    "message": "Editar regla de lista negra",
+    "description": "Tooltip for the blacklist edit button."
+  },
+  "blacklistDeleteTitle": {
+    "message": "Eliminar regla de lista negra",
+    "description": "Tooltip for the blacklist delete button."
+  },
+
+  "advancedSectionTitle": {
+    "message": "Avanzado",
+    "description": "Title for the advanced settings section."
+  },
+  "advancedHideContextMenu": {
+    "message": "Ocultar el menú contextual del clic derecho",
+    "description": "Toggle that hides the extension's context menu items."
+  },
+  "advancedHideContextMenuHelp": {
+    "message": "Cuando está activado, Auto Tab Groups no añadirá sus elementos al menú del clic derecho de la página.",
+    "description": "Help text for the hide context menu toggle."
+  },
+
+  "footerMadeBy": {
+    "message": "Creado por",
+    "description": "Prefix for the author attribution in the footer."
+  },
+  "footerFor": {
+    "message": "para",
+    "description": "Connector text: 'Made by X, for Chrome'."
+  },
+  "footerBrowserChrome": {
+    "message": "Chrome",
+    "description": "Name of the Chrome browser in the footer."
+  },
+  "footerBrowserFirefox": {
+    "message": "Firefox",
+    "description": "Name of the Firefox browser in the footer."
+  },
+  "footerFeedback": {
+    "message": "Comentarios, solicitudes y soporte",
+    "description": "Text of the feedback link."
+  },
+  "footerVersion": {
+    "message": "Versión:",
+    "description": "Prefix before the version number."
+  },
+
+  "contextMenuCreateRuleFromGroup": {
+    "message": "Crear regla a partir del grupo",
+    "description": "Right-click menu: create a custom rule from the clicked tab's group."
+  },
+  "contextMenuAddTabToExistingRule": {
+    "message": "Añadir pestaña a una regla existente",
+    "description": "Right-click menu: submenu to add the current tab's domain to an existing rule."
+  },
+  "contextMenuAddToBlacklist": {
+    "message": "Añadir a la lista negra",
+    "description": "Right-click menu: add the current tab's domain to the blacklist."
+  },
+  "contextMenuNoRulesYet": {
+    "message": "Aún no hay reglas",
+    "description": "Disabled placeholder shown when the Add Tab submenu has no rules."
+  },
+
+  "ruleModalCreateTitle": {
+    "message": "Crear regla personalizada",
+    "description": "Title shown when creating a new rule."
+  },
+  "ruleModalEditTitle": {
+    "message": "Editar regla personalizada",
+    "description": "Title shown when editing an existing rule."
+  },
+  "ruleModalNameLabel": {
+    "message": "Nombre de la regla",
+    "description": "Label for the rule name input."
+  },
+  "ruleModalNamePlaceholder": {
+    "message": "p. ej., Apps de trabajo",
+    "description": "Placeholder for the rule name input."
+  },
+  "ruleModalNameHelp": {
+    "message": "Admite cualquier idioma, incluidos chino, japonés, coreano y emojis",
+    "description": "Help text under the rule name input."
+  },
+  "ruleModalAiAssistLabel": {
+    "message": "Asistente de IA",
+    "description": "Label for the AI assist section."
+  },
+  "ruleModalAiAssistPlaceholder": {
+    "message": "Describe tu regla, p. ej., «Agrupa todos los servicios de Google» o «Agrupa las pestañas de la consola de AWS»",
+    "description": "Placeholder for the AI assist input."
+  },
+  "ruleModalAiGenerate": {
+    "message": "Generar",
+    "description": "Button that asks the AI to generate a rule."
+  },
+  "ruleModalAiAssistHelp": {
+    "message": "Describe qué quieres agrupar y la IA sugerirá nombre, dominios y color",
+    "description": "Help text under the AI assist input."
+  },
+  "ruleModalPatternModeLabel": {
+    "message": "Modo de patrón",
+    "description": "Label for the pattern mode toggle."
+  },
+  "ruleModalPatternModeSimple": {
+    "message": "Simple (dominios)",
+    "description": "Simple pattern mode: matches whole domains."
+  },
+  "ruleModalPatternModeExplicit": {
+    "message": "Explícito (URLs completas)",
+    "description": "Explicit pattern mode: matches full URLs."
+  },
+  "ruleModalSimpleModeHint": {
+    "message": "Agrupa todas las páginas de estos dominios base",
+    "description": "Hint shown in simple pattern mode."
+  },
+  "ruleModalExplicitModeHint": {
+    "message": "Agrupa solo las páginas que coincidan con estos patrones de URL completos",
+    "description": "Hint shown in explicit pattern mode."
+  },
+  "ruleModalPatternsLabel": {
+    "message": "Patrones de URL (uno por línea)",
+    "description": "Label for the patterns textarea."
+  },
+  "ruleModalPatternsHelp": {
+    "message": "Admite: dominios, comodines (*.example.com), rutas (example.com/api/*), direcciones IP",
+    "description": "Help text for the patterns textarea."
+  },
+  "ruleModalColorLabel": {
+    "message": "Color del grupo",
+    "description": "Label for the color picker."
+  },
+  "ruleModalColorBlue": { "message": "Azul", "description": "Color option: blue." },
+  "ruleModalColorRed": { "message": "Rojo", "description": "Color option: red." },
+  "ruleModalColorYellow": { "message": "Amarillo", "description": "Color option: yellow." },
+  "ruleModalColorGreen": { "message": "Verde", "description": "Color option: green." },
+  "ruleModalColorPink": { "message": "Rosa", "description": "Color option: pink." },
+  "ruleModalColorPurple": { "message": "Morado", "description": "Color option: purple." },
+  "ruleModalColorCyan": { "message": "Cian", "description": "Color option: cyan." },
+  "ruleModalColorOrange": { "message": "Naranja", "description": "Color option: orange." },
+  "ruleModalColorGrey": { "message": "Gris", "description": "Color option: grey." },
+  "ruleModalEnabledLabel": {
+    "message": "Activada",
+    "description": "Checkbox: whether the rule is enabled."
+  },
+  "ruleModalSave": {
+    "message": "Guardar regla",
+    "description": "Submit button for the rule form."
+  },
+  "ruleModalUpdate": {
+    "message": "Actualizar regla",
+    "description": "Submit button when editing an existing rule."
+  },
+  "ruleModalCancel": {
+    "message": "Cancelar",
+    "description": "Cancel button for the rule form."
+  },
+  "ruleModalConflictTitle": {
+    "message": "Conflictos de patrones detectados",
+    "description": "Heading of the conflict warning box."
+  },
+  "ruleModalConflictSubtitle": {
+    "message": "Estos patrones se solapan con reglas existentes. Las pestañas que coincidan con ambas reglas solo se asignarán a una.",
+    "description": "Subtitle of the conflict warning."
+  },
+  "ruleModalAiSuggestions": {
+    "message": "Sugerencias de IA",
+    "description": "Heading for the AI-generated resolution suggestions."
+  },
+  "ruleModalSaveAnyway": {
+    "message": "Guardar igualmente",
+    "description": "Button that saves the rule despite conflicts."
+  },
+  "ruleModalGoBack": {
+    "message": "Volver",
+    "description": "Button that returns to editing after a conflict warning."
+  },
+  "ruleModalChecking": {
+    "message": "Comprobando...",
+    "description": "Label shown on the save button while checking for conflicts."
+  },
+  "ruleModalGenerating": {
+    "message": "Generando...",
+    "description": "Label shown on the AI generate button while generating a rule."
+  },
+  "ruleModalAiThinking": {
+    "message": "La IA está pensando...",
+    "description": "Status text while the AI generates a rule."
+  },
+  "ruleModalAiNeedsModel": {
+    "message": "Carga un modelo de IA desde la sección de funciones de IA del popup para usar el asistente de IA",
+    "description": "Status shown when AI Assist is invoked but no model is loaded."
+  },
+  "ruleModalAiGenerated": {
+    "message": "¡Regla generada! Revísala y edítala abajo, y luego guarda.",
+    "description": "Status after the AI generates a rule."
+  },
+  "ruleModalAiGenerateError": {
+    "message": "No se pudo generar la regla. Intenta reformular tu descripción.",
+    "description": "Error shown when AI rule generation fails."
+  },
+  "ruleModalAiEnterDescription": {
+    "message": "Introduce una descripción",
+    "description": "Error shown when AI Assist is triggered with no description."
+  },
+  "ruleModalEnterPattern": {
+    "message": "Introduce al menos un patrón de URL",
+    "description": "Alert shown when submitting with no patterns."
+  },
+  "ruleModalEnterName": {
+    "message": "Introduce un nombre para la regla",
+    "description": "Alert shown when submitting a rule with no name."
+  },
+  "ruleModalFailedToLoad": {
+    "message": "No se pudo cargar la regla para editarla",
+    "description": "Alert when the rule modal can't load the rule."
+  },
+  "ruleModalFailedToSave": {
+    "message": "No se pudo guardar la regla",
+    "description": "Alert when saving a rule fails."
+  },
+
+  "importPageTitle": {
+    "message": "Importar reglas",
+    "description": "Title for the import rules page."
+  },
+  "importDropInstruction": {
+    "message": "Arrastra y suelta aquí un archivo JSON",
+    "description": "Instruction shown in the import drop zone."
+  },
+  "importOr": {
+    "message": "o",
+    "description": "Separator between drag-drop and button."
+  },
+  "importBrowseFiles": {
+    "message": "Explorar archivos",
+    "description": "Button that opens the file picker."
+  },
+  "importPreviewHeading": {
+    "message": "Vista previa",
+    "description": "Heading above the import preview."
+  },
+  "importModeLabel": {
+    "message": "Modo de importación",
+    "description": "Label above the import mode radio buttons."
+  },
+  "importMerge": {
+    "message": "Combinar con las reglas existentes",
+    "description": "Radio option: merge on import."
+  },
+  "importReplace": {
+    "message": "Reemplazar todas las reglas existentes",
+    "description": "Radio option: replace on import."
+  },
+  "importButton": {
+    "message": "Importar reglas",
+    "description": "Button that performs the import."
+  },
+  "importCancel": {
+    "message": "Cancelar",
+    "description": "Cancel button on the import page."
+  },
+  "importStatValid": {
+    "message": "Reglas válidas",
+    "description": "Label for the valid rule count in the import preview."
+  },
+  "importStatInvalid": {
+    "message": "Inválidas (se omitirán)",
+    "description": "Label for the invalid rule count in the import preview."
+  },
+  "importPatternsSuffix": {
+    "message": "$count$ patrones",
+    "description": "Label showing pattern count for an imported rule.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importMoreRules": {
+    "message": "...y $count$ reglas más",
+    "description": "Shown when more rules exist beyond the preview slice.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importUnnamed": {
+    "message": "Sin nombre",
+    "description": "Placeholder name for rules with no name."
+  },
+  "importImporting": {
+    "message": "Importando...",
+    "description": "Label on the import button while importing."
+  },
+  "importSuccess": {
+    "message": "Se importaron correctamente $count$ reglas",
+    "description": "Success message after import.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importSuccessWithSkipped": {
+    "message": "Se importaron correctamente $count$ reglas ($skipped$ omitidas)",
+    "description": "Success message when some rules are skipped.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "importFailed": {
+    "message": "La importación falló",
+    "description": "Generic import failure message."
+  },
+  "importInvalidJson": {
+    "message": "JSON no válido",
+    "description": "Error when file is not valid JSON."
+  },
+  "importInvalidFormat": {
+    "message": "Formato de archivo no válido: falta la propiedad «rules»",
+    "description": "Error when file has no 'rules' key."
+  },
+  "importNoRules": {
+    "message": "No se encontraron reglas en el archivo",
+    "description": "Error when file has no rules."
+  },
+  "importSelectJson": {
+    "message": "Selecciona un archivo JSON",
+    "description": "Error when a non-JSON file is selected."
+  }
+}
