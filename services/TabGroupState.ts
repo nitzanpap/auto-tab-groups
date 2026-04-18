@@ -9,7 +9,8 @@ import type {
   GroupByMode,
   RuleMatchingMode,
   SortDirection,
-  StorageSchema
+  StorageSchema,
+  UserLocale
 } from "../types"
 import { DEFAULT_STATE } from "../types/storage"
 
@@ -26,6 +27,8 @@ class TabGroupState {
   sortGroupsAlphabetically: boolean
   sortGroupsDirection: SortDirection
   indexGroupTitles: boolean
+  hideContextMenu: boolean
+  userLocale: UserLocale
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -40,6 +43,8 @@ class TabGroupState {
     this.sortGroupsAlphabetically = DEFAULT_STATE.sortGroupsAlphabetically
     this.sortGroupsDirection = DEFAULT_STATE.sortGroupsDirection
     this.indexGroupTitles = DEFAULT_STATE.indexGroupTitles
+    this.hideContextMenu = DEFAULT_STATE.hideContextMenu
+    this.userLocale = DEFAULT_STATE.userLocale
   }
 
   /**
@@ -57,6 +62,8 @@ class TabGroupState {
     this.sortGroupsAlphabetically = data.sortGroupsAlphabetically ?? this.sortGroupsAlphabetically
     this.sortGroupsDirection = data.sortGroupsDirection ?? this.sortGroupsDirection
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
+    this.hideContextMenu = data.hideContextMenu ?? this.hideContextMenu
+    this.userLocale = data.userLocale ?? this.userLocale
 
     this.customRules.clear()
 
@@ -85,6 +92,8 @@ class TabGroupState {
       sortGroupsAlphabetically: this.sortGroupsAlphabetically,
       sortGroupsDirection: this.sortGroupsDirection,
       indexGroupTitles: this.indexGroupTitles,
+      hideContextMenu: this.hideContextMenu,
+      userLocale: this.userLocale,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,

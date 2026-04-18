@@ -13,7 +13,8 @@ import type {
   RuleMatchingMode,
   SortDirection,
   StorageSchema,
-  TabGroupColor
+  TabGroupColor,
+  UserLocale
 } from "../types"
 import { DEFAULT_STATE } from "../types/storage"
 
@@ -85,6 +86,14 @@ export const indexGroupTitles = storage.defineItem<boolean>("local:indexGroupTit
   fallback: DEFAULT_STATE.indexGroupTitles
 })
 
+export const hideContextMenu = storage.defineItem<boolean>("local:hideContextMenu", {
+  fallback: DEFAULT_STATE.hideContextMenu
+})
+
+export const userLocale = storage.defineItem<UserLocale>("local:userLocale", {
+  fallback: DEFAULT_STATE.userLocale
+})
+
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
  */
@@ -113,7 +122,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     openTabNextToCurrentValue,
     sortGroupsAlphabeticallyValue,
     sortGroupsDirectionValue,
-    indexGroupTitlesValue
+    indexGroupTitlesValue,
+    hideContextMenuValue,
+    userLocaleValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -130,7 +141,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     openTabNextToCurrent.getValue(),
     sortGroupsAlphabetically.getValue(),
     sortGroupsDirection.getValue(),
-    indexGroupTitles.getValue()
+    indexGroupTitles.getValue(),
+    hideContextMenu.getValue(),
+    userLocale.getValue()
   ])
 
   return {
@@ -149,7 +162,9 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     openTabNextToCurrent: openTabNextToCurrentValue,
     sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
     sortGroupsDirection: sortGroupsDirectionValue,
-    indexGroupTitles: indexGroupTitlesValue
+    indexGroupTitles: indexGroupTitlesValue,
+    hideContextMenu: hideContextMenuValue,
+    userLocale: userLocaleValue
   }
 }
 
@@ -206,6 +221,12 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.indexGroupTitles !== undefined) {
     promises.push(indexGroupTitles.setValue(data.indexGroupTitles))
+  }
+  if (data.hideContextMenu !== undefined) {
+    promises.push(hideContextMenu.setValue(data.hideContextMenu))
+  }
+  if (data.userLocale !== undefined) {
+    promises.push(userLocale.setValue(data.userLocale))
   }
   await Promise.all(promises)
 }

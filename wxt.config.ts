@@ -34,8 +34,9 @@ export default defineConfig({
   }),
   manifest: ({ browser }) => {
     const baseManifest = {
-      name: "Auto Tab Groups",
-      description: "Automatically groups tabs by domain.",
+      name: "__MSG_extensionName__",
+      description: "__MSG_extensionDescription__",
+      default_locale: "en",
       author: "Nitzan Papini",
       permissions: ["tabs", "storage", "tabGroups", "contextMenus"],
       icons: {
@@ -77,7 +78,7 @@ export default defineConfig({
             48: "icon/48.png",
             128: "icon/128.png"
           },
-          default_title: "Auto Tab Groups"
+          default_title: "__MSG_extensionName__"
         }
       }
     }

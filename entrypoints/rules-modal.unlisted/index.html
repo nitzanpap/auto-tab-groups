@@ -8,42 +8,43 @@
   </head>
   <body>
     <div class="modal-container">
-      <h1 id="modalTitle">Create Custom Rule</h1>
+      <h1 id="modalTitle" data-i18n="ruleModalCreateTitle">Create Custom Rule</h1>
       <form id="ruleForm">
         <div class="form-group">
-          <label for="ruleName">Rule Name</label>
-          <input type="text" id="ruleName" placeholder="e.g., Work Apps, 工作, 仕事" required />
-          <div class="help-text">Supports any language including Chinese, Japanese, Korean, and emojis</div>
+          <label for="ruleName" data-i18n="ruleModalNameLabel">Rule Name</label>
+          <input type="text" id="ruleName" placeholder="e.g., Work Apps, 工作, 仕事" data-i18n-placeholder="ruleModalNamePlaceholder" required />
+          <div class="help-text" data-i18n="ruleModalNameHelp">Supports any language including Chinese, Japanese, Korean, and emojis</div>
         </div>
         <div id="aiAssistSection" class="form-group ai-assist-section">
-          <label>AI Assist</label>
+          <label data-i18n="ruleModalAiAssistLabel">AI Assist</label>
           <div class="ai-assist-container">
             <textarea
               id="aiDescription"
               rows="2"
               placeholder="Describe your rule, e.g., 'Group all Google services' or 'Group AWS console tabs'"
+              data-i18n-placeholder="ruleModalAiAssistPlaceholder"
             ></textarea>
-            <button type="button" id="aiGenerateBtn" class="button ai-generate-btn" disabled>
+            <button type="button" id="aiGenerateBtn" class="button ai-generate-btn" disabled data-i18n="ruleModalAiGenerate">
               Generate
             </button>
           </div>
           <div id="aiAssistStatus" class="ai-assist-status"></div>
-          <div class="help-text">Describe what you want to group and AI will suggest name, domains, and color</div>
+          <div class="help-text" data-i18n="ruleModalAiAssistHelp">Describe what you want to group and AI will suggest name, domains, and color</div>
         </div>
         <div id="patternModeToggle" class="form-group pattern-mode-toggle hidden">
-          <label>Pattern Mode</label>
+          <label data-i18n="ruleModalPatternModeLabel">Pattern Mode</label>
           <div class="toggle-buttons">
-            <button type="button" id="simpleModeBtn" class="toggle-btn active">
+            <button type="button" id="simpleModeBtn" class="toggle-btn active" data-i18n="ruleModalPatternModeSimple">
               Simple (domains)
             </button>
-            <button type="button" id="explicitModeBtn" class="toggle-btn">
+            <button type="button" id="explicitModeBtn" class="toggle-btn" data-i18n="ruleModalPatternModeExplicit">
               Explicit (full URLs)
             </button>
           </div>
-          <div id="modeHint" class="help-text">Groups all pages from these base domains</div>
+          <div id="modeHint" class="help-text" data-i18n="ruleModalSimpleModeHint">Groups all pages from these base domains</div>
         </div>
         <div class="form-group">
-          <label for="rulePatterns">URL Patterns (one per line)</label>
+          <label for="rulePatterns" data-i18n="ruleModalPatternsLabel">URL Patterns (one per line)</label>
           <textarea
             id="rulePatterns"
             rows="4"
@@ -53,46 +54,46 @@ example.com/admin/*
 192.168.1.*"
             required
           ></textarea>
-          <div class="help-text pattern-help">Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses</div>
+          <div class="help-text pattern-help" data-i18n="ruleModalPatternsHelp">Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses</div>
           <div id="patternFeedback" class="pattern-feedback"></div>
         </div>
         <div class="form-group" id="colorGroup">
-          <label>Group Color</label>
+          <label data-i18n="ruleModalColorLabel">Group Color</label>
           <div id="colorPicker" class="color-picker">
-            <button type="button" class="color-btn active" data-color="blue" title="Blue"></button>
-            <button type="button" class="color-btn" data-color="red" title="Red"></button>
-            <button type="button" class="color-btn" data-color="yellow" title="Yellow"></button>
-            <button type="button" class="color-btn" data-color="green" title="Green"></button>
-            <button type="button" class="color-btn" data-color="pink" title="Pink"></button>
-            <button type="button" class="color-btn" data-color="purple" title="Purple"></button>
-            <button type="button" class="color-btn" data-color="cyan" title="Cyan"></button>
-            <button type="button" class="color-btn" data-color="orange" title="Orange"></button>
-            <button type="button" class="color-btn" data-color="grey" title="Grey"></button>
+            <button type="button" class="color-btn active" data-color="blue" title="Blue" data-i18n-title="ruleModalColorBlue"></button>
+            <button type="button" class="color-btn" data-color="red" title="Red" data-i18n-title="ruleModalColorRed"></button>
+            <button type="button" class="color-btn" data-color="yellow" title="Yellow" data-i18n-title="ruleModalColorYellow"></button>
+            <button type="button" class="color-btn" data-color="green" title="Green" data-i18n-title="ruleModalColorGreen"></button>
+            <button type="button" class="color-btn" data-color="pink" title="Pink" data-i18n-title="ruleModalColorPink"></button>
+            <button type="button" class="color-btn" data-color="purple" title="Purple" data-i18n-title="ruleModalColorPurple"></button>
+            <button type="button" class="color-btn" data-color="cyan" title="Cyan" data-i18n-title="ruleModalColorCyan"></button>
+            <button type="button" class="color-btn" data-color="orange" title="Orange" data-i18n-title="ruleModalColorOrange"></button>
+            <button type="button" class="color-btn" data-color="grey" title="Grey" data-i18n-title="ruleModalColorGrey"></button>
           </div>
           <input type="hidden" id="ruleColor" value="blue" />
         </div>
         <div class="form-group checkbox-group">
           <label>
             <input type="checkbox" id="ruleEnabled" checked />
-            Enabled
+            <span data-i18n="ruleModalEnabledLabel">Enabled</span>
           </label>
         </div>
         <div class="button-group">
-          <button type="submit" class="button primary" id="saveButton">Save Rule</button>
-          <button type="button" class="button secondary" id="cancelButton">Cancel</button>
+          <button type="submit" class="button primary" id="saveButton" data-i18n="ruleModalSave">Save Rule</button>
+          <button type="button" class="button secondary" id="cancelButton" data-i18n="ruleModalCancel">Cancel</button>
         </div>
       </form>
       <div id="conflictWarning" class="conflict-warning hidden">
-        <h3>Pattern Conflicts Detected</h3>
-        <p class="conflict-subtitle">These patterns overlap with existing rules. Tabs matching both rules will only be assigned to one.</p>
+        <h3 data-i18n="ruleModalConflictTitle">Pattern Conflicts Detected</h3>
+        <p class="conflict-subtitle" data-i18n="ruleModalConflictSubtitle">These patterns overlap with existing rules. Tabs matching both rules will only be assigned to one.</p>
         <div id="conflictList" class="conflict-list"></div>
         <div id="conflictResolutions" class="conflict-resolutions hidden">
-          <h4>AI Suggestions</h4>
+          <h4 data-i18n="ruleModalAiSuggestions">AI Suggestions</h4>
           <ul id="resolutionList"></ul>
         </div>
         <div class="conflict-actions">
-          <button type="button" class="button primary" id="saveAnywayBtn">Save Anyway</button>
-          <button type="button" class="button secondary" id="goBackBtn">Go Back</button>
+          <button type="button" class="button primary" id="saveAnywayBtn" data-i18n="ruleModalSaveAnyway">Save Anyway</button>
+          <button type="button" class="button secondary" id="goBackBtn" data-i18n="ruleModalGoBack">Go Back</button>
         </div>
       </div>
     </div>

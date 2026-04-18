@@ -20,6 +20,7 @@ import {
   parseAiSuggestionResponse,
   parseConflictResolutionResponse
 } from "../utils/AiResponseParser"
+import { initI18n } from "../utils/i18n"
 import {
   conflictResolutionPrompt,
   ruleGenerationPrompt,
@@ -42,6 +43,7 @@ export default defineBackground(() => {
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
         aiService.updateFromStorage(storageData)
+        await initI18n(tabGroupState.userLocale)
         stateInitialized = true
         console.log("State loaded successfully from storage")
         console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
@@ -255,6 +257,29 @@ export default defineBackground(() => {
 
           case "getIndexGroupTitles":
             result = { enabled: tabGroupState.indexGroupTitles }
+            break
+
+          case "getHideContextMenu":
+            result = { enabled: tabGroupState.hideContextMenu }
+            break
+
+          case "toggleHideContextMenu":
+            tabGroupState.hideContextMenu = msg.enabled
+            await saveState()
+            await contextMenuService.applyVisibility()
+            result = { enabled: tabGroupState.hideContextMenu }
+            break
+
+          case "getUserLocale":
+            result = { locale: tabGroupState.userLocale }
+            break
+
+          case "setUserLocale":
+            tabGroupState.userLocale = msg.locale
+            await saveState()
+            await initI18n(msg.locale)
+            await contextMenuService.rebuildMenus()
+            result = { locale: tabGroupState.userLocale }
             break
 
           case "toggleIndexGroupTitles": {

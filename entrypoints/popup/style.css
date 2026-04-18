@@ -444,7 +444,7 @@ input:checked + .slider:before {
 
 .rules-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .rules-count {
@@ -794,7 +794,7 @@ input:checked + .slider:before {
 
 .sorting-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .sorting-toggle .up-arrow {
@@ -890,7 +890,7 @@ input:checked + .slider:before {
 
 .ai-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1357,7 +1357,7 @@ input:checked + .slider:before {
 
 .blacklist-toggle .noselect {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .blacklist-count {
@@ -1429,4 +1429,115 @@ input:checked + .slider:before {
   font-size: 11px;
   color: #6c757d;
   text-align: center;
+}
+
+/* Advanced Section */
+.advanced-section {
+  margin-top: 12px;
+}
+
+.advanced-toggle {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.advanced-toggle:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.advanced-toggle.expanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+  background: #e9ecef;
+}
+
+.advanced-toggle .noselect {
+  flex: 1;
+  text-align: start;
+}
+
+.advanced-toggle .up-arrow {
+  transition: transform 0.2s ease;
+}
+
+.advanced-toggle.expanded .up-arrow {
+  transform: rotate(180deg);
+}
+
+.advanced-content {
+  display: none;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.advanced-content.expanded {
+  display: flex;
+}
+
+.advanced-help {
+  font-size: 11px;
+  color: #6c757d;
+}
+
+/* Language picker */
+.language-row {
+  margin-bottom: 4px;
+}
+
+.language-select {
+  padding: 6px 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 160px;
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.language-select:hover {
+  border-color: #d1d5db;
+}
+
+/* RTL adjustments. Most of the layout is flex-based and mirrors for free
+   under `dir="rtl"`; these overrides handle the few spots where visual
+   order is baked in (rotated arrows, left/right padding on badges). */
+[dir="rtl"] .up-arrow svg {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .ai-badge,
+[dir="rtl"] .sorting-badge {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+[dir="rtl"] .help-text,
+[dir="rtl"] .settings-info {
+  text-align: right;
 }

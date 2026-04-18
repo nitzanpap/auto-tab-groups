@@ -1,0 +1,748 @@
+{
+  "extensionName": {
+    "message": "Auto Tab Groups",
+    "description": "The name of the extension as it appears in the browser store and toolbar."
+  },
+  "extensionDescription": {
+    "message": "يجمّع علامات التبويب تلقائياً حسب النطاق.",
+    "description": "Short description shown in the extensions list."
+  },
+
+  "popupTitle": {
+    "message": "Auto Tab Groups",
+    "description": "Heading shown at the top of the popup/sidebar."
+  },
+  "popupGroupTabs": {
+    "message": "تجميع علامات التبويب",
+    "description": "Button that groups all open tabs immediately."
+  },
+  "popupUngroupAll": {
+    "message": "إلغاء تجميع الكل",
+    "description": "Button that removes every tab group."
+  },
+  "popupGenerateNewColors": {
+    "message": "إنشاء ألوان جديدة",
+    "description": "Button that randomizes the colors of all groups."
+  },
+  "popupGenerateNewColorsTitle": {
+    "message": "اختيار ألوان عشوائية للمجموعات. تُحفظ الألوان وتُستعاد تلقائياً لكل نطاق أو قاعدة.",
+    "description": "Tooltip for the Generate New Colors button."
+  },
+  "popupCollapseAll": {
+    "message": "طي الكل",
+    "description": "Button that collapses every group."
+  },
+  "popupExpandAll": {
+    "message": "توسيع الكل",
+    "description": "Button that expands every group."
+  },
+
+  "settingsHeading": {
+    "message": "الإعدادات",
+    "description": "Heading for the main settings section."
+  },
+  "settingLanguage": {
+    "message": "اللغة",
+    "description": "Label for the UI language picker."
+  },
+  "settingLanguageAuto": {
+    "message": "تلقائي (الافتراضي للمتصفح)",
+    "description": "Picker option that defers to the browser's UI language."
+  },
+  "settingAutoGroupMode": {
+    "message": "وضع التجميع التلقائي",
+    "description": "Label for the toggle that enables automatic grouping."
+  },
+  "settingGroupBy": {
+    "message": "التجميع حسب",
+    "description": "Label for the group-by mode selector."
+  },
+  "settingGroupByRulesOnly": {
+    "message": "القواعد فقط",
+    "description": "Option that groups only by custom rules."
+  },
+  "settingGroupByRulesAndDomain": {
+    "message": "القواعد والنطاق",
+    "description": "Option that groups by rules plus base domain (popup)."
+  },
+  "settingGroupByRulesAndSubdomain": {
+    "message": "القواعد والنطاق الفرعي",
+    "description": "Option that groups by rules plus subdomain (popup)."
+  },
+  "settingGroupByDomain": {
+    "message": "النطاق",
+    "description": "Option that groups by base domain (sidebar)."
+  },
+  "settingGroupBySubdomain": {
+    "message": "النطاق الفرعي",
+    "description": "Option that groups by subdomain (sidebar)."
+  },
+  "settingGroupNewEmptyTabs": {
+    "message": "تجميع علامات التبويب الفارغة الجديدة تحت «System»",
+    "description": "Label for the toggle that groups blank/new tabs under a System group."
+  },
+  "settingMinimumTabsForGroup": {
+    "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
+    "description": "Label for the numeric input that sets the minimum tab count required to create a group."
+  },
+  "settingAutoCollapseInactive": {
+    "message": "طي المجموعات غير النشطة تلقائياً",
+    "description": "Label for the toggle that auto-collapses groups the user isn't looking at."
+  },
+  "settingCollapseDelay": {
+    "message": "تأخير الطي",
+    "description": "Label for the numeric input that sets the auto-collapse delay."
+  },
+  "settingCollapseDelayHelp": {
+    "message": "0 = فوري، أو حدّد التأخير (100-5000 مللي ثانية) قبل الطي",
+    "description": "Help text under the collapse-delay input."
+  },
+  "settingOpenNewTabsNextToCurrent": {
+    "message": "فتح علامات التبويب الجديدة بجوار علامة التبويب الحالية",
+    "description": "Label for the toggle that opens new tabs adjacent to the active tab."
+  },
+  "settingPinnedTabsNote": {
+    "message": "لا تُجمَّع علامات التبويب المثبَّتة تلقائياً أبداً",
+    "description": "Informational note about pinned tabs."
+  },
+
+  "sortingSectionTitle": {
+    "message": "الترتيب",
+    "description": "Title for the collapsible sorting section."
+  },
+  "settingSortGroupsAlphabetically": {
+    "message": "إبقاء المجموعات مرتَّبة أبجدياً",
+    "description": "Toggle that keeps tab groups sorted alphabetically."
+  },
+  "settingSortDirection": {
+    "message": "الاتجاه",
+    "description": "Label for the sort direction toggle (A-Z vs Z-A)."
+  },
+  "settingSortDirectionAsc": {
+    "message": "A - Z",
+    "description": "Ascending alphabetical sort direction option."
+  },
+  "settingSortDirectionDesc": {
+    "message": "Z - A",
+    "description": "Descending alphabetical sort direction option."
+  },
+  "settingNumberGroups": {
+    "message": "ترقيم المجموعات (1. AI، 2. Docs...)",
+    "description": "Toggle that prefixes group titles with their sort index."
+  },
+  "settingNumberGroupsHelp": {
+    "message": "يضيف أرقام المواضع إلى عناوين المجموعات للرجوع السريع",
+    "description": "Help text describing the Number Groups toggle."
+  },
+
+  "aiSectionTitle": {
+    "message": "ميزات الذكاء الاصطناعي",
+    "description": "Title for the AI features section."
+  },
+  "aiExperimentalBadge": {
+    "message": "تجريبي",
+    "description": "Badge shown next to the AI Features title."
+  },
+  "aiHelpTooltip": {
+    "message": "اقتراحات تجميع علامات التبويب المدعومة بالذكاء الاصطناعي. هذه الميزة تجريبية. تجري جميع المعالجة محلياً داخل متصفحك — لا تُرسَل أي بيانات إلى خوادم خارجية.",
+    "description": "Tooltip explaining the AI Features."
+  },
+  "aiBadgeOn": {
+    "message": "مُفعَّل",
+    "description": "Status badge shown when AI is enabled."
+  },
+  "aiBadgeOff": {
+    "message": "مُعطَّل",
+    "description": "Status badge shown when AI is disabled."
+  },
+  "aiEnable": {
+    "message": "تفعيل الذكاء الاصطناعي",
+    "description": "Toggle that enables or disables AI features."
+  },
+  "aiModelLabel": {
+    "message": "النموذج",
+    "description": "Label for the AI model selector."
+  },
+  "aiStatusLabel": {
+    "message": "الحالة:",
+    "description": "Label for the AI model status."
+  },
+  "aiStatusIdle": {
+    "message": "خامل",
+    "description": "AI model status: idle."
+  },
+  "aiStatusReady": {
+    "message": "جاهز",
+    "description": "AI model status: ready."
+  },
+  "aiStatusLoading": {
+    "message": "جارٍ التحميل $progress$٪",
+    "description": "AI model status while loading, with a progress percentage.",
+    "placeholders": {
+      "progress": { "content": "$1", "example": "42" }
+    }
+  },
+  "aiStatusError": {
+    "message": "خطأ",
+    "description": "AI model status: error."
+  },
+  "aiLoadModel": {
+    "message": "تحميل النموذج",
+    "description": "Button that starts loading the AI model."
+  },
+  "aiUnloadModel": {
+    "message": "تفريغ النموذج",
+    "description": "Button that unloads the AI model."
+  },
+  "aiLoadingButton": {
+    "message": "جارٍ التحميل...",
+    "description": "Label shown on the load button while loading."
+  },
+  "aiRetryLoad": {
+    "message": "إعادة المحاولة",
+    "description": "Button shown after an AI model load error."
+  },
+  "aiWebGpuUnavailable": {
+    "message": "WebGPU غير متاح. تتطلب ميزات الذكاء الاصطناعي متصفحاً يدعم WebGPU.",
+    "description": "Warning shown when WebGPU is not supported."
+  },
+  "aiDownloadNote": {
+    "message": "تعمل النماذج محلياً داخل متصفحك. يُنزِّل التحميل الأول النموذج (~250MB-900MB).",
+    "description": "Help text beneath the load model button."
+  },
+  "aiSuggestGroups": {
+    "message": "اقتراح مجموعات",
+    "description": "Button that asks the AI to suggest tab groups."
+  },
+  "aiAnalyzing": {
+    "message": "جارٍ تحليل علامات التبويب الخاصة بك...",
+    "description": "Status text while the AI analyzes open tabs."
+  },
+  "aiNoSuggestions": {
+    "message": "لا توجد اقتراحات",
+    "description": "Status text shown when the AI returns zero suggestions."
+  },
+  "aiFailedToGetSuggestions": {
+    "message": "فشل الحصول على اقتراحات",
+    "description": "Error shown when AI suggestion fails."
+  },
+  "aiDismiss": {
+    "message": "رفض",
+    "description": "Button that dismisses AI suggestions."
+  },
+  "aiApply": {
+    "message": "تطبيق",
+    "description": "Button that applies an AI suggestion."
+  },
+  "aiApplying": {
+    "message": "جارٍ التطبيق...",
+    "description": "Button label while applying a suggestion."
+  },
+  "aiApplied": {
+    "message": "تم التطبيق!",
+    "description": "Button label after applying a suggestion."
+  },
+  "aiFailed": {
+    "message": "فشل",
+    "description": "Button label after a suggestion fails."
+  },
+  "aiCreateRule": {
+    "message": "إنشاء قاعدة",
+    "description": "Button that creates a rule from a suggestion."
+  },
+  "aiTabsCount": {
+    "message": "$count$ علامة تبويب",
+    "description": "Tab count label for a suggestion.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiAppliedWithStale": {
+    "message": "تم التطبيق (أُغلقت $count$ علامة تبويب)",
+    "description": "Shown when a suggestion is applied but some tabs were closed.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiFirefoxNotice": {
+    "message": "ميزات الذكاء الاصطناعي متاحة حالياً على Chrome فقط. دعم Firefox قريباً.",
+    "description": "Notice shown to Firefox users."
+  },
+
+  "rulesSectionTitle": {
+    "message": "القواعد المخصَّصة",
+    "description": "Title for the custom rules section."
+  },
+  "rulesAddNewRule": {
+    "message": "إضافة قاعدة جديدة",
+    "description": "Button that opens the new rule dialog."
+  },
+  "rulesExport": {
+    "message": "تصدير",
+    "description": "Button that exports rules to JSON."
+  },
+  "rulesImport": {
+    "message": "استيراد",
+    "description": "Button that imports rules from JSON."
+  },
+  "rulesExportTitle": {
+    "message": "تصدير جميع القواعد إلى ملف JSON",
+    "description": "Tooltip on the Export button."
+  },
+  "rulesImportTitle": {
+    "message": "استيراد القواعد من ملف JSON",
+    "description": "Tooltip on the Import button."
+  },
+  "rulesExportImportHelp": {
+    "message": "تصدير/استيراد القواعد كملفات JSON للنسخ الاحتياطي أو المشاركة",
+    "description": "Help text under the export/import buttons."
+  },
+  "rulesEmptyState": {
+    "message": "لا توجد قواعد مخصَّصة بعد. أنشئ قاعدتك الأولى لتجميع علامات التبويب حسب تفضيلاتك!",
+    "description": "Shown when there are no custom rules."
+  },
+  "rulesEdit": {
+    "message": "تحرير",
+    "description": "Edit button on a rule row."
+  },
+  "rulesDelete": {
+    "message": "حذف",
+    "description": "Delete button on a rule row."
+  },
+  "rulesEditTitle": {
+    "message": "تحرير القاعدة",
+    "description": "Tooltip for the edit button."
+  },
+  "rulesDeleteTitle": {
+    "message": "حذف القاعدة",
+    "description": "Tooltip for the delete button."
+  },
+  "rulesAddTabTitle": {
+    "message": "إضافة علامة التبويب إلى قاعدة موجودة",
+    "description": "Tooltip for the + button that adds the current tab to a rule."
+  },
+  "rulesDeleteConfirm": {
+    "message": "هل أنت متأكد أنك تريد حذف القاعدة «$name$»؟",
+    "description": "Confirmation prompt before deleting a rule.",
+    "placeholders": {
+      "name": { "content": "$1" }
+    }
+  },
+  "rulesFailedToLoad": {
+    "message": "فشل تحميل القواعد المخصَّصة",
+    "description": "Error when loading rules fails."
+  },
+  "rulesFailedToDelete": {
+    "message": "فشل حذف القاعدة",
+    "description": "Error when deleting a rule fails."
+  },
+  "rulesExportSuccess": {
+    "message": "تم تصدير القواعد بنجاح!",
+    "description": "Confirmation after exporting rules."
+  },
+  "rulesFailedToExport": {
+    "message": "فشل تصدير القواعد",
+    "description": "Error when export fails."
+  },
+  "rulesImportSuccess": {
+    "message": "تم استيراد القواعد بنجاح!",
+    "description": "Confirmation after importing rules."
+  },
+  "rulesImportSummary": {
+    "message": "نجح الاستيراد!\nتم الاستيراد: $imported$ قاعدة\nتم التخطي: $skipped$ قاعدة",
+    "description": "Summary shown after rules are imported.",
+    "placeholders": {
+      "imported": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "rulesFailedToImport": {
+    "message": "فشل استيراد القواعد",
+    "description": "Error when import fails."
+  },
+  "rulesImportReplacePrompt": {
+    "message": "هل تريد استبدال جميع القواعد الموجودة؟\n\nاضغط «موافق» لاستبدال جميع القواعد الموجودة بالقواعد المستوردة\nاضغط «إلغاء» لدمج القواعد المستوردة مع القواعد الموجودة",
+    "description": "Prompt that asks whether to merge or replace on import."
+  },
+  "rulesNoExport": {
+    "message": "لا توجد قواعد لتصديرها",
+    "description": "Tooltip shown on a disabled export button when there are no rules."
+  },
+  "rulesNoDomains": {
+    "message": "لا توجد نطاقات",
+    "description": "Shown when a rule has no configured domains."
+  },
+  "rulesDomainsSeparator": {
+    "message": " و $count$ أخرى",
+    "description": "Appended to truncated domain lists.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "rulesAddTabNoTab": {
+    "message": "لم يتم العثور على علامة تبويب نشطة",
+    "description": "Tooltip shown on the add-tab button when no active tab is available."
+  },
+  "rulesAddTabCantExtract": {
+    "message": "لا يمكن استخراج النطاق من علامة التبويب هذه",
+    "description": "Tooltip when the current tab's URL has no domain."
+  },
+  "rulesAddTabAlreadyExists": {
+    "message": "النطاق موجود بالفعل في هذه القاعدة",
+    "description": "Tooltip when the tab's domain is already part of the rule."
+  },
+  "rulesAddTabAdded": {
+    "message": "تمت الإضافة!",
+    "description": "Tooltip shown briefly after adding a tab to a rule."
+  },
+  "rulesAddTabFailed": {
+    "message": "فشل إضافة النطاق",
+    "description": "Tooltip when adding a domain fails."
+  },
+
+  "blacklistSectionTitle": {
+    "message": "القائمة السوداء",
+    "description": "Title for the blacklist section."
+  },
+  "blacklistAddButton": {
+    "message": "إضافة إلى القائمة السوداء",
+    "description": "Button to add a domain to the blacklist."
+  },
+  "blacklistHelp": {
+    "message": "لن يتم تجميع النطاقات الموجودة في القائمة السوداء أبداً",
+    "description": "Help text under the blacklist section."
+  },
+  "blacklistEmpty": {
+    "message": "لا توجد نطاقات في القائمة السوداء بعد.",
+    "description": "Shown when the blacklist is empty."
+  },
+  "blacklistEditTitle": {
+    "message": "تحرير قاعدة القائمة السوداء",
+    "description": "Tooltip for the blacklist edit button."
+  },
+  "blacklistDeleteTitle": {
+    "message": "حذف قاعدة القائمة السوداء",
+    "description": "Tooltip for the blacklist delete button."
+  },
+
+  "advancedSectionTitle": {
+    "message": "متقدم",
+    "description": "Title for the advanced settings section."
+  },
+  "advancedHideContextMenu": {
+    "message": "إخفاء قائمة النقر بالزر الأيمن",
+    "description": "Toggle that hides the extension's context menu items."
+  },
+  "advancedHideContextMenuHelp": {
+    "message": "عند التفعيل، لن يُضيف Auto Tab Groups عناصره إلى قائمة النقر بالزر الأيمن للصفحة.",
+    "description": "Help text for the hide context menu toggle."
+  },
+
+  "footerMadeBy": {
+    "message": "من إنشاء",
+    "description": "Prefix for the author attribution in the footer."
+  },
+  "footerFor": {
+    "message": "لـ",
+    "description": "Connector text: 'Made by X, for Chrome'."
+  },
+  "footerBrowserChrome": {
+    "message": "Chrome",
+    "description": "Name of the Chrome browser in the footer."
+  },
+  "footerBrowserFirefox": {
+    "message": "Firefox",
+    "description": "Name of the Firefox browser in the footer."
+  },
+  "footerFeedback": {
+    "message": "الملاحظات والطلبات والدعم",
+    "description": "Text of the feedback link."
+  },
+  "footerVersion": {
+    "message": "الإصدار:",
+    "description": "Prefix before the version number."
+  },
+
+  "contextMenuCreateRuleFromGroup": {
+    "message": "إنشاء قاعدة من المجموعة",
+    "description": "Right-click menu: create a custom rule from the clicked tab's group."
+  },
+  "contextMenuAddTabToExistingRule": {
+    "message": "إضافة علامة التبويب إلى قاعدة موجودة",
+    "description": "Right-click menu: submenu to add the current tab's domain to an existing rule."
+  },
+  "contextMenuAddToBlacklist": {
+    "message": "إضافة إلى القائمة السوداء",
+    "description": "Right-click menu: add the current tab's domain to the blacklist."
+  },
+  "contextMenuNoRulesYet": {
+    "message": "لا توجد قواعد بعد",
+    "description": "Disabled placeholder shown when the Add Tab submenu has no rules."
+  },
+
+  "ruleModalCreateTitle": {
+    "message": "إنشاء قاعدة مخصَّصة",
+    "description": "Title shown when creating a new rule."
+  },
+  "ruleModalEditTitle": {
+    "message": "تحرير قاعدة مخصَّصة",
+    "description": "Title shown when editing an existing rule."
+  },
+  "ruleModalNameLabel": {
+    "message": "اسم القاعدة",
+    "description": "Label for the rule name input."
+  },
+  "ruleModalNamePlaceholder": {
+    "message": "مثلاً: تطبيقات العمل",
+    "description": "Placeholder for the rule name input."
+  },
+  "ruleModalNameHelp": {
+    "message": "يدعم أي لغة بما في ذلك الصينية واليابانية والكورية والرموز التعبيرية",
+    "description": "Help text under the rule name input."
+  },
+  "ruleModalAiAssistLabel": {
+    "message": "المساعدة بالذكاء الاصطناعي",
+    "description": "Label for the AI assist section."
+  },
+  "ruleModalAiAssistPlaceholder": {
+    "message": "صِف قاعدتك، مثلاً: «جمِّع كل خدمات Google» أو «جمِّع علامات التبويب الخاصة بـ AWS console»",
+    "description": "Placeholder for the AI assist input."
+  },
+  "ruleModalAiGenerate": {
+    "message": "إنشاء",
+    "description": "Button that asks the AI to generate a rule."
+  },
+  "ruleModalAiAssistHelp": {
+    "message": "صِف ما تريد تجميعه وسيقترح الذكاء الاصطناعي الاسم والنطاقات واللون",
+    "description": "Help text under the AI assist input."
+  },
+  "ruleModalPatternModeLabel": {
+    "message": "وضع النمط",
+    "description": "Label for the pattern mode toggle."
+  },
+  "ruleModalPatternModeSimple": {
+    "message": "بسيط (نطاقات)",
+    "description": "Simple pattern mode: matches whole domains."
+  },
+  "ruleModalPatternModeExplicit": {
+    "message": "صريح (روابط كاملة)",
+    "description": "Explicit pattern mode: matches full URLs."
+  },
+  "ruleModalSimpleModeHint": {
+    "message": "يجمّع جميع الصفحات من هذه النطاقات الأساسية",
+    "description": "Hint shown in simple pattern mode."
+  },
+  "ruleModalExplicitModeHint": {
+    "message": "يجمّع فقط الصفحات التي تطابق هذه الأنماط الكاملة للروابط",
+    "description": "Hint shown in explicit pattern mode."
+  },
+  "ruleModalPatternsLabel": {
+    "message": "أنماط الروابط (نمط واحد لكل سطر)",
+    "description": "Label for the patterns textarea."
+  },
+  "ruleModalPatternsHelp": {
+    "message": "يدعم: النطاقات، الرموز البدل (*.example.com)، المسارات (example.com/api/*)، عناوين IP",
+    "description": "Help text for the patterns textarea."
+  },
+  "ruleModalColorLabel": {
+    "message": "لون المجموعة",
+    "description": "Label for the color picker."
+  },
+  "ruleModalColorBlue": { "message": "أزرق", "description": "Color option: blue." },
+  "ruleModalColorRed": { "message": "أحمر", "description": "Color option: red." },
+  "ruleModalColorYellow": { "message": "أصفر", "description": "Color option: yellow." },
+  "ruleModalColorGreen": { "message": "أخضر", "description": "Color option: green." },
+  "ruleModalColorPink": { "message": "وردي", "description": "Color option: pink." },
+  "ruleModalColorPurple": { "message": "بنفسجي", "description": "Color option: purple." },
+  "ruleModalColorCyan": { "message": "سماوي", "description": "Color option: cyan." },
+  "ruleModalColorOrange": { "message": "برتقالي", "description": "Color option: orange." },
+  "ruleModalColorGrey": { "message": "رمادي", "description": "Color option: grey." },
+  "ruleModalEnabledLabel": {
+    "message": "مُفعَّلة",
+    "description": "Checkbox: whether the rule is enabled."
+  },
+  "ruleModalSave": {
+    "message": "حفظ القاعدة",
+    "description": "Submit button for the rule form."
+  },
+  "ruleModalUpdate": {
+    "message": "تحديث القاعدة",
+    "description": "Submit button when editing an existing rule."
+  },
+  "ruleModalCancel": {
+    "message": "إلغاء",
+    "description": "Cancel button for the rule form."
+  },
+  "ruleModalConflictTitle": {
+    "message": "تم اكتشاف تعارضات في الأنماط",
+    "description": "Heading of the conflict warning box."
+  },
+  "ruleModalConflictSubtitle": {
+    "message": "تتداخل هذه الأنماط مع قواعد موجودة. ستُخصَّص علامات التبويب التي تطابق القاعدتين لواحدة فقط.",
+    "description": "Subtitle of the conflict warning."
+  },
+  "ruleModalAiSuggestions": {
+    "message": "اقتراحات الذكاء الاصطناعي",
+    "description": "Heading for the AI-generated resolution suggestions."
+  },
+  "ruleModalSaveAnyway": {
+    "message": "احفظ على أي حال",
+    "description": "Button that saves the rule despite conflicts."
+  },
+  "ruleModalGoBack": {
+    "message": "رجوع",
+    "description": "Button that returns to editing after a conflict warning."
+  },
+  "ruleModalChecking": {
+    "message": "جارٍ التحقق...",
+    "description": "Label shown on the save button while checking for conflicts."
+  },
+  "ruleModalGenerating": {
+    "message": "جارٍ الإنشاء...",
+    "description": "Label shown on the AI generate button while generating a rule."
+  },
+  "ruleModalAiThinking": {
+    "message": "الذكاء الاصطناعي يفكر...",
+    "description": "Status text while the AI generates a rule."
+  },
+  "ruleModalAiNeedsModel": {
+    "message": "حمّل نموذج ذكاء اصطناعي من قسم ميزات الذكاء الاصطناعي في النافذة المنبثقة لاستخدام المساعدة بالذكاء الاصطناعي",
+    "description": "Status shown when AI Assist is invoked but no model is loaded."
+  },
+  "ruleModalAiGenerated": {
+    "message": "تم إنشاء القاعدة! راجعها وعدّلها أدناه ثم احفظ.",
+    "description": "Status after the AI generates a rule."
+  },
+  "ruleModalAiGenerateError": {
+    "message": "فشل إنشاء القاعدة. حاول إعادة صياغة وصفك.",
+    "description": "Error shown when AI rule generation fails."
+  },
+  "ruleModalAiEnterDescription": {
+    "message": "يرجى إدخال وصف",
+    "description": "Error shown when AI Assist is triggered with no description."
+  },
+  "ruleModalEnterPattern": {
+    "message": "يرجى إدخال نمط رابط واحد على الأقل",
+    "description": "Alert shown when submitting with no patterns."
+  },
+  "ruleModalEnterName": {
+    "message": "يرجى إدخال اسم للقاعدة",
+    "description": "Alert shown when submitting a rule with no name."
+  },
+  "ruleModalFailedToLoad": {
+    "message": "فشل تحميل القاعدة للتحرير",
+    "description": "Alert when the rule modal can't load the rule."
+  },
+  "ruleModalFailedToSave": {
+    "message": "فشل حفظ القاعدة",
+    "description": "Alert when saving a rule fails."
+  },
+
+  "importPageTitle": {
+    "message": "استيراد القواعد",
+    "description": "Title for the import rules page."
+  },
+  "importDropInstruction": {
+    "message": "اسحب ملف JSON وأفلته هنا",
+    "description": "Instruction shown in the import drop zone."
+  },
+  "importOr": {
+    "message": "أو",
+    "description": "Separator between drag-drop and button."
+  },
+  "importBrowseFiles": {
+    "message": "تصفُّح الملفات",
+    "description": "Button that opens the file picker."
+  },
+  "importPreviewHeading": {
+    "message": "معاينة",
+    "description": "Heading above the import preview."
+  },
+  "importModeLabel": {
+    "message": "وضع الاستيراد",
+    "description": "Label above the import mode radio buttons."
+  },
+  "importMerge": {
+    "message": "دمج مع القواعد الموجودة",
+    "description": "Radio option: merge on import."
+  },
+  "importReplace": {
+    "message": "استبدال جميع القواعد الموجودة",
+    "description": "Radio option: replace on import."
+  },
+  "importButton": {
+    "message": "استيراد القواعد",
+    "description": "Button that performs the import."
+  },
+  "importCancel": {
+    "message": "إلغاء",
+    "description": "Cancel button on the import page."
+  },
+  "importStatValid": {
+    "message": "قواعد صالحة",
+    "description": "Label for the valid rule count in the import preview."
+  },
+  "importStatInvalid": {
+    "message": "غير صالحة (سيتم تخطيها)",
+    "description": "Label for the invalid rule count in the import preview."
+  },
+  "importPatternsSuffix": {
+    "message": "$count$ أنماط",
+    "description": "Label showing pattern count for an imported rule.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importMoreRules": {
+    "message": "...و $count$ قواعد أخرى",
+    "description": "Shown when more rules exist beyond the preview slice.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importUnnamed": {
+    "message": "بلا اسم",
+    "description": "Placeholder name for rules with no name."
+  },
+  "importImporting": {
+    "message": "جارٍ الاستيراد...",
+    "description": "Label on the import button while importing."
+  },
+  "importSuccess": {
+    "message": "تم استيراد $count$ قواعد بنجاح",
+    "description": "Success message after import.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importSuccessWithSkipped": {
+    "message": "تم استيراد $count$ قواعد بنجاح (تم تخطي $skipped$)",
+    "description": "Success message when some rules are skipped.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "importFailed": {
+    "message": "فشل الاستيراد",
+    "description": "Generic import failure message."
+  },
+  "importInvalidJson": {
+    "message": "JSON غير صالح",
+    "description": "Error when file is not valid JSON."
+  },
+  "importInvalidFormat": {
+    "message": "تنسيق الملف غير صالح: خاصية «rules» مفقودة",
+    "description": "Error when file has no 'rules' key."
+  },
+  "importNoRules": {
+    "message": "لم يتم العثور على قواعد في الملف",
+    "description": "Error when file has no rules."
+  },
+  "importSelectJson": {
+    "message": "يرجى اختيار ملف JSON",
+    "description": "Error when a non-JSON file is selected."
+  }
+}

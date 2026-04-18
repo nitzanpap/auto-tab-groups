@@ -8,54 +8,74 @@
     <link rel="stylesheet" href="/fonts/inter.css" />
   </head>
   <body class="popup-container">
-    <h1>Auto Tab Groups</h1>
+    <h1 data-i18n="popupTitle">Auto Tab Groups</h1>
     <main>
       <div class="button-group-row">
-        <button id="group" class="button primaryButton">Group Tabs</button>
-        <button id="ungroup" class="button primaryButton">Ungroup All</button>
+        <button id="group" class="button primaryButton" data-i18n="popupGroupTabs">Group Tabs</button>
+        <button id="ungroup" class="button primaryButton" data-i18n="popupUngroupAll">Ungroup All</button>
       </div>
       <button
         id="generateNewColors"
         class="button gradientButton"
+        data-i18n="popupGenerateNewColors"
+        data-i18n-title="popupGenerateNewColorsTitle"
         title="Randomize group colors. Colors are saved and restored automatically for each domain/rule."
       >
         Generate New Colors
       </button>
       <div class="button-group-row">
-        <button id="collapseAllButton" class="button secondaryButton collapse-all-button">
+        <button id="collapseAllButton" class="button secondaryButton collapse-all-button" data-i18n="popupCollapseAll">
           Collapse All
         </button>
-        <button id="expandAllButton" class="button secondaryButton expand-all-button">
+        <button id="expandAllButton" class="button secondaryButton expand-all-button" data-i18n="popupExpandAll">
           Expand All
         </button>
       </div>
       <div class="separator"></div>
       <div class="settings-container">
-        <h2>Settings</h2>
+        <h2 data-i18n="settingsHeading">Settings</h2>
+        <div class="toggle-container language-row">
+          <span data-i18n="settingLanguage">Language</span>
+          <select
+            id="languageSelect"
+            class="language-select"
+            aria-label="Language"
+            data-i18n-aria-label="settingLanguage"
+          >
+            <option value="auto" data-i18n="settingLanguageAuto">Auto (browser default)</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="es">Español</option>
+            <option value="he">עברית</option>
+            <option value="hi">हिन्दी</option>
+            <option value="ru">Русский</option>
+            <option value="zh">中文</option>
+          </select>
+        </div>
         <div class="toggle-container">
-          <span>Auto-Group Mode</span>
+          <span data-i18n="settingAutoGroupMode">Auto-Group Mode</span>
           <label class="switch">
             <input type="checkbox" id="autoGroupToggle" />
             <span class="slider round"></span>
           </label>
         </div>
         <div class="toggle-container">
-          <span>Group by</span>
+          <span data-i18n="settingGroupBy">Group by</span>
           <div class="group-by-toggle-bar">
-            <button class="toggle-option" data-value="rules-only">Rules only</button>
-            <button class="toggle-option active" data-value="domain">Rules & Domain</button>
-            <button class="toggle-option" data-value="subdomain">Rules & Sub-domain</button>
+            <button class="toggle-option" data-value="rules-only" data-i18n="settingGroupByRulesOnly">Rules only</button>
+            <button class="toggle-option active" data-value="domain" data-i18n="settingGroupByRulesAndDomain">Rules &amp; Domain</button>
+            <button class="toggle-option" data-value="subdomain" data-i18n="settingGroupByRulesAndSubdomain">Rules &amp; Sub-domain</button>
           </div>
         </div>
         <div class="toggle-container">
-          <span>Group new empty tabs under "System"</span>
+          <span data-i18n="settingGroupNewEmptyTabs">Group new empty tabs under "System"</span>
           <label class="switch">
             <input type="checkbox" id="groupNewTabsToggle" />
             <span class="slider round"></span>
           </label>
         </div>
         <div class="toggle-container">
-          <span>Minimum tabs to form a group</span>
+          <span data-i18n="settingMinimumTabsForGroup">Minimum tabs to form a group</span>
           <div class="number-input-container">
             <input
               type="number"
@@ -68,14 +88,14 @@
           </div>
         </div>
         <div class="toggle-container">
-          <span>Auto-collapse inactive groups</span>
+          <span data-i18n="settingAutoCollapseInactive">Auto-collapse inactive groups</span>
           <label class="switch">
             <input type="checkbox" id="autoCollapseToggle" />
             <span class="slider round"></span>
           </label>
         </div>
         <div class="toggle-container collapse-delay-container" id="collapseDelayContainer">
-          <span>Collapse delay</span>
+          <span data-i18n="settingCollapseDelay">Collapse delay</span>
           <div class="delay-input-group">
             <input
               type="number"
@@ -89,11 +109,11 @@
             <span class="delay-unit">ms</span>
           </div>
         </div>
-        <div class="help-text collapse-help" id="collapseHelp">
+        <div class="help-text collapse-help" id="collapseHelp" data-i18n="settingCollapseDelayHelp">
           0 = immediate, or set delay (100-5000ms) before collapsing
         </div>
         <div class="toggle-container">
-          <span>Open new tabs next to current tab</span>
+          <span data-i18n="settingOpenNewTabsNextToCurrent">Open new tabs next to current tab</span>
           <label class="switch">
             <input type="checkbox" id="openTabNextToCurrentToggle" />
             <span class="slider round"></span>
@@ -101,14 +121,14 @@
         </div>
         <div class="settings-info">
           <span class="info-icon">&#128204;</span>
-          <span>Pinned tabs are never grouped automatically</span>
+          <span data-i18n="settingPinnedTabsNote">Pinned tabs are never grouped automatically</span>
         </div>
       </div>
 
       <!-- Sorting Section -->
       <div class="sorting-section">
         <button class="sorting-toggle">
-          <span class="noselect">Sorting</span>
+          <span class="noselect" data-i18n="sortingSectionTitle">Sorting</span>
           <span class="up-arrow">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path
@@ -121,27 +141,27 @@
         </button>
         <div class="sorting-content">
           <div class="toggle-container">
-            <span>Keep groups sorted alphabetically</span>
+            <span data-i18n="settingSortGroupsAlphabetically">Keep groups sorted alphabetically</span>
             <label class="switch">
               <input type="checkbox" id="sortGroupsToggle" />
               <span class="slider round"></span>
             </label>
           </div>
           <div class="toggle-container sort-direction-container" id="sortDirectionContainer">
-            <span>Direction</span>
+            <span data-i18n="settingSortDirection">Direction</span>
             <div class="group-by-toggle-bar sort-direction-toggle-bar">
-              <button class="toggle-option sort-direction-option active" data-value="asc">A - Z</button>
-              <button class="toggle-option sort-direction-option" data-value="desc">Z - A</button>
+              <button class="toggle-option sort-direction-option active" data-value="asc" data-i18n="settingSortDirectionAsc">A - Z</button>
+              <button class="toggle-option sort-direction-option" data-value="desc" data-i18n="settingSortDirectionDesc">Z - A</button>
             </div>
           </div>
           <div class="toggle-container sorting-index-container" id="sortingIndexContainer">
-            <span>Number groups (1. AI, 2. Docs...)</span>
+            <span data-i18n="settingNumberGroups">Number groups (1. AI, 2. Docs...)</span>
             <label class="switch">
               <input type="checkbox" id="indexGroupTitlesToggle" />
               <span class="slider round"></span>
             </label>
           </div>
-          <div class="help-text sorting-help" id="sortingHelp">
+          <div class="help-text sorting-help" id="sortingHelp" data-i18n="settingNumberGroupsHelp">
             Adds position numbers to group titles for quick reference
           </div>
         </div>
@@ -150,8 +170,8 @@
       <!-- AI Features Section -->
       <div class="ai-section">
         <button class="ai-toggle">
-          <span class="noselect">AI Features <span class="ai-experimental">Experimental</span><span class="ai-help-icon" data-tooltip="AI-powered tab grouping suggestions. This feature is experimental. All processing runs locally in your browser — no data is sent to external servers.">?</span></span>
-          <span class="ai-badge" id="aiBadge">Off</span>
+          <span class="noselect"><span data-i18n="aiSectionTitle">AI Features</span> <span class="ai-experimental" data-i18n="aiExperimentalBadge">Experimental</span><span class="ai-help-icon" data-tooltip="AI-powered tab grouping suggestions. This feature is experimental. All processing runs locally in your browser — no data is sent to external servers." data-i18n-tooltip="aiHelpTooltip">?</span></span>
+          <span class="ai-badge" id="aiBadge" data-i18n="aiBadgeOff">Off</span>
           <span class="up-arrow">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path
@@ -164,7 +184,7 @@
         </button>
         <div class="ai-content">
           <div class="toggle-container">
-            <span>Enable AI</span>
+            <span data-i18n="aiEnable">Enable AI</span>
             <label class="switch">
               <input type="checkbox" id="aiEnabledToggle" />
               <span class="slider round"></span>
@@ -172,25 +192,25 @@
           </div>
           <div class="ai-settings" id="aiSettings">
             <div class="toggle-container">
-              <span>Model</span>
+              <span data-i18n="aiModelLabel">Model</span>
               <select id="aiModelSelect" class="ai-select"></select>
             </div>
             <div class="ai-status-row">
-              <span class="ai-status-label">Status:</span>
-              <span class="ai-status-badge" id="aiStatusBadge">Idle</span>
+              <span class="ai-status-label" data-i18n="aiStatusLabel">Status:</span>
+              <span class="ai-status-badge" id="aiStatusBadge" data-i18n="aiStatusIdle">Idle</span>
             </div>
             <div class="ai-progress-bar" id="aiProgressBar">
               <div class="ai-progress-fill" id="aiProgressFill"></div>
             </div>
-            <button id="aiLoadButton" class="button ai-load-button">Load Model</button>
-            <div class="ai-webgpu-warning" id="aiWebGpuWarning">
+            <button id="aiLoadButton" class="button ai-load-button" data-i18n="aiLoadModel">Load Model</button>
+            <div class="ai-webgpu-warning" id="aiWebGpuWarning" data-i18n="aiWebGpuUnavailable">
               WebGPU is not available. AI features require a browser with WebGPU support.
             </div>
-            <div class="help-text ai-help-text">
+            <div class="help-text ai-help-text" data-i18n="aiDownloadNote">
               Models run locally in your browser. First load downloads the model (~250MB-900MB).
             </div>
             <div class="ai-suggest-section" id="aiSuggestSection">
-              <button id="aiSuggestButton" class="button ai-suggest-button" disabled>
+              <button id="aiSuggestButton" class="button ai-suggest-button" disabled data-i18n="aiSuggestGroups">
                 Suggest Groups
               </button>
               <div class="ai-suggest-status" id="aiSuggestStatus"></div>
@@ -203,7 +223,7 @@
       <!-- Custom Rules Section -->
       <div class="rules-section">
         <button class="rules-toggle">
-          <span class="noselect">Custom Rules</span>
+          <span class="noselect" data-i18n="rulesSectionTitle">Custom Rules</span>
           <span class="rules-count" id="rulesCount">(0)</span>
           <span class="up-arrow">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -220,11 +240,13 @@
             <!-- Rules will be dynamically added here -->
           </div>
           <div class="rules-actions">
-            <button id="addRuleButton" class="button rules-button">Add New Rule</button>
+            <button id="addRuleButton" class="button rules-button" data-i18n="rulesAddNewRule">Add New Rule</button>
             <div class="rules-import-export">
               <button
                 id="exportRulesButton"
                 class="button rules-button secondary"
+                data-i18n="rulesExport"
+                data-i18n-title="rulesExportTitle"
                 title="Export all rules to JSON file"
               >
                 Export
@@ -232,13 +254,15 @@
               <button
                 id="importRulesButton"
                 class="button rules-button secondary"
+                data-i18n="rulesImport"
+                data-i18n-title="rulesImportTitle"
                 title="Import rules from JSON file"
               >
                 Import
               </button>
               <input type="file" id="importFileInput" accept=".json" style="display: none" />
             </div>
-            <div class="help-text export-import-help">
+            <div class="help-text export-import-help" data-i18n="rulesExportImportHelp">
               Export/import rules as JSON files for backup or sharing
             </div>
           </div>
@@ -248,7 +272,7 @@
       <!-- Blacklist Section -->
       <div class="blacklist-section">
         <button class="blacklist-toggle">
-          <span class="noselect">Blacklist</span>
+          <span class="noselect" data-i18n="blacklistSectionTitle">Blacklist</span>
           <span class="blacklist-count" id="blacklistCount">(0)</span>
           <span class="up-arrow">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -265,10 +289,38 @@
             <!-- Blacklist rules will be dynamically added here -->
           </div>
           <div class="blacklist-actions">
-            <button id="addBlacklistButton" class="button blacklist-button">Add to Blacklist</button>
+            <button id="addBlacklistButton" class="button blacklist-button" data-i18n="blacklistAddButton">Add to Blacklist</button>
           </div>
-          <div class="help-text blacklist-help">
+          <div class="help-text blacklist-help" data-i18n="blacklistHelp">
             Blacklisted domains will never be grouped
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Section -->
+      <div class="advanced-section">
+        <button class="advanced-toggle">
+          <span class="noselect" data-i18n="advancedSectionTitle">Advanced</span>
+          <span class="up-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+              <path
+                d="m16.707 13.293-4-4a1 1 0 0 0-1.414 0l-4 4A1 1 0 0 0 8 15h8a1 1 0 0 0 .707-1.707z"
+                style="fill: #6b7280"
+                data-name="Up"
+              />
+            </svg>
+          </span>
+        </button>
+        <div class="advanced-content">
+          <div class="toggle-container">
+            <span data-i18n="advancedHideContextMenu">Hide right-click context menu</span>
+            <label class="switch">
+              <input type="checkbox" id="hideContextMenuToggle" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="help-text advanced-help" data-i18n="advancedHideContextMenuHelp">
+            When enabled, Auto Tab Groups will not add its items to the page right-click menu.
           </div>
         </div>
       </div>
@@ -276,18 +328,19 @@
     <footer class="footer-container">
       <div class="separator"></div>
       <div>
-        Made by <span class="author selectable">Nitzan Papini</span>, for
+        <span data-i18n="footerMadeBy">Made by</span> <span class="author selectable">Nitzan Papini</span>, <span data-i18n="footerFor">for</span>
         <span id="browserName">Chrome</span> <span id="browserEmoji"></span>
       </div>
       <div class="feedback-link">
         <a
           href="https://docs.google.com/forms/d/1ViwZsXRSlJqij4nGp84F4gT2f4vBhZkGDQU25F9ESPI"
           target="_blank"
-          >Feedback & Requests & Support</a
+          data-i18n="footerFeedback"
+          >Feedback &amp; Requests &amp; Support</a
         >
       </div>
       <div class="version">
-        <span>Version: <span id="versionNumber"></span></span>
+        <span><span data-i18n="footerVersion">Version:</span> <span id="versionNumber"></span></span>
       </div>
     </footer>
     <script type="module" src="./main.ts"></script>

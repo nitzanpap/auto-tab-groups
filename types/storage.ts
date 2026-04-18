@@ -21,6 +21,12 @@ export type RuleMatchingMode = "exact" | "contains" | "regex"
 export type SortDirection = "asc" | "desc"
 
 /**
+ * User-selected UI locale. "auto" defers to the browser's UI locale.
+ * Widen this union when shipping additional locales.
+ */
+export type UserLocale = "auto" | "en" | "he" | "ar" | "es" | "hi" | "ru" | "zh"
+
+/**
  * Mapping of group titles to their colors
  */
 export type GroupColorMapping = Record<string, TabGroupColor>
@@ -66,6 +72,10 @@ export interface StorageSchema {
   sortGroupsDirection: SortDirection
   /** Whether to prefix group titles with their sort position (e.g., "1. AI") */
   indexGroupTitles: boolean
+  /** Whether to hide the extension's right-click context menu items */
+  hideContextMenu: boolean
+  /** User-selected UI locale override ("auto" = follow browser) */
+  userLocale: UserLocale
 }
 
 /**
@@ -87,7 +97,9 @@ export const DEFAULT_STATE: StorageSchema = {
   openTabNextToCurrent: false,
   sortGroupsAlphabetically: false,
   sortGroupsDirection: "asc",
-  indexGroupTitles: false
+  indexGroupTitles: false,
+  hideContextMenu: false,
+  userLocale: "auto"
 }
 
 /**

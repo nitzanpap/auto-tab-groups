@@ -6,6 +6,7 @@
 import type { Browser } from "wxt/browser"
 import type { CustomRule, TabGroupColor } from "../types"
 import { extractDomain } from "../utils/DomainUtils"
+import { t } from "../utils/i18n"
 import { rulesService } from "./RulesService"
 import { tabGroupService } from "./TabGroupService"
 import { tabGroupState } from "./TabGroupState"
@@ -49,6 +50,8 @@ class ContextMenuService {
   private readonly MENU_ID_ADD_TO_BLACKLIST = "add-to-blacklist"
   private readonly MENU_ID_NO_RULES = "add-to-rule-none"
   private initialized = false
+  private menusCreated = false
+  private listenerAttached = false
   /** Track current sub-menu rule IDs for cleanup */
   private currentRuleMenuIds: string[] = []
 
@@ -63,43 +66,92 @@ class ContextMenuService {
     }
 
     try {
-      // Remove any existing menu items first (in case of reload)
-      await browser.contextMenus.removeAll()
+      // Listener is attached once and persists for the service worker lifetime;
+      // visibility is controlled by creating/removing the menu items themselves.
+      if (!this.listenerAttached) {
+        browser.contextMenus.onClicked.addListener(this.handleMenuClick.bind(this))
+        this.listenerAttached = true
+      }
 
-      const contexts = this.getContextTypes()
-
-      // Create "Create Rule from Group" menu item
-      await browser.contextMenus.create({
-        id: this.MENU_ID_CREATE_RULE,
-        title: "Create Rule from Group",
-        contexts
-      })
-
-      // Create "Add Tab to Existing Rule" parent menu item
-      await browser.contextMenus.create({
-        id: this.MENU_ID_ADD_TO_RULE_PARENT,
-        title: "Add Tab to Existing Rule",
-        contexts
-      })
-
-      // Create "Add to Blacklist" menu item
-      await browser.contextMenus.create({
-        id: this.MENU_ID_ADD_TO_BLACKLIST,
-        title: "Add to Blacklist",
-        contexts
-      })
-
-      // Populate rule sub-menu items
-      await this.refreshRuleSubMenuItems()
-
-      // Listen for menu clicks
-      browser.contextMenus.onClicked.addListener(this.handleMenuClick.bind(this))
+      if (tabGroupState.hideContextMenu) {
+        // Ensure no stale items remain from a previous session
+        await browser.contextMenus.removeAll()
+        this.menusCreated = false
+        this.currentRuleMenuIds = []
+        console.log("[ContextMenuService] Context menus hidden by user setting")
+      } else {
+        await this.createMenus()
+      }
 
       this.initialized = true
-      console.log("[ContextMenuService] Initialized context menus")
     } catch (error) {
       console.error("[ContextMenuService] Failed to initialize:", error)
     }
+  }
+
+  /**
+   * Creates the top-level context menu items and populates rule sub-menu.
+   * Safe to call repeatedly — removes any existing items first.
+   */
+  private async createMenus(): Promise<void> {
+    await browser.contextMenus.removeAll()
+    this.currentRuleMenuIds = []
+
+    const contexts = this.getContextTypes()
+
+    await browser.contextMenus.create({
+      id: this.MENU_ID_CREATE_RULE,
+      title: t("contextMenuCreateRuleFromGroup", "Create Rule from Group"),
+      contexts
+    })
+
+    await browser.contextMenus.create({
+      id: this.MENU_ID_ADD_TO_RULE_PARENT,
+      title: t("contextMenuAddTabToExistingRule", "Add Tab to Existing Rule"),
+      contexts
+    })
+
+    await browser.contextMenus.create({
+      id: this.MENU_ID_ADD_TO_BLACKLIST,
+      title: t("contextMenuAddToBlacklist", "Add to Blacklist"),
+      contexts
+    })
+
+    await this.refreshRuleSubMenuItems()
+
+    this.menusCreated = true
+    console.log("[ContextMenuService] Context menus created")
+  }
+
+  /**
+   * Applies the current `hideContextMenu` setting — creates or removes
+   * all menu items. Called when the user toggles the setting.
+   */
+  async applyVisibility(): Promise<void> {
+    if (tabGroupState.hideContextMenu) {
+      if (this.menusCreated) {
+        await browser.contextMenus.removeAll()
+        this.menusCreated = false
+        this.currentRuleMenuIds = []
+        console.log("[ContextMenuService] Context menus removed (hidden)")
+      }
+    } else if (!this.menusCreated) {
+      await this.createMenus()
+    }
+  }
+
+  /**
+   * Destroys and recreates all menu items so their titles pick up the
+   * current locale. No-op when menus are hidden.
+   */
+  async rebuildMenus(): Promise<void> {
+    if (tabGroupState.hideContextMenu) return
+    if (this.menusCreated) {
+      await browser.contextMenus.removeAll()
+      this.menusCreated = false
+      this.currentRuleMenuIds = []
+    }
+    await this.createMenus()
   }
 
   /**
@@ -123,6 +175,9 @@ class ContextMenuService {
    * Call this after any rule add/update/delete to keep the menu in sync
    */
   async refreshRuleSubMenuItems(): Promise<void> {
+    // If menus are hidden, there's nothing to refresh
+    if (!this.menusCreated) return
+
     // Remove old sub-menu items
     for (const menuId of this.currentRuleMenuIds) {
       try {
@@ -143,7 +198,7 @@ class ContextMenuService {
       await browser.contextMenus.create({
         id: this.MENU_ID_NO_RULES,
         parentId: this.MENU_ID_ADD_TO_RULE_PARENT,
-        title: "No rules yet",
+        title: t("contextMenuNoRulesYet", "No rules yet"),
         enabled: false,
         contexts: this.getContextTypes()
       })

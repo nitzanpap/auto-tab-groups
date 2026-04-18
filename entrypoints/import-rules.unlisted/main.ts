@@ -1,5 +1,12 @@
 import "./style.css"
-import type { RuleData } from "../../types"
+import type { RuleData, UserLocale } from "../../types"
+import {
+  applyDirectionToDom,
+  applyI18nToDom,
+  initI18n,
+  resolveEffectiveLocale,
+  t
+} from "../../utils/i18n"
 
 // DOM Elements
 const dropZone = document.getElementById("dropZone") as HTMLDivElement
@@ -52,11 +59,12 @@ function createPreviewRuleElement(rule: RuleData): HTMLDivElement {
 
   const nameSpan = document.createElement("span")
   nameSpan.className = "preview-rule-name"
-  nameSpan.textContent = rule.name || "Unnamed"
+  nameSpan.textContent = rule.name || t("importUnnamed", "Unnamed")
 
   const domainsSpan = document.createElement("span")
   domainsSpan.className = "preview-rule-domains"
-  domainsSpan.textContent = `${rule.domains?.length || 0} patterns`
+  const count = String(rule.domains?.length || 0)
+  domainsSpan.textContent = t("importPatternsSuffix", `${count} patterns`, count)
 
   ruleDiv.appendChild(nameSpan)
   ruleDiv.appendChild(domainsSpan)
@@ -67,14 +75,15 @@ function createPreviewRuleElement(rule: RuleData): HTMLDivElement {
 function createMoreRulesElement(additionalCount: number): HTMLDivElement {
   const moreDiv = document.createElement("div")
   moreDiv.className = "preview-more"
-  moreDiv.textContent = `...and ${additionalCount} more rules`
+  const count = String(additionalCount)
+  moreDiv.textContent = t("importMoreRules", `...and ${count} more rules`, count)
   return moreDiv
 }
 
 // File handling
 function handleFile(file: File): void {
   if (!file.name.endsWith(".json")) {
-    showError("Please select a JSON file")
+    showError(t("importSelectJson", "Please select a JSON file"))
     return
   }
 
@@ -98,7 +107,7 @@ function parseAndPreviewRules(jsonText: string): void {
     const data = JSON.parse(jsonText) as { rules?: Record<string, RuleData> }
 
     if (!data.rules || typeof data.rules !== "object") {
-      showError("Invalid file format: Missing 'rules' property")
+      showError(t("importInvalidFormat", "Invalid file format: Missing 'rules' property"))
       return
     }
 
@@ -106,7 +115,7 @@ function parseAndPreviewRules(jsonText: string): void {
     const ruleCount = Object.keys(parsedRules).length
 
     if (ruleCount === 0) {
-      showError("No rules found in file")
+      showError(t("importNoRules", "No rules found in file"))
       return
     }
 
@@ -117,7 +126,7 @@ function parseAndPreviewRules(jsonText: string): void {
     importButton.disabled = false
     clearError()
   } catch (error) {
-    showError(`Invalid JSON: ${(error as Error).message}`)
+    showError(`${t("importInvalidJson", "Invalid JSON")}: ${(error as Error).message}`)
   }
 }
 
@@ -128,10 +137,14 @@ function displayPreview(rules: Record<string, RuleData>): void {
 
   // Stats - using DOM manipulation instead of innerHTML
   previewStats.replaceChildren()
-  previewStats.appendChild(createStatElement(validRules.length, "Valid Rules"))
+  previewStats.appendChild(
+    createStatElement(validRules.length, t("importStatValid", "Valid Rules"))
+  )
 
   if (invalidCount > 0) {
-    previewStats.appendChild(createStatElement(invalidCount, "Invalid (will be skipped)", true))
+    previewStats.appendChild(
+      createStatElement(invalidCount, t("importStatInvalid", "Invalid (will be skipped)"), true)
+    )
   }
 
   // Rule list preview (show first 5) - using DOM manipulation
@@ -180,7 +193,7 @@ async function performImport(): Promise<void> {
   const replaceExisting = importModeInput?.value === "replace"
 
   importButton.disabled = true
-  importButton.textContent = "Importing..."
+  importButton.textContent = t("importImporting", "Importing...")
 
   try {
     const response = await sendMessage<{
@@ -196,23 +209,30 @@ async function performImport(): Promise<void> {
     })
 
     if (response?.success) {
-      const skippedText = response.skipped ? ` (${response.skipped} skipped)` : ""
-      showResult(`Successfully imported ${response.imported} rules${skippedText}`, "success")
+      const imported = String(response.imported ?? 0)
+      const message = response.skipped
+        ? t(
+            "importSuccessWithSkipped",
+            `Successfully imported ${imported} rules (${response.skipped} skipped)`,
+            [imported, String(response.skipped)]
+          )
+        : t("importSuccess", `Successfully imported ${imported} rules`, imported)
+      showResult(message, "success")
 
       // Auto-close after success (with delay for user to see message)
       setTimeout(() => {
         window.close()
       }, 2000)
     } else {
-      showResult(response?.error || "Import failed", "error")
+      showResult(response?.error || t("importFailed", "Import failed"), "error")
       importButton.disabled = false
     }
   } catch (error) {
-    showResult(`Import failed: ${(error as Error).message}`, "error")
+    showResult(`${t("importFailed", "Import failed")}: ${(error as Error).message}`, "error")
     importButton.disabled = false
   }
 
-  importButton.textContent = "Import Rules"
+  importButton.textContent = t("importButton", "Import Rules")
 }
 
 function showResult(message: string, type: "success" | "error"): void {
@@ -220,6 +240,15 @@ function showResult(message: string, type: "success" | "error"): void {
   resultMessage.className = `result-message ${type}`
   resultMessage.style.display = "block"
 }
+// Initialize — resolve locale from background, load override catalog if any,
+// then translate the DOM and set text direction.
+;(async () => {
+  const resp = await sendMessage<{ locale?: UserLocale }>({ action: "getUserLocale" })
+  const locale: UserLocale = resp?.locale ?? "auto"
+  await initI18n(locale)
+  applyI18nToDom()
+  applyDirectionToDom(resolveEffectiveLocale(locale))
+})()
 
 // Drag and drop handlers
 dropZone.addEventListener("dragover", e => {

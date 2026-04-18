@@ -1,0 +1,748 @@
+{
+  "extensionName": {
+    "message": "Auto Tab Groups",
+    "description": "The name of the extension as it appears in the browser store and toolbar."
+  },
+  "extensionDescription": {
+    "message": "Автоматически группирует вкладки по домену.",
+    "description": "Short description shown in the extensions list."
+  },
+
+  "popupTitle": {
+    "message": "Auto Tab Groups",
+    "description": "Heading shown at the top of the popup/sidebar."
+  },
+  "popupGroupTabs": {
+    "message": "Сгруппировать вкладки",
+    "description": "Button that groups all open tabs immediately."
+  },
+  "popupUngroupAll": {
+    "message": "Разгруппировать всё",
+    "description": "Button that removes every tab group."
+  },
+  "popupGenerateNewColors": {
+    "message": "Сгенерировать новые цвета",
+    "description": "Button that randomizes the colors of all groups."
+  },
+  "popupGenerateNewColorsTitle": {
+    "message": "Случайный выбор цветов групп. Цвета автоматически сохраняются и восстанавливаются для каждого домена или правила.",
+    "description": "Tooltip for the Generate New Colors button."
+  },
+  "popupCollapseAll": {
+    "message": "Свернуть всё",
+    "description": "Button that collapses every group."
+  },
+  "popupExpandAll": {
+    "message": "Развернуть всё",
+    "description": "Button that expands every group."
+  },
+
+  "settingsHeading": {
+    "message": "Настройки",
+    "description": "Heading for the main settings section."
+  },
+  "settingLanguage": {
+    "message": "Язык",
+    "description": "Label for the UI language picker."
+  },
+  "settingLanguageAuto": {
+    "message": "Автоматически (язык браузера)",
+    "description": "Picker option that defers to the browser's UI language."
+  },
+  "settingAutoGroupMode": {
+    "message": "Режим автогруппировки",
+    "description": "Label for the toggle that enables automatic grouping."
+  },
+  "settingGroupBy": {
+    "message": "Группировать по",
+    "description": "Label for the group-by mode selector."
+  },
+  "settingGroupByRulesOnly": {
+    "message": "Только правила",
+    "description": "Option that groups only by custom rules."
+  },
+  "settingGroupByRulesAndDomain": {
+    "message": "Правила и домен",
+    "description": "Option that groups by rules plus base domain (popup)."
+  },
+  "settingGroupByRulesAndSubdomain": {
+    "message": "Правила и поддомен",
+    "description": "Option that groups by rules plus subdomain (popup)."
+  },
+  "settingGroupByDomain": {
+    "message": "Домен",
+    "description": "Option that groups by base domain (sidebar)."
+  },
+  "settingGroupBySubdomain": {
+    "message": "Поддомен",
+    "description": "Option that groups by subdomain (sidebar)."
+  },
+  "settingGroupNewEmptyTabs": {
+    "message": "Группировать новые пустые вкладки в «System»",
+    "description": "Label for the toggle that groups blank/new tabs under a System group."
+  },
+  "settingMinimumTabsForGroup": {
+    "message": "Минимальное число вкладок для создания группы",
+    "description": "Label for the numeric input that sets the minimum tab count required to create a group."
+  },
+  "settingAutoCollapseInactive": {
+    "message": "Автоматически сворачивать неактивные группы",
+    "description": "Label for the toggle that auto-collapses groups the user isn't looking at."
+  },
+  "settingCollapseDelay": {
+    "message": "Задержка сворачивания",
+    "description": "Label for the numeric input that sets the auto-collapse delay."
+  },
+  "settingCollapseDelayHelp": {
+    "message": "0 = немедленно, либо задайте задержку (100–5000 мс) перед сворачиванием",
+    "description": "Help text under the collapse-delay input."
+  },
+  "settingOpenNewTabsNextToCurrent": {
+    "message": "Открывать новые вкладки рядом с текущей",
+    "description": "Label for the toggle that opens new tabs adjacent to the active tab."
+  },
+  "settingPinnedTabsNote": {
+    "message": "Закреплённые вкладки никогда не группируются автоматически",
+    "description": "Informational note about pinned tabs."
+  },
+
+  "sortingSectionTitle": {
+    "message": "Сортировка",
+    "description": "Title for the collapsible sorting section."
+  },
+  "settingSortGroupsAlphabetically": {
+    "message": "Держать группы отсортированными по алфавиту",
+    "description": "Toggle that keeps tab groups sorted alphabetically."
+  },
+  "settingSortDirection": {
+    "message": "Направление",
+    "description": "Label for the sort direction toggle (A-Z vs Z-A)."
+  },
+  "settingSortDirectionAsc": {
+    "message": "A - Z",
+    "description": "Ascending alphabetical sort direction option."
+  },
+  "settingSortDirectionDesc": {
+    "message": "Z - A",
+    "description": "Descending alphabetical sort direction option."
+  },
+  "settingNumberGroups": {
+    "message": "Нумеровать группы (1. AI, 2. Docs...)",
+    "description": "Toggle that prefixes group titles with their sort index."
+  },
+  "settingNumberGroupsHelp": {
+    "message": "Добавляет номера позиций к заголовкам групп для быстрой ориентации",
+    "description": "Help text describing the Number Groups toggle."
+  },
+
+  "aiSectionTitle": {
+    "message": "Функции ИИ",
+    "description": "Title for the AI features section."
+  },
+  "aiExperimentalBadge": {
+    "message": "Экспериментально",
+    "description": "Badge shown next to the AI Features title."
+  },
+  "aiHelpTooltip": {
+    "message": "Предложения группировки вкладок на основе ИИ. Функция экспериментальная. Вся обработка выполняется локально в вашем браузере — данные не отправляются на внешние серверы.",
+    "description": "Tooltip explaining the AI Features."
+  },
+  "aiBadgeOn": {
+    "message": "Вкл",
+    "description": "Status badge shown when AI is enabled."
+  },
+  "aiBadgeOff": {
+    "message": "Выкл",
+    "description": "Status badge shown when AI is disabled."
+  },
+  "aiEnable": {
+    "message": "Включить ИИ",
+    "description": "Toggle that enables or disables AI features."
+  },
+  "aiModelLabel": {
+    "message": "Модель",
+    "description": "Label for the AI model selector."
+  },
+  "aiStatusLabel": {
+    "message": "Статус:",
+    "description": "Label for the AI model status."
+  },
+  "aiStatusIdle": {
+    "message": "Ожидание",
+    "description": "AI model status: idle."
+  },
+  "aiStatusReady": {
+    "message": "Готово",
+    "description": "AI model status: ready."
+  },
+  "aiStatusLoading": {
+    "message": "Загрузка $progress$%",
+    "description": "AI model status while loading, with a progress percentage.",
+    "placeholders": {
+      "progress": { "content": "$1", "example": "42" }
+    }
+  },
+  "aiStatusError": {
+    "message": "Ошибка",
+    "description": "AI model status: error."
+  },
+  "aiLoadModel": {
+    "message": "Загрузить модель",
+    "description": "Button that starts loading the AI model."
+  },
+  "aiUnloadModel": {
+    "message": "Выгрузить модель",
+    "description": "Button that unloads the AI model."
+  },
+  "aiLoadingButton": {
+    "message": "Загрузка...",
+    "description": "Label shown on the load button while loading."
+  },
+  "aiRetryLoad": {
+    "message": "Повторить загрузку",
+    "description": "Button shown after an AI model load error."
+  },
+  "aiWebGpuUnavailable": {
+    "message": "WebGPU недоступен. Функциям ИИ требуется браузер с поддержкой WebGPU.",
+    "description": "Warning shown when WebGPU is not supported."
+  },
+  "aiDownloadNote": {
+    "message": "Модели работают локально в вашем браузере. При первой загрузке скачивается модель (~250МБ–900МБ).",
+    "description": "Help text beneath the load model button."
+  },
+  "aiSuggestGroups": {
+    "message": "Предложить группы",
+    "description": "Button that asks the AI to suggest tab groups."
+  },
+  "aiAnalyzing": {
+    "message": "Анализируем ваши вкладки...",
+    "description": "Status text while the AI analyzes open tabs."
+  },
+  "aiNoSuggestions": {
+    "message": "Предложения не найдены",
+    "description": "Status text shown when the AI returns zero suggestions."
+  },
+  "aiFailedToGetSuggestions": {
+    "message": "Не удалось получить предложения",
+    "description": "Error shown when AI suggestion fails."
+  },
+  "aiDismiss": {
+    "message": "Отклонить",
+    "description": "Button that dismisses AI suggestions."
+  },
+  "aiApply": {
+    "message": "Применить",
+    "description": "Button that applies an AI suggestion."
+  },
+  "aiApplying": {
+    "message": "Применение...",
+    "description": "Button label while applying a suggestion."
+  },
+  "aiApplied": {
+    "message": "Применено!",
+    "description": "Button label after applying a suggestion."
+  },
+  "aiFailed": {
+    "message": "Не удалось",
+    "description": "Button label after a suggestion fails."
+  },
+  "aiCreateRule": {
+    "message": "Создать правило",
+    "description": "Button that creates a rule from a suggestion."
+  },
+  "aiTabsCount": {
+    "message": "$count$ вкладок",
+    "description": "Tab count label for a suggestion.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiAppliedWithStale": {
+    "message": "Применено (закрыто $count$ вкладок)",
+    "description": "Shown when a suggestion is applied but some tabs were closed.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "plural": { "content": "$2" }
+    }
+  },
+  "aiFirefoxNotice": {
+    "message": "Функции ИИ сейчас доступны только в Chrome. Поддержка Firefox появится позже.",
+    "description": "Notice shown to Firefox users."
+  },
+
+  "rulesSectionTitle": {
+    "message": "Пользовательские правила",
+    "description": "Title for the custom rules section."
+  },
+  "rulesAddNewRule": {
+    "message": "Добавить правило",
+    "description": "Button that opens the new rule dialog."
+  },
+  "rulesExport": {
+    "message": "Экспорт",
+    "description": "Button that exports rules to JSON."
+  },
+  "rulesImport": {
+    "message": "Импорт",
+    "description": "Button that imports rules from JSON."
+  },
+  "rulesExportTitle": {
+    "message": "Экспортировать все правила в файл JSON",
+    "description": "Tooltip on the Export button."
+  },
+  "rulesImportTitle": {
+    "message": "Импортировать правила из файла JSON",
+    "description": "Tooltip on the Import button."
+  },
+  "rulesExportImportHelp": {
+    "message": "Экспорт/импорт правил в файлах JSON для резервного копирования или обмена",
+    "description": "Help text under the export/import buttons."
+  },
+  "rulesEmptyState": {
+    "message": "Пока нет пользовательских правил. Создайте первое правило, чтобы группировать вкладки по вашим предпочтениям!",
+    "description": "Shown when there are no custom rules."
+  },
+  "rulesEdit": {
+    "message": "Изменить",
+    "description": "Edit button on a rule row."
+  },
+  "rulesDelete": {
+    "message": "Удалить",
+    "description": "Delete button on a rule row."
+  },
+  "rulesEditTitle": {
+    "message": "Изменить правило",
+    "description": "Tooltip for the edit button."
+  },
+  "rulesDeleteTitle": {
+    "message": "Удалить правило",
+    "description": "Tooltip for the delete button."
+  },
+  "rulesAddTabTitle": {
+    "message": "Добавить вкладку в существующее правило",
+    "description": "Tooltip for the + button that adds the current tab to a rule."
+  },
+  "rulesDeleteConfirm": {
+    "message": "Удалить правило «$name$»?",
+    "description": "Confirmation prompt before deleting a rule.",
+    "placeholders": {
+      "name": { "content": "$1" }
+    }
+  },
+  "rulesFailedToLoad": {
+    "message": "Не удалось загрузить пользовательские правила",
+    "description": "Error when loading rules fails."
+  },
+  "rulesFailedToDelete": {
+    "message": "Не удалось удалить правило",
+    "description": "Error when deleting a rule fails."
+  },
+  "rulesExportSuccess": {
+    "message": "Правила успешно экспортированы!",
+    "description": "Confirmation after exporting rules."
+  },
+  "rulesFailedToExport": {
+    "message": "Не удалось экспортировать правила",
+    "description": "Error when export fails."
+  },
+  "rulesImportSuccess": {
+    "message": "Правила успешно импортированы!",
+    "description": "Confirmation after importing rules."
+  },
+  "rulesImportSummary": {
+    "message": "Импорт успешен!\nИмпортировано: $imported$ правил\nПропущено: $skipped$ правил",
+    "description": "Summary shown after rules are imported.",
+    "placeholders": {
+      "imported": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "rulesFailedToImport": {
+    "message": "Не удалось импортировать правила",
+    "description": "Error when import fails."
+  },
+  "rulesImportReplacePrompt": {
+    "message": "Заменить все существующие правила?\n\nНажмите «ОК», чтобы ЗАМЕНИТЬ все существующие правила импортированными\nНажмите «Отмена», чтобы ОБЪЕДИНИТЬ импортированные правила с существующими",
+    "description": "Prompt that asks whether to merge or replace on import."
+  },
+  "rulesNoExport": {
+    "message": "Нет правил для экспорта",
+    "description": "Tooltip shown on a disabled export button when there are no rules."
+  },
+  "rulesNoDomains": {
+    "message": "Нет доменов",
+    "description": "Shown when a rule has no configured domains."
+  },
+  "rulesDomainsSeparator": {
+    "message": " и ещё $count$",
+    "description": "Appended to truncated domain lists.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "rulesAddTabNoTab": {
+    "message": "Активная вкладка не найдена",
+    "description": "Tooltip shown on the add-tab button when no active tab is available."
+  },
+  "rulesAddTabCantExtract": {
+    "message": "Не удаётся извлечь домен из этой вкладки",
+    "description": "Tooltip when the current tab's URL has no domain."
+  },
+  "rulesAddTabAlreadyExists": {
+    "message": "Домен уже есть в этом правиле",
+    "description": "Tooltip when the tab's domain is already part of the rule."
+  },
+  "rulesAddTabAdded": {
+    "message": "Добавлено!",
+    "description": "Tooltip shown briefly after adding a tab to a rule."
+  },
+  "rulesAddTabFailed": {
+    "message": "Не удалось добавить домен",
+    "description": "Tooltip when adding a domain fails."
+  },
+
+  "blacklistSectionTitle": {
+    "message": "Чёрный список",
+    "description": "Title for the blacklist section."
+  },
+  "blacklistAddButton": {
+    "message": "Добавить в чёрный список",
+    "description": "Button to add a domain to the blacklist."
+  },
+  "blacklistHelp": {
+    "message": "Домены из чёрного списка никогда не будут группироваться",
+    "description": "Help text under the blacklist section."
+  },
+  "blacklistEmpty": {
+    "message": "Пока нет доменов в чёрном списке.",
+    "description": "Shown when the blacklist is empty."
+  },
+  "blacklistEditTitle": {
+    "message": "Изменить правило чёрного списка",
+    "description": "Tooltip for the blacklist edit button."
+  },
+  "blacklistDeleteTitle": {
+    "message": "Удалить правило чёрного списка",
+    "description": "Tooltip for the blacklist delete button."
+  },
+
+  "advancedSectionTitle": {
+    "message": "Дополнительно",
+    "description": "Title for the advanced settings section."
+  },
+  "advancedHideContextMenu": {
+    "message": "Скрыть контекстное меню правой кнопкой",
+    "description": "Toggle that hides the extension's context menu items."
+  },
+  "advancedHideContextMenuHelp": {
+    "message": "Если включено, Auto Tab Groups не будет добавлять свои пункты в контекстное меню страницы.",
+    "description": "Help text for the hide context menu toggle."
+  },
+
+  "footerMadeBy": {
+    "message": "Создано",
+    "description": "Prefix for the author attribution in the footer."
+  },
+  "footerFor": {
+    "message": "для",
+    "description": "Connector text: 'Made by X, for Chrome'."
+  },
+  "footerBrowserChrome": {
+    "message": "Chrome",
+    "description": "Name of the Chrome browser in the footer."
+  },
+  "footerBrowserFirefox": {
+    "message": "Firefox",
+    "description": "Name of the Firefox browser in the footer."
+  },
+  "footerFeedback": {
+    "message": "Отзывы, запросы и поддержка",
+    "description": "Text of the feedback link."
+  },
+  "footerVersion": {
+    "message": "Версия:",
+    "description": "Prefix before the version number."
+  },
+
+  "contextMenuCreateRuleFromGroup": {
+    "message": "Создать правило из группы",
+    "description": "Right-click menu: create a custom rule from the clicked tab's group."
+  },
+  "contextMenuAddTabToExistingRule": {
+    "message": "Добавить вкладку в существующее правило",
+    "description": "Right-click menu: submenu to add the current tab's domain to an existing rule."
+  },
+  "contextMenuAddToBlacklist": {
+    "message": "Добавить в чёрный список",
+    "description": "Right-click menu: add the current tab's domain to the blacklist."
+  },
+  "contextMenuNoRulesYet": {
+    "message": "Правил пока нет",
+    "description": "Disabled placeholder shown when the Add Tab submenu has no rules."
+  },
+
+  "ruleModalCreateTitle": {
+    "message": "Создать пользовательское правило",
+    "description": "Title shown when creating a new rule."
+  },
+  "ruleModalEditTitle": {
+    "message": "Изменить пользовательское правило",
+    "description": "Title shown when editing an existing rule."
+  },
+  "ruleModalNameLabel": {
+    "message": "Название правила",
+    "description": "Label for the rule name input."
+  },
+  "ruleModalNamePlaceholder": {
+    "message": "например, Рабочие приложения",
+    "description": "Placeholder for the rule name input."
+  },
+  "ruleModalNameHelp": {
+    "message": "Поддерживает любые языки, включая китайский, японский, корейский и эмодзи",
+    "description": "Help text under the rule name input."
+  },
+  "ruleModalAiAssistLabel": {
+    "message": "Помощь ИИ",
+    "description": "Label for the AI assist section."
+  },
+  "ruleModalAiAssistPlaceholder": {
+    "message": "Опишите ваше правило, например: «Группировать все сервисы Google» или «Группировать вкладки AWS console»",
+    "description": "Placeholder for the AI assist input."
+  },
+  "ruleModalAiGenerate": {
+    "message": "Сгенерировать",
+    "description": "Button that asks the AI to generate a rule."
+  },
+  "ruleModalAiAssistHelp": {
+    "message": "Опишите, что вы хотите сгруппировать, и ИИ предложит название, домены и цвет",
+    "description": "Help text under the AI assist input."
+  },
+  "ruleModalPatternModeLabel": {
+    "message": "Режим шаблонов",
+    "description": "Label for the pattern mode toggle."
+  },
+  "ruleModalPatternModeSimple": {
+    "message": "Простой (домены)",
+    "description": "Simple pattern mode: matches whole domains."
+  },
+  "ruleModalPatternModeExplicit": {
+    "message": "Явный (полные URL)",
+    "description": "Explicit pattern mode: matches full URLs."
+  },
+  "ruleModalSimpleModeHint": {
+    "message": "Группирует все страницы с этих базовых доменов",
+    "description": "Hint shown in simple pattern mode."
+  },
+  "ruleModalExplicitModeHint": {
+    "message": "Группирует только страницы, совпадающие с этими полными шаблонами URL",
+    "description": "Hint shown in explicit pattern mode."
+  },
+  "ruleModalPatternsLabel": {
+    "message": "Шаблоны URL (по одному на строку)",
+    "description": "Label for the patterns textarea."
+  },
+  "ruleModalPatternsHelp": {
+    "message": "Поддерживаются: домены, подстановки (*.example.com), пути (example.com/api/*), IP-адреса",
+    "description": "Help text for the patterns textarea."
+  },
+  "ruleModalColorLabel": {
+    "message": "Цвет группы",
+    "description": "Label for the color picker."
+  },
+  "ruleModalColorBlue": { "message": "Синий", "description": "Color option: blue." },
+  "ruleModalColorRed": { "message": "Красный", "description": "Color option: red." },
+  "ruleModalColorYellow": { "message": "Жёлтый", "description": "Color option: yellow." },
+  "ruleModalColorGreen": { "message": "Зелёный", "description": "Color option: green." },
+  "ruleModalColorPink": { "message": "Розовый", "description": "Color option: pink." },
+  "ruleModalColorPurple": { "message": "Фиолетовый", "description": "Color option: purple." },
+  "ruleModalColorCyan": { "message": "Голубой", "description": "Color option: cyan." },
+  "ruleModalColorOrange": { "message": "Оранжевый", "description": "Color option: orange." },
+  "ruleModalColorGrey": { "message": "Серый", "description": "Color option: grey." },
+  "ruleModalEnabledLabel": {
+    "message": "Включено",
+    "description": "Checkbox: whether the rule is enabled."
+  },
+  "ruleModalSave": {
+    "message": "Сохранить правило",
+    "description": "Submit button for the rule form."
+  },
+  "ruleModalUpdate": {
+    "message": "Обновить правило",
+    "description": "Submit button when editing an existing rule."
+  },
+  "ruleModalCancel": {
+    "message": "Отмена",
+    "description": "Cancel button for the rule form."
+  },
+  "ruleModalConflictTitle": {
+    "message": "Обнаружены конфликты шаблонов",
+    "description": "Heading of the conflict warning box."
+  },
+  "ruleModalConflictSubtitle": {
+    "message": "Эти шаблоны пересекаются с существующими правилами. Вкладки, подходящие обоим правилам, будут отнесены только к одному.",
+    "description": "Subtitle of the conflict warning."
+  },
+  "ruleModalAiSuggestions": {
+    "message": "Предложения ИИ",
+    "description": "Heading for the AI-generated resolution suggestions."
+  },
+  "ruleModalSaveAnyway": {
+    "message": "Сохранить всё равно",
+    "description": "Button that saves the rule despite conflicts."
+  },
+  "ruleModalGoBack": {
+    "message": "Назад",
+    "description": "Button that returns to editing after a conflict warning."
+  },
+  "ruleModalChecking": {
+    "message": "Проверка...",
+    "description": "Label shown on the save button while checking for conflicts."
+  },
+  "ruleModalGenerating": {
+    "message": "Генерация...",
+    "description": "Label shown on the AI generate button while generating a rule."
+  },
+  "ruleModalAiThinking": {
+    "message": "ИИ думает...",
+    "description": "Status text while the AI generates a rule."
+  },
+  "ruleModalAiNeedsModel": {
+    "message": "Загрузите модель ИИ в разделе «Функции ИИ» всплывающего окна, чтобы использовать помощь ИИ",
+    "description": "Status shown when AI Assist is invoked but no model is loaded."
+  },
+  "ruleModalAiGenerated": {
+    "message": "Правило сгенерировано! Проверьте и отредактируйте ниже, затем сохраните.",
+    "description": "Status after the AI generates a rule."
+  },
+  "ruleModalAiGenerateError": {
+    "message": "Не удалось сгенерировать правило. Попробуйте переформулировать описание.",
+    "description": "Error shown when AI rule generation fails."
+  },
+  "ruleModalAiEnterDescription": {
+    "message": "Введите описание",
+    "description": "Error shown when AI Assist is triggered with no description."
+  },
+  "ruleModalEnterPattern": {
+    "message": "Введите хотя бы один шаблон URL",
+    "description": "Alert shown when submitting with no patterns."
+  },
+  "ruleModalEnterName": {
+    "message": "Введите название правила",
+    "description": "Alert shown when submitting a rule with no name."
+  },
+  "ruleModalFailedToLoad": {
+    "message": "Не удалось загрузить правило для редактирования",
+    "description": "Alert when the rule modal can't load the rule."
+  },
+  "ruleModalFailedToSave": {
+    "message": "Не удалось сохранить правило",
+    "description": "Alert when saving a rule fails."
+  },
+
+  "importPageTitle": {
+    "message": "Импорт правил",
+    "description": "Title for the import rules page."
+  },
+  "importDropInstruction": {
+    "message": "Перетащите сюда файл JSON",
+    "description": "Instruction shown in the import drop zone."
+  },
+  "importOr": {
+    "message": "или",
+    "description": "Separator between drag-drop and button."
+  },
+  "importBrowseFiles": {
+    "message": "Выбрать файл",
+    "description": "Button that opens the file picker."
+  },
+  "importPreviewHeading": {
+    "message": "Предпросмотр",
+    "description": "Heading above the import preview."
+  },
+  "importModeLabel": {
+    "message": "Режим импорта",
+    "description": "Label above the import mode radio buttons."
+  },
+  "importMerge": {
+    "message": "Объединить с существующими правилами",
+    "description": "Radio option: merge on import."
+  },
+  "importReplace": {
+    "message": "Заменить все существующие правила",
+    "description": "Radio option: replace on import."
+  },
+  "importButton": {
+    "message": "Импортировать правила",
+    "description": "Button that performs the import."
+  },
+  "importCancel": {
+    "message": "Отмена",
+    "description": "Cancel button on the import page."
+  },
+  "importStatValid": {
+    "message": "Допустимые правила",
+    "description": "Label for the valid rule count in the import preview."
+  },
+  "importStatInvalid": {
+    "message": "Недопустимые (будут пропущены)",
+    "description": "Label for the invalid rule count in the import preview."
+  },
+  "importPatternsSuffix": {
+    "message": "$count$ шаблонов",
+    "description": "Label showing pattern count for an imported rule.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importMoreRules": {
+    "message": "...и ещё $count$ правил",
+    "description": "Shown when more rules exist beyond the preview slice.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importUnnamed": {
+    "message": "Без названия",
+    "description": "Placeholder name for rules with no name."
+  },
+  "importImporting": {
+    "message": "Импорт...",
+    "description": "Label on the import button while importing."
+  },
+  "importSuccess": {
+    "message": "Успешно импортировано $count$ правил",
+    "description": "Success message after import.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "importSuccessWithSkipped": {
+    "message": "Успешно импортировано $count$ правил ($skipped$ пропущено)",
+    "description": "Success message when some rules are skipped.",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "skipped": { "content": "$2" }
+    }
+  },
+  "importFailed": {
+    "message": "Сбой импорта",
+    "description": "Generic import failure message."
+  },
+  "importInvalidJson": {
+    "message": "Недопустимый JSON",
+    "description": "Error when file is not valid JSON."
+  },
+  "importInvalidFormat": {
+    "message": "Неверный формат файла: отсутствует свойство «rules»",
+    "description": "Error when file has no 'rules' key."
+  },
+  "importNoRules": {
+    "message": "В файле нет правил",
+    "description": "Error when file has no rules."
+  },
+  "importSelectJson": {
+    "message": "Выберите файл JSON",
+    "description": "Error when a non-JSON file is selected."
+  }
+}

@@ -408,3 +408,12 @@ h1 {
   gap: 8px;
   justify-content: flex-end;
 }
+
+/* Pattern textarea always renders left-to-right regardless of the UI language.
+   Domains, URLs, regex — these are technical tokens that are authored in
+   English/ASCII and look broken when mirrored into RTL. The rule name and
+   AI description fields stay LTR/RTL-aware since the user may type Hebrew there. */
+[dir="rtl"] #rulePatterns {
+  direction: ltr;
+  text-align: left;
+}
