@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { aiService } from "../services/ai/AiService"
 import { webLlmProvider } from "../services/ai/WebLlmProvider"
+import { wllamaProvider } from "../services/ai/WllamaProvider"
 import { aiEnabled, aiModelId, aiProvider } from "../utils/storage"
 import * as WebGpuUtils from "../utils/WebGpuUtils"
 
@@ -16,6 +17,12 @@ const TEST_MODEL = {
   displayName: "Test Model",
   sizeInMb: 100,
   vramRequiredMb: 256
+} as const
+
+const WLLAMA_TEST_MODEL = {
+  id: "wllama-test-model",
+  displayName: "Wllama Test Model",
+  sizeInMb: 1000
 } as const
 
 describe("AiService", () => {
@@ -203,6 +210,68 @@ describe("AiService", () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       await aiService.loadModel()
       expect(spyLoadModel).toHaveBeenCalled()
+    })
+  })
+
+  describe("wllama provider routing", () => {
+    let spyWllamaGetStatus: Spy
+    let spyWllamaGetProgress: Spy
+    let spyWllamaLoadModel: Spy
+    let spyWllamaUnloadModel: Spy
+    let spyWllamaComplete: Spy
+
+    beforeEach(() => {
+      vi.spyOn(wllamaProvider, "getAvailableModels").mockReturnValue([WLLAMA_TEST_MODEL])
+      spyWllamaGetStatus = vi.spyOn(wllamaProvider, "getStatus").mockReturnValue("idle")
+      spyWllamaGetProgress = vi.spyOn(wllamaProvider, "getProgress").mockReturnValue(0)
+      vi.spyOn(wllamaProvider, "getError").mockReturnValue(null)
+      spyWllamaLoadModel = vi.spyOn(wllamaProvider, "loadModel").mockResolvedValue(undefined)
+      spyWllamaUnloadModel = vi.spyOn(wllamaProvider, "unloadModel").mockResolvedValue(undefined)
+      spyWllamaComplete = vi.spyOn(wllamaProvider, "complete").mockResolvedValue({
+        content: "wllama test response",
+        finishReason: "stop"
+      })
+
+      aiService.updateFromStorage({
+        aiEnabled: true,
+        aiProvider: "wllama",
+        aiModelId: "wllama-test-model"
+      })
+    })
+
+    it("should route to wllama provider when provider is wllama", () => {
+      const models = aiService.getAvailableModels()
+      expect(models).toHaveLength(1)
+      expect(models[0].id).toBe("wllama-test-model")
+    })
+
+    it("should delegate loadModel to wllama provider", async () => {
+      await aiService.loadModel()
+      expect(spyWllamaLoadModel).toHaveBeenCalledWith("wllama-test-model")
+      expect(spyLoadModel).not.toHaveBeenCalled()
+    })
+
+    it("should delegate complete to wllama provider", async () => {
+      const request = {
+        messages: [{ role: "user" as const, content: "hello" }]
+      }
+      const result = await aiService.complete(request)
+      expect(result.content).toBe("wllama test response")
+      expect(spyWllamaComplete).toHaveBeenCalledWith(request)
+    })
+
+    it("should delegate unloadModel to wllama provider", async () => {
+      await aiService.unloadModel()
+      expect(spyWllamaUnloadModel).toHaveBeenCalled()
+      expect(spyUnloadModel).not.toHaveBeenCalled()
+    })
+
+    it("should return model status from wllama provider", () => {
+      spyWllamaGetStatus.mockReturnValueOnce("ready")
+      spyWllamaGetProgress.mockReturnValueOnce(100)
+      const status = aiService.getModelStatus()
+      expect(status.status).toBe("ready")
+      expect(status.progress).toBe(100)
     })
   })
 

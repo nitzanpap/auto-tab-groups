@@ -20,6 +20,7 @@ import {
 import { checkWebGpuCapability } from "../../utils/WebGpuUtils"
 import type { AiProviderInterface } from "./AiProviderInterface"
 import { webLlmProvider } from "./WebLlmProvider"
+import { wllamaProvider } from "./WllamaProvider"
 
 class AiService {
   private enabled = false
@@ -53,8 +54,19 @@ class AiService {
   }
 
   async setProvider(value: AiProvider): Promise<void> {
+    // When switching providers, unload the current model first
+    const currentProvider = this.getActiveProvider()
+    if (currentProvider.getStatus() === "ready") {
+      await currentProvider.unloadModel()
+    }
     this.provider = value
     await aiProviderStorage.setValue(value)
+    // Reset model ID to the first available for the new provider
+    const available = this.getActiveProvider().getAvailableModels()
+    if (available.length > 0) {
+      this.modelId = available[0].id
+      await aiModelIdStorage.setValue(this.modelId)
+    }
   }
 
   getSelectedModelId(): string {
@@ -111,6 +123,9 @@ class AiService {
   }
 
   private getActiveProvider(): AiProviderInterface {
+    if (this.provider === "wllama") {
+      return wllamaProvider
+    }
     if (this.provider === "webllm") {
       return webLlmProvider
     }
