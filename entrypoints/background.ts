@@ -240,6 +240,9 @@ export default defineBackground(() => {
             break
 
           case "setSortGroupsDirection": {
+            console.log(
+              `[Background] setSortGroupsDirection=${msg.direction} (sortEnabled=${tabGroupState.sortGroupsAlphabetically})`
+            )
             tabGroupState.sortGroupsDirection = msg.direction
             await saveState()
             if (tabGroupState.sortGroupsAlphabetically) {

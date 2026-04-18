@@ -263,6 +263,31 @@ describe("TabSortService", () => {
       expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
       expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
     })
+
+    it("should flip A-Z to Z-A when tab-strip order differs from tabGroups.query order", async () => {
+      // Regression: tabGroups.query() is stable by creation/ID, not visual
+      // tab-strip order. Relying on it caused Z-A (and reverse flips) to no-op
+      // after an initial sort had already been applied.
+      tabGroupState.sortGroupsDirection = "desc"
+      // Chrome returned groups in creation order: Youtube(1) then Google(2)
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "Youtube", windowId: 1 },
+        { id: 2, title: "Google", windowId: 1 }
+      ])
+      // But visually (after a prior A-Z sort) the strip is Google, Youtube
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 100, groupId: 2, pinned: false, index: 0 },
+        { id: 101, groupId: 1, pinned: false, index: 1 }
+      ])
+
+      await tabSortService.sortGroups()
+
+      // Visual order is [Google(2), Youtube(1)], desired Z-A is [Youtube(1), Google(2)] —
+      // every position differs, so both groups get moved.
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: -1 })
+    })
   })
 
   describe("sortGroups with indexing", () => {
