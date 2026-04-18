@@ -1,8 +1,14 @@
 import "./style.css"
-import type { CustomRule } from "../../types"
+import type { CustomRule, UserLocale } from "../../types"
 import type { AiGroupSuggestion } from "../../types/ai-messages"
 import { extractDomain } from "../../utils/DomainUtils"
-import { applyI18nToDom, t } from "../../utils/i18n"
+import {
+  applyDirectionToDom,
+  applyI18nToDom,
+  initI18n,
+  resolveEffectiveLocale,
+  t
+} from "../../utils/i18n"
 import { cachedAiSuggestions } from "../../utils/storage"
 
 // DOM Elements
@@ -59,6 +65,9 @@ const addBlacklistButton = document.getElementById("addBlacklistButton") as HTML
 const advancedToggle = document.querySelector(".advanced-toggle") as HTMLButtonElement
 const advancedContent = document.querySelector(".advanced-content") as HTMLDivElement
 const hideContextMenuToggle = document.getElementById("hideContextMenuToggle") as HTMLInputElement
+
+// Language picker
+const languageSelect = document.getElementById("languageSelect") as HTMLSelectElement
 
 // AI Elements
 const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
@@ -611,11 +620,27 @@ async function importRules(): Promise<void> {
     console.error("Error opening import page:", error)
   }
 }
-
-// Initialize
-applyI18nToDom()
+// Initialize — resolve locale from background, load override catalog if any,
+// then translate the DOM and set text direction.
+;(async () => {
+  const resp = await sendMessage<{ locale?: UserLocale }>({ action: "getUserLocale" })
+  const locale: UserLocale = resp?.locale ?? "auto"
+  languageSelect.value = locale
+  await initI18n(locale)
+  applyI18nToDom()
+  applyDirectionToDom(resolveEffectiveLocale(locale))
+})()
 updateVersionDisplay()
 updateBrowserDisplay()
+
+// Language picker change handler
+languageSelect.addEventListener("change", async () => {
+  const locale = languageSelect.value as UserLocale
+  await sendMessage({ action: "setUserLocale", locale })
+  await initI18n(locale)
+  applyI18nToDom()
+  applyDirectionToDom(resolveEffectiveLocale(locale))
+})
 
 // Button event listeners
 groupButton.addEventListener("click", () => sendMessage({ action: "group" }))

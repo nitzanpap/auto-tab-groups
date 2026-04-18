@@ -1,6 +1,12 @@
 import "./style.css"
-import type { RuleData } from "../../types"
-import { applyI18nToDom, t } from "../../utils/i18n"
+import type { RuleData, UserLocale } from "../../types"
+import {
+  applyDirectionToDom,
+  applyI18nToDom,
+  initI18n,
+  resolveEffectiveLocale,
+  t
+} from "../../utils/i18n"
 
 // DOM Elements
 const dropZone = document.getElementById("dropZone") as HTMLDivElement
@@ -234,9 +240,15 @@ function showResult(message: string, type: "success" | "error"): void {
   resultMessage.className = `result-message ${type}`
   resultMessage.style.display = "block"
 }
-
-// Apply i18n to static DOM elements
-applyI18nToDom()
+// Initialize — resolve locale from background, load override catalog if any,
+// then translate the DOM and set text direction.
+;(async () => {
+  const resp = await sendMessage<{ locale?: UserLocale }>({ action: "getUserLocale" })
+  const locale: UserLocale = resp?.locale ?? "auto"
+  await initI18n(locale)
+  applyI18nToDom()
+  applyDirectionToDom(resolveEffectiveLocale(locale))
+})()
 
 // Drag and drop handlers
 dropZone.addEventListener("dragover", e => {

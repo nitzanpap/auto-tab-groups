@@ -1,6 +1,12 @@
 import "./style.css"
-import type { PatternConflict, RuleData, TabGroupColor } from "../../types"
-import { applyI18nToDom, t } from "../../utils/i18n"
+import type { PatternConflict, RuleData, TabGroupColor, UserLocale } from "../../types"
+import {
+  applyDirectionToDom,
+  applyI18nToDom,
+  initI18n,
+  resolveEffectiveLocale,
+  t
+} from "../../utils/i18n"
 import { urlPatternMatcher } from "../../utils/UrlPatternMatcher"
 
 // Get URL parameters
@@ -443,9 +449,15 @@ async function generateRuleFromDescription(): Promise<void> {
     aiGenerateBtn.classList.remove("generating")
   }
 }
-
-// Initialize
-applyI18nToDom()
+// Initialize — resolve locale from background, load override catalog if any,
+// then translate the DOM and set text direction.
+;(async () => {
+  const resp = await sendMessage<{ locale?: UserLocale }>({ action: "getUserLocale" })
+  const locale: UserLocale = resp?.locale ?? "auto"
+  await initI18n(locale)
+  applyI18nToDom()
+  applyDirectionToDom(resolveEffectiveLocale(locale))
+})()
 setupColorPicker()
 loadExistingRule()
 loadFromGroup()

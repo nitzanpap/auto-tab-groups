@@ -141,6 +141,20 @@ class ContextMenuService {
   }
 
   /**
+   * Destroys and recreates all menu items so their titles pick up the
+   * current locale. No-op when menus are hidden.
+   */
+  async rebuildMenus(): Promise<void> {
+    if (tabGroupState.hideContextMenu) return
+    if (this.menusCreated) {
+      await browser.contextMenus.removeAll()
+      this.menusCreated = false
+      this.currentRuleMenuIds = []
+    }
+    await this.createMenus()
+  }
+
+  /**
    * Returns the appropriate context types based on browser
    * Firefox supports "tab" context (tab strip); Chrome does not
    * Uses type assertion because WXT types are Chrome-based and don't include "tab"

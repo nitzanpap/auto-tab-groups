@@ -34,6 +34,19 @@
       <div class="separator"></div>
       <div class="settings-container">
         <h2 data-i18n="settingsHeading">Settings</h2>
+        <div class="toggle-container language-row">
+          <span data-i18n="settingLanguage">Language</span>
+          <select
+            id="languageSelect"
+            class="language-select"
+            aria-label="Language"
+            data-i18n-aria-label="settingLanguage"
+          >
+            <option value="auto" data-i18n="settingLanguageAuto">Auto (browser default)</option>
+            <option value="en">English</option>
+            <option value="he">עברית</option>
+          </select>
+        </div>
         <div class="toggle-container">
           <span data-i18n="settingAutoGroupMode">Auto-Group Mode</span>
           <label class="switch">

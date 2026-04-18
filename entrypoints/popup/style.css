@@ -1496,3 +1496,48 @@ input:checked + .slider:before {
   font-size: 11px;
   color: #6c757d;
 }
+
+/* Language picker */
+.language-row {
+  margin-bottom: 4px;
+}
+
+.language-select {
+  padding: 6px 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 160px;
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.language-select:hover {
+  border-color: #d1d5db;
+}
+
+/* RTL adjustments. Most of the layout is flex-based and mirrors for free
+   under `dir="rtl"`; these overrides handle the few spots where visual
+   order is baked in (rotated arrows, left/right padding on badges). */
+[dir="rtl"] .up-arrow svg {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .ai-badge,
+[dir="rtl"] .sorting-badge {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+[dir="rtl"] .help-text,
+[dir="rtl"] .settings-info {
+  text-align: right;
+}

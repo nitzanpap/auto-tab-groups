@@ -4,7 +4,7 @@
 
 import type { AiMessage, AiMessageAction } from "./ai-messages"
 import type { CustomRule, RuleData, RulesExportData, RulesStats } from "./rules"
-import type { GroupByMode, SortDirection } from "./storage"
+import type { GroupByMode, SortDirection, UserLocale } from "./storage"
 
 /**
  * All possible message actions
@@ -37,6 +37,8 @@ export type MessageAction =
   | "toggleIndexGroupTitles"
   | "getHideContextMenu"
   | "toggleHideContextMenu"
+  | "getUserLocale"
+  | "setUserLocale"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -78,6 +80,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getSortGroupsDirection"
     | "getIndexGroupTitles"
     | "getHideContextMenu"
+    | "getUserLocale"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -163,6 +166,14 @@ export interface ToggleHideContextMenuMessage extends BaseMessage {
 }
 
 /**
+ * Set user-selected UI locale message
+ */
+export interface SetUserLocaleMessage extends BaseMessage {
+  action: "setUserLocale"
+  locale: UserLocale
+}
+
+/**
  * Add custom rule message
  */
 export interface AddCustomRuleMessage extends BaseMessage {
@@ -219,6 +230,7 @@ export type Message =
   | SetSortGroupsDirectionMessage
   | ToggleIndexGroupTitlesMessage
   | ToggleHideContextMenuMessage
+  | SetUserLocaleMessage
   | AddCustomRuleMessage
   | UpdateCustomRuleMessage
   | DeleteCustomRuleMessage
@@ -283,6 +295,13 @@ export interface GroupByModeResponse {
  */
 export interface SortGroupsDirectionResponse {
   direction: SortDirection
+}
+
+/**
+ * Response for get/set user locale
+ */
+export interface UserLocaleResponse {
+  locale: UserLocale
 }
 
 /**
