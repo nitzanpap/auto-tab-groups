@@ -24,7 +24,7 @@ export type SortDirection = "asc" | "desc"
  * User-selected UI locale. "auto" defers to the browser's UI locale.
  * Widen this union when shipping additional locales.
  */
-export type UserLocale = "auto" | "en" | "he" | "ar" | "es" | "hi" | "ru" | "zh"
+export type UserLocale = "auto" | "en" | "de" | "he" | "ar" | "es" | "hi" | "ru" | "zh"
 
 /**
  * Mapping of group titles to their colors
