@@ -77,6 +77,10 @@
     "message": "Subdominio",
     "description": "Option that groups by subdomain (sidebar)."
   },
+  "settingSystemGroupEnabled": {
+    "message": "Agrupar páginas del navegador en «System»",
+    "description": "Label for the toggle that groups browser/system pages under a System group."
+  },
   "settingGroupNewEmptyTabs": {
     "message": "Agrupar nuevas pestañas vacías en «System»",
     "description": "Label for the toggle that groups blank/new tabs under a System group."

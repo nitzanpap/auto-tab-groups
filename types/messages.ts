@@ -20,9 +20,11 @@ export type MessageAction =
   | "getGroupsCollapseState"
   | "getAutoGroupState"
   | "getGroupNewTabsState"
+  | "getSystemGroupEnabled"
   | "getOnlyApplyToNewTabs"
   | "toggleAutoGroup"
   | "toggleGroupNewTabs"
+  | "toggleSystemGroup"
   | "getGroupByMode"
   | "setGroupByMode"
   | "getMinimumTabsForGroup"
@@ -72,6 +74,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getGroupsCollapseState"
     | "getAutoGroupState"
     | "getGroupNewTabsState"
+    | "getSystemGroupEnabled"
     | "getOnlyApplyToNewTabs"
     | "getGroupByMode"
     | "getMinimumTabsForGroup"
@@ -106,6 +109,14 @@ export interface ToggleAutoGroupMessage extends BaseMessage {
  */
 export interface ToggleGroupNewTabsMessage extends BaseMessage {
   action: "toggleGroupNewTabs"
+  enabled: boolean
+}
+
+/**
+ * Toggle the "System" group on/off message
+ */
+export interface ToggleSystemGroupMessage extends BaseMessage {
+  action: "toggleSystemGroup"
   enabled: boolean
 }
 

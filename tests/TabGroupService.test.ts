@@ -527,6 +527,132 @@ describe("TabGroupService", () => {
     })
   })
 
+  describe("systemGroupEnabled", () => {
+    beforeEach(() => {
+      tabGroupState.autoGroupingEnabled = true
+      tabGroupState.systemGroupEnabled = false
+      // groupNewTabs stays on: the System group toggle must win regardless
+      tabGroupState.groupNewTabs = true
+    })
+
+    it("should skip system URLs when the System group is disabled", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://settings/",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip system URLs even when grouping is forced", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "about:config",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1, true)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip system URLs in rules-only mode when the System group is disabled", async () => {
+      tabGroupState.groupByMode = "rules-only"
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://extensions/",
+        pinned: false,
+        windowId: 1
+      })
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should skip empty-URL tabs during bulk grouping when the System group is disabled", async () => {
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 1, url: "", groupId: -1, pinned: false }])
+
+      await tabGroupService.groupAllTabs()
+
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+    })
+
+    it("should still group regular URLs when the System group is disabled", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false, groupId: -1, windowId: 1 }
+      ])
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+    })
+
+    it("should still group system URLs when the System group is enabled", async () => {
+      tabGroupState.systemGroupEnabled = true
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "chrome://settings/",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "chrome://settings/", pinned: false, groupId: -1, windowId: 1 }
+      ])
+
+      const result = await tabGroupService.handleTabUpdate(1)
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+    })
+  })
+
+  describe("ungroupSystemTabs", () => {
+    it("should ungroup System groups across all windows", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 10, title: "System", windowId: 1 },
+        { id: 11, title: "Example", windowId: 1 },
+        { id: 12, title: "System", windowId: 2 }
+      ])
+      mockBrowser.tabs.query.mockImplementation(({ groupId }: { groupId: number }) =>
+        Promise.resolve(groupId === 10 ? [{ id: 1 }] : groupId === 12 ? [{ id: 2 }] : [])
+      )
+
+      const result = await tabGroupService.ungroupSystemTabs()
+
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.ungroup).toHaveBeenCalledTimes(2)
+      expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([1])
+      expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([2])
+    })
+
+    it("should ungroup System groups that carry a sort index prefix", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 10, title: "3. System", windowId: 1 }])
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 1 }])
+
+      await tabGroupService.ungroupSystemTabs()
+
+      expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([1])
+    })
+  })
+
   describe("findGroupByTitle", () => {
     it("should return group when found by title", async () => {
       const group = { id: 1, title: "Test", windowId: 1 }

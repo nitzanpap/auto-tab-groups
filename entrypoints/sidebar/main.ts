@@ -20,6 +20,7 @@ const collapseAllButton = document.getElementById("collapseAllButton") as HTMLBu
 const expandAllButton = document.getElementById("expandAllButton") as HTMLButtonElement
 const autoGroupToggle = document.getElementById("autoGroupToggle") as HTMLInputElement
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTMLInputElement
+const systemGroupToggle = document.getElementById("systemGroupToggle") as HTMLInputElement
 const groupByToggleOptions = document.querySelectorAll<HTMLButtonElement>(
   ".group-by-toggle-bar:not(.sort-direction-toggle-bar) .toggle-option"
 )
@@ -707,6 +708,15 @@ generateNewColorsButton.addEventListener("click", () =>
 collapseAllButton.addEventListener("click", () => sendMessage({ action: "collapseAll" }))
 expandAllButton.addEventListener("click", () => sendMessage({ action: "expandAll" }))
 
+/**
+ * The "group new empty tabs" toggle only means something while the System group
+ * exists, so it follows the System group toggle.
+ */
+function syncGroupNewTabsAvailability(systemGroupEnabled: boolean): void {
+  groupNewTabsToggle.disabled = !systemGroupEnabled
+  groupNewTabsToggle.closest(".toggle-container")?.classList.toggle("disabled", !systemGroupEnabled)
+}
+
 // Initialize toggle states
 sendMessage<{ enabled?: boolean }>({ action: "getAutoGroupState" }).then(response => {
   if (response?.enabled !== undefined) {
@@ -717,6 +727,13 @@ sendMessage<{ enabled?: boolean }>({ action: "getAutoGroupState" }).then(respons
 sendMessage<{ enabled?: boolean }>({ action: "getGroupNewTabsState" }).then(response => {
   if (response?.enabled !== undefined) {
     groupNewTabsToggle.checked = response.enabled
+  }
+})
+
+sendMessage<{ enabled?: boolean }>({ action: "getSystemGroupEnabled" }).then(response => {
+  if (response?.enabled !== undefined) {
+    systemGroupToggle.checked = response.enabled
+    syncGroupNewTabsAvailability(response.enabled)
   }
 })
 
@@ -776,6 +793,12 @@ groupNewTabsToggle.addEventListener("change", event => {
     action: "toggleGroupNewTabs",
     enabled: (event.target as HTMLInputElement).checked
   })
+})
+
+systemGroupToggle.addEventListener("change", event => {
+  const enabled = (event.target as HTMLInputElement).checked
+  syncGroupNewTabsAvailability(enabled)
+  sendMessage({ action: "toggleSystemGroup", enabled })
 })
 
 // Group by toggle event listeners

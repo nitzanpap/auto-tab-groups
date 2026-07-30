@@ -88,8 +88,10 @@ class TabGroupServiceSimplified {
       const tab = await browser.tabs.get(tabId)
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
-      // Check if this is a system URL and user has disabled grouping system tabs
-      if (!forceGrouping && !tabGroupState.groupNewTabs) {
+      // Check if this is a system URL and user has disabled grouping system tabs.
+      // systemGroupEnabled wins over forceGrouping: when the System group is off
+      // it must never appear, not even from an explicit "Group Tabs" click.
+      if (!tabGroupState.systemGroupEnabled || (!forceGrouping && !tabGroupState.groupNewTabs)) {
         const domain = extractDomain(tab.url || "", false)
         if (domain === "system") {
           console.log(
@@ -124,6 +126,7 @@ class TabGroupServiceSimplified {
         // Handle system URLs
         const domain = extractDomain(tab.url || "", false)
         if (!customRule && domain === "system") {
+          if (!tabGroupState.systemGroupEnabled) return false
           return await this.moveTabToTargetGroup(tabId, tab, "System", null, "grey")
         }
 
@@ -443,7 +446,7 @@ class TabGroupServiceSimplified {
 
           // Handle tabs with empty/undefined URLs as potential new tabs
           if (!tab.url || tab.url === "") {
-            if (tabGroupState.groupNewTabs) {
+            if (tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled) {
               await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
             }
             continue
@@ -484,7 +487,7 @@ class TabGroupServiceSimplified {
 
           // Handle tabs with empty/undefined URLs as potential new tabs
           if (!tab.url || tab.url === "") {
-            if (tabGroupState.groupNewTabs) {
+            if (tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled) {
               await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
             }
             continue
@@ -492,7 +495,10 @@ class TabGroupServiceSimplified {
 
           // For system URLs, respect the groupNewTabs setting
           const domain = extractDomain(tab.url, false)
-          if (domain === "system" && !tabGroupState.groupNewTabs) {
+          if (
+            domain === "system" &&
+            !(tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled)
+          ) {
             console.log(`[TabGroupService] Skipping system tab ${tab.id} - groupNewTabs disabled`)
             continue
           }
@@ -606,22 +612,24 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Ungroups all tabs from the System group (used when groupNewTabs is disabled)
+   * Ungroups all tabs from every System group (used when the System group or
+   * groupNewTabs is disabled). Covers all windows — turning the System group off
+   * should not leave one behind in a window that happens not to be focused.
    */
   async ungroupSystemTabs(): Promise<boolean> {
     try {
       if (!browser.tabGroups) return false
 
-      const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
-      const systemGroup = groups.find(group => group.title === "System")
+      const groups = await browser.tabGroups.query({})
+      const systemGroups = groups.filter(group => stripIndexPrefix(group.title || "") === "System")
 
-      if (!systemGroup) {
+      if (systemGroups.length === 0) {
         console.log(`[TabGroupService] No System group found`)
         return true
       }
 
-      const tabs = await browser.tabs.query({ groupId: systemGroup.id })
-      if (tabs.length > 0) {
+      for (const systemGroup of systemGroups) {
+        const tabs = await browser.tabs.query({ groupId: systemGroup.id })
         const tabIds = tabs.map(tab => tab.id!).filter(id => id !== undefined)
         if (tabIds.length > 0) {
           await withTabEditRetry(() => browser.tabs.ungroup(tabIds as [number, ...number[]]))

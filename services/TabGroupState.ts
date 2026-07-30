@@ -17,6 +17,7 @@ import { DEFAULT_STATE } from "../types/storage"
 class TabGroupState {
   autoGroupingEnabled: boolean
   groupNewTabs: boolean
+  systemGroupEnabled: boolean
   groupByMode: GroupByMode
   customRules: Map<string, CustomRule>
   ruleMatchingMode: RuleMatchingMode
@@ -33,6 +34,7 @@ class TabGroupState {
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
     this.groupNewTabs = DEFAULT_STATE.groupNewTabs
+    this.systemGroupEnabled = DEFAULT_STATE.systemGroupEnabled
     this.groupByMode = DEFAULT_STATE.groupByMode
     this.customRules = new Map()
     this.ruleMatchingMode = DEFAULT_STATE.ruleMatchingMode
@@ -53,6 +55,7 @@ class TabGroupState {
   updateFromStorage(data: Partial<StorageSchema>): void {
     this.autoGroupingEnabled = data.autoGroupingEnabled ?? this.autoGroupingEnabled
     this.groupNewTabs = data.groupNewTabs ?? this.groupNewTabs
+    this.systemGroupEnabled = data.systemGroupEnabled ?? this.systemGroupEnabled
     this.groupByMode = data.groupByMode ?? this.groupByMode
     this.ruleMatchingMode = data.ruleMatchingMode ?? this.ruleMatchingMode
     this.minimumTabsForGroup = data.minimumTabsForGroup ?? this.minimumTabsForGroup
@@ -81,6 +84,7 @@ class TabGroupState {
     return {
       autoGroupingEnabled: this.autoGroupingEnabled,
       groupNewTabs: this.groupNewTabs,
+      systemGroupEnabled: this.systemGroupEnabled,
       groupByMode: this.groupByMode,
       ruleMatchingMode: this.ruleMatchingMode,
       customRules: this.getCustomRulesObject(),
