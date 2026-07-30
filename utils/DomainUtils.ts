@@ -3,6 +3,7 @@
  */
 
 import type { PatternValidationResult } from "../types"
+import { punycodeToUnicode } from "./Punycode"
 
 /**
  * Common country code second-level domains that should be treated as single TLD units
@@ -169,11 +170,13 @@ export function getDomainDisplayName(domain: string): string {
       return domain
     }
 
-    const parts = domain.split(".")
+    // Show IDN domains as Unicode instead of punycode (e.g. xn--mnchen-3ya -> münchen)
+    const unicodeDomain = punycodeToUnicode(domain)
+    const parts = unicodeDomain.split(".")
 
     // If domain has no TLD (single word), return it capitalized
     if (parts.length === 1) {
-      return domain.charAt(0).toUpperCase() + domain.slice(1)
+      return unicodeDomain.charAt(0).toUpperCase() + unicodeDomain.slice(1)
     }
 
     // Use effective TLD length to properly remove TLD parts
@@ -193,7 +196,7 @@ export function getDomainDisplayName(domain: string): string {
     }
 
     // If we end up with an empty string, return the original domain
-    return domain
+    return unicodeDomain
   } catch {
     return domain // Fallback to original domain if error occurs
   }

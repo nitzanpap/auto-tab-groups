@@ -150,6 +150,12 @@ describe("DomainUtils", () => {
     it("should return IP address as-is for other IPv4", () => {
       expect(getDomainDisplayName("192.168.1.100")).toBe("192.168.1.100")
     })
+
+    it("should display IDN domains as Unicode instead of punycode", () => {
+      expect(getDomainDisplayName("xn--mnchen-3ya.de")).toBe("München")
+      expect(getDomainDisplayName("www.xn--bcher-kva.example")).toBe("Bücher")
+      expect(getDomainDisplayName("xn--fiq228c42rmna.xn--fiqs8s")).toBe("中文网络")
+    })
   })
 
   describe("validateStrictDomain", () => {
