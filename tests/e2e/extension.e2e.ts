@@ -1,5 +1,9 @@
 import { type BrowserContext, expect, test } from "@playwright/test"
-import { getExtensionId, launchExtensionContext } from "./helpers/extension-helpers"
+import {
+  getAutoGroupState,
+  getExtensionId,
+  launchExtensionContext
+} from "./helpers/extension-helpers"
 
 let context: BrowserContext
 let extensionId: string
@@ -48,7 +52,13 @@ test.describe("Auto Tab Groups Extension", () => {
     await page.goto(popupUrl)
 
     const toggle = page.locator("#autoGroupToggle")
-    const initialState = await toggle.isChecked()
+
+    // The popup fills its toggles from the background asynchronously. Reading
+    // the checkbox before that lands returns the markup default rather than the
+    // stored setting, so "initial state" would be a lie and the assertions below
+    // would flip-flop — which is exactly how this failed on a slower CI runner.
+    const initialState = await getAutoGroupState(page)
+    await expect(toggle).toBeChecked({ checked: initialState })
 
     // Click the label (visible toggle) to change checkbox state
     await page.locator("label.switch").first().click()

@@ -61,7 +61,9 @@ jobs:
 
       # Extensions can't be loaded headlessly, so the suite needs a display
       - name: End-to-end tests
-        run: xvfb-run --auto-servernum -- bunx playwright test
+        # --fail-on-flaky-tests: a test that only passes on retry is a bug we
+        # want to see, not a green tick
+        run: xvfb-run --auto-servernum -- bunx playwright test --fail-on-flaky-tests
 
       - name: Upload report on failure
         if: failure()
