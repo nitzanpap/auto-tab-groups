@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "समर्थित है: डोमेन, वाइल्डकार्ड (*.example.com), पथ (example.com/api/*), IP पते",
+    "message": "समर्थित है: डोमेन, वाइल्डकार्ड (*.example.com), पथ (example.com/api/*), IP पते, और बाकी सब के लिए अकेला *",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

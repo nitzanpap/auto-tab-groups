@@ -130,13 +130,16 @@ class TabGroupServiceSimplified {
           return await this.moveTabToTargetGroup(tabId, tab, "System", null, "grey")
         }
 
-        if (!customRule) {
+        // Nothing matched — fall back to a catch-all ("*") rule if the user has one
+        const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(tab.url || ""))
+
+        if (!effectiveRule) {
           console.log(`[TabGroupService] Rules-only mode: No rule found for ${tab.url}`)
           return false
         }
 
-        const groupName = customRule.effectiveGroupName || customRule.name
-        return await this.moveTabToTargetGroup(tabId, tab, groupName, customRule)
+        const groupName = effectiveRule.effectiveGroupName || effectiveRule.name
+        return await this.moveTabToTargetGroup(tabId, tab, groupName, effectiveRule)
       }
 
       // Domain/subdomain mode
@@ -169,6 +172,14 @@ class TabGroupServiceSimplified {
     if (customRule && customRule.minimumTabs !== null && customRule.minimumTabs !== undefined) {
       return customRule.minimumTabs
     }
+
+    // A catch-all group collects what nothing else wanted, so the global minimum
+    // does not apply: needing N leftovers before bucketing them is the opposite
+    // of what a leftovers group is for. An explicit per-rule minimum still wins.
+    if (customRule && rulesService.isCatchAllRule(customRule)) {
+      return 1
+    }
+
     return tabGroupState.minimumTabsForGroup || 1
   }
 
@@ -192,9 +203,21 @@ class TabGroupServiceSimplified {
         if (blacklisted) continue
 
         if (customRule) {
-          const matchingRule = await rulesService.findMatchingRule(tab.url || "")
           const expectedGroupName =
             "effectiveGroupName" in customRule ? customRule.effectiveGroupName : customRule.name
+
+          // A catch-all rule only owns tabs that no normal rule claimed.
+          // ponytail: in domain mode this over-counts tabs that domain grouping
+          // will happily group itself. Harmless — over-counting only makes the
+          // leftovers group easier to form, and its minimum is usually 1.
+          const isCatchAll = rulesService.isCatchAllRule(customRule)
+          if (isCatchAll && (await rulesService.findMatchingRule(tab.url || ""))) {
+            continue
+          }
+
+          const matchingRule = isCatchAll
+            ? await rulesService.findCatchAllRule(tab.url || "")
+            : await rulesService.findMatchingRule(tab.url || "")
           const matchGroupName = matchingRule
             ? matchingRule.effectiveGroupName || matchingRule.name
             : null
@@ -235,7 +258,8 @@ class TabGroupServiceSimplified {
     tab: Browser.tabs.Tab,
     expectedTitle: string,
     customRule: MatchedRule | CustomRule | null = null,
-    defaultColor: TabGroupColor | null = null
+    defaultColor: TabGroupColor | null = null,
+    allowCatchAllFallback = true
   ): Promise<boolean> {
     // Check for tabGroups API availability
     if (!browser.tabGroups) {
@@ -294,6 +318,17 @@ class TabGroupServiceSimplified {
 
     if (tabCount < minimumTabs) {
       console.log(`[TabGroupService] Not enough tabs to create group "${expectedTitle}"`)
+
+      // A tab that can't form its own group is exactly what a catch-all rule is for
+      if (allowCatchAllFallback) {
+        const catchAll = await rulesService.findCatchAllRule(tab.url || "")
+        const catchAllTitle = catchAll ? catchAll.effectiveGroupName || catchAll.name : null
+
+        if (catchAllTitle && catchAllTitle !== expectedTitle) {
+          console.log(`[TabGroupService] Falling back to catch-all group "${catchAllTitle}"`)
+          return await this.moveTabToTargetGroup(tabId, tab, catchAllTitle, catchAll, null, false)
+        }
+      }
 
       if (tab.groupId && tab.groupId !== -1) {
         await withTabEditRetry(() => browser.tabs.ungroup([tabId]))

@@ -5,6 +5,7 @@
 
 import type { CustomRule, RuleData, RulesStats, TabGroupColor } from "../types"
 import { isValidColor } from "../utils/Constants"
+import { extractDomain } from "../utils/DomainUtils"
 import { saveAllStorage } from "../utils/storage"
 import { urlPatternMatcher } from "../utils/UrlPatternMatcher"
 import { tabGroupState } from "./TabGroupState"
@@ -44,6 +45,16 @@ interface ImportResult {
 
 class RulesService {
   /**
+   * A catch-all rule is one with a lone "*" include pattern — it matches every
+   * URL, so it is never treated as a normal rule. It is consulted only after
+   * everything else has declined the tab, via findCatchAllRule().
+   */
+  isCatchAllRule(rule: CustomRule): boolean {
+    const { includePatterns } = this.splitPatterns(rule.domains)
+    return includePatterns.some(pattern => pattern.trim() === "*")
+  }
+
+  /**
    * Finds a matching custom rule for a given URL
    * Uses two-pass matching: exact matches first, then auto-www matches
    * This ensures explicit www.domain.com rules take priority over domain.com with auto-www
@@ -52,7 +63,9 @@ class RulesService {
     if (!url) return null
 
     const customRules = tabGroupState.getCustomRulesObject()
-    const groupingRules = Object.values(customRules).filter(r => !r.isBlacklist)
+    const groupingRules = Object.values(customRules).filter(
+      r => !r.isBlacklist && !this.isCatchAllRule(r)
+    )
 
     console.log(`[RulesService] Found ${groupingRules.length} grouping rules to check`)
 
@@ -62,6 +75,29 @@ class RulesService {
 
     // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
     return this.findMatchInRules(url, groupingRules, true)
+  }
+
+  /**
+   * Finds the catch-all rule for a given URL, if one exists and applies.
+   * Exclusion patterns still count, so a catch-all can carve out exceptions
+   * (e.g. "*" plus "!github.com" catches everything except GitHub).
+   */
+  async findCatchAllRule(url: string): Promise<MatchedRule | null> {
+    if (!url) return null
+
+    // Browser/system pages belong to the System group (or nowhere), never to a
+    // leftovers bucket. Note chrome://settings/ parses with hostname "settings",
+    // which a bare "*" would otherwise happily match.
+    if (extractDomain(url, false) === "system") return null
+
+    const customRules = tabGroupState.getCustomRulesObject()
+    const catchAllRules = Object.values(customRules).filter(
+      r => !r.isBlacklist && this.isCatchAllRule(r)
+    )
+
+    if (catchAllRules.length === 0) return null
+
+    return this.findMatchInRules(url, catchAllRules, false)
   }
 
   /**

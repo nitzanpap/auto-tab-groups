@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "Поддерживаются: домены, подстановки (*.example.com), пути (example.com/api/*), IP-адреса",
+    "message": "Поддерживаются: домены, подстановки (*.example.com), пути (example.com/api/*), IP-адреса и одиночная * для всего остального",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

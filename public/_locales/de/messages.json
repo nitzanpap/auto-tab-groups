@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "Unterstützt: Domains, Platzhalter (*.example.com), Pfade (example.com/api/*), IP-Adressen",
+    "message": "Unterstützt: Domains, Platzhalter (*.example.com), Pfade (example.com/api/*), IP-Adressen und * allein für alles Übrige",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {
