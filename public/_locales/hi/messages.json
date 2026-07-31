@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "सियान", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "नारंगी", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "स्लेटी", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "प्राथमिकता",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "जब दो नियम एक ही टैब से मेल खाते हैं तो अधिक मान जीतता है",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "न्यूनतम टैब्स",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "यह समूह बनने के लिए आवश्यक टैब्स। वैश्विक सेटिंग उपयोग करने के लिए खाली छोड़ें",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "वैश्विक सेटिंग",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "प्राथमिकता 1 या उससे अधिक की पूर्ण संख्या होनी चाहिए",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "न्यूनतम टैब्स 1 और 10 के बीच की संख्या होनी चाहिए",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "सक्षम",
     "description": "Checkbox: whether the rule is enabled."

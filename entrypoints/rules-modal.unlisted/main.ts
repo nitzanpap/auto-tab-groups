@@ -29,6 +29,9 @@ const rulePatternsInput = document.getElementById("rulePatterns") as HTMLTextAre
 const ruleColorInput = document.getElementById("ruleColor") as HTMLInputElement
 const colorPicker = document.getElementById("colorPicker") as HTMLDivElement
 const ruleEnabledCheckbox = document.getElementById("ruleEnabled") as HTMLInputElement
+const rulePriorityInput = document.getElementById("rulePriority") as HTMLInputElement
+const ruleMinimumTabsInput = document.getElementById("ruleMinimumTabs") as HTMLInputElement
+const minimumTabsField = document.getElementById("minimumTabsField") as HTMLDivElement
 const colorGroup = document.getElementById("colorGroup") as HTMLDivElement
 
 // Blacklist mode — determined by URL param, not a checkbox
@@ -121,6 +124,9 @@ async function loadExistingRule(): Promise<void> {
       rulePatternsInput.value = rule.domains.join("\n")
       setColorPickerValue(rule.color || "blue")
       ruleEnabledCheckbox.checked = rule.enabled !== false
+      rulePriorityInput.value = String(rule.priority ?? 1)
+      ruleMinimumTabsInput.value =
+        rule.minimumTabs === null || rule.minimumTabs === undefined ? "" : String(rule.minimumTabs)
     }
   } catch (error) {
     console.error("Error loading rule:", error)
@@ -148,7 +154,34 @@ function buildRuleData(): RuleData | null {
     return null
   }
 
-  return { name, domains: patterns, color, enabled, priority: 1, isBlacklist: isBlacklistMode }
+  const priority = Number.parseInt(rulePriorityInput.value, 10)
+  if (Number.isNaN(priority) || priority < 1) {
+    alert(t("ruleModalInvalidPriority", "Priority must be a whole number of 1 or more"))
+    return null
+  }
+
+  // Empty means "use the global setting" — null tells the background to clear
+  // any per-rule override, which undefined would leave in place.
+  const rawMinimumTabs = ruleMinimumTabsInput.value.trim()
+  let minimumTabs: number | null = null
+  if (rawMinimumTabs !== "") {
+    minimumTabs = Number.parseInt(rawMinimumTabs, 10)
+    if (Number.isNaN(minimumTabs) || minimumTabs < 1 || minimumTabs > 10) {
+      alert(t("ruleModalInvalidMinimumTabs", "Minimum tabs must be a number between 1 and 10"))
+      return null
+    }
+  }
+
+  return {
+    name,
+    domains: patterns,
+    color,
+    enabled,
+    priority,
+    // Blacklist rules never form groups, so a minimum tab count is meaningless
+    minimumTabs: isBlacklistMode ? null : minimumTabs,
+    isBlacklist: isBlacklistMode
+  }
 }
 
 // Persist rule to background
@@ -293,6 +326,7 @@ function applyBlacklistMode(): void {
     ? t("ruleModalUpdate", "Update Rule")
     : t("ruleModalSave", "Save Rule")
   colorGroup.style.display = "none"
+  minimumTabsField.style.display = "none"
   ruleNameInput.required = false
   const ruleNameGroup = ruleNameInput.closest(".form-group")
   if (ruleNameGroup) (ruleNameGroup as HTMLElement).style.display = "none"

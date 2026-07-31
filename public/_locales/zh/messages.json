@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "青色", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "橙色", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "灰色", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "优先级",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "当两条规则匹配同一标签页时,数值大的优先",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "最少标签页数",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "创建该分组所需的标签页数。留空则使用全局设置",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "全局设置",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "优先级必须是大于或等于 1 的整数",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "最少标签页数必须是 1 到 10 之间的数字",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "已启用",
     "description": "Checkbox: whether the rule is enabled."

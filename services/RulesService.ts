@@ -246,7 +246,7 @@ class RulesService {
         : "blue") as TabGroupColor,
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || 1,
-      minimumTabs: ruleData.minimumTabs,
+      minimumTabs: ruleData.minimumTabs ?? undefined,
       isBlacklist: ruleData.isBlacklist ?? false,
       createdAt: new Date().toISOString()
     }
@@ -284,7 +284,11 @@ class RulesService {
         : existingRule.color) as TabGroupColor,
       enabled: ruleData.enabled !== false,
       priority: ruleData.priority || existingRule.priority,
-      minimumTabs: ruleData.minimumTabs ?? existingRule.minimumTabs,
+      // null clears the override; undefined means "not supplied, keep what's there"
+      minimumTabs:
+        ruleData.minimumTabs === null
+          ? undefined
+          : (ruleData.minimumTabs ?? existingRule.minimumTabs),
       isBlacklist: ruleData.isBlacklist ?? existingRule.isBlacklist ?? false
     }
 
