@@ -101,6 +101,38 @@
     "message": "इस समूह के लिए स्वतः-समूहन फिर से शुरू करें",
     "description": "Tooltip on the button that removes a group from the excluded list."
   },
+  "commandOpenPopup": {
+    "message": "Auto Tab Groups खोलें",
+    "description": "Keyboard command description: open the extension popup."
+  },
+  "commandToggleAutoGrouping": {
+    "message": "स्वतः-समूहन चालू या बंद करें",
+    "description": "Keyboard command description: turn automatic grouping on or off."
+  },
+  "commandGroupAllTabs": {
+    "message": "सभी टैब्स को अभी समूहित करें",
+    "description": "Keyboard command description: group every open tab now."
+  },
+  "commandUngroupAllTabs": {
+    "message": "सभी टैब्स का समूह हटाएं",
+    "description": "Keyboard command description: remove every tab group."
+  },
+  "commandToggleCollapse": {
+    "message": "सभी समूह संक्षिप्त या विस्तृत करें",
+    "description": "Keyboard command description: collapse or expand every group."
+  },
+  "settingKeyboardShortcuts": {
+    "message": "कीबोर्ड शॉर्टकट",
+    "description": "Label for the keyboard shortcuts row in advanced settings."
+  },
+  "settingKeyboardShortcutsHelp": {
+    "message": "डिफ़ॉल्ट रूप से कोई कुंजी असाइन नहीं है। ब्राउज़र की शॉर्टकट सेटिंग्स में अपनी चुनें",
+    "description": "Help text explaining that shortcuts are unassigned until the user sets them."
+  },
+  "settingKeyboardShortcutsOpen": {
+    "message": "सेट अप करें",
+    "description": "Button that opens the browser's keyboard shortcut settings page."
+  },
   "settingMinimumTabsForGroup": {
     "message": "समूह बनाने के लिए न्यूनतम टैब्स",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

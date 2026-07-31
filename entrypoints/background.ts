@@ -15,6 +15,7 @@ import {
   tabGroupService,
   tabGroupState
 } from "../services"
+import { handleCommand } from "../services/CommandService"
 import { seedProtectedGroupsOnFirstRun } from "../services/FirstRunService"
 import {
   parseAiRuleResponse,
@@ -87,6 +88,17 @@ export default defineBackground(() => {
     .catch(error => {
       console.error("Critical error: Failed to load state on service worker start:", error)
     })
+
+  // Keyboard commands. Inert until the user assigns keys in the browser's
+  // shortcuts page — the manifest suggests none.
+  browser.commands?.onCommand.addListener(async command => {
+    try {
+      await ensureStateLoaded()
+      await handleCommand(command)
+    } catch (error) {
+      console.error(`Error handling command "${command}":`, error)
+    }
+  })
 
   // Message handler for popup communication
   browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

@@ -11,6 +11,16 @@ for those.
 
 ## [Unreleased]
 
+## [3.10.0]
+
+### Added
+
+- Keyboard shortcuts for turning auto-grouping on or off, grouping all tabs,
+  ungrouping all tabs, and collapsing or expanding every group. No keys are
+  assigned by default — installing takes none of your existing shortcuts, and
+  nothing fires until you assign keys in the browser's own shortcut settings.
+  Advanced → Keyboard shortcuts opens that page ([#86], closes [#25]).
+
 ## [3.9.1]
 
 ### Fixed
@@ -90,7 +100,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.9.1...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.10.0...HEAD
+[3.10.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.10.0
 [3.9.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.9.1
 [3.9.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.9.0
 [3.8.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.8.1
@@ -100,6 +111,7 @@ for those.
 [3.6.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.6.0
 [3.5.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.5.2
 [#23]: https://github.com/nitzanpap/auto-tab-groups/issues/23
+[#25]: https://github.com/nitzanpap/auto-tab-groups/issues/25
 [#29]: https://github.com/nitzanpap/auto-tab-groups/issues/29
 [#31]: https://github.com/nitzanpap/auto-tab-groups/issues/31
 [#74]: https://github.com/nitzanpap/auto-tab-groups/issues/74
@@ -112,3 +124,4 @@ for those.
 [#81]: https://github.com/nitzanpap/auto-tab-groups/pull/81
 [#82]: https://github.com/nitzanpap/auto-tab-groups/pull/82
 [#84]: https://github.com/nitzanpap/auto-tab-groups/pull/84
+[#86]: https://github.com/nitzanpap/auto-tab-groups/pull/86

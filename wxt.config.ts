@@ -39,6 +39,27 @@ export default defineConfig({
       default_locale: "en",
       author: "Nitzan Papini",
       permissions: ["tabs", "storage", "tabGroups", "contextMenus"],
+      // No suggested_key anywhere on purpose: the browser then binds nothing on
+      // install and these sit unassigned in its shortcuts page until the user
+      // picks keys. Opting in is the user's move, and no existing shortcut of
+      // theirs gets taken.
+      commands: {
+        _execute_action: {
+          description: "__MSG_commandOpenPopup__"
+        },
+        "toggle-auto-grouping": {
+          description: "__MSG_commandToggleAutoGrouping__"
+        },
+        "group-all-tabs": {
+          description: "__MSG_commandGroupAllTabs__"
+        },
+        "ungroup-all-tabs": {
+          description: "__MSG_commandUngroupAllTabs__"
+        },
+        "toggle-collapse": {
+          description: "__MSG_commandToggleCollapse__"
+        }
+      },
       icons: {
         16: "icon/16.png",
         48: "icon/48.png",
