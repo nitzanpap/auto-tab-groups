@@ -7,9 +7,7 @@
  * - The dependent "group new empty tabs" toggle follows it in the UI
  */
 
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
+import { type BrowserContext, expect, type Page, test } from "@playwright/test"
 import {
   closeTestTabs,
   createTab,
@@ -18,6 +16,7 @@ import {
   getExtensionId,
   getTabGroups,
   groupAllTabs,
+  launchExtensionContext,
   openPopup,
   sendMessage,
   setGroupByMode,
@@ -25,10 +24,6 @@ import {
   TEST_URLS,
   ungroupAllTabs
 } from "./helpers/extension-helpers"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
 
 let context: BrowserContext
 let extensionId: string
@@ -47,10 +42,7 @@ async function hasSystemGroup(page: Page): Promise<boolean> {
 }
 
 test.beforeAll(async () => {
-  context = await chromium.launchPersistentContext("", {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-  })
+  context = await launchExtensionContext()
   extensionId = await getExtensionId(context)
 })
 

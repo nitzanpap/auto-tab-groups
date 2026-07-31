@@ -39,3 +39,36 @@ jobs:
 
       - name: Build Firefox
         run: bun run build:firefox
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: bunx playwright install chromium --with-deps
+
+      - name: Build Chrome extension
+        run: bun run build:chrome
+
+      # Extensions can't be loaded headlessly, so the suite needs a display
+      - name: End-to-end tests
+        # --fail-on-flaky-tests: a test that only passes on retry is a bug we
+        # want to see, not a green tick
+        run: xvfb-run --auto-servernum -- bunx playwright test --fail-on-flaky-tests
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

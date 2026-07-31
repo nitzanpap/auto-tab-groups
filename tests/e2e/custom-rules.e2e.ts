@@ -8,9 +8,7 @@
  * - Delete rule regroups tabs by domain
  */
 
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
+import { type BrowserContext, expect, type Page, test } from "@playwright/test"
 import {
   addCustomRule,
   closeTestTabs,
@@ -22,6 +20,7 @@ import {
   getExtensionId,
   getTabGroups,
   getTabs,
+  launchExtensionContext,
   openPopup,
   setGroupByMode,
   setMinimumTabs,
@@ -30,19 +29,12 @@ import {
   waitForGroup
 } from "./helpers/extension-helpers"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
-
 let context: BrowserContext
 let extensionId: string
 let popupPage: Page
 
 test.beforeAll(async () => {
-  context = await chromium.launchPersistentContext("", {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-  })
+  context = await launchExtensionContext()
   extensionId = await getExtensionId(context)
 })
 

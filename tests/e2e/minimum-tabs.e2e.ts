@@ -7,9 +7,7 @@
  * - Ungroups when below threshold after tab close
  */
 
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
+import { type BrowserContext, expect, type Page, test } from "@playwright/test"
 import {
   closeTestTabs,
   createTab,
@@ -19,6 +17,7 @@ import {
   getMinimumTabs,
   getTabGroups,
   getTabs,
+  launchExtensionContext,
   openPopup,
   setGroupByMode,
   setMinimumTabs,
@@ -27,10 +26,6 @@ import {
   waitForGroup
 } from "./helpers/extension-helpers"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
-
 let context: BrowserContext
 let extensionId: string
 let popupPage: Page
@@ -38,18 +33,12 @@ let popupPage: Page
 test.beforeAll(async () => {
   // Create a fresh browser context for this test suite
   try {
-    context = await chromium.launchPersistentContext("", {
-      headless: false,
-      args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-    })
+    context = await launchExtensionContext()
     extensionId = await getExtensionId(context)
   } catch (error) {
     console.error("Failed to create context, retrying...", error)
     // Retry once
-    context = await chromium.launchPersistentContext("", {
-      headless: false,
-      args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-    })
+    context = await launchExtensionContext()
     extensionId = await getExtensionId(context)
   }
 })
@@ -76,10 +65,7 @@ test.beforeEach(async () => {
   if (needsRecreation) {
     // Context was closed or invalid, recreate it
     console.log("Recreating browser context for minimum-tabs tests...")
-    context = await chromium.launchPersistentContext("", {
-      headless: false,
-      args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-    })
+    context = await launchExtensionContext()
     extensionId = await getExtensionId(context)
   }
 

@@ -5,9 +5,7 @@
  * inactive tab groups when switching tabs.
  */
 
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
+import { type BrowserContext, expect, type Page, test } from "@playwright/test"
 import {
   activateTab,
   closeTestTabs,
@@ -21,27 +19,22 @@ import {
   getAutoCollapseState,
   getExtensionId,
   getTabGroups,
+  launchExtensionContext,
   openPopup,
   setGroupByMode,
   setMinimumTabs,
   TEST_URLS,
   ungroupAllTabs,
-  waitForGroup
+  waitForGroup,
+  waitForGroups
 } from "./helpers/extension-helpers"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
 
 let context: BrowserContext
 let extensionId: string
 let popupPage: Page
 
 test.beforeAll(async () => {
-  context = await chromium.launchPersistentContext("", {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-  })
+  context = await launchExtensionContext()
   extensionId = await getExtensionId(context)
 })
 
@@ -110,25 +103,22 @@ test.describe("Auto-Collapse Feature", () => {
 
     // Expand all groups first
     await expandAllGroups(popupPage)
-    await popupPage.waitForTimeout(300)
-
-    // Verify all groups are expanded
-    let groups = await getTabGroups(popupPage)
-    expect(groups.every(g => !g.collapsed)).toBe(true)
+    let groups = await waitForGroups(popupPage, gs => gs.every(g => !g.collapsed))
 
     // Enable auto-collapse with immediate mode (0ms delay)
     await enableAutoCollapse(popupPage, 0)
 
     // Activate a tab in domain1 group
     await activateTab(popupPage, "example.com")
-    await popupPage.waitForTimeout(500)
 
     // Get the active tab's group
     const activeTab = await getActiveTab(popupPage)
     expect(activeTab).not.toBeNull()
 
-    // Verify other groups collapsed
-    groups = await getTabGroups(popupPage)
+    // Wait for the collapse to land rather than guessing how long it takes
+    groups = await waitForGroups(popupPage, gs =>
+      gs.filter(g => g.id !== activeTab?.groupId).some(g => g.collapsed)
+    )
     const activeGroup = groups.find(g => g.id === activeTab?.groupId)
 
     if (activeGroup) {

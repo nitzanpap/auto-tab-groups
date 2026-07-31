@@ -1,39 +1,15 @@
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, test } from "@playwright/test"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
+import { type BrowserContext, expect, test } from "@playwright/test"
+import {
+  getAutoGroupState,
+  getExtensionId,
+  launchExtensionContext
+} from "./helpers/extension-helpers"
 
 let context: BrowserContext
 let extensionId: string
 
-/**
- * Wait for and retrieve the extension ID from service workers
- */
-async function getExtensionId(ctx: BrowserContext): Promise<string> {
-  return new Promise<string>(resolve => {
-    const checkServiceWorker = () => {
-      const workers = ctx.serviceWorkers()
-      for (const worker of workers) {
-        const url = worker.url()
-        if (url.includes("chrome-extension://")) {
-          resolve(url.split("/")[2])
-          return
-        }
-      }
-      setTimeout(checkServiceWorker, 100)
-    }
-    checkServiceWorker()
-  })
-}
-
 test.beforeAll(async () => {
-  context = await chromium.launchPersistentContext("", {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-  })
+  context = await launchExtensionContext()
 
   // Get extension ID once and reuse across all tests
   extensionId = await getExtensionId(context)
@@ -76,23 +52,21 @@ test.describe("Auto Tab Groups Extension", () => {
     await page.goto(popupUrl)
 
     const toggle = page.locator("#autoGroupToggle")
-    const initialState = await toggle.isChecked()
+
+    // The popup fills its toggles from the background asynchronously. Reading
+    // the checkbox before that lands returns the markup default rather than the
+    // stored setting, so "initial state" would be a lie and the assertions below
+    // would flip-flop — which is exactly how this failed on a slower CI runner.
+    const initialState = await getAutoGroupState(page)
+    await expect(toggle).toBeChecked({ checked: initialState })
 
     // Click the label (visible toggle) to change checkbox state
     await page.locator("label.switch").first().click()
-    await page.waitForTimeout(500)
-
-    // Verify state changed
-    const newState = await toggle.isChecked()
-    expect(newState).toBe(!initialState)
+    await expect(toggle).toBeChecked({ checked: !initialState })
 
     // Toggle back
     await page.locator("label.switch").first().click()
-    await page.waitForTimeout(500)
-
-    // Verify state restored
-    const restoredState = await toggle.isChecked()
-    expect(restoredState).toBe(initialState)
+    await expect(toggle).toBeChecked({ checked: initialState })
 
     await page.close()
   })

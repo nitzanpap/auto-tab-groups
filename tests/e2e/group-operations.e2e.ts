@@ -7,9 +7,7 @@
  * - Toggle collapse state
  */
 
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { type BrowserContext, chromium, expect, type Page, test } from "@playwright/test"
+import { type BrowserContext, expect, type Page, test } from "@playwright/test"
 import {
   closeTestTabs,
   collapseAllGroups,
@@ -19,28 +17,23 @@ import {
   expandAllGroups,
   getExtensionId,
   getTabGroups,
+  launchExtensionContext,
   openPopup,
   setGroupByMode,
   setMinimumTabs,
   TEST_URLS,
   toggleCollapseGroups,
   ungroupAllTabs,
-  waitForGroup
+  waitForGroup,
+  waitForGroups
 } from "./helpers/extension-helpers"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const extensionPath = join(__dirname, "../../.output/chrome-mv3")
 
 let context: BrowserContext
 let extensionId: string
 let popupPage: Page
 
 test.beforeAll(async () => {
-  context = await chromium.launchPersistentContext("", {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`]
-  })
+  context = await launchExtensionContext()
   extensionId = await getExtensionId(context)
 })
 
@@ -84,7 +77,7 @@ test.describe("Group Operations - Collapse/Expand", () => {
     await waitForGroup(popupPage, "Typicode")
 
     // Verify expected groups exist
-    let groups = await getTabGroups(popupPage)
+    const groups = await getTabGroups(popupPage)
     expect(groups.some(g => g.title === "Example")).toBe(true)
     expect(groups.some(g => g.title === "Httpbin")).toBe(true)
     expect(groups.some(g => g.title === "Typicode")).toBe(true)
@@ -92,21 +85,12 @@ test.describe("Group Operations - Collapse/Expand", () => {
 
     // Expand all first to have a known state
     await expandAllGroups(popupPage)
-    await popupPage.waitForTimeout(300)
-
-    // Verify groups are expanded
-    groups = await getTabGroups(popupPage)
-    expect(groups.every(g => !g.collapsed)).toBe(true)
+    await waitForGroups(popupPage, gs => gs.every(g => !g.collapsed))
 
     // Collapse all groups
+    // Most groups should be collapsed (the active tab's group may stay expanded)
     await collapseAllGroups(popupPage)
-    await popupPage.waitForTimeout(300)
-
-    // Verify most groups are collapsed (active tab's group may stay expanded)
-    groups = await getTabGroups(popupPage)
-    const collapsedCount = groups.filter(g => g.collapsed).length
-    // Most groups should be collapsed (allow 1 active tab group to stay expanded)
-    expect(collapsedCount).toBeGreaterThanOrEqual(groups.length - 1)
+    await waitForGroups(popupPage, gs => gs.filter(g => g.collapsed).length >= gs.length - 1)
 
     // Cleanup
     await tab1.close()
@@ -127,20 +111,11 @@ test.describe("Group Operations - Collapse/Expand", () => {
 
     // Collapse all first
     await collapseAllGroups(popupPage)
-    await popupPage.waitForTimeout(300)
-
-    // Verify some groups are collapsed
-    let groups = await getTabGroups(popupPage)
-    const initialCollapsed = groups.filter(g => g.collapsed).length
-    expect(initialCollapsed).toBeGreaterThan(0)
+    await waitForGroups(popupPage, gs => gs.some(g => g.collapsed))
 
     // Expand all groups
     await expandAllGroups(popupPage)
-    await popupPage.waitForTimeout(300)
-
-    // Verify all groups are expanded
-    groups = await getTabGroups(popupPage)
-    expect(groups.every(g => !g.collapsed)).toBe(true)
+    await waitForGroups(popupPage, gs => gs.every(g => !g.collapsed))
 
     // Cleanup
     await tab1.close()
