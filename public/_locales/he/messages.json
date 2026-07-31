@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "טורקיז", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "כתום", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "אפור", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "עדיפות",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "ערך גבוה יותר מנצח כששני כללים מתאימים לאותה לשונית",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "מינימום לשוניות",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "כמה לשוניות נדרשות כדי ליצור את הקבוצה. השאירו ריק לשימוש בהגדרה הגלובלית",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "הגדרה גלובלית",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "העדיפות חייבת להיות מספר שלם של 1 או יותר",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "מינימום הלשוניות חייב להיות מספר בין 1 ל-10",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "מופעל",
     "description": "Checkbox: whether the rule is enabled."

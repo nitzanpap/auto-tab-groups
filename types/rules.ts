@@ -61,7 +61,8 @@ export interface RuleData {
   color?: TabGroupColor
   enabled?: boolean
   priority?: number
-  minimumTabs?: number
+  /** Per-rule override; null clears it so the global setting applies again */
+  minimumTabs?: number | null
   isBlacklist?: boolean
   id?: string
   createdAt?: string

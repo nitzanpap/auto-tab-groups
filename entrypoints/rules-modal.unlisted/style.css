@@ -69,6 +69,30 @@ h1 {
   min-height: 100px;
 }
 
+.advanced-group {
+  display: flex;
+  gap: 12px;
+}
+
+.advanced-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
 .checkbox-group {
   display: flex;
   align-items: center;

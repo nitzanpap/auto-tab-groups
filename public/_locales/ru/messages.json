@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "Голубой", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "Оранжевый", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "Серый", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "Приоритет",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "При совпадении двух правил побеждает большее значение",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "Минимум вкладок",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "Сколько вкладок нужно для создания группы. Оставьте пустым для общей настройки",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "Общая настройка",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "Приоритет должен быть целым числом от 1",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "Минимум вкладок должен быть числом от 1 до 10",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "Включено",
     "description": "Checkbox: whether the rule is enabled."

@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "سماوي", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "برتقالي", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "رمادي", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "الأولوية",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "الأعلى يفوز عندما تتطابق قاعدتان مع نفس علامة التبويب",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "الحد الأدنى لعلامات التبويب",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "عدد علامات التبويب اللازمة لإنشاء هذه المجموعة. اتركه فارغًا لاستخدام الإعداد العام",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "الإعداد العام",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "يجب أن تكون الأولوية عددًا صحيحًا من 1 أو أكثر",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "يجب أن يكون الحد الأدنى لعلامات التبويب رقمًا بين 1 و10",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "مُفعَّلة",
     "description": "Checkbox: whether the rule is enabled."

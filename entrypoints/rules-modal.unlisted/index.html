@@ -72,6 +72,18 @@ example.com/admin/*
           </div>
           <input type="hidden" id="ruleColor" value="blue" />
         </div>
+        <div class="form-group advanced-group">
+          <div class="advanced-field">
+            <label for="rulePriority" data-i18n="ruleModalPriorityLabel">Priority</label>
+            <input type="number" id="rulePriority" min="1" max="999" step="1" value="1" />
+            <div class="help-text" data-i18n="ruleModalPriorityHelp">Higher wins when two rules match the same tab</div>
+          </div>
+          <div class="advanced-field" id="minimumTabsField">
+            <label for="ruleMinimumTabs" data-i18n="ruleModalMinimumTabsLabel">Minimum tabs</label>
+            <input type="number" id="ruleMinimumTabs" min="1" max="10" step="1" placeholder="Global setting" data-i18n-placeholder="ruleModalMinimumTabsPlaceholder" />
+            <div class="help-text" data-i18n="ruleModalMinimumTabsHelp">Tabs needed before this group forms. Leave empty to use the global setting</div>
+          </div>
+        </div>
         <div class="form-group checkbox-group">
           <label>
             <input type="checkbox" id="ruleEnabled" checked />

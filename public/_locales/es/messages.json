@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "Cian", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "Naranja", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "Gris", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "Prioridad",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "El valor más alto gana cuando dos reglas coinciden con la misma pestaña",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "Pestañas mínimas",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "Pestañas necesarias para crear este grupo. Déjalo vacío para usar el ajuste global",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "Ajuste global",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "La prioridad debe ser un número entero de 1 o más",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "Las pestañas mínimas deben ser un número entre 1 y 10",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "Activada",
     "description": "Checkbox: whether the rule is enabled."

@@ -563,6 +563,34 @@
   "ruleModalColorCyan": { "message": "Cyan", "description": "Color option: cyan." },
   "ruleModalColorOrange": { "message": "Orange", "description": "Color option: orange." },
   "ruleModalColorGrey": { "message": "Grey", "description": "Color option: grey." },
+  "ruleModalPriorityLabel": {
+    "message": "Priority",
+    "description": "Label for the rule priority input in the rule editor."
+  },
+  "ruleModalPriorityHelp": {
+    "message": "Higher wins when two rules match the same tab",
+    "description": "Help text explaining what rule priority does."
+  },
+  "ruleModalMinimumTabsLabel": {
+    "message": "Minimum tabs",
+    "description": "Label for the per-rule minimum tabs input in the rule editor."
+  },
+  "ruleModalMinimumTabsHelp": {
+    "message": "Tabs needed before this group forms. Leave empty to use the global setting",
+    "description": "Help text for the per-rule minimum tabs input."
+  },
+  "ruleModalMinimumTabsPlaceholder": {
+    "message": "Global setting",
+    "description": "Placeholder for the per-rule minimum tabs input, meaning the global setting applies."
+  },
+  "ruleModalInvalidPriority": {
+    "message": "Priority must be a whole number of 1 or more",
+    "description": "Alert shown when the entered rule priority is not a positive whole number."
+  },
+  "ruleModalInvalidMinimumTabs": {
+    "message": "Minimum tabs must be a number between 1 and 10",
+    "description": "Alert shown when the entered per-rule minimum tabs value is out of range."
+  },
   "ruleModalEnabledLabel": {
     "message": "Enabled",
     "description": "Checkbox: whether the rule is enabled."
