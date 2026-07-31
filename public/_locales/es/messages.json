@@ -85,6 +85,22 @@
     "message": "Agrupar nuevas pestañas vacías en «System»",
     "description": "Label for the toggle that groups blank/new tabs under a System group."
   },
+  "contextMenuProtectGroup": {
+    "message": "Excluir grupo de la agrupación automática",
+    "description": "Right-click menu: stop auto-grouping from managing the clicked tab's group."
+  },
+  "settingProtectedGroups": {
+    "message": "Grupos excluidos de la agrupación automática",
+    "description": "Label for the list of groups excluded from auto-grouping."
+  },
+  "settingProtectedGroupsHelp": {
+    "message": "Haz clic derecho en una pestaña para excluir su grupo. Elimínalo para que la agrupación automática vuelva a gestionarlo",
+    "description": "Help text explaining how to add and remove excluded groups."
+  },
+  "settingProtectedGroupsRemove": {
+    "message": "Reanudar la agrupación automática para este grupo",
+    "description": "Tooltip on the button that removes a group from the excluded list."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Mínimo de pestañas para formar un grupo",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

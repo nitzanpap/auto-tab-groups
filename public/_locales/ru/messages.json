@@ -85,6 +85,22 @@
     "message": "Группировать новые пустые вкладки в «System»",
     "description": "Label for the toggle that groups blank/new tabs under a System group."
   },
+  "contextMenuProtectGroup": {
+    "message": "Исключить группу из автогруппировки",
+    "description": "Right-click menu: stop auto-grouping from managing the clicked tab's group."
+  },
+  "settingProtectedGroups": {
+    "message": "Группы, исключённые из автогруппировки",
+    "description": "Label for the list of groups excluded from auto-grouping."
+  },
+  "settingProtectedGroupsHelp": {
+    "message": "Щёлкните вкладку правой кнопкой, чтобы исключить её группу. Удалите запись, чтобы вернуть группу под автогруппировку",
+    "description": "Help text explaining how to add and remove excluded groups."
+  },
+  "settingProtectedGroupsRemove": {
+    "message": "Возобновить автогруппировку для этой группы",
+    "description": "Tooltip on the button that removes a group from the excluded list."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Минимальное число вкладок для создания группы",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

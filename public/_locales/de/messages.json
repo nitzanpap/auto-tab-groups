@@ -85,6 +85,22 @@
     "message": "Neue leere Tabs unter „System“ gruppieren",
     "description": "Label for the toggle that groups blank/new tabs under a System group."
   },
+  "contextMenuProtectGroup": {
+    "message": "Gruppe von automatischer Gruppierung ausschließen",
+    "description": "Right-click menu: stop auto-grouping from managing the clicked tab's group."
+  },
+  "settingProtectedGroups": {
+    "message": "Von automatischer Gruppierung ausgeschlossene Gruppen",
+    "description": "Label for the list of groups excluded from auto-grouping."
+  },
+  "settingProtectedGroupsHelp": {
+    "message": "Rechtsklick auf einen Tab, um dessen Gruppe auszuschließen. Entfernen, damit sie wieder automatisch gruppiert wird",
+    "description": "Help text explaining how to add and remove excluded groups."
+  },
+  "settingProtectedGroupsRemove": {
+    "message": "Automatische Gruppierung für diese Gruppe fortsetzen",
+    "description": "Tooltip on the button that removes a group from the excluded list."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Mindestanzahl an Tabs für eine Gruppe",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

@@ -30,6 +30,7 @@ class TabGroupState {
   indexGroupTitles: boolean
   hideContextMenu: boolean
   userLocale: UserLocale
+  protectedGroupTitles: string[]
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -47,6 +48,7 @@ class TabGroupState {
     this.indexGroupTitles = DEFAULT_STATE.indexGroupTitles
     this.hideContextMenu = DEFAULT_STATE.hideContextMenu
     this.userLocale = DEFAULT_STATE.userLocale
+    this.protectedGroupTitles = [...DEFAULT_STATE.protectedGroupTitles]
   }
 
   /**
@@ -67,6 +69,7 @@ class TabGroupState {
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
     this.hideContextMenu = data.hideContextMenu ?? this.hideContextMenu
     this.userLocale = data.userLocale ?? this.userLocale
+    this.protectedGroupTitles = data.protectedGroupTitles ?? this.protectedGroupTitles
 
     this.customRules.clear()
 
@@ -98,6 +101,7 @@ class TabGroupState {
       indexGroupTitles: this.indexGroupTitles,
       hideContextMenu: this.hideContextMenu,
       userLocale: this.userLocale,
+      protectedGroupTitles: this.protectedGroupTitles,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,

@@ -107,6 +107,14 @@ class TabGroupServiceSimplified {
         return false
       }
 
+      // Never move a tab out of a group the user marked protected. This runs
+      // before every grouping path — rules, domain, catch-all and the
+      // below-threshold ungroup — so protection holds everywhere.
+      if (await this.isInProtectedGroup(tab)) {
+        console.log(`[TabGroupService] Tab ${tabId} is in a protected group, leaving it alone`)
+        return false
+      }
+
       // Check blacklist rules — if matched, ungroup the tab and skip all grouping
       const blacklistMatch = await rulesService.findBlacklistMatch(tab.url || "")
       if (blacklistMatch) {
@@ -163,6 +171,46 @@ class TabGroupServiceSimplified {
       console.error(`[TabGroupService] Error processing tab ${tabId}:`, error)
       return false
     }
+  }
+
+  /**
+   * Whether a group title is on the user's protected list.
+   * Titles are compared with any sort-index prefix stripped, so protection
+   * survives the "number groups" setting being toggled.
+   */
+  isProtectedTitle(title: string | undefined): boolean {
+    if (tabGroupState.protectedGroupTitles.length === 0) return false
+    if (!title) return false
+    return tabGroupState.protectedGroupTitles.includes(stripIndexPrefix(title))
+  }
+
+  /**
+   * Whether a tab currently sits in a group the user marked protected.
+   * Cheap no-op when nothing is protected, which is the default.
+   */
+  private async isInProtectedGroup(tab: Browser.tabs.Tab): Promise<boolean> {
+    if (tabGroupState.protectedGroupTitles.length === 0) return false
+    if (!tab.groupId || tab.groupId === -1) return false
+    if (!browser.tabGroups) return false
+
+    try {
+      const group = await browser.tabGroups.get(tab.groupId)
+      return this.isProtectedTitle(group?.title)
+    } catch {
+      // Group vanished between reads — nothing to protect
+      return false
+    }
+  }
+
+  /**
+   * Ids of every protected group in the current window
+   */
+  private async getProtectedGroupIds(): Promise<Set<number>> {
+    if (tabGroupState.protectedGroupTitles.length === 0) return new Set()
+    if (!browser.tabGroups) return new Set()
+
+    const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
+    return new Set(groups.filter(g => this.isProtectedTitle(g.title)).map(g => g.id))
   }
 
   /**
@@ -561,7 +609,12 @@ class TabGroupServiceSimplified {
     try {
       console.log(`[TabGroupService] Ungrouping all tabs`)
       const tabs = await browser.tabs.query({ currentWindow: true })
-      const groupedTabs = tabs.filter(tab => tab.groupId && tab.groupId !== -1)
+      const allGrouped = tabs.filter(tab => tab.groupId && tab.groupId !== -1)
+
+      // "Ungroup All" is still the extension acting, so protected groups survive
+      // it. Users can dissolve one from the browser's own right-click menu.
+      const protectedGroupIds = await this.getProtectedGroupIds()
+      const groupedTabs = allGrouped.filter(tab => !protectedGroupIds.has(tab.groupId as number))
 
       if (groupedTabs.length > 0) {
         const tabIds = groupedTabs.map(tab => tab.id!).filter(id => id !== undefined)

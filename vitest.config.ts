@@ -26,7 +26,8 @@ export default defineConfig({
         "utils/UrlPatternMatcher.ts",
         "utils/WebGpuUtils.ts",
         "utils/withTabEditRetry.ts",
-        "services/TabSortService.ts"
+        "services/TabSortService.ts",
+        "services/FirstRunService.ts"
       ],
       exclude: [
         "**/node_modules/**",

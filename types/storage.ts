@@ -78,6 +78,12 @@ export interface StorageSchema {
   hideContextMenu: boolean
   /** User-selected UI locale override ("auto" = follow browser) */
   userLocale: UserLocale
+  /**
+   * Group titles auto-grouping must never touch. Declared by the user, never
+   * inferred — seeded once at install from groups that already existed, and
+   * edited from the group's right-click menu.
+   */
+  protectedGroupTitles: string[]
 }
 
 /**
@@ -102,7 +108,8 @@ export const DEFAULT_STATE: StorageSchema = {
   sortGroupsDirection: "asc",
   indexGroupTitles: false,
   hideContextMenu: false,
-  userLocale: "auto"
+  userLocale: "auto",
+  protectedGroupTitles: []
 }
 
 /**

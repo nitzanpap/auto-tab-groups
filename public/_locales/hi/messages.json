@@ -85,6 +85,22 @@
     "message": "नए खाली टैब्स को \"System\" के अंतर्गत समूहित करें",
     "description": "Label for the toggle that groups blank/new tabs under a System group."
   },
+  "contextMenuProtectGroup": {
+    "message": "समूह को स्वतः-समूहन से बाहर रखें",
+    "description": "Right-click menu: stop auto-grouping from managing the clicked tab's group."
+  },
+  "settingProtectedGroups": {
+    "message": "स्वतः-समूहन से बाहर रखे गए समूह",
+    "description": "Label for the list of groups excluded from auto-grouping."
+  },
+  "settingProtectedGroupsHelp": {
+    "message": "किसी टैब पर राइट-क्लिक करके उसका समूह बाहर रखें। हटाने पर स्वतः-समूहन उसे फिर से प्रबंधित करेगा",
+    "description": "Help text explaining how to add and remove excluded groups."
+  },
+  "settingProtectedGroupsRemove": {
+    "message": "इस समूह के लिए स्वतः-समूहन फिर से शुरू करें",
+    "description": "Tooltip on the button that removes a group from the excluded list."
+  },
   "settingMinimumTabsForGroup": {
     "message": "समूह बनाने के लिए न्यूनतम टैब्स",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."
