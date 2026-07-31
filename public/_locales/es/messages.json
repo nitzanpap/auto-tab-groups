@@ -133,6 +133,14 @@
     "message": "Configurar",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "Esperar a que vea una pestaña nueva antes de agruparla",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "Las pestañas abiertas en segundo plano permanecen junto a la pestaña de origen hasta que cambies a ellas",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Mínimo de pestañas para formar un grupo",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

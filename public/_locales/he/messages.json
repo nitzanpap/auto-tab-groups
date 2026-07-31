@@ -133,6 +133,14 @@
     "message": "הגדרה",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "המתן שאצפה בלשונית חדשה לפני שתקובץ",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "לשוניות שנפתחות ברקע נשארות ליד הלשונית שממנה נפתחו עד שתעברו אליהן",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "מינימום לשוניות ליצירת קבוצה",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

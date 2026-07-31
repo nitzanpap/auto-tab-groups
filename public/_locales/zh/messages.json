@@ -133,6 +133,14 @@
     "message": "设置",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "先查看新标签页后再分组",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "在后台打开的标签页会留在来源标签页旁边,直到你切换过去",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "形成分组所需的最少标签页数",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

@@ -46,6 +46,24 @@ Titles are matched with any sort-index prefix stripped, so the "Number groups"
 setting doesn't break exclusions. Renaming an excluded group ends its
 exclusion — title is identity here, as everywhere else in the extension.
 
+## Waiting Until a Tab Is Viewed
+
+Off by default. When on, a tab opened **in the background from another tab**
+stays next to the tab it came from until you switch to it — then it is grouped
+as usual.
+
+This exists because filing a tab the instant it appears is what makes it seem
+to vanish: you middle-click a search result, look away, and it has already been
+moved to a group elsewhere in a long tab strip.
+
+- Tabs opened in the foreground are unaffected — they are active immediately,
+  so they group exactly as before.
+- Tabs with no opener (address bar, bookmarks, restored sessions) are unaffected.
+- "Group Tabs" files everything, including tabs still waiting to be viewed.
+
+The grouping decision itself is unchanged — still purely a function of the URL.
+Only its timing moves.
+
 ## Keyboard Shortcuts
 
 The extension registers four commands, plus the browser's built-in "open the
