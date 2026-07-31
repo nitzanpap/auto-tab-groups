@@ -108,9 +108,6 @@ function sendMessage<T = Record<string, unknown>>(message: Record<string, unknow
 async function loadExistingRule(): Promise<void> {
   if (!isEditMode || !ruleId) return
 
-  modalTitle.textContent = t("ruleModalEditTitle", "Edit Custom Rule")
-  saveButton.textContent = t("ruleModalUpdate", "Update Rule")
-
   try {
     const response = await sendMessage<{
       customRules?: Record<string, RuleData>
@@ -319,12 +316,6 @@ function cancel(): void {
 // Apply blacklist mode UI adjustments
 function applyBlacklistMode(): void {
   if (!isBlacklistMode) return
-  modalTitle.textContent = isEditMode
-    ? t("blacklistEditTitle", "Edit Blacklist Rule")
-    : t("blacklistAddButton", "Add to Blacklist")
-  saveButton.textContent = isEditMode
-    ? t("ruleModalUpdate", "Update Rule")
-    : t("ruleModalSave", "Save Rule")
   colorGroup.style.display = "none"
   minimumTabsField.style.display = "none"
   ruleNameInput.required = false
@@ -360,8 +351,6 @@ function setupColorPicker(): void {
 // Pre-populate form from group data
 function loadFromGroup(): void {
   if (!isFromGroup) return
-
-  modalTitle.textContent = t("contextMenuCreateRuleFromGroup", "Create Rule from Group")
 
   // Pre-populate form fields
   ruleNameInput.value = groupName
@@ -483,6 +472,30 @@ async function generateRuleFromDescription(): Promise<void> {
     aiGenerateBtn.classList.remove("generating")
   }
 }
+/**
+ * Applies the title and save-button text for the current mode.
+ *
+ * This has to run *after* applyI18nToDom(): that pass re-translates every
+ * [data-i18n] element, so anything written to the title earlier — during
+ * blacklist, edit or from-group setup — would be overwritten by the generic
+ * "Create Custom Rule". Running it here also guarantees t() sees the loaded
+ * override catalog rather than falling back to the browser UI locale.
+ */
+function applyModeText(): void {
+  if (isBlacklistMode) {
+    modalTitle.textContent = isEditMode
+      ? t("blacklistEditTitle", "Edit Blacklist Rule")
+      : t("blacklistAddButton", "Add to Blacklist")
+  } else if (isEditMode) {
+    modalTitle.textContent = t("ruleModalEditTitle", "Edit Custom Rule")
+  } else if (isFromGroup) {
+    modalTitle.textContent = t("contextMenuCreateRuleFromGroup", "Create Rule from Group")
+  }
+
+  saveButton.textContent = isEditMode
+    ? t("ruleModalUpdate", "Update Rule")
+    : t("ruleModalSave", "Save Rule")
+}
 // Initialize — resolve locale from background, load override catalog if any,
 // then translate the DOM and set text direction.
 ;(async () => {
@@ -491,12 +504,15 @@ async function generateRuleFromDescription(): Promise<void> {
   await initI18n(locale)
   applyI18nToDom()
   applyDirectionToDom(resolveEffectiveLocale(locale))
+
+  // Both call t(), so they wait for the catalog and for the translation pass
+  applyModeText()
+  checkAiAvailability()
 })()
 setupColorPicker()
 loadExistingRule()
 loadFromGroup()
 setupPatternModeToggle()
-checkAiAvailability()
 
 // Auto-focus AI description when opened via AI Assist entry point
 if (isAiAssist) {
