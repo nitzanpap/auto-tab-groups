@@ -63,6 +63,20 @@ github.com/**/issues        -> github.com/owner/repo/issues
 console.cloud.google.com/** -> any path on console.cloud.google.com
 ```
 
+### Rule Priority
+
+When two rules match the same tab, the one with the higher `priority` wins.
+Rules default to priority `1`, and rules that tie keep creation order — so the
+older rule wins, as before.
+
+Two caveats:
+
+- An exact pattern still beats an implied one regardless of priority:
+  `www.example.com` wins over `example.com` matching `www.example.com` by
+  auto-subdomain, even if the latter has a higher priority.
+- Priority has no UI yet. Set it the same way as `minimumTabs`: export your
+  rules, edit the JSON, re-import.
+
 ### Limitations
 
 - Single `**` per domain or path component
@@ -95,7 +109,8 @@ console.cloud.google.com/** -> any path on console.cloud.google.com
       "domains": ["example.com", "*.subdomain.com"],
       "color": "blue",
       "enabled": true,
-      "minimumTabs": 1
+      "minimumTabs": 1,
+      "priority": 1
     }
   },
   "totalRules": 1

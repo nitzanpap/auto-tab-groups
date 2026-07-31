@@ -247,7 +247,7 @@ function updateRulesDisplay(): void {
   } else {
     groupingRules.sort((a, b) => {
       if (a.priority !== b.priority) {
-        return a.priority - b.priority
+        return b.priority - a.priority
       }
       return a.name.localeCompare(b.name)
     })
