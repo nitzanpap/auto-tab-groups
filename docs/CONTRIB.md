@@ -41,6 +41,14 @@ bun run dev
 | `bun run code:check` | Run Biome check and typecheck |
 | `bun run code:fix` | Fix lint and formatting issues |
 
+## Releasing
+
+1. Bump `version` in `package.json` (WXT reads it for both manifests).
+2. Add an entry to `CHANGELOG.md` under the new version — what changed for
+   users, not what changed in the code.
+3. `bun run zip && bun run zip:firefox` produces the store packages in
+   `.output/`, including the sources zip AMO requires.
+
 ## Continuous Integration
 
 Every push to `master` and every pull request runs `.github/workflows/ci.yml`:
