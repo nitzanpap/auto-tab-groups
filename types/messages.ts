@@ -41,6 +41,9 @@ export type MessageAction =
   | "toggleHideContextMenu"
   | "getUserLocale"
   | "setUserLocale"
+  | "getProtectedGroups"
+  | "addProtectedGroup"
+  | "removeProtectedGroup"
   | "getCustomRules"
   | "addCustomRule"
   | "updateCustomRule"
@@ -84,6 +87,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getIndexGroupTitles"
     | "getHideContextMenu"
     | "getUserLocale"
+    | "getProtectedGroups"
     | "getCustomRules"
     | "getRulesStats"
     | "exportRules"
@@ -118,6 +122,22 @@ export interface ToggleGroupNewTabsMessage extends BaseMessage {
 export interface ToggleSystemGroupMessage extends BaseMessage {
   action: "toggleSystemGroup"
   enabled: boolean
+}
+
+/**
+ * Add a group title to the protected list
+ */
+export interface AddProtectedGroupMessage extends BaseMessage {
+  action: "addProtectedGroup"
+  title: string
+}
+
+/**
+ * Remove a group title from the protected list
+ */
+export interface RemoveProtectedGroupMessage extends BaseMessage {
+  action: "removeProtectedGroup"
+  title: string
 }
 
 /**

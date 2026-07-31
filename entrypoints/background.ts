@@ -15,6 +15,7 @@ import {
   tabGroupService,
   tabGroupState
 } from "../services"
+import { seedProtectedGroupsOnFirstRun } from "../services/FirstRunService"
 import {
   parseAiRuleResponse,
   parseAiSuggestionResponse,
@@ -40,6 +41,7 @@ export default defineBackground(() => {
     if (!stateInitialized) {
       try {
         console.log("Service worker starting - loading state from storage...")
+        await seedProtectedGroupsOnFirstRun()
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
         aiService.updateFromStorage(storageData)
@@ -301,6 +303,34 @@ export default defineBackground(() => {
             await contextMenuService.rebuildMenus()
             result = { locale: tabGroupState.userLocale }
             break
+
+          case "getProtectedGroups":
+            result = { titles: tabGroupState.protectedGroupTitles }
+            break
+
+          case "addProtectedGroup": {
+            const title = msg.title.trim()
+            if (title && !tabGroupState.protectedGroupTitles.includes(title)) {
+              tabGroupState.protectedGroupTitles = [...tabGroupState.protectedGroupTitles, title]
+              await saveState()
+            }
+            result = { titles: tabGroupState.protectedGroupTitles }
+            break
+          }
+
+          case "removeProtectedGroup": {
+            tabGroupState.protectedGroupTitles = tabGroupState.protectedGroupTitles.filter(
+              title => title !== msg.title
+            )
+            await saveState()
+
+            // The group is fair game again — pick it up on the next pass
+            if (tabGroupState.autoGroupingEnabled) {
+              await tabGroupService.groupAllTabs()
+            }
+            result = { titles: tabGroupState.protectedGroupTitles }
+            break
+          }
 
           case "toggleIndexGroupTitles": {
             tabGroupState.indexGroupTitles = msg.enabled

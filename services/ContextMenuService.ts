@@ -7,9 +7,11 @@ import type { Browser } from "wxt/browser"
 import type { CustomRule, TabGroupColor } from "../types"
 import { extractDomain } from "../utils/DomainUtils"
 import { t } from "../utils/i18n"
+import { saveAllStorage } from "../utils/storage"
 import { rulesService } from "./RulesService"
 import { tabGroupService } from "./TabGroupService"
 import { tabGroupState } from "./TabGroupState"
+import { stripIndexPrefix } from "./TabSortService"
 
 /**
  * Data collected from a tab group for rule creation
@@ -48,6 +50,7 @@ class ContextMenuService {
   private readonly MENU_ID_CREATE_RULE = "create-rule-from-group"
   private readonly MENU_ID_ADD_TO_RULE_PARENT = "add-tab-to-rule"
   private readonly MENU_ID_ADD_TO_BLACKLIST = "add-to-blacklist"
+  private readonly MENU_ID_PROTECT_GROUP = "protect-group"
   private readonly MENU_ID_NO_RULES = "add-to-rule-none"
   private initialized = false
   private menusCreated = false
@@ -114,6 +117,12 @@ class ContextMenuService {
     await browser.contextMenus.create({
       id: this.MENU_ID_ADD_TO_BLACKLIST,
       title: t("contextMenuAddToBlacklist", "Add to Blacklist"),
+      contexts
+    })
+
+    await browser.contextMenus.create({
+      id: this.MENU_ID_PROTECT_GROUP,
+      title: t("contextMenuProtectGroup", "Exclude group from auto-grouping"),
       contexts
     })
 
@@ -243,9 +252,50 @@ class ContextMenuService {
       return
     }
 
+    if (menuId === this.MENU_ID_PROTECT_GROUP) {
+      await this.handleProtectGroup(tab)
+      return
+    }
+
     if (menuId.startsWith(ADD_TO_RULE_PREFIX)) {
       const ruleId = menuId.slice(ADD_TO_RULE_PREFIX.length)
       await this.handleAddTabToRule(ruleId, tab)
+    }
+  }
+
+  /**
+   * Handles the "Exclude group from auto-grouping" menu item.
+   * Adding is contextual — you are looking at the group. Removing lives in the
+   * popup, where every protected title is listed together.
+   */
+  private async handleProtectGroup(tab?: Browser.tabs.Tab): Promise<void> {
+    if (!tab?.id || !tab.groupId || tab.groupId === -1) {
+      console.log("[ContextMenuService] Tab is not in a group, nothing to protect")
+      return
+    }
+
+    try {
+      if (!browser.tabGroups) return
+
+      const group = await browser.tabGroups.get(tab.groupId)
+      const title = stripIndexPrefix(group?.title || "")
+
+      if (!title) {
+        console.log("[ContextMenuService] Group has no title, cannot protect it")
+        return
+      }
+
+      if (tabGroupState.protectedGroupTitles.includes(title)) {
+        console.log(`[ContextMenuService] Group "${title}" is already protected`)
+        return
+      }
+
+      tabGroupState.protectedGroupTitles = [...tabGroupState.protectedGroupTitles, title]
+      await saveAllStorage(tabGroupState.getStorageData())
+
+      console.log(`[ContextMenuService] Protected group "${title}" from auto-grouping`)
+    } catch (error) {
+      console.error("[ContextMenuService] Error protecting group:", error)
     }
   }
 

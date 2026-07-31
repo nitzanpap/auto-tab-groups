@@ -85,6 +85,22 @@
     "message": "تجميع علامات التبويب الفارغة الجديدة تحت «System»",
     "description": "Label for the toggle that groups blank/new tabs under a System group."
   },
+  "contextMenuProtectGroup": {
+    "message": "استبعاد المجموعة من التجميع التلقائي",
+    "description": "Right-click menu: stop auto-grouping from managing the clicked tab's group."
+  },
+  "settingProtectedGroups": {
+    "message": "المجموعات المستبعدة من التجميع التلقائي",
+    "description": "Label for the list of groups excluded from auto-grouping."
+  },
+  "settingProtectedGroupsHelp": {
+    "message": "انقر بزر الفأرة الأيمن على علامة تبويب لاستبعاد مجموعتها. أزل الإدخال ليعود التجميع التلقائي إلى إدارتها",
+    "description": "Help text explaining how to add and remove excluded groups."
+  },
+  "settingProtectedGroupsRemove": {
+    "message": "استئناف التجميع التلقائي لهذه المجموعة",
+    "description": "Tooltip on the button that removes a group from the excluded list."
+  },
   "settingMinimumTabsForGroup": {
     "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

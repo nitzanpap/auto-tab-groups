@@ -222,6 +222,40 @@ footer {
   background-color: #3f8f6a;
 }
 
+.protected-groups-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.protected-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--secondary-color, #e5e7eb);
+  font-size: 12px;
+}
+
+.protected-group-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.protected-group-chip button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  color: inherit;
+}
+
 .toggle-container.disabled {
   opacity: 0.5;
 }
@@ -1548,4 +1582,9 @@ input:checked + .slider:before {
 [dir="rtl"] .help-text,
 [dir="rtl"] .settings-info {
   text-align: right;
+}
+
+/* Utility — declared last so it beats the layout rules above */
+.hidden {
+  display: none;
 }

@@ -21,6 +21,11 @@ const expandAllButton = document.getElementById("expandAllButton") as HTMLButton
 const autoGroupToggle = document.getElementById("autoGroupToggle") as HTMLInputElement
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTMLInputElement
 const systemGroupToggle = document.getElementById("systemGroupToggle") as HTMLInputElement
+const protectedGroupsContainer = document.getElementById(
+  "protectedGroupsContainer"
+) as HTMLDivElement
+const protectedGroupsList = document.getElementById("protectedGroupsList") as HTMLDivElement
+const protectedGroupsHelp = document.getElementById("protectedGroupsHelp") as HTMLDivElement
 const groupByToggleOptions = document.querySelectorAll<HTMLButtonElement>(
   ".group-by-toggle-bar:not(.sort-direction-toggle-bar) .toggle-option"
 )
@@ -717,7 +722,48 @@ function syncGroupNewTabsAvailability(systemGroupEnabled: boolean): void {
   groupNewTabsToggle.closest(".toggle-container")?.classList.toggle("disabled", !systemGroupEnabled)
 }
 
+/**
+ * Renders the groups the user excluded from auto-grouping. The whole block
+ * stays hidden until there is something to show, so people who never use the
+ * feature never see it.
+ */
+async function renderProtectedGroups(): Promise<void> {
+  const response = await sendMessage<{ titles?: string[] }>({ action: "getProtectedGroups" })
+  const titles = response?.titles ?? []
+
+  protectedGroupsList.innerHTML = ""
+  const isEmpty = titles.length === 0
+
+  for (const element of [protectedGroupsContainer, protectedGroupsList, protectedGroupsHelp]) {
+    element.classList.toggle("hidden", isEmpty)
+  }
+
+  for (const title of titles) {
+    const chip = document.createElement("div")
+    chip.className = "protected-group-chip"
+
+    const label = document.createElement("span")
+    label.textContent = title
+    label.title = title
+
+    const remove = document.createElement("button")
+    remove.type = "button"
+    remove.textContent = "\u00d7"
+    remove.title = t("settingProtectedGroupsRemove", "Resume auto-grouping for this group")
+    remove.addEventListener("click", async () => {
+      await sendMessage({ action: "removeProtectedGroup", title })
+      await renderProtectedGroups()
+    })
+
+    chip.appendChild(label)
+    chip.appendChild(remove)
+    protectedGroupsList.appendChild(chip)
+  }
+}
+
 // Initialize toggle states
+renderProtectedGroups()
+
 sendMessage<{ enabled?: boolean }>({ action: "getAutoGroupState" }).then(response => {
   if (response?.enabled !== undefined) {
     autoGroupToggle.checked = response.enabled

@@ -25,6 +25,27 @@ if (changeInfo.pinned === false) {
 }
 ```
 
+## Groups Excluded From Auto-Grouping
+
+Auto-grouping never touches a group whose title is on the excluded list. The
+list is always explicit — the extension does not try to work out which groups
+you made yourself.
+
+- **Adding**: right-click a tab in the group → "Exclude group from auto-grouping".
+- **Removing**: the popup and sidebar list every excluded group; removing one
+  hands it straight back to auto-grouping.
+- **At install**: groups that already existed the first time the extension runs
+  are excluded automatically. A group present before the extension has ever run
+  cannot have been created by it, so this needs no guesswork — it stops a fresh
+  install from dissolving organization you built by hand.
+
+Excluded groups are skipped by automatic grouping, by the "Group Tabs" button,
+and by "Ungroup All". To dissolve one, use the browser's own right-click menu.
+
+Titles are matched with any sort-index prefix stripped, so the "Number groups"
+setting doesn't break exclusions. Renaming an excluded group ends its
+exclusion — title is identity here, as everywhere else in the extension.
+
 ## URL Patterns
 
 Custom rules support advanced URL pattern matching beyond simple domains.
