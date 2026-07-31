@@ -79,6 +79,8 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 | TLD Wildcard | `google.**/forms` | `google.com/forms`, `google.org/forms` |
 | Path Wildcard | `site.com/**/admin` | `site.com/any/path/admin` |
 | Catch-All | `*` | everything no other rule took |
+| Query String | `site.com/?ticket=VZ01` | that exact query |
+| Query Extraction | `site.com/?ticket={ticket}` | a group per ticket value |
 
 ### Catch-All Rules
 
@@ -116,6 +118,23 @@ Two caveats:
   auto-subdomain, even if the latter has a higher priority.
 - Priority has no UI yet. Set it the same way as `minimumTabs`: export your
   rules, edit the JSON, re-import.
+
+### Query Strings
+
+A pattern that contains `?` is matched against the query string as well as the
+host and path, so tabs on one domain can be split by a parameter:
+
+```txt
+domain.cz/?ticket={ticket}          -> a group per ticket value
+domain.cz/?ticket=VZ01              -> only that ticket
+/.*domain\.cz.*ticket=([a-z0-9-]+)/ -> same, via regex; the capture names the group
+```
+
+With `{variable}` or a regex capture, the captured value becomes the group
+title — so `?ticket=VZ01` and `?ticket=VZ02` land in separate groups.
+
+The query is only consulted after host and path have failed to match, so
+patterns written before this existed behave exactly as they did.
 
 ### Limitations
 

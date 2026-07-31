@@ -905,4 +905,94 @@ describe("UrlPatternMatcher", () => {
       expect(urlPatternMatcher.splitDomainPort("example.co").portPattern).toBeNull()
     })
   })
+  describe("query string matching", () => {
+    const TICKET_REGEX = "/.*domain\\.cz.*ticket=([a-z0-9-]+)/"
+
+    it("should match a regex against the query string", () => {
+      const result = urlPatternMatcher.match("https://domain.cz/?ticket=VZ01", TICKET_REGEX)
+      expect(result.matched).toBe(true)
+    })
+
+    it("should name the group from the captured value", () => {
+      // The point of the feature: one group per ticket, not one per domain
+      expect(
+        urlPatternMatcher.match("https://domain.cz/?ticket=VZ01", TICKET_REGEX).groupName
+      ).toBe("VZ01")
+      expect(
+        urlPatternMatcher.match("https://domain.cz/?a=1&ticket=VZ02&b=2", TICKET_REGEX).groupName
+      ).toBe("VZ02")
+    })
+
+    it("should not match when the query is absent", () => {
+      expect(urlPatternMatcher.match("https://domain.cz/", TICKET_REGEX).matched).toBe(false)
+    })
+
+    it("should extract a query value with a segment pattern", () => {
+      const result = urlPatternMatcher.match(
+        "https://domain.cz/?ticket=VZ03",
+        "domain.cz/?ticket={ticket}"
+      )
+
+      expect(result.matched).toBe(true)
+      expect(result.extractedValues.ticket).toBe("VZ03")
+      expect(result.groupName).toBe("VZ03")
+    })
+
+    it("should match a literal query with a simple pattern", () => {
+      expect(
+        urlPatternMatcher.match("https://domain.cz/?ticket=VZ01", "domain.cz/?ticket=VZ01").matched
+      ).toBe(true)
+      expect(
+        urlPatternMatcher.match("https://domain.cz/?ticket=VZ02", "domain.cz/?ticket=VZ01").matched
+      ).toBe(false)
+    })
+
+    it("should support a wildcard inside the query", () => {
+      expect(
+        urlPatternMatcher.match("https://domain.cz/?ticket=VZ09", "domain.cz/?ticket=*").matched
+      ).toBe(true)
+    })
+
+    it("should match a query on a path as well as a root", () => {
+      expect(
+        urlPatternMatcher.match("https://shop.com/list?page=2", "shop.com/list?page=2").matched
+      ).toBe(true)
+    })
+
+    it("should accept query characters when validating", () => {
+      expect(urlPatternMatcher.validatePattern("domain.cz/?ticket=VZ01").isValid).toBe(true)
+      expect(urlPatternMatcher.validatePattern("domain.cz/?ticket={ticket}").isValid).toBe(true)
+      expect(urlPatternMatcher.validatePattern("shop.com/list?a=1&b=2").isValid).toBe(true)
+    })
+
+    describe("existing patterns are unaffected", () => {
+      it("should still match a domain pattern on a URL carrying a query", () => {
+        expect(urlPatternMatcher.match("https://example.com/?q=1", "example.com").matched).toBe(
+          true
+        )
+      })
+
+      it("should still match path patterns unchanged", () => {
+        expect(
+          urlPatternMatcher.match("https://example.com/admin/x", "example.com/admin/*").matched
+        ).toBe(true)
+        expect(urlPatternMatcher.match("https://example.com/a/b", "example.com/a/**").matched).toBe(
+          true
+        )
+      })
+
+      it("should not let a query satisfy a path pattern", () => {
+        // ?admin=1 must not be mistaken for the /admin path
+        expect(
+          urlPatternMatcher.match("https://example.com/?admin=1", "example.com/admin").matched
+        ).toBe(false)
+      })
+
+      it("should keep a path-anchored regex from matching only the query", () => {
+        expect(
+          urlPatternMatcher.match("https://example.com/?x=/admin", "/example\\.com/admin/").matched
+        ).toBe(false)
+      })
+    })
+  })
 })
