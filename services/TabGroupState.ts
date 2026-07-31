@@ -25,6 +25,7 @@ class TabGroupState {
   autoCollapseEnabled: boolean
   autoCollapseDelayMs: number
   openTabNextToCurrent: boolean
+  deferGroupingUntilSeen: boolean
   sortGroupsAlphabetically: boolean
   sortGroupsDirection: SortDirection
   indexGroupTitles: boolean
@@ -43,6 +44,7 @@ class TabGroupState {
     this.autoCollapseEnabled = DEFAULT_STATE.autoCollapseEnabled
     this.autoCollapseDelayMs = DEFAULT_STATE.autoCollapseDelayMs
     this.openTabNextToCurrent = DEFAULT_STATE.openTabNextToCurrent
+    this.deferGroupingUntilSeen = DEFAULT_STATE.deferGroupingUntilSeen
     this.sortGroupsAlphabetically = DEFAULT_STATE.sortGroupsAlphabetically
     this.sortGroupsDirection = DEFAULT_STATE.sortGroupsDirection
     this.indexGroupTitles = DEFAULT_STATE.indexGroupTitles
@@ -64,6 +66,7 @@ class TabGroupState {
     this.autoCollapseEnabled = data.autoCollapseEnabled ?? this.autoCollapseEnabled
     this.autoCollapseDelayMs = data.autoCollapseDelayMs ?? this.autoCollapseDelayMs
     this.openTabNextToCurrent = data.openTabNextToCurrent ?? this.openTabNextToCurrent
+    this.deferGroupingUntilSeen = data.deferGroupingUntilSeen ?? this.deferGroupingUntilSeen
     this.sortGroupsAlphabetically = data.sortGroupsAlphabetically ?? this.sortGroupsAlphabetically
     this.sortGroupsDirection = data.sortGroupsDirection ?? this.sortGroupsDirection
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
@@ -96,6 +99,7 @@ class TabGroupState {
       autoCollapseEnabled: this.autoCollapseEnabled,
       autoCollapseDelayMs: this.autoCollapseDelayMs,
       openTabNextToCurrent: this.openTabNextToCurrent,
+      deferGroupingUntilSeen: this.deferGroupingUntilSeen,
       sortGroupsAlphabetically: this.sortGroupsAlphabetically,
       sortGroupsDirection: this.sortGroupsDirection,
       indexGroupTitles: this.indexGroupTitles,

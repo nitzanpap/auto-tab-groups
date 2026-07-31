@@ -133,6 +133,14 @@
     "message": "إعداد",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "الانتظار حتى أعرض علامة التبويب الجديدة قبل تجميعها",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "علامات التبويب التي تُفتح في الخلفية تبقى بجوار علامة التبويب التي فُتحت منها حتى تنتقل إليها",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

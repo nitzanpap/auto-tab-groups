@@ -316,6 +316,16 @@ export default defineBackground(() => {
             result = { locale: tabGroupState.userLocale }
             break
 
+          case "getDeferGroupingUntilSeen":
+            result = { enabled: tabGroupState.deferGroupingUntilSeen }
+            break
+
+          case "toggleDeferGroupingUntilSeen":
+            tabGroupState.deferGroupingUntilSeen = msg.enabled
+            await saveState()
+            result = { enabled: tabGroupState.deferGroupingUntilSeen }
+            break
+
           case "getProtectedGroups":
             result = { titles: tabGroupState.protectedGroupTitles }
             break
@@ -931,6 +941,11 @@ export default defineBackground(() => {
   browser.tabs.onActivated.addListener(async activeInfo => {
     try {
       await ensureStateLoaded()
+
+      // A tab that was left alone until first view gets grouped now
+      if (tabGroupState.deferGroupingUntilSeen && tabGroupState.autoGroupingEnabled) {
+        await tabGroupService.handleTabUpdate(activeInfo.tabId)
+      }
 
       if (!tabGroupState.autoCollapseEnabled) return
 

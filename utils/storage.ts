@@ -37,6 +37,10 @@ export const protectedGroupTitles = storage.defineItem<string[]>("local:protecte
   fallback: DEFAULT_STATE.protectedGroupTitles
 })
 
+export const deferGroupingUntilSeen = storage.defineItem<boolean>("local:deferGroupingUntilSeen", {
+  fallback: DEFAULT_STATE.deferGroupingUntilSeen
+})
+
 export const groupByMode = storage.defineItem<GroupByMode>("local:groupByMode", {
   fallback: DEFAULT_STATE.groupByMode
 })
@@ -134,7 +138,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     indexGroupTitlesValue,
     hideContextMenuValue,
     userLocaleValue,
-    protectedGroupTitlesValue
+    protectedGroupTitlesValue,
+    deferGroupingUntilSeenValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -155,7 +160,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     indexGroupTitles.getValue(),
     hideContextMenu.getValue(),
     userLocale.getValue(),
-    protectedGroupTitles.getValue()
+    protectedGroupTitles.getValue(),
+    deferGroupingUntilSeen.getValue()
   ])
 
   return {
@@ -178,7 +184,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     indexGroupTitles: indexGroupTitlesValue,
     hideContextMenu: hideContextMenuValue,
     userLocale: userLocaleValue,
-    protectedGroupTitles: protectedGroupTitlesValue
+    protectedGroupTitles: protectedGroupTitlesValue,
+    deferGroupingUntilSeen: deferGroupingUntilSeenValue
   }
 }
 
@@ -247,6 +254,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.protectedGroupTitles !== undefined) {
     promises.push(protectedGroupTitles.setValue(data.protectedGroupTitles))
+  }
+  if (data.deferGroupingUntilSeen !== undefined) {
+    promises.push(deferGroupingUntilSeen.setValue(data.deferGroupingUntilSeen))
   }
   await Promise.all(promises)
 }

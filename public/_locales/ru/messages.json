@@ -133,6 +133,14 @@
     "message": "Настроить",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "Группировать новую вкладку только после её открытия",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "Вкладки, открытые в фоне, остаются рядом с исходной, пока вы на них не перейдёте",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Минимальное число вкладок для создания группы",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

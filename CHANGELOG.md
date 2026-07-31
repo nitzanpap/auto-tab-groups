@@ -11,6 +11,16 @@ for those.
 
 ## [Unreleased]
 
+## [3.12.0]
+
+### Added
+
+- Optional "wait until I view a new tab before grouping it". Off by default.
+  When on, a tab opened in the background from another tab stays next to the
+  tab it came from until you switch to it, instead of being filed away before
+  you have seen it. Foreground tabs, tabs with no opener, and the "Group Tabs"
+  button are unaffected ([#89], addresses [#68] / [#88]).
+
 ## [3.11.0]
 
 ### Added
@@ -110,7 +120,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.11.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.12.0...HEAD
+[3.12.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.12.0
 [3.11.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.11.0
 [3.10.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.10.0
 [3.9.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.9.1
@@ -124,6 +135,8 @@ for those.
 [#23]: https://github.com/nitzanpap/auto-tab-groups/issues/23
 [#25]: https://github.com/nitzanpap/auto-tab-groups/issues/25
 [#27]: https://github.com/nitzanpap/auto-tab-groups/issues/27
+[#68]: https://github.com/nitzanpap/auto-tab-groups/issues/68
+[#88]: https://github.com/nitzanpap/auto-tab-groups/issues/88
 [#29]: https://github.com/nitzanpap/auto-tab-groups/issues/29
 [#31]: https://github.com/nitzanpap/auto-tab-groups/issues/31
 [#74]: https://github.com/nitzanpap/auto-tab-groups/issues/74
@@ -138,3 +151,4 @@ for those.
 [#84]: https://github.com/nitzanpap/auto-tab-groups/pull/84
 [#86]: https://github.com/nitzanpap/auto-tab-groups/pull/86
 [#87]: https://github.com/nitzanpap/auto-tab-groups/pull/87
+[#89]: https://github.com/nitzanpap/auto-tab-groups/pull/89

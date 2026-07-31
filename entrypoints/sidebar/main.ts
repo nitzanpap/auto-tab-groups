@@ -21,6 +21,7 @@ const expandAllButton = document.getElementById("expandAllButton") as HTMLButton
 const autoGroupToggle = document.getElementById("autoGroupToggle") as HTMLInputElement
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTMLInputElement
 const systemGroupToggle = document.getElementById("systemGroupToggle") as HTMLInputElement
+const deferGroupingToggle = document.getElementById("deferGroupingToggle") as HTMLInputElement
 const protectedGroupsContainer = document.getElementById(
   "protectedGroupsContainer"
 ) as HTMLDivElement
@@ -781,6 +782,19 @@ openShortcutsButton.addEventListener("click", async () => {
     console.error("[Popup] Could not open the shortcuts page:", error)
     openShortcutsButton.textContent = url
   }
+})
+
+sendMessage<{ enabled?: boolean }>({ action: "getDeferGroupingUntilSeen" }).then(response => {
+  if (response?.enabled !== undefined) {
+    deferGroupingToggle.checked = response.enabled
+  }
+})
+
+deferGroupingToggle.addEventListener("change", event => {
+  sendMessage({
+    action: "toggleDeferGroupingUntilSeen",
+    enabled: (event.target as HTMLInputElement).checked
+  })
 })
 
 // Initialize toggle states

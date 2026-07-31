@@ -34,6 +34,28 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Whether this tab was opened in the background and the user hasn't switched
+   * to it yet, with the "wait until I view it" setting on.
+   *
+   * Filing a tab the moment it appears is what makes it seem to vanish: you
+   * middle-click a search result, look away, and it has been moved to a group
+   * elsewhere in the strip before you ever saw it. Waiting until the tab is
+   * activated leaves it next to the tab it came from, where you expect it, and
+   * changes nothing for tabs that open in the foreground — those are active
+   * immediately, so they group exactly as before.
+   *
+   * Only applies to tabs opened from another tab (openerTabId) that this
+   * service saw created, so restored sessions and address-bar tabs are
+   * untouched.
+   */
+  private shouldWaitForFirstView(tab: Browser.tabs.Tab): boolean {
+    if (!tabGroupState.deferGroupingUntilSeen) return false
+    if (tab.active) return false
+    if (!tab.openerTabId) return false
+    return tab.id !== undefined && this.recentlyCreatedTabIds.has(tab.id)
+  }
+
+  /**
    * Checks if a URL is a new tab URL
    */
   isNewTabUrl(url: string): boolean {
@@ -112,6 +134,13 @@ class TabGroupServiceSimplified {
       // below-threshold ungroup — so protection holds everywhere.
       if (await this.isInProtectedGroup(tab)) {
         console.log(`[TabGroupService] Tab ${tabId} is in a protected group, leaving it alone`)
+        return false
+      }
+
+      // Leave a background tab where it was opened until the user looks at it.
+      // forceGrouping bypasses this, so "Group Tabs" still files everything.
+      if (!forceGrouping && this.shouldWaitForFirstView(tab)) {
+        console.log(`[TabGroupService] Tab ${tabId} not viewed yet, leaving it next to its opener`)
         return false
       }
 

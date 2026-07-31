@@ -133,6 +133,14 @@
     "message": "Set up",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "Wait until I view a new tab before grouping it",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "Tabs opened in the background stay next to the tab they came from until you switch to them",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Minimum tabs to form a group",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

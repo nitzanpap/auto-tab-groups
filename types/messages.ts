@@ -31,6 +31,8 @@ export type MessageAction =
   | "setMinimumTabsForGroup"
   | "getOpenTabNextToCurrent"
   | "toggleOpenTabNextToCurrent"
+  | "getDeferGroupingUntilSeen"
+  | "toggleDeferGroupingUntilSeen"
   | "getSortGroupsAlphabetically"
   | "toggleSortGroupsAlphabetically"
   | "getSortGroupsDirection"
@@ -82,6 +84,7 @@ export interface SimpleMessage extends BaseMessage {
     | "getGroupByMode"
     | "getMinimumTabsForGroup"
     | "getOpenTabNextToCurrent"
+    | "getDeferGroupingUntilSeen"
     | "getSortGroupsAlphabetically"
     | "getSortGroupsDirection"
     | "getIndexGroupTitles"
@@ -161,6 +164,14 @@ export interface SetMinimumTabsMessage extends BaseMessage {
  */
 export interface ToggleOpenTabNextToCurrentMessage extends BaseMessage {
   action: "toggleOpenTabNextToCurrent"
+  enabled: boolean
+}
+
+/**
+ * Toggle deferring grouping until a tab is first viewed
+ */
+export interface ToggleDeferGroupingMessage extends BaseMessage {
+  action: "toggleDeferGroupingUntilSeen"
   enabled: boolean
 }
 

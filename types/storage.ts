@@ -68,6 +68,11 @@ export interface StorageSchema {
   aiModelId: string
   /** Whether to open new tabs next to the current tab (opt-in, default off) */
   openTabNextToCurrent: boolean
+  /**
+   * Whether a tab opened in the background waits until you switch to it before
+   * being grouped, so it stays next to the tab it came from (opt-in, default off)
+   */
+  deferGroupingUntilSeen: boolean
   /** Whether to keep tab groups sorted alphabetically */
   sortGroupsAlphabetically: boolean
   /** Sort direction when alphabetical sorting is enabled ("asc" = A-Z, "desc" = Z-A) */
@@ -104,6 +109,7 @@ export const DEFAULT_STATE: StorageSchema = {
   aiProvider: "webllm",
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
   openTabNextToCurrent: false,
+  deferGroupingUntilSeen: false,
   sortGroupsAlphabetically: false,
   sortGroupsDirection: "asc",
   indexGroupTitles: false,

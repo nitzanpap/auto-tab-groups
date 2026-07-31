@@ -133,6 +133,14 @@
     "message": "सेट अप करें",
     "description": "Button that opens the browser's keyboard shortcut settings page."
   },
+  "settingDeferGrouping": {
+    "message": "नया टैब देखने तक उसे समूहित न करें",
+    "description": "Label for the toggle that waits until a new tab is viewed before grouping it."
+  },
+  "settingDeferGroupingHelp": {
+    "message": "पृष्ठभूमि में खुले टैब्स उसी टैब के पास रहते हैं जहाँ से खुले थे, जब तक आप उन पर नहीं जाते",
+    "description": "Help text for the wait-until-viewed toggle."
+  },
   "settingMinimumTabsForGroup": {
     "message": "समूह बनाने के लिए न्यूनतम टैब्स",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."
