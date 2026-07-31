@@ -41,6 +41,17 @@ bun run dev
 | `bun run code:check` | Run Biome check and typecheck |
 | `bun run code:fix` | Fix lint and formatting issues |
 
+## Continuous Integration
+
+Every push to `master` and every pull request runs `.github/workflows/ci.yml`:
+`bun install --frozen-lockfile`, `bun run code:check`, `bun run test`, then a
+Chrome and a Firefox build. Running `bun run code:check && bun run test` locally
+reproduces it exactly.
+
+E2E tests are not in CI yet — the suite fails roughly one test per full run
+(a different one each time, passing in isolation), so it would report noise
+rather than signal. It goes in once that is fixed.
+
 ## Development Workflow
 
 ### 1. Start Development Server

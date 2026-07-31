@@ -1,5 +1,7 @@
 # 🔖 Auto Tab Groups (Cross-Browser Extension)
 
+[![CI](https://github.com/nitzanpap/auto-tab-groups/actions/workflows/ci.yml/badge.svg)](https://github.com/nitzanpap/auto-tab-groups/actions/workflows/ci.yml)
+
 A lightweight cross-browser extension that automatically groups open tabs by domain, with intelligent domain name handling for better organization. Works on both Chrome and Firefox!
 
 ## 📦 Downloads
