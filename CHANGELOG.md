@@ -11,6 +11,16 @@ for those.
 
 ## [Unreleased]
 
+## [3.11.0]
+
+### Added
+
+- Rules can match query strings. A pattern containing `?` is matched against
+  the query as well as the host and path, so tabs on one domain can be split by
+  a parameter — `domain.cz/?ticket={ticket}` puts each ticket in its own group,
+  and a regex capture does the same. Patterns written before this behave
+  exactly as they did ([#87], closes [#27]).
+
 ## [3.10.0]
 
 ### Added
@@ -100,7 +110,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.10.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.11.0
 [3.10.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.10.0
 [3.9.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.9.1
 [3.9.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.9.0
@@ -112,6 +123,7 @@ for those.
 [3.5.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.5.2
 [#23]: https://github.com/nitzanpap/auto-tab-groups/issues/23
 [#25]: https://github.com/nitzanpap/auto-tab-groups/issues/25
+[#27]: https://github.com/nitzanpap/auto-tab-groups/issues/27
 [#29]: https://github.com/nitzanpap/auto-tab-groups/issues/29
 [#31]: https://github.com/nitzanpap/auto-tab-groups/issues/31
 [#74]: https://github.com/nitzanpap/auto-tab-groups/issues/74
@@ -125,3 +137,4 @@ for those.
 [#82]: https://github.com/nitzanpap/auto-tab-groups/pull/82
 [#84]: https://github.com/nitzanpap/auto-tab-groups/pull/84
 [#86]: https://github.com/nitzanpap/auto-tab-groups/pull/86
+[#87]: https://github.com/nitzanpap/auto-tab-groups/pull/87

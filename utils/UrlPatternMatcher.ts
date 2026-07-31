@@ -114,6 +114,23 @@ class UrlPatternMatcher {
   }
 
   /**
+   * Candidate strings to match a pattern against, query string last.
+   *
+   * The query is tried only after the plain hostname/path has failed, which
+   * keeps this purely additive: a pattern that matched before still matches the
+   * same text with the same capture groups, and only patterns that need the
+   * query see it. Case is preserved so extracted values (a ticket id, say) keep
+   * theirs when they become a group name.
+   */
+  private matchTargets(urlObj: URL, base: string, lowercaseQuery = false): string[] {
+    // The wildcard matcher lowercases its pattern and path, so its query has to
+    // be lowercased too. The extraction matchers keep case, because their
+    // captures become group titles.
+    const search = lowercaseQuery ? urlObj.search.toLowerCase() : urlObj.search
+    return search ? [base, base + search] : [base]
+  }
+
+  /**
    * Matches using simple wildcard patterns
    */
   matchSimpleWildcard(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
@@ -145,8 +162,11 @@ class UrlPatternMatcher {
       }
 
       // Match path part if specified
-      if (hasPath && !this.matchPathWildcard(pathname, pathPattern)) {
-        return { matched: false, extractedValues: {}, groupName: null }
+      if (hasPath) {
+        const targets = this.matchTargets(urlObj, pathname, true)
+        if (!targets.some(target => this.matchPathWildcard(target, pathPattern))) {
+          return { matched: false, extractedValues: {}, groupName: null }
+        }
       }
 
       return {
@@ -283,13 +303,14 @@ class UrlPatternMatcher {
         return { matched: false, extractedValues: {}, groupName: null }
       }
 
-      let targetString = hostname
-      if (pattern.includes("/")) {
-        targetString = hostname + pathname
-      }
-
+      const base = pattern.includes("/") ? hostname + pathname : hostname
       const regex = this.buildSegmentRegex(patternInfo)
-      const match = targetString.match(regex)
+
+      let match: RegExpMatchArray | null = null
+      for (const target of this.matchTargets(urlObj, base)) {
+        match = target.match(regex)
+        if (match) break
+      }
 
       if (!match) {
         return { matched: false, extractedValues: {}, groupName: null }
@@ -430,9 +451,13 @@ class UrlPatternMatcher {
       const regex = new RegExp(regexStr, "i")
 
       const urlObj = new URL(url)
-      const fullUrl = urlObj.hostname + urlObj.pathname
 
-      const match = fullUrl.match(regex)
+      let match: RegExpMatchArray | null = null
+      for (const target of this.matchTargets(urlObj, urlObj.hostname + urlObj.pathname)) {
+        match = target.match(regex)
+        if (match) break
+      }
+
       if (!match) {
         return { matched: false, extractedValues: {}, groupName: null }
       }
@@ -610,7 +635,8 @@ class UrlPatternMatcher {
       }
     }
 
-    if (hasPath && pathPattern && !/^[a-zA-Z0-9._/*-]*$/.test(pathPattern)) {
+    // ?, = and & are allowed so a pattern can address a query string
+    if (hasPath && pathPattern && !/^[a-zA-Z0-9._/*?=&%+~:,-]*$/.test(pathPattern)) {
       return {
         isValid: false,
         error: "Path pattern contains invalid characters",
