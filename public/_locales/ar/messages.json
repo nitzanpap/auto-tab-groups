@@ -101,6 +101,38 @@
     "message": "استئناف التجميع التلقائي لهذه المجموعة",
     "description": "Tooltip on the button that removes a group from the excluded list."
   },
+  "commandOpenPopup": {
+    "message": "فتح Auto Tab Groups",
+    "description": "Keyboard command description: open the extension popup."
+  },
+  "commandToggleAutoGrouping": {
+    "message": "تشغيل أو إيقاف التجميع التلقائي",
+    "description": "Keyboard command description: turn automatic grouping on or off."
+  },
+  "commandGroupAllTabs": {
+    "message": "تجميع كل علامات التبويب الآن",
+    "description": "Keyboard command description: group every open tab now."
+  },
+  "commandUngroupAllTabs": {
+    "message": "إلغاء تجميع كل علامات التبويب",
+    "description": "Keyboard command description: remove every tab group."
+  },
+  "commandToggleCollapse": {
+    "message": "طي أو توسيع كل المجموعات",
+    "description": "Keyboard command description: collapse or expand every group."
+  },
+  "settingKeyboardShortcuts": {
+    "message": "اختصارات لوحة المفاتيح",
+    "description": "Label for the keyboard shortcuts row in advanced settings."
+  },
+  "settingKeyboardShortcutsHelp": {
+    "message": "لا توجد مفاتيح معيّنة افتراضيًا. اختر مفاتيحك من إعدادات اختصارات المتصفح",
+    "description": "Help text explaining that shortcuts are unassigned until the user sets them."
+  },
+  "settingKeyboardShortcutsOpen": {
+    "message": "إعداد",
+    "description": "Button that opens the browser's keyboard shortcut settings page."
+  },
   "settingMinimumTabsForGroup": {
     "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

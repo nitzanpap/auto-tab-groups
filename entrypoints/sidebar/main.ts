@@ -761,6 +761,28 @@ async function renderProtectedGroups(): Promise<void> {
   }
 }
 
+/**
+ * Opens the browser's own keyboard shortcut settings.
+ *
+ * Assigning keys can only happen there — an extension cannot bind them for
+ * you, which is also why nothing is bound until someone visits this page.
+ */
+const openShortcutsButton = document.getElementById("openShortcutsButton") as HTMLButtonElement
+
+openShortcutsButton.addEventListener("click", async () => {
+  const url =
+    import.meta.env.BROWSER === "firefox" ? "about:addons" : "chrome://extensions/shortcuts"
+
+  try {
+    await browser.tabs.create({ url })
+  } catch (error) {
+    // Firefox refuses about: pages from an extension in some versions; fall
+    // back to telling the user where to go rather than failing silently
+    console.error("[Popup] Could not open the shortcuts page:", error)
+    openShortcutsButton.textContent = url
+  }
+})
+
 // Initialize toggle states
 renderProtectedGroups()
 

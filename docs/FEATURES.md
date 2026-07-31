@@ -46,6 +46,25 @@ Titles are matched with any sort-index prefix stripped, so the "Number groups"
 setting doesn't break exclusions. Renaming an excluded group ends its
 exclusion — title is identity here, as everywhere else in the extension.
 
+## Keyboard Shortcuts
+
+The extension registers four commands, plus the browser's built-in "open the
+popup":
+
+| Command | Does |
+| ------- | ---- |
+| Turn auto-grouping on or off | Same as the Auto-Group Mode toggle |
+| Group all tabs now | Same as the Group Tabs button |
+| Ungroup all tabs | Same as the Ungroup All button |
+| Collapse or expand all groups | Same as Collapse All / Expand All |
+
+**No keys are assigned.** The manifest suggests none deliberately, so installing
+the extension never takes a shortcut you already use, and nothing fires until
+you assign keys yourself. Advanced → Keyboard shortcuts → "Set up" opens the
+browser's own shortcut settings (`chrome://extensions/shortcuts` in Chrome,
+Add-ons Manager in Firefox), which is the only place keys can be bound —
+extensions cannot assign them for you.
+
 ## URL Patterns
 
 Custom rules support advanced URL pattern matching beyond simple domains.

@@ -1584,6 +1584,21 @@ input:checked + .slider:before {
   text-align: right;
 }
 
+.shortcuts-button {
+  padding: 6px 14px;
+  border: 1px solid var(--secondary-color, #ccc);
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shortcuts-button:hover {
+  background: var(--secondary-color-dark, #e5e7eb);
+}
+
 /* Utility — declared last so it beats the layout rules above */
 .hidden {
   display: none;

@@ -101,6 +101,38 @@
     "message": "חידוש קיבוץ אוטומטי עבור קבוצה זו",
     "description": "Tooltip on the button that removes a group from the excluded list."
   },
+  "commandOpenPopup": {
+    "message": "פתח את Auto Tab Groups",
+    "description": "Keyboard command description: open the extension popup."
+  },
+  "commandToggleAutoGrouping": {
+    "message": "הפעלה או כיבוי של קיבוץ אוטומטי",
+    "description": "Keyboard command description: turn automatic grouping on or off."
+  },
+  "commandGroupAllTabs": {
+    "message": "קבץ את כל הלשוניות עכשיו",
+    "description": "Keyboard command description: group every open tab now."
+  },
+  "commandUngroupAllTabs": {
+    "message": "בטל קיבוץ של כל הלשוניות",
+    "description": "Keyboard command description: remove every tab group."
+  },
+  "commandToggleCollapse": {
+    "message": "כווץ או הרחב את כל הקבוצות",
+    "description": "Keyboard command description: collapse or expand every group."
+  },
+  "settingKeyboardShortcuts": {
+    "message": "קיצורי מקלדת",
+    "description": "Label for the keyboard shortcuts row in advanced settings."
+  },
+  "settingKeyboardShortcutsHelp": {
+    "message": "כברירת מחדל לא מוגדרים מקשים. בחרו משלכם בהגדרות קיצורי המקלדת של הדפדפן",
+    "description": "Help text explaining that shortcuts are unassigned until the user sets them."
+  },
+  "settingKeyboardShortcutsOpen": {
+    "message": "הגדרה",
+    "description": "Button that opens the browser's keyboard shortcut settings page."
+  },
   "settingMinimumTabsForGroup": {
     "message": "מינימום לשוניות ליצירת קבוצה",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

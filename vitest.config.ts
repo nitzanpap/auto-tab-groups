@@ -27,7 +27,8 @@ export default defineConfig({
         "utils/WebGpuUtils.ts",
         "utils/withTabEditRetry.ts",
         "services/TabSortService.ts",
-        "services/FirstRunService.ts"
+        "services/FirstRunService.ts",
+        "services/CommandService.ts"
       ],
       exclude: [
         "**/node_modules/**",
