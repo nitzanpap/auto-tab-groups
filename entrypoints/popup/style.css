@@ -222,6 +222,14 @@ footer {
   background-color: #3f8f6a;
 }
 
+.toggle-container.disabled {
+  opacity: 0.5;
+}
+
+.toggle-container.disabled .slider {
+  cursor: not-allowed;
+}
+
 .toggle-container {
   display: flex;
   justify-content: space-between;

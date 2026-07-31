@@ -44,6 +44,8 @@ export interface StorageSchema {
   autoGroupingEnabled: boolean
   /** Whether to group new empty tabs under "System" */
   groupNewTabs: boolean
+  /** Whether the "System" group exists at all (off = system tabs stay ungrouped) */
+  systemGroupEnabled: boolean
   /** How to group tabs: by rules only, domain, or subdomain */
   groupByMode: GroupByMode
   /** Custom rules for grouping specific domains */
@@ -84,6 +86,7 @@ export interface StorageSchema {
 export const DEFAULT_STATE: StorageSchema = {
   autoGroupingEnabled: true,
   groupNewTabs: true,
+  systemGroupEnabled: true,
   groupByMode: "domain",
   customRules: {},
   ruleMatchingMode: "exact",

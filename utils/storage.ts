@@ -29,6 +29,10 @@ export const groupNewTabs = storage.defineItem<boolean>("local:groupNewTabs", {
   fallback: DEFAULT_STATE.groupNewTabs
 })
 
+export const systemGroupEnabled = storage.defineItem<boolean>("local:systemGroupEnabled", {
+  fallback: DEFAULT_STATE.systemGroupEnabled
+})
+
 export const groupByMode = storage.defineItem<GroupByMode>("local:groupByMode", {
   fallback: DEFAULT_STATE.groupByMode
 })
@@ -109,6 +113,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
   const [
     autoGroupingEnabledValue,
     groupNewTabsValue,
+    systemGroupEnabledValue,
     groupByModeValue,
     customRulesValue,
     ruleMatchingModeValue,
@@ -128,6 +133,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
+    systemGroupEnabled.getValue(),
     groupByMode.getValue(),
     customRules.getValue(),
     ruleMatchingMode.getValue(),
@@ -149,6 +155,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
   return {
     autoGroupingEnabled: autoGroupingEnabledValue,
     groupNewTabs: groupNewTabsValue,
+    systemGroupEnabled: systemGroupEnabledValue,
     groupByMode: groupByModeValue,
     customRules: customRulesValue,
     ruleMatchingMode: ruleMatchingModeValue,
@@ -179,6 +186,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.groupNewTabs !== undefined) {
     promises.push(groupNewTabs.setValue(data.groupNewTabs))
+  }
+  if (data.systemGroupEnabled !== undefined) {
+    promises.push(systemGroupEnabled.setValue(data.systemGroupEnabled))
   }
   if (data.groupByMode !== undefined) {
     promises.push(groupByMode.setValue(data.groupByMode))

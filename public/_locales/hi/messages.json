@@ -77,6 +77,10 @@
     "message": "उप-डोमेन",
     "description": "Option that groups by subdomain (sidebar)."
   },
+  "settingSystemGroupEnabled": {
+    "message": "ब्राउज़र पेजों को \"System\" के अंतर्गत समूहित करें",
+    "description": "Label for the toggle that groups browser/system pages under a System group."
+  },
   "settingGroupNewEmptyTabs": {
     "message": "नए खाली टैब्स को \"System\" के अंतर्गत समूहित करें",
     "description": "Label for the toggle that groups blank/new tabs under a System group."

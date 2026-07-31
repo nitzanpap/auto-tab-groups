@@ -77,6 +77,10 @@
     "message": "子域名",
     "description": "Option that groups by subdomain (sidebar)."
   },
+  "settingSystemGroupEnabled": {
+    "message": "将浏览器页面归入“System”",
+    "description": "Label for the toggle that groups browser/system pages under a System group."
+  },
   "settingGroupNewEmptyTabs": {
     "message": "将新的空白标签页归入“System”",
     "description": "Label for the toggle that groups blank/new tabs under a System group."

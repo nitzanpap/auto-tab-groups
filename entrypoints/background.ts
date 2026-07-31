@@ -172,6 +172,26 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.groupNewTabs }
             break
 
+          case "getSystemGroupEnabled":
+            result = { enabled: tabGroupState.systemGroupEnabled }
+            break
+
+          case "toggleSystemGroup":
+            tabGroupState.systemGroupEnabled = msg.enabled
+            await saveState()
+
+            if (msg.enabled) {
+              if (tabGroupState.autoGroupingEnabled) {
+                await tabGroupService.groupAllTabs()
+              }
+            } else {
+              // Dissolve the System group regardless of auto-grouping: the user
+              // asked for it gone, so it should disappear right away.
+              await tabGroupService.ungroupSystemTabs()
+            }
+            result = { enabled: tabGroupState.systemGroupEnabled }
+            break
+
           case "getGroupByMode":
             result = { mode: tabGroupState.groupByMode }
             break
