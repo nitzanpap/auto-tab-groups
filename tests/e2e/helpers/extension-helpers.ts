@@ -5,8 +5,15 @@
  * through the extension popup and background service worker.
  */
 
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import type { BrowserContext, Page } from "@playwright/test"
-import { expect } from "@playwright/test"
+import { chromium, expect } from "@playwright/test"
+
+const EXTENSION_PATH = join(dirname(fileURLToPath(import.meta.url)), "../../../.output/chrome-mv3")
+
+/** CI runners are slower than a dev machine, so the polls get more room there */
+const DEFAULT_WAIT_MS = process.env.CI ? 15000 : 5000
 
 /**
  * Test domain URLs for isolation
@@ -43,6 +50,43 @@ export interface TabInfo {
   groupId: number
   pinned: boolean
   windowId: number
+}
+
+/**
+ * Serves every http(s) request from memory instead of the network.
+ *
+ * Grouping is keyed on the hostname, so the tests need several distinct
+ * domains — but nothing about them needs to be real. Fulfilling the requests
+ * locally keeps the hostnames while removing DNS, TLS and third-party uptime
+ * (httpbin.org in particular) from a suite whose assertions are timing
+ * sensitive. Extension pages are left alone; only http/https is intercepted.
+ */
+export async function serveFixtures(context: BrowserContext): Promise<void> {
+  await context.route(
+    url => url.protocol === "http:" || url.protocol === "https:",
+    async route => {
+      const url = new URL(route.request().url())
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html; charset=utf-8",
+        body: `<!doctype html><html><head><title>${url.hostname}${url.pathname}</title></head><body><h1>${url.hostname}</h1></body></html>`
+      })
+    }
+  )
+}
+
+/**
+ * Launches a browser with the built extension loaded and fixtures served.
+ * Every spec file used to repeat this block; keeping it in one place means
+ * changes like the fixture routing apply everywhere at once.
+ */
+export async function launchExtensionContext(): Promise<BrowserContext> {
+  const context = await chromium.launchPersistentContext("", {
+    headless: false,
+    args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`]
+  })
+  await serveFixtures(context)
+  return context
 }
 
 /**
@@ -186,7 +230,7 @@ export async function createTabs(
 export async function waitForGroup(
   popupPage: Page,
   expectedTitle: string,
-  timeout = 5000
+  timeout = DEFAULT_WAIT_MS
 ): Promise<TabGroupInfo> {
   let group: TabGroupInfo | undefined
 
@@ -200,13 +244,35 @@ export async function waitForGroup(
 }
 
 /**
+ * Wait until the current groups satisfy a predicate.
+ *
+ * Prefer this over sleeping before an assertion: the extension applies changes
+ * asynchronously, so a fixed wait either flakes on a slow machine or wastes
+ * time on a fast one.
+ */
+export async function waitForGroups(
+  popupPage: Page,
+  predicate: (groups: TabGroupInfo[]) => boolean,
+  timeout = DEFAULT_WAIT_MS
+): Promise<TabGroupInfo[]> {
+  let groups: TabGroupInfo[] = []
+
+  await expect(async () => {
+    groups = await getTabGroups(popupPage)
+    expect(predicate(groups)).toBe(true)
+  }).toPass({ timeout })
+
+  return groups
+}
+
+/**
  * Wait for a tab to be in a specific group
  */
 export async function waitForTabInGroup(
   popupPage: Page,
   tabUrl: string,
   expectedGroupTitle: string,
-  timeout = 5000
+  timeout = DEFAULT_WAIT_MS
 ): Promise<void> {
   await expect(async () => {
     const tabs = await getTabs(popupPage)
@@ -231,7 +297,7 @@ export async function waitForTabInGroup(
 export async function waitForTabUngrouped(
   popupPage: Page,
   tabUrl: string,
-  timeout = 5000
+  timeout = DEFAULT_WAIT_MS
 ): Promise<void> {
   await expect(async () => {
     const tabs = await getTabs(popupPage)
@@ -244,7 +310,7 @@ export async function waitForTabUngrouped(
 /**
  * Wait for no groups to exist
  */
-export async function waitForNoGroups(popupPage: Page, timeout = 5000): Promise<void> {
+export async function waitForNoGroups(popupPage: Page, timeout = DEFAULT_WAIT_MS): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
     expect(groups.length).toBe(0)
@@ -257,7 +323,7 @@ export async function waitForNoGroups(popupPage: Page, timeout = 5000): Promise<
 export async function waitForGroupCount(
   popupPage: Page,
   count: number,
-  timeout = 5000
+  timeout = DEFAULT_WAIT_MS
 ): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
@@ -439,7 +505,10 @@ export async function getCollapseState(popupPage: Page): Promise<boolean> {
 /**
  * Wait for all groups to be collapsed
  */
-export async function waitForGroupsCollapsed(popupPage: Page, timeout = 5000): Promise<void> {
+export async function waitForGroupsCollapsed(
+  popupPage: Page,
+  timeout = DEFAULT_WAIT_MS
+): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
     const _nonActiveGroups = groups.filter(g => !g.collapsed === false)
@@ -450,7 +519,10 @@ export async function waitForGroupsCollapsed(popupPage: Page, timeout = 5000): P
 /**
  * Wait for all groups to be expanded
  */
-export async function waitForGroupsExpanded(popupPage: Page, timeout = 5000): Promise<void> {
+export async function waitForGroupsExpanded(
+  popupPage: Page,
+  timeout = DEFAULT_WAIT_MS
+): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
     expect(groups.every(g => !g.collapsed)).toBe(true)
@@ -592,7 +664,7 @@ export async function getActiveTab(popupPage: Page): Promise<TabInfo | null> {
 export async function waitForOtherGroupsCollapsed(
   popupPage: Page,
   activeGroupId: number,
-  timeout = 5000
+  timeout = DEFAULT_WAIT_MS
 ): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)

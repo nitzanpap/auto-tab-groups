@@ -44,13 +44,33 @@ bun run dev
 ## Continuous Integration
 
 Every push to `master` and every pull request runs `.github/workflows/ci.yml`:
-`bun install --frozen-lockfile`, `bun run code:check`, `bun run test`, then a
-Chrome and a Firefox build. Running `bun run code:check && bun run test` locally
-reproduces it exactly.
 
-E2E tests are not in CI yet — the suite fails roughly one test per full run
-(a different one each time, passing in isolation), so it would report noise
-rather than signal. It goes in once that is fixed.
+- **check** — `bun install --frozen-lockfile`, `bun run code:check`,
+  `bun run test`, then a Chrome and a Firefox build
+- **e2e** — builds the Chrome extension and runs Playwright under `xvfb`,
+  since an extension cannot be loaded headlessly. The HTML report is uploaded
+  as an artifact when the job fails.
+
+## Writing E2E tests
+
+Two rules keep the suite deterministic:
+
+- **Launch through `launchExtensionContext()`** rather than calling
+  `chromium.launchPersistentContext` directly. It loads the built extension and
+  installs the fixture routes described below.
+- **Never sleep before an assertion.** The extension applies changes
+  asynchronously, so a fixed `waitForTimeout` either flakes on a slow machine or
+  wastes time on a fast one. Use `waitForGroup`, `waitForGroups`,
+  `waitForTabInGroup` and friends, which poll until the condition holds. A fixed
+  wait is only acceptable before asserting that something did *not* happen.
+
+### Fixtures
+
+`serveFixtures()` fulfils every http(s) request from memory. Grouping is keyed
+on the hostname, so tests need several distinct domains — but none of them need
+to be real, and depending on third-party uptime inside a timing-sensitive suite
+was the main source of flakiness. `TEST_URLS` hostnames stay as they are; only
+the network round trip disappears.
 
 ## Development Workflow
 
