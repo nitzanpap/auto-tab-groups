@@ -132,7 +132,7 @@ class RulesService {
   ): MatchedRule | null {
     const passLabel = allowAutoSubdomain ? " (auto-subdomain)" : ""
 
-    for (const rule of rules) {
+    for (const rule of this.byPriority(rules)) {
       if (!rule.enabled) continue
 
       const { includePatterns, excludePatterns } = this.splitPatterns(rule.domains)
@@ -165,6 +165,16 @@ class RulesService {
     }
 
     return null
+  }
+
+  /**
+   * Orders rules for matching: highest priority first. Array.prototype.sort is
+   * stable, so rules that share a priority keep their existing order — which
+   * preserves the previous first-created-wins behavior for the common case
+   * where every rule sits at the default priority of 1.
+   */
+  private byPriority(rules: readonly CustomRule[]): CustomRule[] {
+    return [...rules].sort((a, b) => (b.priority || 1) - (a.priority || 1))
   }
 
   /**

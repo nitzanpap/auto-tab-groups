@@ -206,9 +206,9 @@ class ContextMenuService {
       return
     }
 
-    // Sort by priority then name
+    // Sort by priority (highest first, matching how rules are evaluated) then name
     const sortedRules = [...enabledRules].sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority
+      if (a.priority !== b.priority) return b.priority - a.priority
       return a.name.localeCompare(b.name)
     })
 
