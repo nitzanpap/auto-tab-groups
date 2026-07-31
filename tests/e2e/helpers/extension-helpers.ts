@@ -313,7 +313,9 @@ export async function waitForTabUngrouped(
 export async function waitForNoGroups(popupPage: Page, timeout = DEFAULT_WAIT_MS): Promise<void> {
   await expect(async () => {
     const groups = await getTabGroups(popupPage)
-    expect(groups.length).toBe(0)
+    // Compare titles rather than a count: when this fails, the message names
+    // the group that survived instead of just saying "expected 0, got 1"
+    expect(groups.map(group => `${group.title} (#${group.id})`)).toEqual([])
   }).toPass({ timeout })
 }
 
@@ -335,8 +337,14 @@ export async function waitForGroupCount(
  * Ungroup all tabs via the extension
  */
 export async function ungroupAllTabs(popupPage: Page): Promise<void> {
-  await sendMessage(popupPage, "ungroup")
-  await waitForNoGroups(popupPage)
+  // Re-send on every attempt rather than asking once and waiting. A grouping
+  // operation already in flight when the first request lands can regroup a tab
+  // just after it is ungrouped, which a single request can never recover from.
+  await expect(async () => {
+    await sendMessage(popupPage, "ungroup")
+    const groups = await getTabGroups(popupPage)
+    expect(groups.map(group => `${group.title} (#${group.id})`)).toEqual([])
+  }).toPass({ timeout: DEFAULT_WAIT_MS })
 }
 
 /**
