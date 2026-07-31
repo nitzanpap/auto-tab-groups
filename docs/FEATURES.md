@@ -38,6 +38,22 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 | Domain + Path | `docs.google.com/forms` | `docs.google.com/forms*` |
 | TLD Wildcard | `google.**/forms` | `google.com/forms`, `google.org/forms` |
 | Path Wildcard | `site.com/**/admin` | `site.com/any/path/admin` |
+| Catch-All | `*` | everything no other rule took |
+
+### Catch-All Rules
+
+A rule whose pattern is a lone `*` is a catch-all: a bucket for tabs nothing else
+claimed. It never competes with normal rules — it is consulted only after every
+other rule has declined the tab.
+
+- **Rules-only mode**: collects every tab no rule matched.
+- **Domain/sub-domain mode**: collects tabs that can't form their own group,
+  i.e. domains below the minimum group size.
+- Browser/system pages are never collected — they belong to the System group.
+- Blacklist rules still win.
+- Exclusions work as usual: `*` plus `!github.com` catches everything except GitHub.
+- The global minimum group size does not apply to a catch-all group (it defaults
+  to 1); set the rule's own minimum if you want one.
 
 ### Examples
 

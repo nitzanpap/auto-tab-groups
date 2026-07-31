@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "支持:域名、通配符 (*.example.com)、路径 (example.com/api/*)、IP 地址",
+    "message": "支持:域名、通配符 (*.example.com)、路径 (example.com/api/*)、IP 地址,以及单独的 * 表示其余全部",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

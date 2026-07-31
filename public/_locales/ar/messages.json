@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "يدعم: النطاقات، الرموز البدل (*.example.com)، المسارات (example.com/api/*)، عناوين IP",
+    "message": "يدعم: النطاقات، الرموز البدل (*.example.com)، المسارات (example.com/api/*)، عناوين IP، و * بمفردها لكل ما تبقى",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

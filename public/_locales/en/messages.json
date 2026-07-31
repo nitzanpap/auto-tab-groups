@@ -547,7 +547,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses",
+    "message": "Supports: domains, wildcards (*.example.com), paths (example.com/api/*), IP addresses, and * on its own for everything else",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {
