@@ -11,6 +11,11 @@ for those.
 
 ## [Unreleased]
 
+### Changed
+
+- Rules import from the sidebar now opens the same dedicated page the popup
+  uses, instead of an inline file picker.
+
 ## [3.13.0]
 
 ### Added
