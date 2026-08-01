@@ -59,6 +59,17 @@ Every push to `master` and every pull request runs `.github/workflows/ci.yml`:
   since an extension cannot be loaded headlessly. The HTML report is uploaded
   as an artifact when the job fails.
 
+## Popup and Sidebar
+
+They are one screen in two frames. The behaviour lives in `ui/settingsUi.ts`,
+which both entrypoints import; `entrypoints/popup/main.ts` and
+`entrypoints/sidebar/main.ts` only pull in the stylesheet and that module.
+
+Add a setting once, there. The markup still exists twice — `popup/index.html`
+and `sidebar/index.html` — so a control has to be added to both, and an E2E
+parity test diffs the element ids of the two documents to catch a control added
+to one and forgotten in the other.
+
 ## Writing E2E tests
 
 Two rules keep the suite deterministic:
