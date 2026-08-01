@@ -43,6 +43,7 @@ export type MessageAction =
   | "toggleHideContextMenu"
   | "getUserLocale"
   | "setUserLocale"
+  | "moveTabToGroupWindow"
   | "getProtectedGroups"
   | "addProtectedGroup"
   | "removeProtectedGroup"
@@ -125,6 +126,14 @@ export interface ToggleGroupNewTabsMessage extends BaseMessage {
 export interface ToggleSystemGroupMessage extends BaseMessage {
   action: "toggleSystemGroup"
   enabled: boolean
+}
+
+/**
+ * Send a tab to the window where its group already lives
+ */
+export interface MoveTabToGroupWindowMessage extends BaseMessage {
+  action: "moveTabToGroupWindow"
+  tabId: number
 }
 
 /**

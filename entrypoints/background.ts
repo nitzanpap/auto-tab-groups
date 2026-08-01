@@ -326,6 +326,10 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.deferGroupingUntilSeen }
             break
 
+          case "moveTabToGroupWindow":
+            result = await tabGroupService.moveTabToItsGroupWindow(msg.tabId)
+            break
+
           case "getProtectedGroups":
             result = { titles: tabGroupState.protectedGroupTitles }
             break

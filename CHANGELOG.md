@@ -11,6 +11,15 @@ for those.
 
 ## [Unreleased]
 
+## [3.13.0]
+
+### Added
+
+- "Move tab to its group's window", from the right-click menu or an (unassigned)
+  keyboard shortcut. Sends a tab to the window where its group already lives,
+  for people who keep windows roughly by topic. Grouping still never moves tabs
+  between windows on its own ([#90], closes [#68]).
+
 ## [3.12.0]
 
 ### Added
@@ -120,7 +129,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.12.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.13.0...HEAD
+[3.13.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.0
 [3.12.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.12.0
 [3.11.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.11.0
 [3.10.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.10.0
@@ -152,3 +162,4 @@ for those.
 [#86]: https://github.com/nitzanpap/auto-tab-groups/pull/86
 [#87]: https://github.com/nitzanpap/auto-tab-groups/pull/87
 [#89]: https://github.com/nitzanpap/auto-tab-groups/pull/89
+[#90]: https://github.com/nitzanpap/auto-tab-groups/pull/90

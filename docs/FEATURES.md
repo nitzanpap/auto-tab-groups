@@ -46,6 +46,20 @@ Titles are matched with any sort-index prefix stripped, so the "Number groups"
 setting doesn't break exclusions. Renaming an excluded group ends its
 exclusion — title is identity here, as everywhere else in the extension.
 
+## Moving a Tab to Its Group's Window
+
+Right-click a tab and choose "Move tab to its group's window" to send it to the
+window where that group already lives. There's a keyboard command for it too,
+unassigned like the others.
+
+Nothing happens automatically — grouping never moves tabs between windows on its
+own. This is for when you keep windows roughly by topic and a tab lands in the
+wrong one.
+
+If several windows hold a group of that name, the largest one wins, which is
+usually the main window for that topic. If no other window has it, nothing
+happens.
+
 ## Waiting Until a Tab Is Viewed
 
 Off by default. When on, a tab opened **in the background from another tab**

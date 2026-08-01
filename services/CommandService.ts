@@ -16,7 +16,8 @@ export const COMMANDS = {
   TOGGLE_AUTO_GROUPING: "toggle-auto-grouping",
   GROUP_ALL_TABS: "group-all-tabs",
   UNGROUP_ALL_TABS: "ungroup-all-tabs",
-  TOGGLE_COLLAPSE: "toggle-collapse"
+  TOGGLE_COLLAPSE: "toggle-collapse",
+  MOVE_TO_GROUP_WINDOW: "move-tab-to-group-window"
 } as const
 
 export type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS]
@@ -54,6 +55,14 @@ export async function handleCommand(command: string): Promise<boolean> {
     case COMMANDS.TOGGLE_COLLAPSE:
       await tabGroupService.toggleAllGroupsCollapse()
       return true
+
+    case COMMANDS.MOVE_TO_GROUP_WINDOW: {
+      const [active] = await browser.tabs.query({ active: true, currentWindow: true })
+      if (active?.id) {
+        await tabGroupService.moveTabToItsGroupWindow(active.id)
+      }
+      return true
+    }
 
     default:
       // _execute_action and anything the browser adds later are handled by the

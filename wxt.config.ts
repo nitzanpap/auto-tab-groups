@@ -58,6 +58,9 @@ export default defineConfig({
         },
         "toggle-collapse": {
           description: "__MSG_commandToggleCollapse__"
+        },
+        "move-tab-to-group-window": {
+          description: "__MSG_commandMoveToGroupWindow__"
         }
       },
       icons: {

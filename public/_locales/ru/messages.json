@@ -141,6 +141,14 @@
     "message": "Вкладки, открытые в фоне, остаются рядом с исходной, пока вы на них не перейдёте",
     "description": "Help text for the wait-until-viewed toggle."
   },
+  "contextMenuMoveToGroupWindow": {
+    "message": "Переместить вкладку в окно её группы",
+    "description": "Right-click menu: send this tab to the window where its group already is."
+  },
+  "commandMoveToGroupWindow": {
+    "message": "Переместить вкладку в окно её группы",
+    "description": "Keyboard command description: send the current tab to its group's window."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Минимальное число вкладок для создания группы",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."
