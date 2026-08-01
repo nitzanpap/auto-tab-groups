@@ -180,18 +180,13 @@ class TabGroupServiceSimplified {
       }
 
       // Domain/subdomain mode
-      const includeSubDomain = tabGroupState.groupByMode === "subdomain"
-      const domain = extractDomain(tab.url || "", includeSubDomain)
-      if (!domain) {
+      const expectedTitle = await this.getExpectedGroupTitle(tab)
+      if (!expectedTitle) {
         console.log(`[TabGroupService] No domain extracted, skipping`)
         return false
       }
 
-      // Check for custom rules first
       const customRule = await rulesService.findMatchingRule(tab.url || "")
-      const expectedTitle = customRule
-        ? customRule.effectiveGroupName || customRule.name
-        : getDomainDisplayName(domain)
 
       console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
 
@@ -240,6 +235,87 @@ class TabGroupServiceSimplified {
 
     const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
     return new Set(groups.filter(g => this.isProtectedTitle(g.title)).map(g => g.id))
+  }
+
+  /**
+   * The group title this tab would be filed under, or null if it wouldn't be.
+   *
+   * Shared with the "move to its group's window" command so a manual move and
+   * automatic grouping can never disagree about where a tab belongs.
+   */
+  async getExpectedGroupTitle(tab: Browser.tabs.Tab): Promise<string | null> {
+    const url = tab.url || ""
+
+    if (tabGroupState.groupByMode === "rules-only") {
+      const customRule = await rulesService.findMatchingRule(url)
+
+      if (!customRule && extractDomain(url, false) === "system") {
+        return tabGroupState.systemGroupEnabled ? "System" : null
+      }
+
+      const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(url))
+      if (!effectiveRule) return null
+
+      return effectiveRule.effectiveGroupName || effectiveRule.name
+    }
+
+    const domain = extractDomain(url, tabGroupState.groupByMode === "subdomain")
+    if (!domain) return null
+
+    const customRule = await rulesService.findMatchingRule(url)
+    return customRule
+      ? customRule.effectiveGroupName || customRule.name
+      : getDomainDisplayName(domain)
+  }
+
+  /**
+   * Sends a tab to the window where its group already lives.
+   *
+   * Requested in #68: when you keep windows roughly by topic, a tab opened in
+   * the wrong one is easier to deal with by sending it home than by hunting for
+   * it later. Nothing automatic — the user asks for this per tab.
+   *
+   * When several windows hold a group of that name, the largest wins, which is
+   * almost always the "main" one for that topic.
+   */
+  async moveTabToItsGroupWindow(
+    tabId: number
+  ): Promise<{ moved: boolean; reason?: "pinned" | "no-title" | "no-group" }> {
+    try {
+      if (!browser.tabGroups) return { moved: false, reason: "no-group" }
+
+      const tab = await browser.tabs.get(tabId)
+      if (tab.pinned) return { moved: false, reason: "pinned" }
+
+      const title = await this.getExpectedGroupTitle(tab)
+      if (!title) return { moved: false, reason: "no-title" }
+
+      const groups = await browser.tabGroups.query({})
+      const candidates = groups.filter(
+        group => group.windowId !== tab.windowId && stripIndexPrefix(group.title || "") === title
+      )
+      if (candidates.length === 0) return { moved: false, reason: "no-group" }
+
+      const withCounts = await Promise.all(
+        candidates.map(async group => ({
+          group,
+          count: (await browser.tabs.query({ groupId: group.id })).length
+        }))
+      )
+      withCounts.sort((a, b) => b.count - a.count || a.group.id - b.group.id)
+      const target = withCounts[0].group
+
+      await withTabEditRetry(() =>
+        browser.tabs.move(tabId, { windowId: target.windowId, index: -1 })
+      )
+      await withTabEditRetry(() => browser.tabs.group({ tabIds: [tabId], groupId: target.id }))
+
+      console.log(`[TabGroupService] Moved tab ${tabId} to "${title}" in window ${target.windowId}`)
+      return { moved: true }
+    } catch (error) {
+      console.error(`[TabGroupService] Error moving tab ${tabId} to its group's window:`, error)
+      return { moved: false, reason: "no-group" }
+    }
   }
 
   /**

@@ -141,6 +141,14 @@
     "message": "Tabs opened in the background stay next to the tab they came from until you switch to them",
     "description": "Help text for the wait-until-viewed toggle."
   },
+  "contextMenuMoveToGroupWindow": {
+    "message": "Move tab to its group's window",
+    "description": "Right-click menu: send this tab to the window where its group already is."
+  },
+  "commandMoveToGroupWindow": {
+    "message": "Move tab to its group's window",
+    "description": "Keyboard command description: send the current tab to its group's window."
+  },
   "settingMinimumTabsForGroup": {
     "message": "Minimum tabs to form a group",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

@@ -141,6 +141,14 @@
     "message": "علامات التبويب التي تُفتح في الخلفية تبقى بجوار علامة التبويب التي فُتحت منها حتى تنتقل إليها",
     "description": "Help text for the wait-until-viewed toggle."
   },
+  "contextMenuMoveToGroupWindow": {
+    "message": "نقل علامة التبويب إلى نافذة مجموعتها",
+    "description": "Right-click menu: send this tab to the window where its group already is."
+  },
+  "commandMoveToGroupWindow": {
+    "message": "نقل علامة التبويب إلى نافذة مجموعتها",
+    "description": "Keyboard command description: send the current tab to its group's window."
+  },
   "settingMinimumTabsForGroup": {
     "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

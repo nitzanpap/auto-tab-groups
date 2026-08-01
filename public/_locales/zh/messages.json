@@ -141,6 +141,14 @@
     "message": "在后台打开的标签页会留在来源标签页旁边,直到你切换过去",
     "description": "Help text for the wait-until-viewed toggle."
   },
+  "contextMenuMoveToGroupWindow": {
+    "message": "将标签页移到其分组所在的窗口",
+    "description": "Right-click menu: send this tab to the window where its group already is."
+  },
+  "commandMoveToGroupWindow": {
+    "message": "将标签页移到其分组所在的窗口",
+    "description": "Keyboard command description: send the current tab to its group's window."
+  },
   "settingMinimumTabsForGroup": {
     "message": "形成分组所需的最少标签页数",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

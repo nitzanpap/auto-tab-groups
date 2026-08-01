@@ -51,6 +51,7 @@ class ContextMenuService {
   private readonly MENU_ID_ADD_TO_RULE_PARENT = "add-tab-to-rule"
   private readonly MENU_ID_ADD_TO_BLACKLIST = "add-to-blacklist"
   private readonly MENU_ID_PROTECT_GROUP = "protect-group"
+  private readonly MENU_ID_MOVE_TO_GROUP_WINDOW = "move-to-group-window"
   private readonly MENU_ID_NO_RULES = "add-to-rule-none"
   private initialized = false
   private menusCreated = false
@@ -123,6 +124,12 @@ class ContextMenuService {
     await browser.contextMenus.create({
       id: this.MENU_ID_PROTECT_GROUP,
       title: t("contextMenuProtectGroup", "Exclude group from auto-grouping"),
+      contexts
+    })
+
+    await browser.contextMenus.create({
+      id: this.MENU_ID_MOVE_TO_GROUP_WINDOW,
+      title: t("contextMenuMoveToGroupWindow", "Move tab to its group's window"),
       contexts
     })
 
@@ -249,6 +256,11 @@ class ContextMenuService {
 
     if (menuId === this.MENU_ID_ADD_TO_BLACKLIST) {
       await this.handleAddToBlacklist(tab)
+      return
+    }
+
+    if (menuId === this.MENU_ID_MOVE_TO_GROUP_WINDOW) {
+      if (tab?.id) await tabGroupService.moveTabToItsGroupWindow(tab.id)
       return
     }
 
