@@ -11,6 +11,15 @@ for those.
 
 ## [Unreleased]
 
+## [3.13.1]
+
+### Fixed
+
+- Rules could not address anything after a `#`, so single-page apps that route
+  through the fragment — `apps.example.com/directory/#/admin/` and
+  `.../#/analytics/` — all collapsed into one group. A pattern containing `#` is
+  now matched against the fragment as well ([#93], closes [#92]).
+
 ### Changed
 
 - Rules import from the sidebar now opens the same dedicated page the popup
@@ -134,7 +143,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.13.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.13.1...HEAD
+[3.13.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.1
 [3.13.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.0
 [3.12.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.12.0
 [3.11.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.11.0
@@ -168,3 +178,5 @@ for those.
 [#87]: https://github.com/nitzanpap/auto-tab-groups/pull/87
 [#89]: https://github.com/nitzanpap/auto-tab-groups/pull/89
 [#90]: https://github.com/nitzanpap/auto-tab-groups/pull/90
+[#92]: https://github.com/nitzanpap/auto-tab-groups/issues/92
+[#93]: https://github.com/nitzanpap/auto-tab-groups/pull/93

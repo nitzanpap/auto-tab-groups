@@ -168,6 +168,20 @@ title — so `?ticket=VZ01` and `?ticket=VZ02` land in separate groups.
 The query is only consulted after host and path have failed to match, so
 patterns written before this existed behave exactly as they did.
 
+### Hash Routes
+
+Single-page apps often put the real route after a `#`. A pattern containing `#`
+is matched against the fragment too, so those routes can be split apart:
+
+```txt
+apps.example.com/directory/#/admin/*     -> one group
+apps.example.com/directory/#/analytics/* -> another
+app.io/directory/#/{section}             -> a group per section
+```
+
+Write the `#` as-is — no escaping. Like the query, the fragment is only
+consulted after host and path have failed to match.
+
 ### Limitations
 
 - Single `**` per domain or path component
