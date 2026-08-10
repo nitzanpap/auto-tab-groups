@@ -114,20 +114,29 @@ class UrlPatternMatcher {
   }
 
   /**
-   * Candidate strings to match a pattern against, query string last.
+   * Candidate strings to match a pattern against, query string and hash last.
    *
-   * The query is tried only after the plain hostname/path has failed, which
-   * keeps this purely additive: a pattern that matched before still matches the
-   * same text with the same capture groups, and only patterns that need the
-   * query see it. Case is preserved so extracted values (a ticket id, say) keep
-   * theirs when they become a group name.
+   * The query and hash are tried only after the plain hostname/path has failed,
+   * which keeps this purely additive: a pattern that matched before still
+   * matches the same text with the same capture groups, and only patterns that
+   * need them see them. Case is preserved so extracted values (a ticket id,
+   * say) keep theirs when they become a group name.
    */
-  private matchTargets(urlObj: URL, base: string, lowercaseQuery = false): string[] {
-    // The wildcard matcher lowercases its pattern and path, so its query has to
-    // be lowercased too. The extraction matchers keep case, because their
-    // captures become group titles.
-    const search = lowercaseQuery ? urlObj.search.toLowerCase() : urlObj.search
-    return search ? [base, base + search] : [base]
+  private matchTargets(urlObj: URL, base: string, lowercase = false): string[] {
+    // The wildcard matcher lowercases its pattern and path, so the query and
+    // hash have to be lowercased too. The extraction matchers keep case,
+    // because their captures become group titles.
+    const search = lowercase ? urlObj.search.toLowerCase() : urlObj.search
+    const hash = lowercase ? urlObj.hash.toLowerCase() : urlObj.hash
+
+    const targets = [base]
+    if (search) targets.push(base + search)
+    // Hash routing (example.com/app/#/admin) puts the meaningful path after #
+    if (hash) {
+      targets.push(base + hash)
+      if (search) targets.push(base + search + hash)
+    }
+    return targets
   }
 
   /**
@@ -635,8 +644,8 @@ class UrlPatternMatcher {
       }
     }
 
-    // ?, = and & are allowed so a pattern can address a query string
-    if (hasPath && pathPattern && !/^[a-zA-Z0-9._/*?=&%+~:,-]*$/.test(pathPattern)) {
+    // ?, = and & are allowed so a pattern can address a query string, # a hash
+    if (hasPath && pathPattern && !/^[a-zA-Z0-9._/*?=&%+~:,#-]*$/.test(pathPattern)) {
       return {
         isValid: false,
         error: "Path pattern contains invalid characters",

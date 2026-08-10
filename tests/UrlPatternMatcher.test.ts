@@ -995,4 +995,50 @@ describe("UrlPatternMatcher", () => {
       })
     })
   })
+
+  describe("hash (fragment) matching", () => {
+    const ADMIN = "https://apps.cac1.pure.cloud/directory/#/admin/agents"
+    const ANALYTICS = "https://apps.cac1.pure.cloud/directory/#/analytics/views"
+
+    it("should separate hash routes with simple patterns", () => {
+      expect(urlPatternMatcher.match(ADMIN, "*.pure.cloud/directory/#/admin/*").matched).toBe(true)
+      expect(urlPatternMatcher.match(ANALYTICS, "*.pure.cloud/directory/#/admin/*").matched).toBe(
+        false
+      )
+      expect(
+        urlPatternMatcher.match(ANALYTICS, "*.pure.cloud/directory/#/analytics/*").matched
+      ).toBe(true)
+    })
+
+    it("should match a hash on a root path", () => {
+      expect(
+        urlPatternMatcher.match("https://app.io/#/settings", "app.io/#/settings").matched
+      ).toBe(true)
+    })
+
+    it("should match a hash after a query string", () => {
+      expect(
+        urlPatternMatcher.match("https://app.io/x?a=1#/admin", "app.io/x?a=1#/admin").matched
+      ).toBe(true)
+    })
+
+    it("should extract a hash segment", () => {
+      const result = urlPatternMatcher.match(
+        "https://app.io/directory/#/analytics",
+        "app.io/directory/#/{section}"
+      )
+      expect(result.matched).toBe(true)
+      expect(result.groupName).toBe("analytics")
+    })
+
+    it("should accept # when validating", () => {
+      expect(urlPatternMatcher.validatePattern("app.io/#/admin/*").isValid).toBe(true)
+    })
+
+    it("should not let a hash satisfy a path pattern", () => {
+      expect(
+        urlPatternMatcher.match("https://example.com/#admin", "example.com/admin").matched
+      ).toBe(false)
+    })
+  })
 })
