@@ -1599,6 +1599,26 @@ input:checked + .slider:before {
   background: var(--secondary-color-dark, #e5e7eb);
 }
 
+.consolidate-preview {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--secondary-color, #ccc);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.consolidate-preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.consolidate-preview-count {
+  color: #6c757d;
+  white-space: nowrap;
+}
+
 /* Utility — declared last so it beats the layout rules above */
 .hidden {
   display: none;

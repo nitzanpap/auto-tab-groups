@@ -326,6 +326,14 @@ export default defineBackground(() => {
             result = { enabled: tabGroupState.deferGroupingUntilSeen }
             break
 
+          case "planGroupConsolidation":
+            result = { moves: await tabGroupService.planGroupConsolidation() }
+            break
+
+          case "consolidateGroups":
+            result = await tabGroupService.consolidateGroups()
+            break
+
           case "moveTabToGroupWindow":
             result = await tabGroupService.moveTabToItsGroupWindow(msg.tabId)
             break

@@ -11,6 +11,16 @@ for those.
 
 ## [Unreleased]
 
+## [3.14.0]
+
+### Added
+
+- Merge groups that are split across windows. When the same group exists in
+  several windows, Advanced offers to consolidate them into the window already
+  holding most of each one. It shows exactly what will move before doing it,
+  because the move cannot be undone. Groups excluded from auto-grouping, the
+  System group and pinned tabs are left alone ([#94], follows [#68]).
+
 ## [3.13.1]
 
 ### Fixed
@@ -143,7 +153,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.13.1...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.14.0...HEAD
+[3.14.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.0
 [3.13.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.1
 [3.13.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.0
 [3.12.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.12.0
@@ -180,3 +191,4 @@ for those.
 [#90]: https://github.com/nitzanpap/auto-tab-groups/pull/90
 [#92]: https://github.com/nitzanpap/auto-tab-groups/issues/92
 [#93]: https://github.com/nitzanpap/auto-tab-groups/pull/93
+[#94]: https://github.com/nitzanpap/auto-tab-groups/pull/94

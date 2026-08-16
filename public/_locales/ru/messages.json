@@ -149,6 +149,51 @@
     "message": "Переместить вкладку в окно её группы",
     "description": "Keyboard command description: send the current tab to its group's window."
   },
+  "settingConsolidate": {
+    "message": "$count$ групп(ы) разбросаны по $windows$ окнам",
+    "description": "Label showing how many groups are split across windows. $1 = group count, $2 = window count.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "windows": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingConsolidateAction": {
+    "message": "Показать",
+    "description": "Button that shows what a group merge would do."
+  },
+  "settingConsolidateConfirm": {
+    "message": "Объединить",
+    "description": "Button that performs the group merge after the preview."
+  },
+  "settingConsolidateHelp": {
+    "message": "Объединяет каждую группу в окне, где уже находится большая её часть. Отменить нельзя",
+    "description": "Help text warning that merging groups across windows cannot be undone."
+  },
+  "settingConsolidateTabCount": {
+    "message": "$count$ вкл.",
+    "description": "Tab count shown next to a group in the merge preview. $1 = number of tabs.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingConsolidateDone": {
+    "message": "Объединено групп: $groups$, перемещено вкладок: $tabs$",
+    "description": "Result message after merging. $1 = groups merged, $2 = tabs moved.",
+    "placeholders": {
+      "groups": {
+        "content": "$1"
+      },
+      "tabs": {
+        "content": "$2"
+      }
+    }
+  },
   "settingMinimumTabsForGroup": {
     "message": "Минимальное число вкладок для создания группы",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."
