@@ -149,6 +149,51 @@
     "message": "Mover la pestaña a la ventana de su grupo",
     "description": "Keyboard command description: send the current tab to its group's window."
   },
+  "settingConsolidate": {
+    "message": "$count$ grupo(s) repartidos en $windows$ ventanas",
+    "description": "Label showing how many groups are split across windows. $1 = group count, $2 = window count.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "windows": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingConsolidateAction": {
+    "message": "Revisar",
+    "description": "Button that shows what a group merge would do."
+  },
+  "settingConsolidateConfirm": {
+    "message": "Fusionar",
+    "description": "Button that performs the group merge after the preview."
+  },
+  "settingConsolidateHelp": {
+    "message": "Fusiona cada grupo en la ventana que ya contiene la mayoría. Esto no se puede deshacer",
+    "description": "Help text warning that merging groups across windows cannot be undone."
+  },
+  "settingConsolidateTabCount": {
+    "message": "$count$ pestañas",
+    "description": "Tab count shown next to a group in the merge preview. $1 = number of tabs.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingConsolidateDone": {
+    "message": "$groups$ grupo(s) fusionados, $tabs$ pestañas movidas",
+    "description": "Result message after merging. $1 = groups merged, $2 = tabs moved.",
+    "placeholders": {
+      "groups": {
+        "content": "$1"
+      },
+      "tabs": {
+        "content": "$2"
+      }
+    }
+  },
   "settingMinimumTabsForGroup": {
     "message": "Mínimo de pestañas para formar un grupo",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

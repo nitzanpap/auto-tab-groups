@@ -149,6 +149,51 @@
     "message": "نقل علامة التبويب إلى نافذة مجموعتها",
     "description": "Keyboard command description: send the current tab to its group's window."
   },
+  "settingConsolidate": {
+    "message": "‏$count$ مجموعة موزعة على $windows$ نافذة",
+    "description": "Label showing how many groups are split across windows. $1 = group count, $2 = window count.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "windows": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingConsolidateAction": {
+    "message": "مراجعة",
+    "description": "Button that shows what a group merge would do."
+  },
+  "settingConsolidateConfirm": {
+    "message": "دمجها",
+    "description": "Button that performs the group merge after the preview."
+  },
+  "settingConsolidateHelp": {
+    "message": "يدمج كل مجموعة في النافذة التي تحتوي بالفعل على معظمها. لا يمكن التراجع عن ذلك",
+    "description": "Help text warning that merging groups across windows cannot be undone."
+  },
+  "settingConsolidateTabCount": {
+    "message": "‏$count$ علامة تبويب",
+    "description": "Tab count shown next to a group in the merge preview. $1 = number of tabs.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingConsolidateDone": {
+    "message": "تم دمج $groups$ مجموعة ونقل $tabs$ علامة تبويب",
+    "description": "Result message after merging. $1 = groups merged, $2 = tabs moved.",
+    "placeholders": {
+      "groups": {
+        "content": "$1"
+      },
+      "tabs": {
+        "content": "$2"
+      }
+    }
+  },
   "settingMinimumTabsForGroup": {
     "message": "الحد الأدنى لعلامات التبويب لتكوين مجموعة",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

@@ -14,6 +14,16 @@ import { tabGroupState } from "./TabGroupState"
 import { stripIndexPrefix, tabSortService } from "./TabSortService"
 
 /**
+ * One group's tabs moving to the window that already holds most of that group
+ */
+export interface ConsolidationMove {
+  title: string
+  fromWindowId: number
+  toWindowId: number
+  tabIds: number[]
+}
+
+/**
  * Collapse state result
  */
 interface CollapseState {
@@ -235,6 +245,132 @@ class TabGroupServiceSimplified {
 
     const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
     return new Set(groups.filter(g => this.isProtectedTitle(g.title)).map(g => g.id))
+  }
+
+  /**
+   * One group's worth of tabs that would move to another window.
+   */
+  private buildConsolidationMove(
+    group: Browser.tabGroups.TabGroup,
+    target: { windowId: number; groupId: number },
+    tabs: Browser.tabs.Tab[]
+  ): ConsolidationMove | null {
+    const tabIds = tabs
+      .filter(tab => tab.groupId === group.id && !tab.pinned && tab.id !== undefined)
+      .map(tab => tab.id as number)
+
+    if (tabIds.length === 0) return null
+
+    return {
+      title: stripIndexPrefix(group.title || ""),
+      fromWindowId: group.windowId,
+      toWindowId: target.windowId,
+      tabIds
+    }
+  }
+
+  /**
+   * Works out which groups are split across windows, and where each one would
+   * end up if they were merged.
+   *
+   * A group's home is the window already holding most of its tabs, decided up
+   * front so it can't shift while tabs are moving. Deliberately keyed on the
+   * group title rather than on rules: this merges groups that already exist,
+   * so the question is which window owns a title, not where a URL belongs.
+   */
+  async planGroupConsolidation(): Promise<ConsolidationMove[]> {
+    try {
+      if (!browser.tabGroups) return []
+
+      const groups = await browser.tabGroups.query({})
+      const tabs = await browser.tabs.query({})
+
+      const sizeOf = new Map<number, number>()
+      for (const tab of tabs) {
+        if (tab.groupId && tab.groupId !== -1) {
+          sizeOf.set(tab.groupId, (sizeOf.get(tab.groupId) ?? 0) + 1)
+        }
+      }
+
+      const home = new Map<string, { windowId: number; groupId: number; size: number }>()
+      for (const group of groups) {
+        const title = stripIndexPrefix(group.title || "")
+        if (!title) continue
+
+        // "Never auto-group this" should also mean "don't haul it between
+        // windows in a bulk sweep". System is the extension's own bucket for
+        // browser pages, not a topic anyone arranges windows around.
+        if (title === "System" || this.isProtectedTitle(title)) continue
+
+        const size = sizeOf.get(group.id) ?? 0
+        const best = home.get(title)
+        if (!best || size > best.size || (size === best.size && group.id < best.groupId)) {
+          home.set(title, { windowId: group.windowId, groupId: group.id, size })
+        }
+      }
+
+      const moves: ConsolidationMove[] = []
+      for (const group of groups) {
+        const target = home.get(stripIndexPrefix(group.title || ""))
+        if (!target || target.windowId === group.windowId) continue
+
+        const move = this.buildConsolidationMove(group, target, tabs)
+        if (move) moves.push(move)
+      }
+
+      return moves
+    } catch (error) {
+      console.error(`[TabGroupService] Error planning group consolidation:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Merges every group that is split across windows into a single window each.
+   *
+   * Recomputes the plan rather than replaying one the UI captured earlier:
+   * group ids go stale as soon as anything moves, and "consolidate everything
+   * as it is now" is the honest reading of the button.
+   *
+   * There is no undo — nothing records where a tab came from — which is why
+   * the UI shows the plan and asks before calling this.
+   */
+  async consolidateGroups(): Promise<{ movedTabs: number; movedGroups: number }> {
+    const moves = await this.planGroupConsolidation()
+    if (moves.length === 0) return { movedTabs: 0, movedGroups: 0 }
+
+    this.bulkOperationInProgress = true
+    try {
+      let movedTabs = 0
+      let movedGroups = 0
+
+      for (const move of moves) {
+        try {
+          const target = (await browser.tabGroups.query({ windowId: move.toWindowId })).find(
+            group => stripIndexPrefix(group.title || "") === move.title
+          )
+          if (!target) continue
+
+          const tabIds = move.tabIds as [number, ...number[]]
+          await withTabEditRetry(() =>
+            browser.tabs.move(tabIds, { windowId: move.toWindowId, index: -1 })
+          )
+          await withTabEditRetry(() => browser.tabs.group({ tabIds, groupId: target.id }))
+
+          movedTabs += move.tabIds.length
+          movedGroups += 1
+        } catch (error) {
+          // One group failing shouldn't strand the rest half-done
+          console.error(`[TabGroupService] Could not consolidate "${move.title}":`, error)
+        }
+      }
+
+      console.log(`[TabGroupService] Consolidated ${movedGroups} group(s), ${movedTabs} tab(s)`)
+      return { movedTabs, movedGroups }
+    } finally {
+      this.bulkOperationInProgress = false
+      await tabSortService.applySorting()
+    }
   }
 
   /**

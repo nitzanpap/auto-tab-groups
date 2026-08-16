@@ -149,6 +149,51 @@
     "message": "टैब को उसके समूह की विंडो में ले जाएँ",
     "description": "Keyboard command description: send the current tab to its group's window."
   },
+  "settingConsolidate": {
+    "message": "$count$ समूह $windows$ विंडो में बिखरे हैं",
+    "description": "Label showing how many groups are split across windows. $1 = group count, $2 = window count.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "windows": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingConsolidateAction": {
+    "message": "देखें",
+    "description": "Button that shows what a group merge would do."
+  },
+  "settingConsolidateConfirm": {
+    "message": "मर्ज करें",
+    "description": "Button that performs the group merge after the preview."
+  },
+  "settingConsolidateHelp": {
+    "message": "हर समूह को उस विंडो में मर्ज करता है जिसमें पहले से अधिकांश टैब हैं। इसे पूर्ववत नहीं किया जा सकता",
+    "description": "Help text warning that merging groups across windows cannot be undone."
+  },
+  "settingConsolidateTabCount": {
+    "message": "$count$ टैब",
+    "description": "Tab count shown next to a group in the merge preview. $1 = number of tabs.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingConsolidateDone": {
+    "message": "$groups$ समूह मर्ज हुए, $tabs$ टैब स्थानांतरित",
+    "description": "Result message after merging. $1 = groups merged, $2 = tabs moved.",
+    "placeholders": {
+      "groups": {
+        "content": "$1"
+      },
+      "tabs": {
+        "content": "$2"
+      }
+    }
+  },
   "settingMinimumTabsForGroup": {
     "message": "समूह बनाने के लिए न्यूनतम टैब्स",
     "description": "Label for the numeric input that sets the minimum tab count required to create a group."

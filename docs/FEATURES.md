@@ -46,6 +46,21 @@ Titles are matched with any sort-index prefix stripped, so the "Number groups"
 setting doesn't break exclusions. Renaming an excluded group ends its
 exclusion — title is identity here, as everywhere else in the extension.
 
+## Consolidating Groups Across Windows
+
+When the same group exists in more than one window, Advanced shows a row saying
+so. Clicking **Review** lists what would move; clicking again merges each group
+into the window that already holds most of it.
+
+The row only appears when something is actually split, and the two-step flow is
+deliberate: **this cannot be undone.** Nothing records which window a tab came
+from, so there is no way back. The preview is also a quick answer to "where did
+my groups end up".
+
+Skipped by design: groups excluded from auto-grouping, the System group, and
+pinned tabs. There is no keyboard shortcut — an unrecoverable action shouldn't
+be one keypress away.
+
 ## Moving a Tab to Its Group's Window
 
 Right-click a tab and choose "Move tab to its group's window" to send it to the
