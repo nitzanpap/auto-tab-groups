@@ -891,6 +891,16 @@ class TabGroupServiceSimplified {
       const group = groups.find(g => g.id === groupId)
       if (!group) return false
 
+      // "Excluded from auto-grouping" means the extension never edits that group,
+      // and disbanding it because it fell under the minimum is an edit. Per-tab
+      // paths already honour this (see handleTabUpdate); the sweep must too.
+      if (this.isProtectedTitle(group.title)) {
+        console.log(
+          `[TabGroupService] Group "${group.title}" is protected, skipping threshold check`
+        )
+        return false
+      }
+
       let customRule: CustomRule | null = null
       const customRules = tabGroupState.getCustomRulesObject()
       for (const rule of Object.values(customRules)) {

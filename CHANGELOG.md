@@ -11,6 +11,14 @@ for those.
 
 ## [Unreleased]
 
+### Fixed
+
+- Groups excluded from auto-grouping could still be disbanded by the minimum-tabs
+  sweep. Closing any tab re-checked every group in the window against the
+  threshold, and a protected group with fewer tabs than the minimum was ungrouped
+  even though the per-tab paths already left it alone. The sweep now skips
+  protected groups too, so "excluded from auto-grouping" holds everywhere.
+
 ## [3.14.0]
 
 ### Added

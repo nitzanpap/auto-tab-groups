@@ -286,6 +286,39 @@ describe("TabGroupService", () => {
       expect(result).toBe(true)
       expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([101, 102, 103])
     })
+
+    it("should not disband a protected group that is below threshold", async () => {
+      tabGroupState.minimumTabsForGroup = 5
+      tabGroupState.protectedGroupTitles = ["Claude"]
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Claude" }])
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 101, groupId: 1, pinned: false }])
+
+      const result = await tabGroupService.checkGroupThreshold(1)
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.ungroup).not.toHaveBeenCalled()
+    })
+
+    it("should treat an index-prefixed protected title as protected", async () => {
+      tabGroupState.minimumTabsForGroup = 5
+      tabGroupState.protectedGroupTitles = ["Claude"]
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "2. Claude" }])
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 101, groupId: 1, pinned: false }])
+
+      const result = await tabGroupService.checkGroupThreshold(1)
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.ungroup).not.toHaveBeenCalled()
+    })
+
+    it("should still disband unprotected groups when a protected list exists", async () => {
+      tabGroupState.minimumTabsForGroup = 5
+      tabGroupState.protectedGroupTitles = ["Claude"]
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 2, title: "example.com" }])
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 201, groupId: 2, pinned: false }])
+
+      const result = await tabGroupService.checkGroupThreshold(2)
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.ungroup).toHaveBeenCalledWith([201])
+    })
   })
 
   describe("checkAllGroupsThreshold", () => {
