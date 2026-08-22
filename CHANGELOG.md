@@ -11,6 +11,16 @@ for those.
 
 ## [Unreleased]
 
+### Fixed
+
+- The minimum-tabs threshold took apart tab groups belonging to other
+  extensions. Every tab close swept all groups in the window, and a group
+  another extension created and kept below the minimum was ungrouped out from
+  under it; the same happened per tab when a tab in such a group navigated.
+  Extensions that name their groups per session could not be protected by
+  title, so the threshold now only disbands groups Auto Tab Groups would have
+  created itself, and no longer disbands protected ones ([#96], [#95]).
+
 ## [3.14.0]
 
 ### Added
@@ -192,3 +202,5 @@ for those.
 [#92]: https://github.com/nitzanpap/auto-tab-groups/issues/92
 [#93]: https://github.com/nitzanpap/auto-tab-groups/pull/93
 [#94]: https://github.com/nitzanpap/auto-tab-groups/pull/94
+[#95]: https://github.com/nitzanpap/auto-tab-groups/pull/95
+[#96]: https://github.com/nitzanpap/auto-tab-groups/issues/96

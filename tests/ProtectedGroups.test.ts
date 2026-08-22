@@ -17,9 +17,9 @@ import { tabGroupService } from "../services/TabGroupService"
 /**
  * Tests for groups the user excluded from auto-grouping.
  *
- * The extension never infers which groups are the user's own — protection is
- * an explicit list of titles, so these tests are about the list being honored
- * on every path that could otherwise move a tab.
+ * Protection here is an explicit list of titles, so these tests are about the
+ * list being honored on every path that could otherwise move a tab. Groups the
+ * extension can tell it did not create are covered in ForeignGroups.test.ts.
  */
 describe("Protected groups", () => {
   const PROTECTED_GROUP_ID = 42
