@@ -276,6 +276,10 @@ Groups only created when minimum tab count is met.
 - Below threshold: tabs remain ungrouped
 - Meets threshold: group created with all matching tabs
 - Falls below threshold: group disbanded, tabs ungrouped
+- Only groups the extension itself would have created are disbanded. A group
+  another extension or the browser's own "new group" made — anything whose
+  title is not `System`, a rule's name, or a title the extension has produced
+  before — is left alone, however few tabs it holds
 
 ## Focus Mode (Auto-Collapse)
 

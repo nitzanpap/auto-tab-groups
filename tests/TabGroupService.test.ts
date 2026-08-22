@@ -250,8 +250,8 @@ describe("TabGroupService", () => {
       tabGroupState.minimumTabsForGroup = 3
       mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Test" }])
       mockBrowser.tabs.query.mockResolvedValue([
-        { id: 101, groupId: 1, pinned: false },
-        { id: 102, groupId: 1, pinned: false }
+        { id: 101, groupId: 1, pinned: false, url: "https://test.com" },
+        { id: 102, groupId: 1, pinned: false, url: "https://test.com" }
       ])
 
       const result = await tabGroupService.checkGroupThreshold(1)
@@ -277,9 +277,9 @@ describe("TabGroupService", () => {
       tabGroupState.minimumTabsForGroup = 3
       mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Test" }])
       mockBrowser.tabs.query.mockResolvedValue([
-        { id: 101, groupId: 1, pinned: false },
-        { id: 102, groupId: 1, pinned: false },
-        { id: 103, groupId: 1, pinned: true }
+        { id: 101, groupId: 1, pinned: false, url: "https://test.com" },
+        { id: 102, groupId: 1, pinned: false, url: "https://test.com" },
+        { id: 103, groupId: 1, pinned: true, url: "https://test.com" }
       ])
 
       const result = await tabGroupService.checkGroupThreshold(1)
@@ -833,8 +833,8 @@ describe("TabGroupService", () => {
         tabGroupState.minimumTabsForGroup = 2
         mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "Test" }])
         mockBrowser.tabs.query.mockResolvedValue([
-          { id: 101, groupId: 1, pinned: true }, // Pinned - excluded from count
-          { id: 102, groupId: 1, pinned: false } // Only 1 unpinned
+          { id: 101, groupId: 1, pinned: true, url: "https://test.com" }, // Pinned - excluded
+          { id: 102, groupId: 1, pinned: false, url: "https://test.com" } // Only 1 unpinned
         ])
 
         const result = await tabGroupService.checkGroupThreshold(1)

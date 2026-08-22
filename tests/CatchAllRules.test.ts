@@ -293,6 +293,8 @@ describe("Catch-all rules", () => {
       mockBrowser.tabs.query.mockResolvedValue([
         { id: 1, url: "https://lonely.com", pinned: false, windowId: 1, groupId: 5 }
       ])
+      // Group 5 is one we built for lonely.com, so it is ours to take apart
+      mockBrowser.tabGroups.get.mockResolvedValue({ id: 5, title: "Lonely" })
 
       const result = await tabGroupService.handleTabUpdate(1)
 
@@ -313,6 +315,8 @@ describe("Catch-all rules", () => {
       mockBrowser.tabs.query.mockResolvedValue([
         { id: 1, url: "https://lonely.com", pinned: false, windowId: 1, groupId: 5 }
       ])
+      // Group 5 is one we built for lonely.com, so it is ours to take apart
+      mockBrowser.tabGroups.get.mockResolvedValue({ id: 5, title: "Lonely" })
 
       const result = await tabGroupService.handleTabUpdate(1)
 

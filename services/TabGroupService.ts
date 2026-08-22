@@ -237,6 +237,56 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Whether a group is one this extension would have built itself.
+   *
+   * Other extensions create and manage their own tab groups, and they often
+   * name them per session, so no title list can protect them (#96). The
+   * cheapest reliable signal is the title: if it is not a title Auto Tab
+   * Groups produces, the group belongs to someone else and we leave it alone.
+   *
+   * A title counts as ours when it is "System", an enabled rule's name, a
+   * title we have created before, or the title a tab currently in the group
+   * would be filed under. Untitled groups are never ours — every group this
+   * extension creates gets a title.
+   */
+  private async isOwnGroup(
+    group: Pick<Browser.tabGroups.TabGroup, "title">,
+    tabsInGroup: Browser.tabs.Tab[]
+  ): Promise<boolean> {
+    const title = stripIndexPrefix(group.title || "")
+    if (!title) return false
+    if (title === "System") return true
+
+    const rules = Object.values(tabGroupState.getCustomRulesObject())
+    if (rules.some(rule => rule.enabled && rule.name === title)) return true
+
+    // Creating a group records its colour under its title, which makes the
+    // colour mapping a ledger of every title this extension has produced —
+    // it still recognises our group after its last tab navigates elsewhere.
+    if (await getGroupColor(title)) return true
+
+    for (const tab of tabsInGroup) {
+      if ((await this.getExpectedGroupTitle(tab)) === title) return true
+    }
+
+    return false
+  }
+
+  /**
+   * isOwnGroup for a group we only have the id of. Errs on "not ours", so a
+   * group that disappears mid-read is left alone rather than dismantled.
+   */
+  private async isOwnGroupId(groupId: number): Promise<boolean> {
+    try {
+      const group = await browser.tabGroups.get(groupId)
+      const tabs = await browser.tabs.query({ groupId })
+      return await this.isOwnGroup(group, tabs)
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Ids of every protected group in the current window
    */
   private async getProtectedGroupIds(): Promise<Set<number>> {
@@ -619,7 +669,9 @@ class TabGroupServiceSimplified {
         }
       }
 
-      if (tab.groupId && tab.groupId !== -1) {
+      // Only pull the tab out of a group we built. A group another extension
+      // owns must survive its tabs navigating around (#96).
+      if (tab.groupId && tab.groupId !== -1 && (await this.isOwnGroupId(tab.groupId))) {
         await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
       }
 
@@ -903,7 +955,20 @@ class TabGroupServiceSimplified {
       const minimumTabs = this.getEffectiveMinimumTabs(customRule)
       if (minimumTabs <= 1) return false
 
+      if (this.isProtectedTitle(group.title)) {
+        console.log(`[TabGroupService] Group "${group.title}" is protected, leaving it alone`)
+        return false
+      }
+
       const tabs = await browser.tabs.query({ groupId })
+
+      // The sweep runs over every group in the window, including ones other
+      // extensions or the user created — disbanding those is not ours to do.
+      if (!(await this.isOwnGroup(group, tabs))) {
+        console.log(`[TabGroupService] Group "${group.title}" was not created by us, skipping`)
+        return false
+      }
+
       const tabCount = tabs.filter(tab => !tab.pinned).length
 
       if (tabCount < minimumTabs) {
