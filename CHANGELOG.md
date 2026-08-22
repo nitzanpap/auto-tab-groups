@@ -11,6 +11,8 @@ for those.
 
 ## [Unreleased]
 
+## [3.14.1]
+
 ### Fixed
 
 - The minimum-tabs threshold took apart tab groups belonging to other
@@ -163,7 +165,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.14.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.14.1...HEAD
+[3.14.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.1
 [3.14.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.0
 [3.13.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.1
 [3.13.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.0
