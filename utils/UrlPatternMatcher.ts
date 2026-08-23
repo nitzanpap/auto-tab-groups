@@ -410,18 +410,7 @@ class UrlPatternMatcher {
       const parts = cleanPattern.split("**")
       if (parts.length !== 2) return false
 
-      const prefix = parts[0]
-      const suffix = parts[1]
-
-      if (!cleanDomain.startsWith(prefix)) return false
-      if (suffix && !cleanDomain.endsWith(suffix)) return false
-
-      const remainder = cleanDomain.substring(prefix.length)
-      if (suffix) {
-        const beforeSuffix = remainder.substring(0, remainder.length - suffix.length)
-        return beforeSuffix.length > 0 && /^[a-zA-Z0-9.-]+$/.test(beforeSuffix)
-      }
-      return remainder.length > 0 && /^[a-zA-Z0-9.-]+$/.test(remainder)
+      return this.matchDoubleStarDomain(cleanDomain, parts[0], parts[1])
     }
 
     // Handle * wildcard for subdomains (*.domain.com)
@@ -446,6 +435,41 @@ class UrlPatternMatcher {
 
     // Auto-match any subdomain (only if enabled)
     if (options.allowAutoSubdomain && cleanDomain.endsWith(`.${cleanPattern}`)) return true
+
+    return false
+  }
+
+  /**
+   * Matches a host against a "prefix**suffix" pattern, where "**" stands for
+   * one or more characters that may cross dots — a TLD, or "co.uk".
+   *
+   * The halves around it used to be compared literally, so a single wildcard
+   * in them matched nothing: `*.google.**` was documented as reaching
+   * `docs.google.com` and quietly matched no host at all. They are globs now,
+   * which is what everywhere else in a pattern already means.
+   */
+  private matchDoubleStarDomain(domain: string, prefix: string, suffix: string): boolean {
+    const isHostText = /^[a-zA-Z0-9.-]+$/
+    const suffixIsGlob = suffix.includes("*")
+
+    for (let split = 0; split <= domain.length; split++) {
+      if (!this.globMatch(domain.substring(0, split), prefix, ".", true)) continue
+
+      if (!suffixIsGlob) {
+        if (!domain.endsWith(suffix)) return false
+
+        const suffixStart = domain.length - suffix.length
+        const middle = domain.substring(split, suffixStart)
+        if (middle.length > 0 && isHostText.test(middle)) return true
+        continue
+      }
+
+      // A wildcard in the suffix as well — try every place it could start
+      for (let end = split + 1; end <= domain.length; end++) {
+        if (!isHostText.test(domain.substring(split, end))) break
+        if (this.globMatch(domain.substring(end), suffix, ".", true)) return true
+      }
+    }
 
     return false
   }

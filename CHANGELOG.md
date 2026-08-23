@@ -11,6 +11,15 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.2]
+
+### Fixed
+
+- `*.google.**` — any subdomain, any TLD — matched no host at all, though the
+  docs have always shown it. The halves around a `**` were compared literally,
+  so a `*` in them could only ever match a literal `*` in the host. They are
+  globs now, like every other part of a pattern ([#98]).
+
 ## [3.15.1]
 
 ### Security
@@ -205,7 +214,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.1...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.2...HEAD
+[3.15.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.2
 [3.15.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.1
 [3.15.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.0
 [3.14.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.1

@@ -45,6 +45,13 @@ describe("Pattern safety", () => {
       expect(elapsed).toBeLessThan(BUDGET_MS)
     })
 
+    it("should stay quick on a hostile ** pattern", () => {
+      const elapsed = timed(() =>
+        urlPatternMatcher.match(`https://${"a".repeat(50)}X.com/x`, `${HOSTILE}**b.com`)
+      )
+      expect(elapsed).toBeLessThan(BUDGET_MS)
+    })
+
     it("should still match the patterns people actually write", () => {
       expect(
         urlPatternMatcher.match("https://docs.google.com/forms", "*.google.com/forms").matched

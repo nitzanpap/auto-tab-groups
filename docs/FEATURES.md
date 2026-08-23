@@ -124,6 +124,7 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 | Subdomain Wildcard | `*.google.com` | `docs.google.com/*` |
 | Domain + Path | `docs.google.com/forms` | `docs.google.com/forms*` |
 | TLD Wildcard | `google.**/forms` | `google.com/forms`, `google.org/forms` |
+| Subdomain + TLD | `*.google.**` | `docs.google.com`, `mail.google.co.uk` |
 | Path Wildcard | `site.com/**/admin` | `site.com/any/path/admin` |
 | Catch-All | `*` | everything no other rule took |
 | Query String | `site.com/?ticket=VZ01` | that exact query |

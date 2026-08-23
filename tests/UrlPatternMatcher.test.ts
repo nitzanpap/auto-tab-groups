@@ -255,10 +255,28 @@ describe("UrlPatternMatcher", () => {
       expect(result.matched).toBe(false)
     })
 
-    it("should not match combined *.** pattern (not supported)", () => {
-      // Combined * and ** patterns are complex and not fully supported
-      const result = urlPatternMatcher.match("https://mail.google.com", "*.google.**")
-      expect(result.matched).toBe(false)
+    it("should match a combined *.** pattern", () => {
+      // Any subdomain, any TLD — the form docs have always advertised
+      expect(urlPatternMatcher.match("https://mail.google.com", "*.google.**").matched).toBe(true)
+      expect(urlPatternMatcher.match("https://docs.google.co.uk", "*.google.**").matched).toBe(true)
+      expect(
+        urlPatternMatcher.match("https://docs.google.com/forms", "*.google.**/forms").matched
+      ).toBe(true)
+    })
+
+    it("should not match a combined *.** pattern on another host", () => {
+      expect(urlPatternMatcher.match("https://mail.notgoogle.com", "*.google.**").matched).toBe(
+        false
+      )
+      expect(
+        urlPatternMatcher.match("https://docs.google.com/sheets", "*.google.**/forms").matched
+      ).toBe(false)
+    })
+
+    it("should still require a subdomain for a *. prefix", () => {
+      // "*.google.com" matches the bare host as a kindness; "**" stays strict,
+      // because "google.**" is already the way to say "no subdomain"
+      expect(urlPatternMatcher.match("https://google.com", "*.google.**").matched).toBe(false)
     })
   })
 
