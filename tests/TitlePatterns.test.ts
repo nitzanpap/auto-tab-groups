@@ -79,6 +79,22 @@ describe("Title patterns", () => {
     })
   })
 
+  describe("hostile patterns", () => {
+    it("should not blow up on a pattern full of wildcards", () => {
+      // "*a*a*a…" compiled to a regex backtracks exponentially — 75 seconds for
+      // this one before it was scanned instead. Rules arrive from imported
+      // files too, so a pattern's cost cannot depend on who wrote it
+      const started = performance.now()
+
+      const result = urlPatternMatcher.match("https://example.com", `title:${"*a".repeat(20)}b`, {
+        title: `${"a".repeat(60)}X`
+      })
+
+      expect(result.matched).toBe(false)
+      expect(performance.now() - started).toBeLessThan(100)
+    })
+  })
+
   describe("validation", () => {
     it("should accept a title pattern", () => {
       const result = urlPatternMatcher.validatePattern("title:{channel} - YouTube")

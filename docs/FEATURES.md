@@ -236,6 +236,12 @@ title:*- Figma             -> every Figma document
 - Single `**` per domain or path component
 - Case-insensitive matching
 - Protocol agnostic (works with http/https)
+- An extraction pattern may hold at most 4 wildcards and `{variables}`
+  combined. Matching them is exponential in that count, and a rules file you
+  imported from someone else is not something to run unbounded work for.
+- A regex pattern that backtracks catastrophically (`/(a+)+$/` and friends) is
+  rejected when the rule is saved or imported. One that gets past the check and
+  turns out slow anyway is skipped from then on, and says so in the console.
 
 ## Export/Import Rules
 

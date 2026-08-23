@@ -11,6 +11,21 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.1]
+
+### Security
+
+- Rule patterns could hang the extension. Every pattern type compiled to a
+  regex that backtracks exponentially, so a pattern like `*a*a*a…b` with twenty
+  wildcards took over a minute in a single match — with the service worker
+  blocked for all of it, on every tab update, for every rule. Rules import from
+  a JSON file, so a shared rules pack could do this to whoever imported it.
+  Wildcard, path and title patterns are now scanned instead of compiled and
+  cost the same whoever wrote them; extraction patterns are capped at 4
+  wildcards and variables; a regex that backtracks catastrophically is refused
+  when the rule is saved or imported, and one that slips through is skipped
+  after its first slow run ([#98]).
+
 ## [3.15.0]
 
 ### Added
@@ -190,7 +205,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.0...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.1...HEAD
+[3.15.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.1
 [3.15.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.0
 [3.14.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.1
 [3.14.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.0
