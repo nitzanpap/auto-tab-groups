@@ -128,20 +128,6 @@ class UrlPatternMatcher {
   }
 
   /**
-   * Candidate strings to match a pattern against, query string and hash last.
-   *
-   * The query and hash are tried only after the plain hostname/path has failed,
-   * which keeps this purely additive: a pattern that matched before still
-   * matches the same text with the same capture groups, and only patterns that
-   * need them see them. Case is preserved so extracted values (a ticket id,
-   * say) keep theirs when they become a group name.
-   */
-  /** Escapes every regex metacharacter in a literal */
-  private escapeRegex(literal: string): string {
-    return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  }
-
-  /**
    * Whether a pattern addresses the tab's title rather than its URL.
    */
   isTitlePattern(pattern: string): boolean {
@@ -172,18 +158,22 @@ class UrlPatternMatcher {
     const spec = this.titleSpec(pattern)
     if (!title || !spec) return noMatch
 
-    const regexStr = spec
-      .split("*")
-      .map(part => this.escapeRegex(part))
-      .join(".*")
+    // Scanned rather than turned into a regex: "*a*a*a…" compiles to a regex
+    // that backtracks exponentially, and rules arrive from imported files as
+    // well as from the person using them. indexOf walks the title once per
+    // literal, so a hostile pattern costs no more than a sensible one.
+    const haystack = title.toLowerCase()
+    const literals = spec.toLowerCase().split("*")
+    let cursor = 0
 
-    let matched = false
-    try {
-      matched = new RegExp(regexStr, "i").test(title)
-    } catch {
-      return noMatch
+    for (const literal of literals) {
+      if (!literal) continue
+
+      const found = haystack.indexOf(literal, cursor)
+      if (found === -1) return noMatch
+
+      cursor = found + literal.length
     }
-    if (!matched) return noMatch
 
     return {
       matched: true,
@@ -231,6 +221,15 @@ class UrlPatternMatcher {
     return hosts
   }
 
+  /**
+   * Candidate strings to match a pattern against, query string and hash last.
+   *
+   * The query and hash are tried only after the plain hostname/path has failed,
+   * which keeps this purely additive: a pattern that matched before still
+   * matches the same text with the same capture groups, and only patterns that
+   * need them see them. Case is preserved so extracted values (a ticket id,
+   * say) keep theirs when they become a group name.
+   */
   private matchTargets(urlObj: URL, base: string, lowercase = false): string[] {
     // The wildcard matcher lowercases its pattern and path, so the query and
     // hash have to be lowercased too. The extraction matchers keep case,
