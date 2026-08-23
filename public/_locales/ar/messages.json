@@ -656,7 +656,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "يدعم: النطاقات، الرموز البدل (*.example.com)، المسارات (example.com/api/*)، سلاسل الاستعلام (site.com/?id={id})، عناوين IP، و * بمفردها لكل ما تبقى",
+    "message": "يدعم: النطاقات، الرموز البدل (*.example.com)، المسارات (example.com/api/*)، سلاسل الاستعلام (site.com/?id={id})، عناوين الصفحات (title:Barely Sociable)، عناوين IP، و * بمفردها لكل ما تبقى",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

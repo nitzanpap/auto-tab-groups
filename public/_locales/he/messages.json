@@ -656,7 +656,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "תומך ב: דומיינים, תווים כלליים (*.example.com), נתיבים (example.com/api/*), מחרוזות שאילתה (site.com/?id={id}), כתובות IP, ו-* לבד עבור כל השאר",
+    "message": "תומך ב: דומיינים, תווים כלליים (*.example.com), נתיבים (example.com/api/*), מחרוזות שאילתה (site.com/?id={id}), כותרות עמוד (title:Barely Sociable), כתובות IP, ו-* לבד עבור כל השאר",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

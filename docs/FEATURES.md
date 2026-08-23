@@ -128,6 +128,7 @@ Custom rules support advanced URL pattern matching beyond simple domains.
 | Catch-All | `*` | everything no other rule took |
 | Query String | `site.com/?ticket=VZ01` | that exact query |
 | Query Extraction | `site.com/?ticket={ticket}` | a group per ticket value |
+| Page Title | `title:Barely Sociable` | any tab whose title says that |
 
 ### Catch-All Rules
 
@@ -183,6 +184,17 @@ title — so `?ticket=VZ01` and `?ticket=VZ02` land in separate groups.
 The query is only consulted after host and path have failed to match, so
 patterns written before this existed behave exactly as they did.
 
+A query written straight after the host needs no path in between:
+
+```txt
+youtube.com?ab_channel=BarelySociable
+```
+
+reads as "anywhere on this host", which is why the parameter can sit anywhere
+in the query. Written with a path — `youtube.com/watch?ab_channel=...` — the
+parameter has to be the first one, so put a `*` before it if it might not be:
+`youtube.com/watch?*ab_channel=...`.
+
 ### Hash Routes
 
 Single-page apps often put the real route after a `#`. A pattern containing `#`
@@ -196,6 +208,28 @@ app.io/directory/#/{section}             -> a group per section
 
 Write the `#` as-is — no escaping. Like the query, the fragment is only
 consulted after host and path have failed to match.
+
+### Page Titles
+
+A pattern prefixed with `title:` is matched against the tab's title instead of
+its URL. Useful when the page's address says nothing about what it is:
+
+```txt
+title:Barely Sociable      -> any tab with that text in its title
+title:*- Figma             -> every Figma document
+!title:*Private*           -> as an exclusion, like any other pattern
+```
+
+- The text has to appear somewhere in the title; `*` stands for any run of
+  characters. Everything else, braces included, is literal.
+- Matching ignores case, and the group is named after the rule.
+- Titles arrive after the URL and change again on client-side navigation, so a
+  tab is re-filed whenever its title changes — but only while some enabled rule
+  actually matches on titles.
+- There is no `{variable}` capture here: a title is prose, so
+  `title:{channel} - YouTube` has no single right answer on
+  `Video - Channel - YouTube`. Extraction stays on the URL side, where the
+  structure makes it unambiguous.
 
 ### Limitations
 

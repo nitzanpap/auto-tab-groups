@@ -155,7 +155,7 @@ class TabGroupServiceSimplified {
       }
 
       // Check blacklist rules — if matched, ungroup the tab and skip all grouping
-      const blacklistMatch = await rulesService.findBlacklistMatch(tab.url || "")
+      const blacklistMatch = await rulesService.findBlacklistMatch(tab.url || "", tab.title)
       if (blacklistMatch) {
         console.log(
           `[TabGroupService] Tab ${tabId} matches blacklist rule "${blacklistMatch.name}", skipping grouping`
@@ -168,7 +168,7 @@ class TabGroupServiceSimplified {
 
       // Handle rules-only mode
       if (tabGroupState.groupByMode === "rules-only") {
-        const customRule = await rulesService.findMatchingRule(tab.url || "")
+        const customRule = await rulesService.findMatchingRule(tab.url || "", tab.title)
 
         // Handle system URLs
         const domain = extractDomain(tab.url || "", false)
@@ -178,7 +178,8 @@ class TabGroupServiceSimplified {
         }
 
         // Nothing matched — fall back to a catch-all ("*") rule if the user has one
-        const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(tab.url || ""))
+        const effectiveRule =
+          customRule ?? (await rulesService.findCatchAllRule(tab.url || "", tab.title))
 
         if (!effectiveRule) {
           console.log(`[TabGroupService] Rules-only mode: No rule found for ${tab.url}`)
@@ -196,7 +197,7 @@ class TabGroupServiceSimplified {
         return false
       }
 
-      const customRule = await rulesService.findMatchingRule(tab.url || "")
+      const customRule = await rulesService.findMatchingRule(tab.url || "", tab.title)
 
       console.log(`[TabGroupService] Expected group title: "${expectedTitle}"`)
 
@@ -431,15 +432,16 @@ class TabGroupServiceSimplified {
    */
   async getExpectedGroupTitle(tab: Browser.tabs.Tab): Promise<string | null> {
     const url = tab.url || ""
+    const title = tab.title
 
     if (tabGroupState.groupByMode === "rules-only") {
-      const customRule = await rulesService.findMatchingRule(url)
+      const customRule = await rulesService.findMatchingRule(url, title)
 
       if (!customRule && extractDomain(url, false) === "system") {
         return tabGroupState.systemGroupEnabled ? "System" : null
       }
 
-      const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(url))
+      const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(url, title))
       if (!effectiveRule) return null
 
       return effectiveRule.effectiveGroupName || effectiveRule.name
@@ -448,7 +450,7 @@ class TabGroupServiceSimplified {
     const domain = extractDomain(url, tabGroupState.groupByMode === "subdomain")
     if (!domain) return null
 
-    const customRule = await rulesService.findMatchingRule(url)
+    const customRule = await rulesService.findMatchingRule(url, title)
     return customRule
       ? customRule.effectiveGroupName || customRule.name
       : getDomainDisplayName(domain)
@@ -538,7 +540,7 @@ class TabGroupServiceSimplified {
         if (tab.pinned) continue
 
         // Skip blacklisted tabs from count
-        const blacklisted = await rulesService.findBlacklistMatch(tab.url || "")
+        const blacklisted = await rulesService.findBlacklistMatch(tab.url || "", tab.title)
         if (blacklisted) continue
 
         if (customRule) {
@@ -550,13 +552,13 @@ class TabGroupServiceSimplified {
           // will happily group itself. Harmless — over-counting only makes the
           // leftovers group easier to form, and its minimum is usually 1.
           const isCatchAll = rulesService.isCatchAllRule(customRule)
-          if (isCatchAll && (await rulesService.findMatchingRule(tab.url || ""))) {
+          if (isCatchAll && (await rulesService.findMatchingRule(tab.url || "", tab.title))) {
             continue
           }
 
           const matchingRule = isCatchAll
-            ? await rulesService.findCatchAllRule(tab.url || "")
-            : await rulesService.findMatchingRule(tab.url || "")
+            ? await rulesService.findCatchAllRule(tab.url || "", tab.title)
+            : await rulesService.findMatchingRule(tab.url || "", tab.title)
           const matchGroupName = matchingRule
             ? matchingRule.effectiveGroupName || matchingRule.name
             : null
@@ -660,7 +662,7 @@ class TabGroupServiceSimplified {
 
       // A tab that can't form its own group is exactly what a catch-all rule is for
       if (allowCatchAllFallback) {
-        const catchAll = await rulesService.findCatchAllRule(tab.url || "")
+        const catchAll = await rulesService.findCatchAllRule(tab.url || "", tab.title)
         const catchAllTitle = catchAll ? catchAll.effectiveGroupName || catchAll.name : null
 
         if (catchAllTitle && catchAllTitle !== expectedTitle) {
@@ -738,12 +740,18 @@ class TabGroupServiceSimplified {
         }
 
         // Skip blacklisted tabs
-        const blacklisted = await rulesService.findBlacklistMatch(otherTab.url || "")
+        const blacklisted = await rulesService.findBlacklistMatch(
+          otherTab.url || "",
+          otherTab.title
+        )
         if (blacklisted) continue
 
         let shouldGroup = false
         if (customRule) {
-          const matchingRule = await rulesService.findMatchingRule(otherTab.url || "")
+          const matchingRule = await rulesService.findMatchingRule(
+            otherTab.url || "",
+            otherTab.title
+          )
           shouldGroup = !!matchingRule && matchingRule.name === customRule.name
         } else {
           const includeSubDomain = tabGroupState.groupByMode === "subdomain"
