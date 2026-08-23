@@ -11,6 +11,31 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.0]
+
+### Added
+
+- Rules can match the page title. A pattern prefixed with `title:` —
+  `title:Barely Sociable`, `title:*- Figma` — is matched against the tab's
+  title instead of its URL, for pages whose address says nothing about what
+  they are. Works as an exclusion too, and tabs are re-filed when a title
+  changes ([#98]).
+
+### Fixed
+
+- A query written straight after the host (`youtube.com?ab_channel=Name`) was
+  rejected as an invalid pattern: the host half swallowed the query and then
+  refused it for containing `?` and `=`. It now reads as "anywhere on this
+  host", so the parameter can sit anywhere in the query ([#98]).
+- A `{variable}` in a query string captured everything after it, so a rule on
+  `?ab_channel={channel}` named its group `Name&v=abc123` whenever the
+  parameter was not the last one. A capture now stops at the next parameter
+  ([#98]).
+- Extraction patterns ignored the auto-subdomain pass that wildcard patterns
+  get, so `youtube.com/watch?*v={id}` matched nothing on `www.youtube.com`
+  while the same rule without `{id}` matched. Both behave the same way now
+  ([#98]).
+
 ## [3.14.1]
 
 ### Fixed
@@ -165,7 +190,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.14.1...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.0...HEAD
+[3.15.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.0
 [3.14.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.1
 [3.14.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.14.0
 [3.13.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.13.1
@@ -207,3 +233,4 @@ for those.
 [#94]: https://github.com/nitzanpap/auto-tab-groups/pull/94
 [#95]: https://github.com/nitzanpap/auto-tab-groups/pull/95
 [#96]: https://github.com/nitzanpap/auto-tab-groups/issues/96
+[#98]: https://github.com/nitzanpap/auto-tab-groups/issues/98

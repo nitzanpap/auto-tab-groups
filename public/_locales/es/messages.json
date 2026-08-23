@@ -656,7 +656,7 @@
     "description": "Label for the patterns textarea."
   },
   "ruleModalPatternsHelp": {
-    "message": "Admite: dominios, comodines (*.example.com), rutas (example.com/api/*), cadenas de consulta (site.com/?id={id}), direcciones IP y * por sí solo para todo lo demás",
+    "message": "Admite: dominios, comodines (*.example.com), rutas (example.com/api/*), cadenas de consulta (site.com/?id={id}), títulos de página (title:Barely Sociable), direcciones IP y * por sí solo para todo lo demás",
     "description": "Help text for the patterns textarea."
   },
   "ruleModalColorLabel": {

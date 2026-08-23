@@ -11,7 +11,8 @@ import type { PatternValidationResult } from "../types"
 export const PATTERN_TYPES = {
   SIMPLE_WILDCARD: "simple_wildcard",
   SEGMENT_EXTRACTION: "segment_extraction",
-  REGEX: "regex"
+  REGEX: "regex",
+  TITLE: "title"
 } as const
 
 export type PatternType = (typeof PATTERN_TYPES)[keyof typeof PATTERN_TYPES]
@@ -32,7 +33,12 @@ export interface MatchOptions {
   ruleName?: string
   groupNameTemplate?: string
   allowAutoSubdomain?: boolean
+  /** The tab's title, needed by "title:" patterns and ignored by the rest */
+  title?: string
 }
+
+/** Prefix that switches a pattern from matching the URL to matching the title */
+export const TITLE_PATTERN_PREFIX = "title:"
 
 /**
  * Pattern validation result with type
@@ -73,7 +79,7 @@ class UrlPatternMatcher {
    * Main entry point - matches a URL against a pattern
    */
   match(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
-    if (!url || !pattern) {
+    if (!pattern || (!url && !this.isTitlePattern(pattern))) {
       return { matched: false, extractedValues: {}, groupName: null }
     }
 
@@ -86,6 +92,8 @@ class UrlPatternMatcher {
     const patternType = this.detectPatternType(pattern)
 
     switch (patternType) {
+      case PATTERN_TYPES.TITLE:
+        return this.matchTitle(options.title || "", pattern, options)
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
         return this.matchSegmentExtraction(url, pattern, options)
       case PATTERN_TYPES.REGEX:
@@ -99,6 +107,12 @@ class UrlPatternMatcher {
    * Detects the type of pattern
    */
   detectPatternType(pattern: string): PatternType {
+    // A "title:" prefix decides what the pattern is matched against, so it
+    // wins over the syntax checks below — a title may contain anything
+    if (this.isTitlePattern(pattern)) {
+      return PATTERN_TYPES.TITLE
+    }
+
     // Check for segment extraction patterns (contains {variable})
     if (/\{[^}]+\}/.test(pattern)) {
       return PATTERN_TYPES.SEGMENT_EXTRACTION
@@ -122,6 +136,101 @@ class UrlPatternMatcher {
    * need them see them. Case is preserved so extracted values (a ticket id,
    * say) keep theirs when they become a group name.
    */
+  /** Escapes every regex metacharacter in a literal */
+  private escapeRegex(literal: string): string {
+    return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  }
+
+  /**
+   * Whether a pattern addresses the tab's title rather than its URL.
+   */
+  isTitlePattern(pattern: string): boolean {
+    return pattern.trim().toLowerCase().startsWith(TITLE_PATTERN_PREFIX)
+  }
+
+  /** The pattern with its "title:" prefix removed */
+  private titleSpec(pattern: string): string {
+    return pattern.trim().substring(TITLE_PATTERN_PREFIX.length).trim()
+  }
+
+  /**
+   * Matches a tab title against a "title:" pattern (#98).
+   *
+   * Titles are prose, not structure: they carry spaces, dashes and dots that
+   * mean nothing, so this has none of the URL matchers' segment rules. The
+   * text has to appear somewhere in the title and "*" stands for any run of
+   * characters. Everything else, braces included, is literal.
+   *
+   * ponytail: no {variable} capture here — "{channel} - YouTube" has no single
+   * right answer on "Video - Channel - YouTube", and guessing one would name
+   * people's groups wrong. Titles name their group after the rule; the URL
+   * matchers keep extraction, where the structure makes it unambiguous.
+   */
+  matchTitle(title: string, pattern: string, options: MatchOptions = {}): MatchResult {
+    const noMatch: MatchResult = { matched: false, extractedValues: {}, groupName: null }
+
+    const spec = this.titleSpec(pattern)
+    if (!title || !spec) return noMatch
+
+    const regexStr = spec
+      .split("*")
+      .map(part => this.escapeRegex(part))
+      .join(".*")
+
+    let matched = false
+    try {
+      matched = new RegExp(regexStr, "i").test(title)
+    } catch {
+      return noMatch
+    }
+    if (!matched) return noMatch
+
+    return {
+      matched: true,
+      extractedValues: {},
+      groupName: options.groupNameTemplate || options.ruleName || null
+    }
+  }
+
+  /**
+   * Rewrites "host?query" as "host/*query" (#98).
+   *
+   * A query written straight after the host has no path to live in, so the
+   * host half used to swallow it and the pattern was rejected for containing
+   * "?" and "=". Reading it as "anywhere on this host" is both what people
+   * mean by it and what the documented "host/*key=value" form already does —
+   * the leading "*" is why parameter order does not matter.
+   */
+  private normalizeQueryOnlyPattern(pattern: string): string {
+    const questionMark = pattern.indexOf("?")
+    if (questionMark === -1) return pattern
+
+    const slash = pattern.indexOf("/")
+    if (slash !== -1 && slash < questionMark) return pattern
+
+    return `${pattern.substring(0, questionMark)}/*${pattern.substring(questionMark + 1)}`
+  }
+
+  /**
+   * The hostname, then the same hostname with leading subdomains dropped when
+   * the caller allows it.
+   *
+   * RulesService retries every rule with allowAutoSubdomain so "youtube.com"
+   * reaches "www.youtube.com". The wildcard matcher has always honoured that;
+   * extraction patterns silently did not, so the same rule text matched
+   * different hosts depending on which pattern type it happened to be (#98).
+   */
+  private candidateHostnames(hostname: string, options: MatchOptions): string[] {
+    if (!options.allowAutoSubdomain) return [hostname]
+
+    const hosts = [hostname]
+    const labels = hostname.split(".")
+    for (let i = 1; labels.length - i >= 2; i++) {
+      hosts.push(labels.slice(i).join("."))
+    }
+    return hosts
+  }
+
   private matchTargets(urlObj: URL, base: string, lowercase = false): string[] {
     // The wildcard matcher lowercases its pattern and path, so the query and
     // hash have to be lowercased too. The extraction matchers keep case,
@@ -147,7 +256,7 @@ class UrlPatternMatcher {
       const urlObj = new URL(url)
       const hostname = urlObj.hostname.toLowerCase()
       const pathname = urlObj.pathname.toLowerCase()
-      const cleanPattern = pattern.toLowerCase().trim()
+      const cleanPattern = this.normalizeQueryOnlyPattern(pattern.toLowerCase().trim())
 
       // Check if pattern includes a path
       const hasPath = cleanPattern.includes("/")
@@ -312,12 +421,15 @@ class UrlPatternMatcher {
         return { matched: false, extractedValues: {}, groupName: null }
       }
 
-      const base = pattern.includes("/") ? hostname + pathname : hostname
       const regex = this.buildSegmentRegex(patternInfo)
 
       let match: RegExpMatchArray | null = null
-      for (const target of this.matchTargets(urlObj, base)) {
-        match = target.match(regex)
+      for (const host of this.candidateHostnames(hostname, options)) {
+        const base = pattern.includes("/") ? host + pathname : host
+        for (const target of this.matchTargets(urlObj, base)) {
+          match = target.match(regex)
+          if (match) break
+        }
         if (match) break
       }
 
@@ -413,17 +525,19 @@ class UrlPatternMatcher {
         regexStr += literal
       } else if (part.type === "variable") {
         const variable = part.value as VariableSpec
+        // "&" and "#" end a value wherever it sits: without them a capture in
+        // a query string runs on into the parameters after it (#98)
         if (variable.delimiter === "dash") {
-          regexStr += "([^-]+)"
-        } else if (variable.delimiter === "dot") {
-          regexStr += "([^.]+)"
+          regexStr += "([^-&#]+)"
         } else {
-          regexStr += "([^.]+)"
+          regexStr += "([^.&#]+)"
         }
       }
     }
 
-    regexStr += "$"
+    // A pattern that ends inside a query string addresses one parameter, so
+    // whatever follows the one it captured is none of its business (#98)
+    regexStr += "(?:[&#].*)?$"
     return new RegExp(regexStr, "i")
   }
 
@@ -435,6 +549,18 @@ class UrlPatternMatcher {
     extractedValues: Record<string, string>,
     options: MatchOptions
   ): string {
+    return this.groupNameFor(extractedValues, patternInfo.variables[0]?.name, options)
+  }
+
+  /**
+   * The group name for a set of captures: the template if there is one, else
+   * the first captured value, else the rule's own name.
+   */
+  private groupNameFor(
+    extractedValues: Record<string, string>,
+    firstVariableName: string | undefined,
+    options: MatchOptions
+  ): string {
     if (options.groupNameTemplate) {
       let groupName = options.groupNameTemplate
       for (const [key, value] of Object.entries(extractedValues)) {
@@ -443,9 +569,8 @@ class UrlPatternMatcher {
       return groupName
     }
 
-    const firstVariable = patternInfo.variables[0]
-    if (firstVariable && extractedValues[firstVariable.name]) {
-      return extractedValues[firstVariable.name]
+    if (firstVariableName && extractedValues[firstVariableName]) {
+      return extractedValues[firstVariableName]
     }
 
     return options.ruleName || "Extracted Group"
@@ -525,6 +650,14 @@ class UrlPatternMatcher {
     const patternType = this.detectPatternType(inner)
 
     switch (patternType) {
+      case PATTERN_TYPES.TITLE:
+        return this.titleSpec(inner)
+          ? { isValid: true, error: null, type: PATTERN_TYPES.TITLE }
+          : {
+              isValid: false,
+              error: "Title pattern cannot be empty after 'title:'",
+              type: PATTERN_TYPES.TITLE
+            }
       case PATTERN_TYPES.SEGMENT_EXTRACTION:
         return this.validateSegmentPattern(inner)
       case PATTERN_TYPES.REGEX:
@@ -581,7 +714,8 @@ class UrlPatternMatcher {
   /**
    * Validates a simple wildcard pattern
    */
-  validateSimpleWildcardPattern(pattern: string): PatternValidationResultWithType {
+  validateSimpleWildcardPattern(rawPattern: string): PatternValidationResultWithType {
+    const pattern = this.normalizeQueryOnlyPattern(rawPattern)
     const hasPath = pattern.includes("/")
     const [fullDomainPattern, pathPattern] = hasPath ? pattern.split("/", 2) : [pattern, ""]
 

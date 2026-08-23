@@ -59,7 +59,7 @@ class RulesService {
    * Uses two-pass matching: exact matches first, then auto-www matches
    * This ensures explicit www.domain.com rules take priority over domain.com with auto-www
    */
-  async findMatchingRule(url: string): Promise<MatchedRule | null> {
+  async findMatchingRule(url: string, title?: string): Promise<MatchedRule | null> {
     if (!url) return null
 
     const customRules = tabGroupState.getCustomRulesObject()
@@ -70,11 +70,11 @@ class RulesService {
     console.log(`[RulesService] Found ${groupingRules.length} grouping rules to check`)
 
     // First pass: exact matches only (no auto-subdomain)
-    const exactMatch = this.findMatchInRules(url, groupingRules, false)
+    const exactMatch = this.findMatchInRules(url, groupingRules, false, title)
     if (exactMatch) return exactMatch
 
     // Second pass: auto-subdomain matches (domain.com matches *.domain.com)
-    return this.findMatchInRules(url, groupingRules, true)
+    return this.findMatchInRules(url, groupingRules, true, title)
   }
 
   /**
@@ -82,7 +82,7 @@ class RulesService {
    * Exclusion patterns still count, so a catch-all can carve out exceptions
    * (e.g. "*" plus "!github.com" catches everything except GitHub).
    */
-  async findCatchAllRule(url: string): Promise<MatchedRule | null> {
+  async findCatchAllRule(url: string, title?: string): Promise<MatchedRule | null> {
     if (!url) return null
 
     // Browser/system pages belong to the System group (or nowhere), never to a
@@ -97,14 +97,14 @@ class RulesService {
 
     if (catchAllRules.length === 0) return null
 
-    return this.findMatchInRules(url, catchAllRules, false)
+    return this.findMatchInRules(url, catchAllRules, false, title)
   }
 
   /**
    * Finds a matching blacklist rule for a given URL.
    * Blacklist rules prevent tabs from being grouped entirely.
    */
-  async findBlacklistMatch(url: string): Promise<MatchedRule | null> {
+  async findBlacklistMatch(url: string, title?: string): Promise<MatchedRule | null> {
     if (!url) return null
 
     const customRules = tabGroupState.getCustomRulesObject()
@@ -113,11 +113,11 @@ class RulesService {
     if (blacklistRules.length === 0) return null
 
     // First pass: exact matches only
-    const exactMatch = this.findMatchInRules(url, blacklistRules, false)
+    const exactMatch = this.findMatchInRules(url, blacklistRules, false, title)
     if (exactMatch) return exactMatch
 
     // Second pass: auto-subdomain matches
-    return this.findMatchInRules(url, blacklistRules, true)
+    return this.findMatchInRules(url, blacklistRules, true, title)
   }
 
   /**
@@ -128,7 +128,8 @@ class RulesService {
   private findMatchInRules(
     url: string,
     rules: CustomRule[],
-    allowAutoSubdomain: boolean
+    allowAutoSubdomain: boolean,
+    title?: string
   ): MatchedRule | null {
     const passLabel = allowAutoSubdomain ? " (auto-subdomain)" : ""
 
@@ -140,11 +141,12 @@ class RulesService {
       for (const rulePattern of includePatterns) {
         const matchResult = urlPatternMatcher.match(url, rulePattern, {
           ruleName: rule.name,
-          allowAutoSubdomain
+          allowAutoSubdomain,
+          title
         })
 
         if (matchResult.matched) {
-          if (this.isExcludedByRule(url, excludePatterns, allowAutoSubdomain)) {
+          if (this.isExcludedByRule(url, excludePatterns, allowAutoSubdomain, title)) {
             console.log(
               `[RulesService] URL "${url}" matches rule "${rule.name}" but is excluded${passLabel}`
             )
@@ -204,10 +206,26 @@ class RulesService {
   private isExcludedByRule(
     url: string,
     excludePatterns: string[],
-    allowAutoSubdomain: boolean
+    allowAutoSubdomain: boolean,
+    title?: string
   ): boolean {
     return excludePatterns.some(
-      exclPattern => urlPatternMatcher.match(url, exclPattern, { allowAutoSubdomain }).matched
+      exclPattern =>
+        urlPatternMatcher.match(url, exclPattern, { allowAutoSubdomain, title }).matched
+    )
+  }
+
+  /**
+   * Whether any enabled rule matches on the page title.
+   *
+   * Titles change far more often than URLs — every load, and again on every
+   * client-side navigation — so the background only re-files a tab on a title
+   * change when some rule actually cares about titles.
+   */
+  hasTitleRules(): boolean {
+    return Object.values(tabGroupState.getCustomRulesObject()).some(
+      rule =>
+        rule.enabled && rule.domains.some(pattern => urlPatternMatcher.isTitlePattern(pattern))
     )
   }
 

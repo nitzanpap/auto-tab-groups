@@ -868,6 +868,14 @@ export default defineBackground(() => {
         console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`)
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tabId)
+      } else if (changeInfo.title) {
+        // Titles arrive after the URL and change again on client-side
+        // navigation, so this only costs anything when a rule matches on them
+        await ensureStateLoaded()
+        if (rulesService.hasTitleRules()) {
+          console.log(`[tabs.onUpdated] Title changed to: ${changeInfo.title}`)
+          await tabGroupService.handleTabUpdate(tabId)
+        }
       }
     } catch (error) {
       console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error)
