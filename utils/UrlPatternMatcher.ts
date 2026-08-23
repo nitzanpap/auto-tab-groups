@@ -41,6 +41,22 @@ export interface MatchOptions {
 export const TITLE_PATTERN_PREFIX = "title:"
 
 /**
+ * Most wildcards and variables one extraction pattern may contain.
+ *
+ * Measured cost of one match against a 60-character URL: 4 wildcards 3ms,
+ * 5 wildcards 31ms, 6 wildcards 285ms, 7 wildcards 2.3s. Real patterns use
+ * two or three ("*.reddit.com/r/{subreddit}/comments/*" is three), so 4 is
+ * both room to work and a ceiling on what a hostile rules file can cost.
+ */
+const MAX_EXTRACTION_WILDCARDS = 4
+
+/** A single match this slow means the pattern, not the machine, is the problem */
+const SLOW_MATCH_MS = 250
+
+/** Budget for the validation probe below */
+const SLOW_PROBE_MS = 25
+
+/**
  * Pattern validation result with type
  */
 export interface PatternValidationResultWithType extends PatternValidationResult {
@@ -75,6 +91,9 @@ interface SegmentPatternInfo {
 }
 
 class UrlPatternMatcher {
+  /** Regex patterns caught taking too long, skipped until the worker restarts */
+  private slowPatterns = new Set<string>()
+
   /**
    * Main entry point - matches a URL against a pattern
    */
@@ -125,6 +144,84 @@ class UrlPatternMatcher {
 
     // Default to simple wildcard
     return PATTERN_TYPES.SIMPLE_WILDCARD
+  }
+
+  /**
+   * Wildcard matching without a regex.
+   *
+   * "a*b*c" compiled to /a[^/]*b[^/]*c/ backtracks exponentially in the number
+   * of wildcards: twenty of them against a sixty-character URL took over a
+   * minute here, with the service worker blocked for all of it. Patterns are
+   * not only typed by the person using them — they arrive in imported rules
+   * files too — so a pattern's cost must not depend on who wrote it.
+   *
+   * This is the textbook two-pointer glob: on a mismatch it hands one more
+   * character to the last "*" and carries on, which visits each character at
+   * most once per wildcard instead of exploring every split.
+   *
+   * @param separator a character "*" may never swallow (path "/", host ".")
+   * @param fullMatch whether the pattern must consume the whole text
+   */
+  private globMatch(text: string, pattern: string, separator: string, fullMatch: boolean): boolean {
+    let textIndex = 0
+    let patternIndex = 0
+    let lastStar = -1
+    let starTextIndex = 0
+
+    while (textIndex < text.length) {
+      if (!fullMatch && patternIndex === pattern.length) return true
+
+      if (pattern[patternIndex] === "*") {
+        lastStar = patternIndex
+        starTextIndex = textIndex
+        patternIndex++
+      } else if (patternIndex < pattern.length && pattern[patternIndex] === text[textIndex]) {
+        textIndex++
+        patternIndex++
+      } else if (lastStar !== -1) {
+        // Give the last "*" one more character — unless that character is the
+        // separator, which no single "*" is allowed to cross
+        if (text[starTextIndex] === separator) return false
+        starTextIndex++
+        textIndex = starTextIndex
+        patternIndex = lastStar + 1
+      } else {
+        return false
+      }
+    }
+
+    while (patternIndex < pattern.length && pattern[patternIndex] === "*") patternIndex++
+    return patternIndex === pattern.length
+  }
+
+  /**
+   * Whether a user's regex backtracks catastrophically.
+   *
+   * A regex is the one pattern type that cannot be made safe by rewriting the
+   * matcher — it is the user's own program, and JavaScript cannot interrupt one
+   * mid-run. So it is measured instead: exponential backtracking is already
+   * obvious on a short string (a few million steps), while any sane regex
+   * finishes a twenty-character probe in microseconds. Short probes are what
+   * keep this check itself cheap — the same regex on sixty characters would
+   * take hours.
+   *
+   * Catches the classic shapes, not every possible one. Patterns that slip
+   * through are quarantined by matchRegex() after their first slow run.
+   */
+  private backtracksBadly(regex: RegExp): boolean {
+    const probes = [`${"a".repeat(20)}!`, `${"ab".repeat(10)}!`, `${"a-".repeat(10)}!`]
+    const started = performance.now()
+
+    for (const probe of probes) {
+      try {
+        regex.test(probe)
+      } catch {
+        return false
+      }
+      if (performance.now() - started > SLOW_PROBE_MS) return true
+    }
+
+    return false
   }
 
   /**
@@ -357,14 +454,7 @@ class UrlPatternMatcher {
    * Matches patterns with wildcards in the middle
    */
   matchMiddleWildcard(domain: string, pattern: string): boolean {
-    // Convert pattern to regex, escaping special chars except *
-    const regexPattern = pattern
-      .split("*")
-      .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("[^.]*")
-
-    const regex = new RegExp(`^${regexPattern}$`)
-    return regex.test(domain)
+    return this.globMatch(domain, pattern, ".", true)
   }
 
   /**
@@ -392,14 +482,8 @@ class UrlPatternMatcher {
 
     // Handle single * wildcard in path segments (match single segment)
     if (cleanPattern.includes("*")) {
-      // Convert pattern to regex: * matches any characters within a segment (not /)
-      const regexPattern = cleanPattern
-        .split("*")
-        .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-        .join("[^/]*")
-
-      const regex = new RegExp(`^${regexPattern}`)
-      return regex.test(cleanPath)
+      // Prefix match: the pattern has to be satisfied, the path may continue
+      return this.globMatch(cleanPath, cleanPattern, "/", false)
     }
 
     // Exact prefix matching
@@ -579,16 +663,32 @@ class UrlPatternMatcher {
    * Matches using regex patterns
    */
   matchRegex(url: string, pattern: string, options: MatchOptions = {}): MatchResult {
+    // Rules saved before the validation probe existed, or slow only on certain
+    // URLs, get one bad run and are then left out of every later match. In
+    // memory on purpose: a service worker restart is a fair second chance, and
+    // a rule the user has since fixed should not stay broken forever.
+    if (this.slowPatterns.has(pattern)) {
+      return { matched: false, extractedValues: {}, groupName: null }
+    }
+
     try {
       const regexStr = pattern.slice(1, -1)
       const regex = new RegExp(regexStr, "i")
 
       const urlObj = new URL(url)
+      const started = performance.now()
 
       let match: RegExpMatchArray | null = null
       for (const target of this.matchTargets(urlObj, urlObj.hostname + urlObj.pathname)) {
         match = target.match(regex)
         if (match) break
+      }
+
+      if (performance.now() - started > SLOW_MATCH_MS) {
+        console.warn(
+          `[UrlPatternMatcher] Pattern "${pattern}" took too long to match and will be skipped`
+        )
+        this.slowPatterns.add(pattern)
       }
 
       if (!match) {
@@ -793,6 +893,19 @@ class UrlPatternMatcher {
    * Validates a segment extraction pattern
    */
   validateSegmentPattern(pattern: string): PatternValidationResultWithType {
+    // Extraction still goes through a regex, because the captures are the
+    // point, and that regex backtracks exponentially in the number of
+    // wildcards and variables: twenty of them took over a minute. Nothing
+    // legible needs more than a handful, so the count is where it is stopped.
+    const wildcards = (pattern.match(/\*/g) || []).length + (pattern.match(/\{/g) || []).length
+    if (wildcards > MAX_EXTRACTION_WILDCARDS) {
+      return {
+        isValid: false,
+        error: `Pattern has too many wildcards and variables (max ${MAX_EXTRACTION_WILDCARDS})`,
+        type: PATTERN_TYPES.SEGMENT_EXTRACTION
+      }
+    }
+
     const info = this.parseSegmentPattern(pattern)
 
     if (!info.valid) {
@@ -859,7 +972,16 @@ class UrlPatternMatcher {
     }
 
     try {
-      new RegExp(regexStr)
+      const regex = new RegExp(regexStr)
+
+      if (this.backtracksBadly(regex)) {
+        return {
+          isValid: false,
+          error: "Regex is too slow to run on every tab — avoid nested quantifiers",
+          type: PATTERN_TYPES.REGEX
+        }
+      }
+
       return { isValid: true, error: null, type: PATTERN_TYPES.REGEX }
     } catch (error) {
       return {
