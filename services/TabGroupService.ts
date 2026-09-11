@@ -1054,22 +1054,6 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Gets the domain for a given group
-   */
-  async getGroupDomain(groupId: number): Promise<string | null> {
-    try {
-      const tabs = await browser.tabs.query({ groupId })
-      if (tabs.length === 0) return null
-
-      const includeSubDomain = tabGroupState.groupByMode === "subdomain"
-      return extractDomain(tabs[0].url || "", includeSubDomain)
-    } catch (error) {
-      console.error(`[TabGroupService] Error getting group domain:`, error)
-      return null
-    }
-  }
-
-  /**
    * Generates new random colors for all groups
    */
   async generateNewColors(): Promise<boolean> {
@@ -1181,6 +1165,34 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Records a group's current colour under its title.
+   *
+   * The colour mapping is what a group is rebuilt from, so a colour the user
+   * picked by hand has to land there too — otherwise the next rebuild or
+   * startup restore silently reverts it to whatever we last chose (#102).
+   */
+  async rememberGroupColor(group: Browser.tabGroups.TabGroup): Promise<boolean> {
+    try {
+      const title = stripIndexPrefix(group.title || "")
+      if (!title) return false
+
+      // The mapping doubles as our ownership ledger — writing a foreign group
+      // into it would make us start managing someone else's group (#96).
+      const tabsInGroup = await browser.tabs.query({ groupId: group.id })
+      if (!(await this.isOwnGroup(group, tabsInGroup))) return false
+
+      if ((await getGroupColor(title)) === group.color) return false
+
+      await updateGroupColor(title, group.color as TabGroupColor)
+      console.log(`[TabGroupService] Remembered color "${group.color}" for "${title}"`)
+      return true
+    } catch (error) {
+      console.warn(`[TabGroupService] Failed to remember group color:`, error)
+      return false
+    }
+  }
+
+  /**
    * Restores saved colors
    */
   async restoreSavedColors(): Promise<boolean> {
@@ -1192,7 +1204,7 @@ class TabGroupServiceSimplified {
       let restoredCount = 0
 
       for (const group of groups) {
-        const savedColor = colorMappingValue[group.title || ""]
+        const savedColor = colorMappingValue[stripIndexPrefix(group.title || "")]
         if (savedColor && savedColor !== group.color) {
           try {
             await browser.tabGroups.update(group.id, {
