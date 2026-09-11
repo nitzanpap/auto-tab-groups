@@ -11,6 +11,19 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.3]
+
+### Fixed
+
+- A tab group color picked by hand reverted on its own, seemingly when another
+  group was opened. The color mapping a group is rebuilt from was only ever
+  written by the extension, so a manual color was never recorded and the next
+  rebuild — a group dropping below its minimum-tabs threshold and coming back,
+  or the startup color restore — repainted it with the extension's old choice.
+  A manual recolor is recorded now. The startup restore also skipped every
+  group while tab sorting was on, because it looked up the title with its sort
+  index still attached ([#103]).
+
 ## [3.15.2]
 
 ### Fixed
@@ -214,7 +227,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.2...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.3...HEAD
+[3.15.3]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.3
 [3.15.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.2
 [3.15.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.1
 [3.15.0]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.0
@@ -260,3 +274,4 @@ for those.
 [#95]: https://github.com/nitzanpap/auto-tab-groups/pull/95
 [#96]: https://github.com/nitzanpap/auto-tab-groups/issues/96
 [#98]: https://github.com/nitzanpap/auto-tab-groups/issues/98
+[#103]: https://github.com/nitzanpap/auto-tab-groups/pull/103
