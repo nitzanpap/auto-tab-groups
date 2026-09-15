@@ -999,10 +999,8 @@ export default defineBackground(() => {
       try {
         await ensureStateLoaded()
 
-        const domain = await tabGroupService.getGroupDomain(group.id)
-        if (!domain) return
-
-        console.log(`[tabGroups.onUpdated] Group ${group.id} updated for domain "${domain}"`)
+        // Keeps a hand-picked colour as the one we rebuild the group with
+        await tabGroupService.rememberGroupColor(group)
       } catch (error) {
         console.error("[tabGroups.onUpdated] Error handling group update:", error)
       }

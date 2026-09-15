@@ -257,6 +257,71 @@ describe("Color Persistence", () => {
     })
   })
 
+  describe("rememberGroupColor behavior", () => {
+    it("should save a color the user picked by hand", async () => {
+      colorMappingState = { Example: "blue" }
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false, windowId: 1, groupId: 7 }
+      ])
+
+      const remembered = await tabGroupService.rememberGroupColor({
+        id: 7,
+        title: "Example",
+        color: "red"
+      } as never)
+
+      expect(remembered).toBe(true)
+      expect(colorMappingState).toEqual({ Example: "red" })
+    })
+
+    it("should ignore a sort-index prefix", async () => {
+      colorMappingState = { Example: "blue" }
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false, windowId: 1, groupId: 7 }
+      ])
+
+      await tabGroupService.rememberGroupColor({
+        id: 7,
+        title: "2. Example",
+        color: "red"
+      } as never)
+
+      expect(colorMappingState).toEqual({ Example: "red" })
+    })
+
+    it("should not write when the color already matches", async () => {
+      colorMappingState = { Example: "red" }
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false, windowId: 1, groupId: 7 }
+      ])
+
+      const remembered = await tabGroupService.rememberGroupColor({
+        id: 7,
+        title: "Example",
+        color: "red"
+      } as never)
+
+      expect(remembered).toBe(false)
+      expect(spySetValue).not.toHaveBeenCalled()
+    })
+
+    it("should not adopt a group this extension did not create", async () => {
+      colorMappingState = {}
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false, windowId: 1, groupId: 7 }
+      ])
+
+      const remembered = await tabGroupService.rememberGroupColor({
+        id: 7,
+        title: "Someone Else's Group",
+        color: "red"
+      } as never)
+
+      expect(remembered).toBe(false)
+      expect(colorMappingState).toEqual({})
+    })
+  })
+
   describe("restoreSavedColors behavior", () => {
     it("should restore colors from saved mapping", async () => {
       colorMappingState = { example: "purple", other: "orange" }
@@ -284,6 +349,16 @@ describe("Color Persistence", () => {
 
       // Should NOT call update since color already matches
       expect(mockBrowser.tabGroups.update).not.toHaveBeenCalled()
+    })
+
+    it("should restore a color onto a sort-index prefixed title", async () => {
+      colorMappingState = { example: "purple" }
+
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "1. example", color: "blue" }])
+
+      await tabGroupService.restoreSavedColors()
+
+      expect(mockBrowser.tabGroups.update).toHaveBeenCalledWith(1, { color: "purple" })
     })
 
     it("should skip groups without saved colors", async () => {
