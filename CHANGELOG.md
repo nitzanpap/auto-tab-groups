@@ -11,6 +11,14 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.4]
+
+### Fixed
+
+- Empty rule imports now clear existing rules when Replace mode is selected ([#104]).
+- Rule deletion uses an in-page confirmation so it works when browser confirmation
+  dialogs are suppressed ([#104]).
+
 ## [3.15.3]
 
 ### Fixed
@@ -228,6 +236,7 @@ for those.
   instead of `München` ([#75], closes [#74]).
 
 [unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.3...HEAD
+[3.15.4]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.4
 [3.15.3]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.3
 [3.15.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.2
 [3.15.1]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.1
@@ -275,3 +284,4 @@ for those.
 [#96]: https://github.com/nitzanpap/auto-tab-groups/issues/96
 [#98]: https://github.com/nitzanpap/auto-tab-groups/issues/98
 [#103]: https://github.com/nitzanpap/auto-tab-groups/pull/103
+[#104]: https://github.com/nitzanpap/auto-tab-groups/pull/104
