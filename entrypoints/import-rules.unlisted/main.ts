@@ -106,7 +106,7 @@ function parseAndPreviewRules(jsonText: string): void {
   try {
     const data = JSON.parse(jsonText) as { rules?: Record<string, RuleData> }
 
-    if (!data.rules || typeof data.rules !== "object") {
+    if (!data?.rules || typeof data.rules !== "object" || Array.isArray(data.rules)) {
       showError(t("importInvalidFormat", "Invalid file format: Missing 'rules' property"))
       return
     }
@@ -114,7 +114,11 @@ function parseAndPreviewRules(jsonText: string): void {
     const parsedRules = data.rules
     const ruleCount = Object.keys(parsedRules).length
 
-    if (ruleCount === 0) {
+    importOptions.style.display = "block"
+    const replaceExisting =
+      document.querySelector<HTMLInputElement>('input[name="importMode"]:checked')?.value ===
+      "replace"
+    if (ruleCount === 0 && !replaceExisting) {
       showError(t("importNoRules", "No rules found in file"))
       return
     }
@@ -289,6 +293,12 @@ clearFile.addEventListener("click", () => {
 
 // Import button
 importButton.addEventListener("click", performImport)
+
+for (const input of document.querySelectorAll('input[name="importMode"]')) {
+  input.addEventListener("change", () => {
+    if (rawJsonData) parseAndPreviewRules(rawJsonData)
+  })
+}
 
 // Cancel button
 cancelButton.addEventListener("click", () => {
