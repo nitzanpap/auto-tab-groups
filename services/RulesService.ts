@@ -431,14 +431,18 @@ class RulesService {
     try {
       const importData = JSON.parse(jsonData)
 
-      if (!importData.rules || typeof importData.rules !== "object") {
+      if (
+        !importData?.rules ||
+        typeof importData.rules !== "object" ||
+        Array.isArray(importData.rules)
+      ) {
         throw new Error("Invalid import file: Missing or invalid rules data")
       }
 
       const importRules = importData.rules as Record<string, RuleData>
       const importCount = Object.keys(importRules).length
 
-      if (importCount === 0) {
+      if (importCount === 0 && !replaceExisting) {
         throw new Error("No rules found in import file")
       }
 
@@ -477,7 +481,7 @@ class RulesService {
       }
 
       const validCount = Object.keys(validRules).length
-      if (validCount === 0) {
+      if (validCount === 0 && importCount > 0) {
         throw new Error(`No valid rules found. Errors: ${validationErrors.join("; ")}`)
       }
 

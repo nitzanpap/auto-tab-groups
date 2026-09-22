@@ -145,3 +145,30 @@ describe("Rule editing - priority and minimum tabs", () => {
     })
   })
 })
+
+describe("Empty rule imports", () => {
+  beforeEach(() => {
+    tabGroupState.updateFromStorage(DEFAULT_STATE)
+  })
+
+  it("clears and persists rules when replacing with an empty export", async () => {
+    await rulesService.addRule({ name: "Docs", domains: ["docs.google.com"] })
+    const result = await rulesService.importRules('{"version":"1.0","rules":{}}', true)
+    expect(result).toMatchObject({ success: true, imported: 0, replacedExisting: true })
+    expect(await rulesService.getCustomRules()).toEqual({})
+    const { saveAllStorage } = await import("../utils/storage")
+    expect(saveAllStorage).toHaveBeenLastCalledWith({ customRules: {} })
+  })
+
+  it.each([
+    '{"rules":{}}',
+    '{"rules":[]}',
+    '{"rules":null}',
+    '{"rules":{"bad":{}}}'
+  ])("preserves existing rules for an empty merge or invalid replacement: %s", async json => {
+    const id = await rulesService.addRule({ name: "Docs", domains: ["docs.google.com"] })
+    const result = await rulesService.importRules(json, json !== '{"rules":{}}')
+    expect(result.success).toBe(false)
+    expect((await rulesService.getCustomRules())[id]).toBeDefined()
+  })
+})

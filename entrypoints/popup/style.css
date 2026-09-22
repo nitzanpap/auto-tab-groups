@@ -30,6 +30,23 @@ html {
   box-sizing: border-box;
 }
 
+.rule-delete-dialog {
+  margin: auto;
+  max-width: calc(100% - 32px);
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.rule-delete-dialog p {
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+
+.rule-delete-dialog::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+
 .selectable {
   -moz-user-select: text;
   user-select: text;

@@ -567,14 +567,43 @@ function toggleBlacklistSection(): void {
 
 // Delete rule
 async function deleteRule(ruleId: string, ruleName: string): Promise<void> {
-  const prompt = t(
+  const dialog = document.createElement("dialog")
+  dialog.className = "rule-delete-dialog"
+  const prompt = document.createElement("p")
+  prompt.id = "rule-delete-prompt"
+  prompt.textContent = t(
     "rulesDeleteConfirm",
     `Are you sure you want to delete the rule "${ruleName}"?`,
     ruleName
   )
-  if (!confirm(prompt)) {
-    return
-  }
+  dialog.setAttribute("aria-labelledby", prompt.id)
+  const actions = document.createElement("form")
+  actions.method = "dialog"
+  actions.className = "rule-actions"
+  const cancel = document.createElement("button")
+  cancel.className = "rule-action-btn"
+  cancel.textContent = t("ruleModalCancel", "Cancel")
+  cancel.value = "cancel"
+  const remove = document.createElement("button")
+  remove.className = "rule-action-btn delete"
+  remove.textContent = t("rulesDelete", "Delete")
+  remove.value = "delete"
+  actions.append(cancel, remove)
+  dialog.append(prompt, actions)
+  document.body.append(dialog)
+  const confirmed = await new Promise<boolean>(resolve => {
+    dialog.addEventListener(
+      "close",
+      () => {
+        resolve(dialog.returnValue === "delete")
+        dialog.remove()
+      },
+      { once: true }
+    )
+    dialog.showModal()
+    cancel.focus()
+  })
+  if (!confirmed) return
 
   try {
     const response = await sendMessage<{ success?: boolean; error?: string }>({
