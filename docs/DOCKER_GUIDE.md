@@ -241,36 +241,40 @@ docker image prune --filter "dangling=true" -f
 
 ## 10. Post-Development Cleanup: Freeing All Disk Space
 
-Once you have finished developing or building the extension and have exported the distribution packages to the `.output/` directory, you may want to reclaim all disk space on the Docker engine by removing temporary project images and build cache.
+Once you have finished developing or building the extension and have exported the distribution packages to the `.output/` directory, you can reclaim all disk space on the Docker engine by tearing down project containers, isolated volumes, networks, temporary images, and the build cache.
 
-### 🧹 1. Complete Post-Development Purge
+### 🧹 1. Complete Post-Development Purge (Containers, Volumes, Networks & Cache)
 
 ```powershell
-# Remove temporary images created during testing/debugging
+# 1. Tear down Compose containers, remove project network, and wipe isolated volumes
+docker compose down -v --remove-orphans
+
+# 2. Remove temporary images created during testing or manual builds
 docker rmi auto-tab-groups:builder auto-tab-groups:test -f 2>$null
 
-# Purge BuildKit build cache and immediately reclaim disk space
+# 3. Purge BuildKit build cache and immediately reclaim disk space
 docker builder prune -a -f
 
-# Prune stopped containers and untagged dangling images
-docker container prune -f
+# 4. Prune unused anonymous volumes, networks, and untagged dangling images
+docker volume prune -f
+docker network prune -f
 docker image prune -f
 ```
 
 ### ⚡ 2. One-Liner PowerShell Cleanup
 
-Clean up project images and build cache in a single command:
+Clean up everything related to this project (containers, volumes, networks, cache) in a single command:
 
 ```powershell
-docker rmi auto-tab-groups:builder auto-tab-groups:test -f 2>$null; docker builder prune -f
+docker compose down -v --remove-orphans; docker builder prune -f; docker volume prune -f; docker network prune -f
 ```
 
-Or using the build script with the `-Clean` switch:
+Or directly using the build script with the `-Clean` switch:
 ```powershell
 .\docker-build.ps1 -Clean
 ```
 
 ### 💡 Why Keep vs. Purge Build Cache?
-- **During Active Development**: Docker keeps the **BuildKit Cache** so that subsequent builds finish in **under 3 seconds** (`CACHED` layers).
-- **After Work is Complete**: Once you have the finalized `.output/` bundles and no longer need rapid incremental rebuilds, running `docker builder prune -f` completely cleans all cached build layers from the Docker engine.
+- **During Active Development**: Docker keeps the **BuildKit Cache** and persistent volumes so that subsequent builds finish in **under 3 seconds** (`CACHED` layers).
+- **After Work is Complete**: Once you have the finalized `.output/` bundles and no longer need rapid incremental rebuilds, running `.\docker-build.ps1 -Clean` completely wipes all temporary containers, networks, volumes, and build caches from the Docker engine.
 

@@ -50,10 +50,18 @@ if [ "$PRUNE" = true ]; then
 fi
 
 if [ "$CLEAN" = true ]; then
-  echo "Cleaning up project images and build cache..."
-  docker rmi auto-tab-groups:builder auto-tab-groups:test -f 2>/dev/null || true
+  echo "Cleaning up project containers, networks, volumes, images, and build cache..."
+  docker compose down -v --remove-orphans 2>/dev/null || true
+  for target in "auto-tab-groups:builder" "auto-tab-groups:test"; do
+    id=$(docker images -q "$target" 2>/dev/null || true)
+    if [ -n "$id" ]; then
+      docker rmi -f "$id" 2>/dev/null || true
+    fi
+  done
   docker builder prune -f
   docker image prune -f
+  docker volume prune -f
+  docker network prune -f
 fi
 
 if [ "$PREVIEW" = true ]; then

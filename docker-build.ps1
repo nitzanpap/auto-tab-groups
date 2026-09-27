@@ -41,17 +41,24 @@ if ($Prune) {
     docker image prune --filter "dangling=true" -f
 }
 
-# 4. Clean up all build cache and project images if requested
+# 4. Clean up all build cache, project images, volumes, and networks if requested
 if ($Clean) {
-    Write-Host "`nCleaning up project images and build cache..." -ForegroundColor Yellow
+    Write-Host "`nCleaning up project containers, networks, volumes, images, and build cache..." -ForegroundColor Yellow
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    docker compose down -v --remove-orphans 2>&1 | Out-Null
     foreach ($target in @("auto-tab-groups:builder", "auto-tab-groups:test")) {
-        $id = docker images -q $target
+        $id = docker images -q $target 2>$null
         if ($id) {
             docker rmi -f $id 2>&1 | Out-Null
         }
     }
-    docker builder prune -f
-    docker image prune -f
+    docker builder prune -f 2>&1 | Out-Null
+    docker image prune -f 2>&1 | Out-Null
+    docker volume prune -f 2>&1 | Out-Null
+    docker network prune -f 2>&1 | Out-Null
+    $ErrorActionPreference = $prev
+    Write-Host "Cleanup completed successfully." -ForegroundColor Green
 }
 
 # 4. Launch Preview Server if requested
