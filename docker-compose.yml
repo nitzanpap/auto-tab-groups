@@ -1,0 +1,124 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Dev Service: Continuous development & live preview server
+  # ----------------------------------------------------------------------------
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: auto-tab-groups-dev
+    restart: unless-stopped
+    working_dir: /workspace/app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount host source code into container for live development
+      - .:/workspace/app
+      # Volume isolation: prevent host node_modules and .wxt from colliding with container Linux environment
+      - node-modules-isolation:/workspace/app/node_modules
+      - wxt-isolation:/workspace/app/.wxt
+      - output-isolation:/workspace/app/.output
+      # Package manager cache
+      - bun-cache:/root/.bun
+    environment:
+      - NODE_ENV=development
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 2048M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    command: ["bun", "run", "dev"]
+
+  # ----------------------------------------------------------------------------
+  # 2. CLI Service: One-off tool execution (typecheck, lint, build, zip)
+  # ----------------------------------------------------------------------------
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    working_dir: /workspace/app
+    volumes:
+      - .:/workspace/app
+      - node-modules-isolation:/workspace/app/node_modules
+      - wxt-isolation:/workspace/app/.wxt
+      - output-isolation:/workspace/app/.output
+      - bun-cache:/root/.bun
+    environment:
+      - NODE_ENV=development
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["bun"]
+
+  # ----------------------------------------------------------------------------
+  # 3. Test Service: Runs full automated test suite deterministically
+  # ----------------------------------------------------------------------------
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    working_dir: /workspace/app
+    volumes:
+      - .:/workspace/app
+      - node-modules-isolation:/workspace/app/node_modules
+      - wxt-isolation:/workspace/app/.wxt
+      - output-isolation:/workspace/app/.output
+      - bun-cache:/root/.bun
+    environment:
+      - NODE_ENV=test
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 2048M
+    entrypoint: ["bun", "run"]
+    command: ["test"]
+
+  # ----------------------------------------------------------------------------
+  # 4. Preview / Production Service: Hardened distribution server
+  # ----------------------------------------------------------------------------
+  preview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: auto-tab-groups-preview
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  node-modules-isolation:
+    name: auto-tab-groups-node-modules
+  wxt-isolation:
+    name: auto-tab-groups-wxt
+  output-isolation:
+    name: auto-tab-groups-output
+  bun-cache:
+    name: auto-tab-groups-bun-cache

@@ -1,0 +1,30 @@
+{
+  "name": "Auto Tab Groups Development",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "..",
+    "target": "development"
+  },
+  "workspaceFolder": "/workspace/app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/app,type=bind",
+  "mounts": [
+    "source=auto-tab-groups-node-modules,target=/workspace/app/node_modules,type=volume",
+    "source=auto-tab-groups-wxt,target=/workspace/app/.wxt,type=volume",
+    "source=auto-tab-groups-output,target=/workspace/app/.output,type=volume",
+    "source=auto-tab-groups-bun-cache,target=/root/.bun,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "biomejs.biome"
+      },
+      "extensions": [
+        "biomejs.biome",
+        "wxt-dev.vscode-wxt"
+      ]
+    }
+  },
+  "postCreateCommand": "bun install && bun x wxt prepare",
+  "remoteUser": "appuser"
+}

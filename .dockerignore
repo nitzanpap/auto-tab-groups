@@ -1,0 +1,58 @@
+# ==============================================================================
+# Docker Build Ignore Specification - Auto Tab Groups
+# ==============================================================================
+
+# 1. Host Node Modules & Dependencies (CRITICAL: prevents host-container collision)
+node_modules/
+.pnpm-store/
+.bun/
+
+# 2. VCS & Metadata
+.git/
+.gitignore
+.gitattributes
+
+# 3. Build & Framework Artifacts
+.output/
+.wxt/
+dist/
+build/
+web-ext-artifacts/
+*.zip
+*.xpi
+*.tar.gz
+*.tgz
+
+# 4. Test Results, Coverage & Temporary Reports
+coverage/
+test-results/
+test-report/
+playwright-report/
+TEST_REPORT.md
+.reports/
+
+# 5. Secrets, Local Environment & Private Tokens
+.env
+.env.*
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa*
+*.pfx
+
+# 6. IDEs & Operating System Artifacts
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+PowerShellHistory.txt
+*.log
+users-feedback.csv
+
+# 7. Local Output Sandboxes & Temporary Workspaces
+tmp/
+temp/
+workspace/

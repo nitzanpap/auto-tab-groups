@@ -8,6 +8,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**
 🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
+🐳 **[Docker Engineering & Operations Guide](docs/DOCKER_GUIDE.md)**
 
 ## Example of tab groups in the navigation bar
 
@@ -125,7 +126,28 @@ All AI features run **entirely on your device** using [WebLLM](https://github.co
 
 The extension is built with [WXT](https://wxt.dev/) and TypeScript, supporting both Chrome and Firefox from a unified codebase.
 
-### Quick Start
+### 🐳 Quick Start with Docker (Recommended)
+
+No local Node.js or Bun installation needed! Build and export distribution packages (`.output/`) directly to your machine:
+
+```powershell
+# Windows PowerShell (One-click build & export)
+.\docker-build.ps1
+```
+
+```bash
+# Linux / macOS / Bash
+./docker-build.sh
+```
+
+Or via direct Docker BuildKit command:
+```bash
+docker build --target export --output type=local,dest=. .
+```
+
+For full documentation on container workflows, testing, preview server, and remote Docker contexts, see the **[Docker Guide](docs/DOCKER_GUIDE.md)**.
+
+### Local Development (without Docker)
 
 ```bash
 bun install
@@ -399,6 +421,7 @@ This ensures that international users get proper domain grouping regardless of t
 
 ## 📚 Resources
 
+- [Docker Guide (Build, Test & Export via Container)](docs/DOCKER_GUIDE.md)
 - [MDN WebExtensions API Docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 - [tabs.group() API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/group)
 - [WXT Framework](https://wxt.dev/)
@@ -408,6 +431,20 @@ This ensures that international users get proper domain grouping regardless of t
 ## 📦 Distribution
 
 ### Building for Production
+
+#### Using Docker (Recommended - Zero Host Dependencies)
+
+```powershell
+# Windows
+.\docker-build.ps1
+```
+
+```bash
+# Linux / macOS
+./docker-build.sh
+```
+
+#### Using Local Bun (Alternative)
 
 1. Update version in `package.json`
 2. Build the extension:
