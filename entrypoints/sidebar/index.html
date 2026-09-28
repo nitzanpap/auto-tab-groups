@@ -32,6 +32,22 @@
             Expand All
           </button>
         </div>
+        <button
+          id="openGraph3dButton"
+          class="button graph3dButton"
+          title="Open interactive 3D tab groups galaxy visualizer"
+        >
+          🪐 Open 3D Graph
+        </button>
+        <button
+          id="compareTabsButton"
+          class="button secondaryButton compareTabsButton"
+          style="width: 100%; margin-top: 8px; font-weight: 600; border-color: #8b5cf6; color: #8b5cf6;"
+          title="Compare this tab with the next visited tab"
+          data-i18n="popupCompareTabs"
+        >
+          ⚖️ Compare Tabs
+        </button>
         <div class="separator"></div>
         <div class="settings-container">
           <h2 data-i18n="settingsHeading">Settings</h2>
@@ -143,6 +159,14 @@
             </label>
           </div>
           <div class="help-text" data-i18n="settingDeferGroupingHelp">Tabs opened in the background stay next to the tab they came from until you switch to them</div>
+          <div class="toggle-container">
+            <span data-i18n="settingLockLaterGroupFirstTab">Pin &amp; Lock first tab in "Read Later"</span>
+            <label class="switch">
+              <input type="checkbox" id="lockLaterGroupFirstTabToggle" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="help-text" data-i18n="settingLockLaterGroupHelp">Keeps the primary leader tab immovably pinned at index 0 in the Read Later group</div>
           <div class="settings-info">
             <span class="info-icon">&#128204;</span>
             <span data-i18n="settingPinnedTabsNote">Pinned tabs are never grouped automatically</span>
@@ -215,9 +239,128 @@
               </label>
             </div>
             <div class="ai-settings" id="aiSettings">
-              <div class="toggle-container">
-                <span data-i18n="aiModelLabel">Model</span>
+            <div class="toggle-container">
+              <span data-i18n="aiProviderLabel">Provider</span>
+              <select id="aiProviderSelect" class="ai-select">
+                <option value="webllm" data-i18n="aiProviderWebLlm">WebLLM (Local WebGPU)</option>
+                <option value="external" data-i18n="aiProviderExternal">External / Custom API</option>
+              </select>
+            </div>
+            <!-- Custom OpenAI-compatible endpoint configuration block -->
+            <div id="aiCustomEndpointSettings" class="ai-custom-endpoint-settings hidden" style="margin: 8px 0; padding: 10px; background: rgba(124, 58, 237, 0.05); border-radius: 8px; border: 1px solid rgba(124, 58, 237, 0.2);">
+              <div class="toggle-container" style="margin-bottom: 8px;">
+                <span data-i18n="aiCompatibilityLabel" style="font-size: 11px; font-weight: 600; color: #7c3aed;">Compatibility</span>
+                <select id="aiCompatibilitySelect" class="ai-select" style="max-width: 190px; font-size: 11px; padding: 4px 6px;">
+                  <option value="openai" selected>OpenAI Compatible (Ollama, LM Studio, etc.)</option>
+                </select>
+              </div>
+              <input
+                type="text"
+                id="aiCustomEndpointInput"
+                placeholder="Base URL (e.g. http://localhost:11434/v1)"
+                style="width: 100%; margin-bottom: 6px; padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
+              />
+              <input
+                type="password"
+                id="aiCustomApiKeyInput"
+                placeholder="API Key (optional for Ollama)"
+                style="width: 100%; margin-bottom: 6px; padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
+              />
+              <input
+                type="text"
+                id="aiCustomModelInput"
+                placeholder="Model Name (e.g. llama3.2, gpt-4o-mini)"
+                style="width: 100%; margin-bottom: 8px; padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px;"
+              />
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button
+                  type="button"
+                  id="aiTestConnectionBtn"
+                  class="button secondary"
+                  style="padding: 4px 10px; font-size: 11px;"
+                >Test Connection</button>
+                <span id="aiConnectionStatus" style="font-size: 11px;"></span>
+              </div>
+            </div>
+            <div class="toggle-container" id="aiModelSelectContainer">
+              <span data-i18n="aiModelLabel">Model</span>
+              <div class="ai-model-control">
                 <select id="aiModelSelect" class="ai-select"></select>
+                <button
+                  id="aiRemoveModelButton"
+                  class="ai-remove-model-btn hidden"
+                  title="Remove selected model"
+                  data-i18n-title="aiRemoveModelTitle"
+                >✕</button>
+              </div>
+            </div>
+            <div class="ai-custom-model-box hidden" id="aiCustomModelBox">
+                <button
+                  id="aiToggleAddCustomBtn"
+                  class="ai-toggle-add-btn"
+                  data-i18n="aiAddCustomModelBtn"
+                >+ Add Custom Model / Provider</button>
+                <div id="aiAddCustomForm" class="ai-add-custom-form hidden">
+                  <input
+                    type="text"
+                    id="customModelIdInput"
+                    placeholder="Model ID (e.g. llama3.2, mistral)"
+                    data-i18n-placeholder="aiCustomModelIdPlaceholder"
+                    class="ai-custom-input"
+                  />
+                  <input
+                    type="text"
+                    id="customModelNameInput"
+                    placeholder="Display Name (e.g. Ollama Llama 3)"
+                    data-i18n-placeholder="aiCustomModelNamePlaceholder"
+                    class="ai-custom-input"
+                  />
+                  <input
+                    type="text"
+                    id="customModelEndpointInput"
+                    placeholder="Endpoint URL (e.g. http://localhost:11434/v1)"
+                    data-i18n-placeholder="aiCustomModelEndpointPlaceholder"
+                    class="ai-custom-input"
+                  />
+                  <input
+                    type="password"
+                    id="customModelApiKeyInput"
+                    placeholder="API Key (optional)"
+                    data-i18n-placeholder="aiCustomModelApiKeyPlaceholder"
+                    class="ai-custom-input"
+                  />
+                  <div class="ai-custom-form-actions">
+                    <button
+                      id="aiSaveCustomModelBtn"
+                      class="button primary"
+                      data-i18n="aiSaveCustomModelBtn"
+                    >Save Model</button>
+                    <button
+                      id="aiCancelCustomModelBtn"
+                      class="button secondary"
+                      data-i18n="aiCancelCustomModelBtn"
+                    >Cancel</button>
+                  </div>
+                </div>
+              </div>
+              <div class="ai-similarity-section">
+                <div class="ai-similarity-header">
+                  <span class="ai-similarity-title" data-i18n="aiSimilarityThresholdLabel">Purpose Similarity Threshold</span>
+                  <span id="similarityThresholdVal" class="ai-similarity-value">60%</span>
+                </div>
+                <input
+                  type="range"
+                  id="similarityThresholdSlider"
+                  min="10"
+                  max="95"
+                  step="5"
+                  value="60"
+                  class="ai-similarity-slider"
+                  aria-label="Purpose Similarity Threshold"
+                />
+                <div class="ai-similarity-help" data-i18n="aiSimilarityThresholdHelp">
+                  Threshold to merge sites with similar purposes into the same group.
+                </div>
               </div>
               <div class="ai-status-row">
                 <span class="ai-status-label" data-i18n="aiStatusLabel">Status:</span>
@@ -230,8 +373,11 @@
               <div class="ai-webgpu-warning" id="aiWebGpuWarning" data-i18n="aiWebGpuUnavailable">
                 WebGPU is not available. AI features require a browser with WebGPU support.
               </div>
-              <div class="help-text ai-help-text" data-i18n="aiDownloadNote">
+              <div class="help-text ai-help-text" id="aiDownloadNote" data-i18n="aiDownloadNote">
                 Models run locally in your browser. First load downloads the model (~250MB-900MB).
+              </div>
+              <div class="ai-external-note" id="aiExternalNote" data-i18n="aiExternalNote">
+                Connects to an external or local OpenAI-compatible service (e.g. Ollama, LM Studio, OpenAI). No browser weights download required.
               </div>
               <div class="ai-suggest-section" id="aiSuggestSection">
                 <button id="aiSuggestButton" class="button ai-suggest-button" disabled data-i18n="aiSuggestGroups">

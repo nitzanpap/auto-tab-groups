@@ -1,429 +1,126 @@
-# Features
+# Features Specification (v3.15.5)
 
-## Pinned Tabs
+## Table of Contents
+1. [Core Auto-Grouping & Tab Management](#1-core-auto-grouping--tab-management)
+2. [Interactive Tab Comparison (New in v3.15.5)](#2-interactive-tab-comparison-new-in-v3155)
+3. [Interactive 3D Tab Knowledge Graph (New in v3.15.5)](#3-interactive-3d-tab-knowledge-graph-new-in-v3155)
+4. [Multi-Provider AI & External LLM Integration (New in v3.15.5)](#4-multi-provider-ai--external-llm-integration-new-in-v3155)
+5. [Semantic Tab Clustering (New in v3.15.5)](#5-semantic-tab-clustering-new-in-v3155)
+6. [Read Later ("فيما بعد") Group Leader Tab Pinning (New in v3.15.5)](#6-read-later-group-leader-tab-pinning-new-in-v3155)
+7. [Smart Position: Open Tab Next to Current Tab (New in v3.15.5)](#7-smart-position-open-tab-next-to-current-tab-new-in-v3155)
+8. [Chrome Side Panel MV3 Integration (New in v3.15.5)](#8-chrome-side-panel-mv3-integration-new-in-v3155)
+9. [Protected Groups & Manual Color Persistence](#9-protected-groups--manual-color-persistence)
+10. [Focus Mode & Auto-Collapse](#10-focus-mode--auto-collapse)
+11. [Cross-Window Group Consolidation](#11-cross-window-group-consolidation)
 
-Pinned tabs are never moved to groups and remain at the beginning of the tab bar.
+---
 
-### Behavior of Pinned Tabs
+## 1. Core Auto-Grouping & Tab Management
 
-- **Pinned tab created**: Stays ungrouped
-- **Existing tab pinned**: Removed from group, moves to tab bar start
-- **Pinned tab unpinned**: Automatically grouped based on URL
-- **Pinned tab URL changed**: Stays pinned and ungrouped
+Auto Tab Groups automatically organizes browser tabs into domain or rule-based tab groups.
+- **Domain Extraction**: Resolves clean domain names using public suffix lists (e.g. `github.com`, `docs.google.com`).
+- **Custom Rules**: Supports exact URLs, domain wildcards (`*.github.com`), TLD wildcards (`google.*`), path wildcards (`github.com/org/*`), and title matching rules.
+- **Minimum Tab Threshold**: Configure minimum tabs required before forming a group (e.g. 2 or 3 tabs).
+- **Pinned Tabs**: Pinned tabs are permanently excluded from auto-grouping and remain at the tab bar origin.
 
-### Implementation
+---
 
-```javascript
-// In handleTabUpdate
-if (tab.pinned) {
-  return false // Skip grouping
-}
+## 2. Interactive Tab Comparison (New in v3.15.5)
 
-// In background.js - detect unpinning
-if (changeInfo.pinned === false) {
-  await tabGroupService.handleTabUpdate(tabId)
-}
-```
+The Tab Comparison Service enables seamless A/B comparison between two tabs:
 
-## Groups Excluded From Auto-Grouping
+### Workflow:
+1. **Initiate**: The user triggers "Compare Tabs" from the popup, sidebar, or shortcut on Tab A (source tab).
+2. **Badge Indicator**: The extension toolbar badge immediately displays `CMP` with a purple accent color.
+3. **Target Selection**: The user clicks or switches to Tab B (target tab).
+4. **Auto-Grouping**: Tabs A & B are automatically moved into a dedicated group named `"Comparison"` with color `purple`.
+5. **Session Resolution**: The `CMP` badge clears automatically, and the comparison session is stored.
+6. **Restoration / Cancelation**: Clicking "Cancel Comparison" dissolves the comparison group and restores both Tab A and Tab B back to their original parent group IDs.
 
-Auto-grouping never touches a group whose title is on the excluded list. The
-list is always explicit — the extension does not try to work out which groups
-you made yourself.
+---
 
-- **Adding**: right-click a tab in the group → "Exclude group from auto-grouping".
-- **Removing**: the popup and sidebar list every excluded group; removing one
-  hands it straight back to auto-grouping.
-- **At install**: groups that already existed the first time the extension runs
-  are excluded automatically. A group present before the extension has ever run
-  cannot have been created by it, so this needs no guesswork — it stops a fresh
-  install from dissolving organization you built by hand.
+## 3. Interactive 3D Tab Knowledge Graph (New in v3.15.5)
 
-Excluded groups are skipped by automatic grouping, by the "Group Tabs" button,
-and by "Ungroup All". To dissolve one, use the browser's own right-click menu.
+An interactive WebGL 3D Force-Directed Graph visualizing your browser workspace in three dimensions.
 
-Titles are matched with any sort-index prefix stripped, so the "Number groups"
-setting doesn't break exclusions. Renaming an excluded group ends its
-exclusion — title is identity here, as everywhere else in the extension.
-
-## Consolidating Groups Across Windows
-
-When the same group exists in more than one window, Advanced shows a row saying
-so. Clicking **Review** lists what would move; clicking again merges each group
-into the window that already holds most of it.
-
-The row only appears when something is actually split, and the two-step flow is
-deliberate: **this cannot be undone.** Nothing records which window a tab came
-from, so there is no way back. The preview is also a quick answer to "where did
-my groups end up".
+### Capabilities:
+- **Spatial Topology**: Visualizes Windows as top-level anchors, Tab Groups as colored clusters, and individual tabs as orbiting leaf nodes.
+- **Favicon Textures**: Domain favicons are extracted and rendered as textures directly onto 3D spheres.
+- **Interactive Focus & Camera**:
+  - Click any tab node to focus camera on it with smooth spherical tweening.
+  - Double-click or click "Activate Tab" to immediately switch the physical browser window and tab to the selected node.
+- **Real-time Synchronization**: Responds to live browser tab events (create, close, move, update).
+- **Dedicated Sidebar**: Displays tab title, domain, URL, and group color with quick navigation controls.
+- **Launch Vector**: Open via the popup/sidebar button or direct action message `openGraph3d`.
 
-Skipped by design: groups excluded from auto-grouping, the System group, and
-pinned tabs. There is no keyboard shortcut — an unrecoverable action shouldn't
-be one keypress away.
+---
 
-## Moving a Tab to Its Group's Window
+## 4. Multi-Provider AI & External LLM Integration (New in v3.15.5)
 
-Right-click a tab and choose "Move tab to its group's window" to send it to the
-window where that group already lives. There's a keyboard command for it too,
-unassigned like the others.
+The AI subsystem has been re-architected from single-provider (WebLLM) to a flexible multi-provider engine.
 
-Nothing happens automatically — grouping never moves tabs between windows on its
-own. This is for when you keep windows roughly by topic and a tab lands in the
-wrong one.
+### Supported Providers:
+1. **On-Device WebLLM**: Runs locally inside browser worker via WebGPU (`@mlc-ai/web-llm`). Models include Qwen2.5 3B, Llama 3.2 3B, and Phi-3.5 Mini.
+2. **Local OpenAI-Compatible Server (Ollama / LM Studio / vLLM)**: Connects to local inference servers at customizable endpoints (e.g., `http://localhost:11434/v1` for Ollama).
+3. **Cloud OpenAI-Compatible APIs (OpenAI, Groq, Together, DeepSeek)**: Direct API integration supporting custom endpoints and bearer API keys.
 
-If several windows hold a group of that name, the largest one wins, which is
-usually the main window for that topic. If no other window has it, nothing
-happens.
+### Features:
+- **Custom Model Management**: Add, edit, and delete custom model configurations (`addCustomAiModel`, `removeCustomAiModel`).
+- **Live Connection Diagnostics**: Dedicated "Test Connection" button (`testAiConnection`) validates endpoint reachability and model availability before running queries.
+- **AI Rule Generation**: Convert natural language descriptions into custom regex/domain tab grouping rules.
+- **AI Tab Group Suggestions**: Intelligently groups open tabs by semantic topic rather than domain.
 
-## Waiting Until a Tab Is Viewed
+---
 
-Off by default. When on, a tab opened **in the background from another tab**
-stays next to the tab it came from until you switch to it — then it is grouped
-as usual.
+## 5. Semantic Tab Clustering (New in v3.15.5)
 
-This exists because filing a tab the instant it appears is what makes it seem
-to vanish: you middle-click a search result, look away, and it has already been
-moved to a group elsewhere in a long tab strip.
+- **Algorithmic Cosine Clustering**: Leverages text vectorization across tab titles, domain tokens, and URL paths to identify semantic clusters without requiring external cloud embeddings.
+- **Configurable Similarity Threshold**: Users can adjust clustering sensitivity (`aiSimilarityThreshold`, default `0.6`).
+- **One-Click Smart Grouping**: Trigger `smartGroupTabs` from popup/sidebar to instantly categorize messy multi-tab research sessions.
 
-- Tabs opened in the foreground are unaffected — they are active immediately,
-  so they group exactly as before.
-- Tabs with no opener (address bar, bookmarks, restored sessions) are unaffected.
-- "Group Tabs" files everything, including tabs still waiting to be viewed.
+---
 
-The grouping decision itself is unchanged — still purely a function of the URL.
-Only its timing moves.
+## 6. Read Later ("فيما بعد") Group Leader Tab Pinning (New in v3.15.5)
 
-## Keyboard Shortcuts
+- **Problem Addressed**: In "Read Later" or bookmarking groups, users often designate the first tab as an index, notes document, or anchor. Moving or sorting tabs inside the group could inadvertently displace this anchor tab.
+- **Behavior**: When `lockLaterGroupFirstTab` is enabled, the designated leader tab (`laterGroupLeaderTabId`) is locked at index 0 of the group. If any other tab is dragged or moved before it, `enforceLaterGroupLeaderTab` automatically restores the leader tab to the start of the group.
 
-The extension registers four commands, plus the browser's built-in "open the
-popup":
+---
 
-| Command | Does |
-| ------- | ---- |
-| Turn auto-grouping on or off | Same as the Auto-Group Mode toggle |
-| Group all tabs now | Same as the Group Tabs button |
-| Ungroup all tabs | Same as the Ungroup All button |
-| Collapse or expand all groups | Same as Collapse All / Expand All |
-
-**No keys are assigned.** The manifest suggests none deliberately, so installing
-the extension never takes a shortcut you already use, and nothing fires until
-you assign keys yourself. Advanced → Keyboard shortcuts → "Set up" opens the
-browser's own shortcut settings (`chrome://extensions/shortcuts` in Chrome,
-Add-ons Manager in Firefox), which is the only place keys can be bound —
-extensions cannot assign them for you.
-
-## URL Patterns
-
-Custom rules support advanced URL pattern matching beyond simple domains.
-
-### Pattern Types
-
-| Pattern | Example | Matches |
-| ------- | ------- | ------- |
-| Domain Only | `google.com` | `google.com/*` |
-| Subdomain Wildcard | `*.google.com` | `docs.google.com/*` |
-| Domain + Path | `docs.google.com/forms` | `docs.google.com/forms*` |
-| TLD Wildcard | `google.**/forms` | `google.com/forms`, `google.org/forms` |
-| Subdomain + TLD | `*.google.**` | `docs.google.com`, `mail.google.co.uk` |
-| Path Wildcard | `site.com/**/admin` | `site.com/any/path/admin` |
-| Catch-All | `*` | everything no other rule took |
-| Query String | `site.com/?ticket=VZ01` | that exact query |
-| Query Extraction | `site.com/?ticket={ticket}` | a group per ticket value |
-| Page Title | `title:Barely Sociable` | any tab whose title says that |
-
-### Catch-All Rules
-
-A rule whose pattern is a lone `*` is a catch-all: a bucket for tabs nothing else
-claimed. It never competes with normal rules — it is consulted only after every
-other rule has declined the tab.
-
-- **Rules-only mode**: collects every tab no rule matched.
-- **Domain/sub-domain mode**: collects tabs that can't form their own group,
-  i.e. domains below the minimum group size.
-- Browser/system pages are never collected — they belong to the System group.
-- Blacklist rules still win.
-- Exclusions work as usual: `*` plus `!github.com` catches everything except GitHub.
-- The global minimum group size does not apply to a catch-all group (it defaults
-  to 1); set the rule's own minimum if you want one.
-
-### Examples
-
-```txt
-github.com/**/issues        -> github.com/owner/repo/issues
-*.google.**/forms           -> docs.google.com/forms
-console.cloud.google.com/** -> any path on console.cloud.google.com
-```
-
-### Rule Priority
-
-When two rules match the same tab, the one with the higher `priority` wins.
-Rules default to priority `1`, and rules that tie keep creation order — so the
-older rule wins, as before.
-
-Two caveats:
-
-- An exact pattern still beats an implied one regardless of priority:
-  `www.example.com` wins over `example.com` matching `www.example.com` by
-  auto-subdomain, even if the latter has a higher priority.
-- Priority has no UI yet. Set it the same way as `minimumTabs`: export your
-  rules, edit the JSON, re-import.
-
-### Query Strings
-
-A pattern that contains `?` is matched against the query string as well as the
-host and path, so tabs on one domain can be split by a parameter:
-
-```txt
-domain.cz/?ticket={ticket}          -> a group per ticket value
-domain.cz/?ticket=VZ01              -> only that ticket
-/.*domain\.cz.*ticket=([a-z0-9-]+)/ -> same, via regex; the capture names the group
-```
-
-With `{variable}` or a regex capture, the captured value becomes the group
-title — so `?ticket=VZ01` and `?ticket=VZ02` land in separate groups.
-
-The query is only consulted after host and path have failed to match, so
-patterns written before this existed behave exactly as they did.
-
-A query written straight after the host needs no path in between:
-
-```txt
-youtube.com?ab_channel=BarelySociable
-```
-
-reads as "anywhere on this host", which is why the parameter can sit anywhere
-in the query. Written with a path — `youtube.com/watch?ab_channel=...` — the
-parameter has to be the first one, so put a `*` before it if it might not be:
-`youtube.com/watch?*ab_channel=...`.
-
-### Hash Routes
-
-Single-page apps often put the real route after a `#`. A pattern containing `#`
-is matched against the fragment too, so those routes can be split apart:
-
-```txt
-apps.example.com/directory/#/admin/*     -> one group
-apps.example.com/directory/#/analytics/* -> another
-app.io/directory/#/{section}             -> a group per section
-```
-
-Write the `#` as-is — no escaping. Like the query, the fragment is only
-consulted after host and path have failed to match.
-
-### Page Titles
-
-A pattern prefixed with `title:` is matched against the tab's title instead of
-its URL. Useful when the page's address says nothing about what it is:
+## 7. Smart Position: Open Tab Next to Current Tab (New in v3.15.5)
 
-```txt
-title:Barely Sociable      -> any tab with that text in its title
-title:*- Figma             -> every Figma document
-!title:*Private*           -> as an exclusion, like any other pattern
-```
-
-- The text has to appear somewhere in the title; `*` stands for any run of
-  characters. Everything else, braces included, is literal.
-- Matching ignores case, and the group is named after the rule.
-- Titles arrive after the URL and change again on client-side navigation, so a
-  tab is re-filed whenever its title changes — but only while some enabled rule
-  actually matches on titles.
-- There is no `{variable}` capture here: a title is prose, so
-  `title:{channel} - YouTube` has no single right answer on
-  `Video - Channel - YouTube`. Extraction stays on the URL side, where the
-  structure makes it unambiguous.
-
-### Limitations
+- When `openTabNextToCurrent` is enabled:
+  - Newly opened tabs (via link click or shortcut) are positioned directly next to the active tab (`index: anchorTab.index + 1`).
+  - If the active tab belongs to a group, the new tab temporarily joins that group until navigated.
+  - New tab URLs (`chrome://newtab`, `about:blank`) defer grouping until real destination URLs load, preventing tabs from prematurely bouncing into the System group.
 
-- Single `**` per domain or path component
-- Case-insensitive matching
-- Protocol agnostic (works with http/https)
-- An extraction pattern may hold at most 4 wildcards and `{variables}`
-  combined. Matching them is exponential in that count, and a rules file you
-  imported from someone else is not something to run unbounded work for.
-- A regex pattern that backtracks catastrophically (`/(a+)+$/` and friends) is
-  rejected when the rule is saved or imported. One that gets past the check and
-  turns out slow anyway is skipped from then on, and says so in the console.
+---
 
-## Export/Import Rules
+## 8. Chrome Side Panel MV3 Integration (New in v3.15.5)
 
-### Export
+- Full integration with Chrome's native Side Panel API (`chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`).
+- Allows keeping Auto Tab Groups persistent in a browser side panel alongside web browsing.
+- Includes fallback handlers for Firefox and unsupported Chromium builds.
 
-1. Open popup -> Custom Rules -> Export
-2. Downloads `auto-tab-groups-rules-YYYY-MM-DD.json`
+---
 
-### Import
+## 9. Protected Groups & Manual Color Persistence
 
-1. Open popup -> Custom Rules -> Import
-2. Select JSON file
-3. Choose Replace (all existing rules deleted) or Merge (add alongside existing)
+- **Manual Color Retention**: When a user changes a tab group color using the browser's native color picker, Auto Tab Groups records the selection and persists it across sessions.
+- **Protected Groups**: Excluded groups are never dissolved by auto-grouping or "Ungroup All".
+- **System Group Sanitization**: The background worker guarantees that the reserved "System" group is never accidentally added to the protected groups list.
 
-### File Format
+---
 
-```json
-{
-  "version": "1.0",
-  "exportDate": "2025-06-15T12:00:00.000Z",
-  "rules": {
-    "rule-id": {
-      "id": "rule-id",
-      "name": "Rule Name",
-      "domains": ["example.com", "*.subdomain.com"],
-      "color": "blue",
-      "enabled": true,
-      "minimumTabs": 1,
-      "priority": 1
-    }
-  },
-  "totalRules": 1
-}
-```
+## 10. Focus Mode & Auto-Collapse
 
-### Validation
+- Automatically collapses inactive tab groups when switching between tabs.
+- Keeps the active tab's group expanded for distraction-free navigation.
+- Exponential backoff ensures reliable collapse without race conditions.
 
-- Rule name: 1-50 characters
-- At least one domain, max 20 per rule
-- Valid domain format (supports wildcards)
-- Valid color value
+---
 
-## Colors & UI
+## 11. Cross-Window Group Consolidation
 
-### Persistent Color Mapping
-
-Group colors are saved persistently and restored after browser restarts.
-
-- Colors saved when groups created or randomized
-- Custom rule colors protected during "Generate New Colors"
-- Automatic restoration on extension startup
-
-### Collapse/Expand
-
-Two stateless buttons for predictable behavior:
-
-- **Collapse All**: Collapses all groups
-- **Expand All**: Expands all groups
-- **Firefox**: Respects active tab constraint (active tab's group stays expanded)
-
-## Minimum Tabs Threshold
-
-Groups only created when minimum tab count is met.
-
-### Configuration
-
-- **Global Setting**: Default minimum for all domains
-- **Per-Rule Setting**: Override global for specific rules
-
-### Behavior of Threshold
-
-- Below threshold: tabs remain ungrouped
-- Meets threshold: group created with all matching tabs
-- Falls below threshold: group disbanded, tabs ungrouped
-- Only groups the extension itself would have created are disbanded. A group
-  another extension or the browser's own "new group" made — anything whose
-  title is not `System`, a rule's name, or a title the extension has produced
-  before — is left alone, however few tabs it holds
-
-## Focus Mode (Auto-Collapse)
-
-Focus Mode automatically collapses inactive tab groups when switching tabs, keeping only the active tab's group expanded.
-
-### How It Works
-
-1. **Tab Switch Detection**: Listens to `tabs.onActivated` events
-2. **Active Group Identification**: Queries browser for fresh active tab state
-3. **Collapse Others**: Collapses all groups except the active tab's group
-4. **Expand Active**: Expands the active group if it was collapsed
-
-### Settings
-
-- **Toggle**: Enable/disable via popup settings
-- **Collapse Delay**: Configurable delay before collapsing (default: 300ms)
-
-### Behavior
-
-- Only triggers on actual tab switches (event-driven, not polling)
-- Respects user intent: manually expanded groups won't auto-collapse until you switch tabs
-- Active tab's group always stays expanded
-- Ungrouped tabs: all groups collapse when switching to an ungrouped tab
-
-### Reliability Mechanism
-
-Chrome's tab API can throw "Tabs cannot be edited right now" during tab transitions. The feature uses **exponential backoff** to handle this:
-
-| Attempt | Delay  | Cumulative |
-| ------- | ------ | ---------- |
-| 0       | 0ms    | 0ms        |
-| 1       | 25ms   | 25ms       |
-| 2       | 50ms   | 75ms       |
-| 3       | 100ms  | 175ms      |
-| 4       | 200ms  | 375ms      |
-| 5       | 400ms  | 775ms      |
-
-This provides ~95% reliability by extending the retry window to ~775ms while keeping fast success on quick machines.
-
-## AI Features (On-Device via WebLLM)
-
-All AI features run entirely on-device using [WebLLM](https://github.com/mlc-ai/web-llm) with WebGPU acceleration. No tab data leaves the browser.
-
-### Architecture
-
-- **AiService** (`services/ai/AiService.ts`): Orchestrator managing model lifecycle (load/unload), settings persistence, and provider delegation
-- **WebLlmProvider** (`services/ai/WebLlmProvider.ts`): WebLLM backend using dynamic `import()` (never loaded until user triggers it)
-- **AiResponseParser** (`utils/AiResponseParser.ts`): Robust JSON extraction with multiple fallback strategies
-- **PromptTemplates** (`utils/PromptTemplates.ts`): Engineered prompts for suggestion and rule generation
-
-### Available Models
-
-| Model | Size | VRAM | Notes |
-|-------|------|------|-------|
-| Qwen2.5 3B (Recommended) | 1750 MB | 2505 MB | Best quality for tab grouping |
-| Llama 3.2 3B | 1820 MB | 2264 MB | Good alternative |
-| Phi-3.5 Mini 3.8B | 2150 MB | 3672 MB | Largest, most capable |
-
-### Tab Group Suggestions
-
-1. User clicks "Suggest Groups" in popup/sidebar
-2. Background queries current window tabs (filters pinned, extension, and system URLs; caps at 50)
-3. Prompt instructs model to group by **topic** (not domain) with descriptive category names
-4. Model returns `{"groups": [{ groupName, tabIndices, color }]}` (JSON mode enforced)
-5. Parser validates, maps indices to tab IDs, deduplicates, and normalizes colors
-6. UI renders suggestion cards with "Apply" and "Create Rule" buttons
-
-### Suggestion Caching
-
-Suggestions persist in `browser.storage.local` so they survive popup reopens:
-
-- After `suggestGroups`: cache saved with `appliedIndices: []`
-- After `applySuggestion`: the applied suggestion's index is added to `appliedIndices`
-- On popup reopen: cached suggestions render with applied ones marked "Applied!" and disabled
-- Cache expires after 30 minutes
-- "Dismiss" button clears cache; clicking "Suggest Groups" overwrites with fresh results
-
-### AI Rule Generation
-
-1. User describes a rule in natural language (e.g., "Group social media sites")
-2. Background sends description + existing domains to model
-3. Model returns `{ name, domains[], color }`
-4. Parser validates domains and color, returns structured rule for the rules modal
-
-### Response Parsing Strategy
-
-The AI response parser uses multiple extraction strategies for robustness:
-
-1. Direct JSON parse (for clean `json_object` mode output)
-2. `{"groups": [...]}` wrapper extraction
-3. Markdown code fence extraction
-4. Brace/bracket block extraction from surrounding text
-5. JSONL (one object per line) concatenation
-
-Each suggestion is individually validated:
-- Group name truncated to 30 chars
-- Tab indices validated against actual tab list
-- Invalid colors normalized to `blue`
-- Tabs deduplicated across groups (first-wins)
-
-### Model State Management
-
-- Model state is **ephemeral** (service workers restart); settings are persisted to storage
-- UI polls `getAiModelStatus` every 500ms during loading to show progress
-- Background fires-and-forgets `loadModel()` (never awaits it in message handler)
-- WebGPU capability checked before enabling the load button
+- Identifies identical groups split across multiple browser windows.
+- Provides a safe two-step preview and consolidation workflow to merge groups into their primary window.

@@ -14,6 +14,17 @@ Auto Tab Groups is a cross-browser extension (Chrome & Firefox) that automatical
 bun install
 ```
 
+### Docker & Architecture Commands
+
+```powershell
+.\scripts\graft-build.ps1        # Rebuild & export Graft architecture graph via Docker
+.\scripts\graft-query.ps1 map    # Zero-token repository landscape orientation
+.\scripts\graft-query.ps1 gui    # Interactive web architecture visualizer
+.\scripts\docker-build.ps1       # Build extension via Docker and export to .output/
+```
+*Note: Coding agents MUST consult `graft/INDEX.md` or `.\scripts\graft-query.ps1 map` before exploring raw source files to save tokens and locate exact line spans (`LXX-LYY`).*
+
+
 ### Build Commands
 
 ```bash

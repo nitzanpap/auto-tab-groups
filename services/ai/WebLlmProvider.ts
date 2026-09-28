@@ -48,6 +48,8 @@ class WebLlmProvider implements AiProviderInterface {
     return this.progress
   }
 
+  private abortLoading = false
+
   getError(): string | null {
     return this.error
   }
@@ -72,21 +74,44 @@ class WebLlmProvider implements AiProviderInterface {
     this.status = "loading"
     this.progress = 0
     this.error = null
+    this.abortLoading = false
 
     try {
       const webllm = await import("@mlc-ai/web-llm")
 
       const engine = await webllm.CreateMLCEngine(modelId, {
         initProgressCallback: (report: { progress: number; text: string }) => {
+          if (this.abortLoading) {
+            throw new Error("Model loading was cancelled by user")
+          }
           this.progress = Math.round(report.progress * 100)
         }
       })
+
+      if (this.abortLoading) {
+        if (typeof (engine as any).unload === "function") {
+          await (engine as any).unload()
+        }
+        this.status = "idle"
+        this.progress = 0
+        this.engine = null
+        this.loadedModelId = null
+        return
+      }
 
       this.engine = engine
       this.loadedModelId = modelId
       this.status = "ready"
       this.progress = 100
     } catch (err) {
+      if (this.abortLoading || (err instanceof Error && err.message.includes("cancelled"))) {
+        this.status = "idle"
+        this.progress = 0
+        this.error = null
+        this.engine = null
+        this.loadedModelId = null
+        return
+      }
       this.status = "error"
       this.error = err instanceof Error ? err.message : "Failed to load model"
       this.engine = null
@@ -96,6 +121,7 @@ class WebLlmProvider implements AiProviderInterface {
   }
 
   async unloadModel(): Promise<void> {
+    this.abortLoading = true
     if (this.engine) {
       try {
         const eng = this.engine as { unload?: () => Promise<void> }

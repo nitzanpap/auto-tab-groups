@@ -30,7 +30,9 @@ export async function seedProtectedGroupsOnFirstRun(): Promise<string[]> {
     if (!browser.tabGroups) return []
 
     const groups = await browser.tabGroups.query({})
-    const titles = [...new Set(groups.map(group => group.title).filter(Boolean))] as string[]
+    const allTitles = [...new Set(groups.map(group => group.title).filter(Boolean))] as string[]
+    // System group is internal to the browser/extension and should never be protected
+    const titles = allTitles.filter(t => t.toLowerCase() !== "system")
 
     // Write even when there is nothing to protect. Storage stays empty until the
     // user changes a setting, and MV3 shuts down idle service workers — so

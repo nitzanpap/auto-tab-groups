@@ -1,65 +1,63 @@
-# Roadmap
+# Development Roadmap (v3.15.5)
 
-## Completed
+## Completed Milestones
 
-- [x] Domain-based auto tab grouping
-- [x] URL pattern enhancement (domain+path, TLD wildcards, path wildcards)
-- [x] Custom rules with colors and minimum tabs
-- [x] Export/import rules
-- [x] Pinned tab handling
-- [x] Focus Mode (auto-collapse inactive groups)
-- [x] AI infrastructure (WebLLM on-device inference via WebGPU)
-- [x] AI-powered rule generation from natural language
-- [x] AI-powered tab group suggestions (topic-based grouping)
-- [x] Suggestion caching across popup reopens
+### Core Engine & Architecture
+- [x] Domain-based auto tab grouping with public suffix resolution
+- [x] URL pattern enhancements (domain+path, TLD wildcards, path wildcards)
+- [x] Custom rules engine with colors, priority ordering, and minimum tab thresholds
+- [x] Rule export and import via JSON
+- [x] Pinned tab protection and tab bar origin anchoring
+- [x] Focus Mode (auto-collapse inactive groups with exponential backoff)
+- [x] Protected groups and manual group color persistence
+- [x] Cross-window group consolidation with two-step safety preview
 
-### AI Implementation Details (Completed)
+### Release v3.15.5 Innovations
+- [x] **Interactive Tab Comparison Service**:
+  - Two-tab A/B pairing workflow
+  - Dynamic `CMP` action badge state indicator
+  - Dedicated "Comparison" group with automatic restoration on cancel
+- [x] **3D Force-Directed Knowledge Graph Visualizer**:
+  - WebGL 3D force simulation using `3d-force-graph`, `three`, and `d3-force-3d`
+  - Node clustering by window and tab group
+  - Favicon texture mapping onto 3D spheres
+  - Smooth camera focusing and direct tab activation
+- [x] **Multi-Provider AI Architecture**:
+  - WebLLM on-device local WebGPU inference
+  - Local OpenAI-compatible server support (Ollama, LM Studio, vLLM)
+  - Cloud OpenAI-compatible endpoint integration (OpenAI, Groq, DeepSeek)
+  - Custom model registry and live connection diagnostics
+- [x] **Semantic Tab Clustering**:
+  - Cosine similarity text vector clustering across tab titles and URLs
+  - Configurable similarity threshold (`aiSimilarityThreshold`)
+  - One-click `smartGroupTabs` clustering engine
+- [x] **Read Later Anchor Pinning**:
+  - Invariant locking for the first tab in "Read Later" ("فيما بعد") groups
+- [x] **Smart Tab Positioning**:
+  - Position new tabs directly adjacent to the active anchor tab
+  - Defer new tab URL grouping to prevent unintended bounces into System group
+- [x] **Chrome Manifest V3 Side Panel**:
+  - Native side panel behavior integration (`chrome.sidePanel`)
+- [x] **Containerized Architecture Intelligence**:
+  - Graft AST codebase wiring graph with zero-token map and CLI queries
 
-**Phase 1 - AI Infrastructure**:
+---
 
-- WebLLM provider with dynamic `import()` (zero bundle cost until activated)
-- AiService orchestrator with model lifecycle management
-- WebGPU capability detection
-- 6 model options (360MB to 3.8GB) with Qwen2.5 3B as recommended default
-- Settings persistence across service worker restarts
+## Active & Upcoming Roadmap
 
-**Phase 2 - Smart Rule Generation**:
+### AI & Machine Learning Pipeline
+- [ ] Content-aware grouping utilizing on-page body text extraction (`TODO:P2 @dev #ai`)
+- [ ] Autonomous AI regrouping daemon based on idle tab analysis (`TODO:P2 @dev #ai`)
+- [ ] Explainability dialog: "Why was this tab grouped here?" (`TODO:P3 @dev #ai #ui`)
+- [ ] Automatic rule conflict detector suggestions powered by LLM (`TODO:P2 @dev #ai #rules`)
 
-- Natural language to rule conversion (e.g., "Group social media" -> domains + color)
-- AI response parser with robust JSON extraction
-- Integration with rules modal for review before saving
+### 3D Visualizer & UI Polish
+- [ ] VR/XR immersive spatial tab management via WebXR (`TODO:P3 @dev #graph3d`)
+- [ ] Real-time physics clustering fine-tuning controls in sidebar (`TODO:P2 @dev #graph3d #ui`)
+- [ ] Search and filter overlay directly inside the 3D canvas (`TODO:P1 @dev #graph3d #ui`)
+- [ ] Dark/Light mode synchronization for 3D canvas backdrop (`TODO:P2 @dev #ui`)
 
-**Phase 3 - Tab Group Suggestions**:
-
-- Topic-based grouping prompts (groups by subject, not domain)
-- `response_format: json_object` for reliable structured output
-- Suggestion cards with "Apply" and "Create Rule" actions
-- Caching system so suggestions survive popup closes
-- Applied/pending state tracking across reopens
-
-## Planned
-
-### AI Enhancements
-
-- [ ] Content-aware grouping (analyze page content, not just URL/title)
-- [ ] Autonomous AI mode (AI decides when to regroup tabs)
-- [ ] "Why is this tab here?" explainer for group assignments
-- [ ] Rule conflict detection and resolution suggestions
-
-### UI Improvements
-
-- [ ] Custom Rules UI enhancements (better visualization of priorities and conflicts)
-- [ ] Search through open tabs and groups
-- [ ] Filter by domain, group name, or custom rules
-- [ ] Pattern testing interface for custom rules
-
-### Security & Quality
-
-- [ ] Enhanced XSS prevention
-- [ ] Content Security Policy (CSP) updates
-- [ ] Cloud sync for rules across devices
-
-### Future Features
-
-- [ ] Rule templates marketplace
-- [ ] Query parameter matching in URL patterns
+### Security, Performance & Sync
+- [ ] Cloud sync for custom rules and color presets across browser profiles (`TODO:P1 @dev #storage #cloud`)
+- [ ] Strict Content Security Policy (CSP) audit for WebLLM WebGPU workers (`TODO:P0 @dev #security`)
+- [ ] Memory footprint optimization for long-running 3D graph sessions (`TODO:P1 @dev #perf #graph3d`)

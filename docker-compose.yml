@@ -5,7 +5,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       target: development
     container_name: auto-tab-groups-dev
     restart: unless-stopped
@@ -41,7 +41,7 @@ services:
   cli:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       target: development
     working_dir: /workspace/app
     volumes:
@@ -62,7 +62,7 @@ services:
   test:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       target: test
     working_dir: /workspace/app
     volumes:
@@ -89,7 +89,7 @@ services:
   preview:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       target: production
     container_name: auto-tab-groups-preview
     restart: unless-stopped

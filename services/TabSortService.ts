@@ -151,6 +151,18 @@ class TabSortService {
         }
       }
 
+      // Preserve Read Later leader tab invariant if later group was shifted
+      if (tabGroupState.lockLaterGroupFirstTab) {
+        const targetGroupName = tabGroupState.laterGroupName || "فيما بعد"
+        const laterGroup = groups.find(
+          g => stripIndexPrefix(g.title || "") === targetGroupName
+        )
+        if (laterGroup) {
+          const { tabGroupService } = await import("./TabGroupService")
+          await tabGroupService.enforceLaterGroupLeaderTab(laterGroup.id)
+        }
+      }
+
       await this.moveUngroupedTabsToEnd(currentWindow.id)
     } catch (error) {
       console.error("[TabSortService] Error sorting groups:", error)

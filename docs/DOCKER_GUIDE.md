@@ -36,7 +36,7 @@ Auto Tab Groups utilizes a **hermetic multi-stage containerization architecture*
 | :--- | :--- | :--- |
 | **Engine Location** | Local Host (Docker Desktop on Windows/macOS) | Remote Linux VM (e.g. `ssh://crowz-debian@192.168.85.129`) |
 | **Active Context** | `docker context use default` | `docker context use debian-vm` |
-| **Build & Export** | `.\docker-build.ps1` or `docker build --target export` | `.\docker-build.ps1` or `docker build --target export` |
+| **Build & Export** | `.\scripts\docker-build.ps1` or `docker build -f docker/Dockerfile --target export` | `.\scripts\docker-build.ps1` or `docker build -f docker/Dockerfile --target export` |
 | **Artifact Delivery** | Exported directly to `.output/` on host disk | Exported through Docker Client stream to `.output/` on host disk |
 | **Live Code Bind Mount** | Instant hot-reloading across shared filesystem | Requires Samba/NFS/VMware shared folder or fast rebuilds (~1-2s) |
 
@@ -48,38 +48,38 @@ Auto Tab Groups utilizes a **hermetic multi-stage containerization architecture*
 
 ```powershell
 # Build extension and export all packages to .output/
-.\docker-build.ps1
+.\scripts\docker-build.ps1
 
 # Build, export, and run automated tests
-.\docker-build.ps1 -RunTests
+.\scripts\docker-build.ps1 -RunTests
 
 # Build, export, and launch static distribution preview on http://localhost:8080
-.\docker-build.ps1 -Preview
+.\scripts\docker-build.ps1 -Preview
 
-# Build, export, and clean up dangling builder layers
-.\docker-build.ps1 -Prune
+# Skip automatic dangling builder layers cleanup
+.\scripts\docker-build.ps1 -NoPrune
 ```
 
 ### Option B: Bash Script (Linux / macOS / WSL)
 
 ```bash
-chmod +x ./docker-build.sh
+chmod +x ./scripts/docker-build.sh
 
 # Build and export to .output/
-./docker-build.sh
+./scripts/docker-build.sh
 
 # Run tests as well
-./docker-build.sh --test
+./scripts/docker-build.sh --test
 
 # Launch preview server
-./docker-build.sh --preview
+./scripts/docker-build.sh --preview
 ```
 
 ### Option C: Direct Docker BuildKit CLI Command
 
 ```bash
 # Export compiled Chrome MV3, Firefox MV3, and zip files directly to .output/
-docker build --target export --output type=local,dest=. .
+docker build -f docker/Dockerfile --target export --output type=local,dest=. .
 ```
 
 After building, your `.output/` folder contains:

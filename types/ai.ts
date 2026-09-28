@@ -7,7 +7,21 @@ import type { AiGroupSuggestion } from "./ai-messages"
 /**
  * Supported AI provider backends
  */
-export type AiProvider = "webllm" | "external"
+export type AiProvider = "webllm" | "external" | "openai" | "ollama" | "custom"
+
+/**
+ * Custom AI model configuration added or modified by user
+ */
+export interface CustomAiModel {
+  id: string
+  displayName: string
+  provider: AiProvider
+  endpoint?: string
+  apiKey?: string
+  sizeInMb?: number
+  vramRequiredMb?: number
+  isCustom?: boolean
+}
 
 /**
  * AI model loading state machine: idle → loading → ready (or error)
@@ -72,12 +86,27 @@ export interface WebGpuCapability {
 }
 
 /**
+ * OpenAI-compatible custom endpoint configuration
+ */
+export interface OpenAiCompatibleConfig {
+  baseUrl: string // e.g. "https://api.openai.com/v1" or "http://localhost:11434/v1"
+  apiKey?: string // optional for local Ollama/LMStudio, mandatory for OpenAI/Groq
+  modelName: string // e.g. "gpt-4o-mini", "llama3.2"
+  customHeaders?: Record<string, string>
+}
+
+/**
  * AI settings stored in browser storage
  */
 export interface AiStorageSettings {
   aiEnabled: boolean
   aiProvider: AiProvider
   aiModelId: string
+  customAiModels?: CustomAiModel[]
+  aiSimilarityThreshold?: number
+  aiCustomEndpoint?: string
+  aiCustomApiKey?: string
+  aiCustomModel?: string
 }
 
 /**

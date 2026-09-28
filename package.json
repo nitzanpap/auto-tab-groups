@@ -1,6 +1,6 @@
 {
   "name": "auto-tab-groups",
-  "version": "3.15.4",
+  "version": "3.15.5",
   "type": "module",
   "description": "Cross-browser extension that automatically groups tabs by domain",
   "author": "Nitzan Papini",
@@ -27,12 +27,16 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.80"
+    "@mlc-ai/web-llm": "^0.2.80",
+    "3d-force-graph": "^1.80.0",
+    "d3-force-3d": "^3.0.6",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
     "@playwright/test": "^1.56.1",
     "@types/chrome": "^0.0.287",
+    "@types/three": "^0.180.0",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.3",
     "vitest": "^3.0.0",

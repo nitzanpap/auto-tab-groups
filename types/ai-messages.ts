@@ -54,6 +54,32 @@ export interface SetAiModelIdMessage {
 }
 
 /**
+ * Configure custom OpenAI-compatible API
+ */
+export interface SetCustomAiConfigMessage {
+  action: "setCustomAiConfig"
+  endpoint: string
+  apiKey: string
+  modelName: string
+}
+
+/**
+ * Test OpenAI-compatible API connection
+ */
+export interface TestAiConnectionMessage {
+  action: "testAiConnection"
+  endpoint?: string
+  apiKey?: string
+  modelName?: string
+}
+
+export interface TestAiConnectionResponse {
+  success: boolean
+  error?: string
+  latencyMs?: number
+}
+
+/**
  * Get AI model status message
  */
 export interface GetAiModelStatusMessage {
@@ -184,6 +210,8 @@ export type AiMessage =
   | SuggestGroupsMessage
   | ApplySuggestionMessage
   | AnalyzeRuleConflictsMessage
+  | SetCustomAiConfigMessage
+  | TestAiConnectionMessage
 
 /**
  * Response for getAiState

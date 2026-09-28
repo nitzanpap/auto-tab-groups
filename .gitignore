@@ -34,3 +34,7 @@ manifest.json
 .DS_Store
 Thumbs.db
 users-feedback.csv
+/graft
+PowerShellHistory.txt
+/.kilo
+/.cache

@@ -272,6 +272,62 @@
     "message": "تفعيل الذكاء الاصطناعي",
     "description": "Toggle that enables or disables AI features."
   },
+  "aiProviderLabel": {
+    "message": "المزود",
+    "description": "Label for the AI provider selector."
+  },
+  "aiProviderWebLlm": {
+    "message": "WebLLM (محلي بتقنية WebGPU)",
+    "description": "Option for in-browser WebLLM AI provider."
+  },
+  "aiProviderExternal": {
+    "message": "واجهة خارجية / مخصصة (API)",
+    "description": "Option for external or local server AI provider."
+  },
+  "aiRemoveModelTitle": {
+    "message": "إزالة النموذج المحدد",
+    "description": "Tooltip for the button that removes a custom AI model."
+  },
+  "aiAddCustomModelBtn": {
+    "message": "+ إضافة نموذج / مزود مخصص",
+    "description": "Button to expand the add custom model form."
+  },
+  "aiCustomModelIdPlaceholder": {
+    "message": "معرّف النموذج (مثال: llama3.2, mistral)",
+    "description": "Placeholder for custom model ID."
+  },
+  "aiCustomModelNamePlaceholder": {
+    "message": "اسم العرض (مثال: Ollama Llama 3)",
+    "description": "Placeholder for custom model display name."
+  },
+  "aiCustomModelEndpointPlaceholder": {
+    "message": "رابط نقطة النهاية (مثال: http://localhost:11434/v1)",
+    "description": "Placeholder for custom model endpoint URL."
+  },
+  "aiCustomModelApiKeyPlaceholder": {
+    "message": "مفتاح API (اختياري)",
+    "description": "Placeholder for custom model API key."
+  },
+  "aiSaveCustomModelBtn": {
+    "message": "حفظ النموذج",
+    "description": "Button to save a custom AI model."
+  },
+  "aiCancelCustomModelBtn": {
+    "message": "إلغاء",
+    "description": "Button to cancel adding a custom AI model."
+  },
+  "aiSimilarityThresholdLabel": {
+    "message": "عتبة تشابه الأغراض",
+    "description": "Label for similarity threshold slider."
+  },
+  "aiSimilarityThresholdHelp": {
+    "message": "النسبة اللازمة لدمج المواقع ذات الأغراض المتشابهة في نفس المجموعة.",
+    "description": "Help text explaining similarity threshold."
+  },
+  "aiCompatibilityLabel": {
+    "message": "التوافق",
+    "description": "Label for AI compatibility selector."
+  },
   "aiModelLabel": {
     "message": "النموذج",
     "description": "Label for the AI model selector."
@@ -311,6 +367,10 @@
     "message": "جارٍ التحميل...",
     "description": "Label shown on the load button while loading."
   },
+  "aiCancelLoad": {
+    "message": "إلغاء",
+    "description": "Button to cancel loading the AI model."
+  },
   "aiRetryLoad": {
     "message": "إعادة المحاولة",
     "description": "Button shown after an AI model load error."
@@ -320,8 +380,12 @@
     "description": "Warning shown when WebGPU is not supported."
   },
   "aiDownloadNote": {
-    "message": "تعمل النماذج محلياً داخل متصفحك. يُنزِّل التحميل الأول النموذج (~250MB-900MB).",
+    "message": "تعمل النماذج محلياً داخل متصفحك. أول تشغيل يقوم بتنزيل النموذج (~250 ميجابايت - 900 ميجابايت).",
     "description": "Help text beneath the load model button."
+  },
+  "aiExternalNote": {
+    "message": "يتصل بخدمة متوافقة مع بروتوكول OpenAI (مثل Ollama أو LM Studio أو OpenAI). لا يتطلب تنزيل أي أوزان داخل المتصفح.",
+    "description": "Help text for external AI provider."
   },
   "aiSuggestGroups": {
     "message": "اقتراح مجموعات",

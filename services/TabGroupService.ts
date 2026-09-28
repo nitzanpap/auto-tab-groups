@@ -7,9 +7,11 @@ import type { Browser } from "wxt/browser"
 import type { CustomRule, TabGroupColor } from "../types"
 import { getRandomTabGroupColor } from "../utils/Constants"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
+import { detectEntityAndColor } from "../utils/EntityServiceDetector"
 import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/storage"
 import { withTabEditRetry } from "../utils/withTabEditRetry"
-import { type MatchedRule, rulesService } from "./RulesService"
+import { rulesService, type MatchedRule } from "./RulesService"
+import { COMPARISON_GROUP_TITLE, tabComparisonService } from "./TabComparisonService"
 import { tabGroupState } from "./TabGroupState"
 import { stripIndexPrefix, tabSortService } from "./TabSortService"
 
@@ -37,6 +39,10 @@ class TabGroupServiceSimplified {
 
   markAsNewTab(tabId: number): void {
     this.recentlyCreatedTabIds.add(tabId)
+  }
+
+  isRecentlyCreated(tabId: number): boolean {
+    return this.recentlyCreatedTabIds.has(tabId)
   }
 
   private consumeNewTabFlag(tabId: number): boolean {
@@ -90,7 +96,8 @@ class TabGroupServiceSimplified {
    * Handles a tab update - moves tab to correct group based on its current URL
    */
   async handleTabUpdate(tabId: number, forceGrouping = false): Promise<boolean> {
-    if (!forceGrouping && !tabGroupState.autoGroupingEnabled) {
+    const isNewTab = this.recentlyCreatedTabIds.has(tabId)
+    if (!forceGrouping && !tabGroupState.autoGroupingEnabled && !isNewTab) {
       return false
     }
 
@@ -120,6 +127,8 @@ class TabGroupServiceSimplified {
       const tab = await browser.tabs.get(tabId)
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
+      const isNewTab = this.recentlyCreatedTabIds.has(tabId)
+
       // Check if this is a system URL and user has disabled grouping system tabs.
       // systemGroupEnabled wins over forceGrouping: when the System group is off
       // it must never appear, not even from an explicit "Group Tabs" click.
@@ -129,6 +138,7 @@ class TabGroupServiceSimplified {
           console.log(
             `[TabGroupService] Tab ${tabId} has a system URL and grouping system tabs is disabled`
           )
+          this.consumeNewTabFlag(tabId)
           return false
         }
       }
@@ -136,13 +146,13 @@ class TabGroupServiceSimplified {
       // Skip pinned tabs
       if (tab.pinned) {
         console.log(`[TabGroupService] Tab ${tabId} is pinned, skipping`)
+        this.consumeNewTabFlag(tabId)
         return false
       }
 
-      // Never move a tab out of a group the user marked protected. This runs
-      // before every grouping path — rules, domain, catch-all and the
-      // below-threshold ungroup — so protection holds everywhere.
-      if (await this.isInProtectedGroup(tab)) {
+      // Never move a tab out of a group the user marked protected unless this is a newly
+      // opened tab that was only placed beside its anchor group temporarily before navigating.
+      if (!isNewTab && (await this.isInProtectedGroup(tab))) {
         console.log(`[TabGroupService] Tab ${tabId} is in a protected group, leaving it alone`)
         return false
       }
@@ -163,6 +173,7 @@ class TabGroupServiceSimplified {
         if (tab.groupId && tab.groupId !== -1) {
           await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
         }
+        this.consumeNewTabFlag(tabId)
         return false
       }
 
@@ -173,7 +184,10 @@ class TabGroupServiceSimplified {
         // Handle system URLs
         const domain = extractDomain(tab.url || "", false)
         if (!customRule && domain === "system") {
-          if (!tabGroupState.systemGroupEnabled) return false
+          if (!tabGroupState.systemGroupEnabled) {
+            this.consumeNewTabFlag(tabId)
+            return false
+          }
           return await this.moveTabToTargetGroup(tabId, tab, "System", null, "grey")
         }
 
@@ -183,6 +197,14 @@ class TabGroupServiceSimplified {
 
         if (!effectiveRule) {
           console.log(`[TabGroupService] Rules-only mode: No rule found for ${tab.url}`)
+          if (
+            tab.groupId &&
+            tab.groupId !== -1 &&
+            (isNewTab || (await this.isOwnGroupId(tab.groupId)))
+          ) {
+            await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
+          }
+          this.consumeNewTabFlag(tabId)
           return false
         }
 
@@ -194,6 +216,14 @@ class TabGroupServiceSimplified {
       const expectedTitle = await this.getExpectedGroupTitle(tab)
       if (!expectedTitle) {
         console.log(`[TabGroupService] No domain extracted, skipping`)
+        if (
+          tab.groupId &&
+          tab.groupId !== -1 &&
+          (isNewTab || (await this.isOwnGroupId(tab.groupId)))
+        ) {
+          await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
+        }
+        this.consumeNewTabFlag(tabId)
         return false
       }
 
@@ -220,13 +250,18 @@ class TabGroupServiceSimplified {
   }
 
   /**
-   * Whether a tab currently sits in a group the user marked protected.
-   * Cheap no-op when nothing is protected, which is the default.
+   * Whether a tab currently sits in a comparison group or a group the user marked protected.
+   * Cheap no-op when nothing is protected and no comparison group exists.
    */
   private async isInProtectedGroup(tab: Browser.tabs.Tab): Promise<boolean> {
-    if (tabGroupState.protectedGroupTitles.length === 0) return false
     if (!tab.groupId || tab.groupId === -1) return false
     if (!browser.tabGroups) return false
+
+    if (tabComparisonService.getComparisonGroupId() === tab.groupId) {
+      return true
+    }
+
+    if (tabGroupState.protectedGroupTitles.length === 0) return false
 
     try {
       const group = await browser.tabGroups.get(tab.groupId)
@@ -291,7 +326,6 @@ class TabGroupServiceSimplified {
    * Ids of every protected group in the current window
    */
   private async getProtectedGroupIds(): Promise<Set<number>> {
-    if (tabGroupState.protectedGroupTitles.length === 0) return new Set()
     if (!browser.tabGroups) return new Set()
 
     const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
@@ -671,9 +705,17 @@ class TabGroupServiceSimplified {
         }
       }
 
+      const wasNewTab = this.consumeNewTabFlag(tabId)
+
       // Only pull the tab out of a group we built. A group another extension
-      // owns must survive its tabs navigating around (#96).
-      if (tab.groupId && tab.groupId !== -1 && (await this.isOwnGroupId(tab.groupId))) {
+      // owns must survive its tabs navigating around (#96). However, if this tab was
+      // a newly created tab placed in an anchor group temporarily, always ungroup it
+      // if its new destination URL does not meet threshold to avoid leaving it in the wrong group.
+      if (
+        tab.groupId &&
+        tab.groupId !== -1 &&
+        (wasNewTab || (await this.isOwnGroupId(tab.groupId)))
+      ) {
         await withTabEditRetry(() => browser.tabs.ungroup([tabId]))
       }
 
@@ -697,7 +739,9 @@ class TabGroupServiceSimplified {
         if (savedColor) {
           updateOptions.color = savedColor as Browser.tabGroups.Color
         } else {
+          const detected = detectEntityAndColor(tab.url || "", tab.title)
           updateOptions.color = (defaultColor ||
+            detected?.color ||
             getRandomTabGroupColor()) as Browser.tabGroups.Color
         }
       }
@@ -712,6 +756,8 @@ class TabGroupServiceSimplified {
     } catch (error) {
       console.error(`[TabGroupService] Failed to update group ${groupId} title:`, error)
     }
+
+    this.consumeNewTabFlag(tabId)
 
     // Group matching ungrouped tabs
     await this.groupMatchingUngroupedTabs(expectedTitle, tab.windowId!, customRule)
@@ -906,15 +952,15 @@ class TabGroupServiceSimplified {
   /**
    * Ungroups all tabs in the current window
    */
-  async ungroupAllTabs(): Promise<boolean> {
+  async ungroupAllTabs(forceAll = false): Promise<boolean> {
     try {
       console.log(`[TabGroupService] Ungrouping all tabs`)
       const tabs = await browser.tabs.query({ currentWindow: true })
       const allGrouped = tabs.filter(tab => tab.groupId && tab.groupId !== -1)
 
-      // "Ungroup All" is still the extension acting, so protected groups survive
-      // it. Users can dissolve one from the browser's own right-click menu.
-      const protectedGroupIds = await this.getProtectedGroupIds()
+      const protectedGroupIds = forceAll
+        ? new Set<number>()
+        : await this.getProtectedGroupIds()
       const groupedTabs = allGrouped.filter(tab => !protectedGroupIds.has(tab.groupId as number))
 
       if (groupedTabs.length > 0) {
@@ -1369,6 +1415,60 @@ class TabGroupServiceSimplified {
       }
     } catch (error) {
       console.error(`[TabGroupService] Error in collapseOtherGroups:`, error)
+    }
+  }
+
+  /**
+   * Enforces that the leader tab in the "Read Later" / "فيما بعد" group
+   * stays strictly pinned at the very beginning of the group (index 0 relative to group).
+   */
+  async enforceLaterGroupLeaderTab(groupId: number): Promise<boolean> {
+    try {
+      if (!tabGroupState.lockLaterGroupFirstTab) return false
+      if (!browser.tabGroups) return false
+
+      const group = await browser.tabGroups.get(groupId).catch(() => null)
+      if (!group) return false
+
+      const targetGroupName = tabGroupState.laterGroupName || "فيما بعد"
+      const cleanTitle = stripIndexPrefix(group.title || "")
+      if (cleanTitle !== targetGroupName) return false
+
+      const tabs = await browser.tabs.query({ groupId })
+      if (!tabs || tabs.length <= 1) return false
+
+      // Sort tabs by their current index
+      const sortedTabs = [...tabs].sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      const targetGroupStartIndex = sortedTabs[0].index
+
+      let leaderTabId = tabGroupState.laterGroupLeaderTabId
+      // If no leader is designated yet, establish the first tab as the immutable leader
+      if (!leaderTabId || !tabs.some(t => t.id === leaderTabId)) {
+        leaderTabId = sortedTabs[0].id ?? null
+        if (leaderTabId !== null) {
+          tabGroupState.laterGroupLeaderTabId = leaderTabId
+          const { laterGroupLeaderTabId: storageItem } = await import("../utils/storage")
+          await storageItem.setValue(leaderTabId)
+        }
+      }
+
+      if (!leaderTabId) return false
+
+      const currentFirstTab = sortedTabs[0]
+      if (currentFirstTab.id !== leaderTabId && targetGroupStartIndex !== undefined) {
+        console.log(
+          `[TabGroupService] Restoring later group leader tab ${leaderTabId} to index ${targetGroupStartIndex}`
+        )
+        await withTabEditRetry(() =>
+          browser.tabs.move(leaderTabId!, { index: targetGroupStartIndex })
+        )
+        return true
+      }
+
+      return false
+    } catch (err) {
+      console.error("[TabGroupService] Error enforcing later group leader tab:", err)
+      return false
     }
   }
 

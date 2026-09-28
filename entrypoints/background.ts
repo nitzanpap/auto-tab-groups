@@ -30,35 +30,58 @@ import {
 } from "../utils/PromptTemplates"
 import { detectConflicts } from "../utils/RuleConflictDetector"
 import { cachedAiSuggestions, loadAllStorage, saveAllStorage } from "../utils/storage"
+import { withTabEditRetry } from "../utils/withTabEditRetry"
 
 export default defineBackground(() => {
   // State initialization flag to ensure it only happens once per service worker instance
   let stateInitialized = false
+  let stateLoadPromise: Promise<void> | null = null
 
   /**
    * Ensures state is loaded from storage (SSOT) before any operations
    */
   async function ensureStateLoaded(): Promise<void> {
-    if (!stateInitialized) {
-      try {
-        console.log("Service worker starting - loading state from storage...")
-        await seedProtectedGroupsOnFirstRun()
-        const storageData = await loadAllStorage()
-        tabGroupState.updateFromStorage(storageData)
-        aiService.updateFromStorage(storageData)
-        await initI18n(tabGroupState.userLocale)
-        stateInitialized = true
-        console.log("State loaded successfully from storage")
-        console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
-        console.log("Custom rules count:", tabGroupState.customRules.size)
+    if (stateInitialized) return
+    if (!stateLoadPromise) {
+      stateLoadPromise = (async () => {
+        try {
+          console.log("Service worker starting - loading state from storage...")
+          await seedProtectedGroupsOnFirstRun()
+          const storageData = await loadAllStorage()
+          tabGroupState.updateFromStorage(storageData)
+          aiService.updateFromStorage(storageData)
+          await initI18n(tabGroupState.userLocale)
+          stateInitialized = true
+          console.log("State loaded successfully from storage")
+          console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
+          console.log("Custom rules count:", tabGroupState.customRules.size)
 
-        // Restore saved colors for existing groups
-        await tabGroupService.restoreSavedColors()
-      } catch (error) {
-        console.error("Error loading state from storage:", error)
-        throw error
-      }
+          // Sanitize protected groups to ensure System is never protected
+          if (
+            tabGroupState.protectedGroupTitles.some(
+              t => t.toLowerCase() === "system"
+            )
+          ) {
+            tabGroupState.protectedGroupTitles = tabGroupState.protectedGroupTitles.filter(
+              t => t.toLowerCase() !== "system"
+            )
+            await saveState()
+          }
+
+          // Restore saved colors for existing groups
+          await tabGroupService.restoreSavedColors()
+
+          // Initialize comparison service state
+          const { tabComparisonService } = await import("../services/TabComparisonService")
+          await tabComparisonService.initialize()
+        } catch (error) {
+          stateLoadPromise = null
+          console.error("Error loading state from storage:", error)
+          throw error
+        }
+      })()
     }
+    await stateLoadPromise
   }
 
   /**
@@ -100,6 +123,38 @@ export default defineBackground(() => {
     }
   })
 
+  // Configure Chrome Side Panel API (Manifest V3)
+  if (typeof chrome !== "undefined" && chrome.sidePanel?.setPanelBehavior) {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: true })
+      .catch((error: unknown) => {
+        console.error("[Background] Failed to set side panel behavior:", error)
+      })
+  }
+
+  // Fallback to open Side Panel when action icon is clicked in Chrome
+  if (typeof chrome !== "undefined" && chrome.action?.onClicked) {
+    chrome.action.onClicked.addListener(async tab => {
+      if (tab.windowId !== undefined && chrome.sidePanel?.open) {
+        try {
+          await chrome.sidePanel.open({ windowId: tab.windowId })
+        } catch (error) {
+          console.error("[Background] Error opening side panel on action click:", error)
+        }
+      }
+    })
+  }
+
+  browser.runtime.onInstalled?.addListener(() => {
+    if (typeof chrome !== "undefined" && chrome.sidePanel?.setPanelBehavior) {
+      chrome.sidePanel
+        .setPanelBehavior({ openPanelOnActionClick: true })
+        .catch((error: unknown) => {
+          console.error("[Background] Failed to set side panel behavior on install:", error)
+        })
+    }
+  })
+
   // Message handler for popup communication
   browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     ;(async () => {
@@ -115,7 +170,7 @@ export default defineBackground(() => {
             break
 
           case "ungroup":
-            await tabGroupService.ungroupAllTabs()
+            await tabGroupService.ungroupAllTabs(true)
             result = { success: true }
             break
 
@@ -139,6 +194,58 @@ export default defineBackground(() => {
             result = { success: true }
             break
 
+          case "openGraph3d": {
+            const url = browser.runtime.getURL("/graph-3d.html" as any)
+            const tab = await browser.tabs.create({ url, active: true })
+            result = { success: true, tabId: tab.id }
+            break
+          }
+
+          case "getGraphData": {
+            const tabs = await browser.tabs.query({})
+            let groups: Browser.tabGroups.TabGroup[] = []
+            if (browser.tabGroups?.query) {
+              try {
+                groups = await browser.tabGroups.query({})
+              } catch (err) {
+                console.error("[Background] Failed to query tab groups:", err)
+              }
+            }
+            result = {
+              tabs: tabs.map(t => ({
+                id: t.id,
+                groupId: t.groupId,
+                title: t.title || "Untitled",
+                url: t.url || "",
+                favIconUrl: t.favIconUrl || "",
+                windowId: t.windowId,
+                active: t.active,
+                pinned: t.pinned
+              })),
+              groups: groups.map(g => ({
+                id: g.id,
+                title: g.title || "Untitled Group",
+                color: g.color || "grey",
+                collapsed: g.collapsed,
+                windowId: g.windowId
+              }))
+            }
+            break
+          }
+
+          case "activateTab": {
+            if (typeof msg.tabId === "number") {
+              await browser.tabs.update(msg.tabId, { active: true })
+              if (typeof msg.windowId === "number" && typeof chrome !== "undefined" && chrome.windows?.update) {
+                await chrome.windows.update(msg.windowId, { focused: true })
+              }
+              result = { success: true }
+            } else {
+              result = { success: false, error: "tabId required" }
+            }
+            break
+          }
+
           case "toggleCollapse": {
             const collapseResult = await tabGroupService.toggleAllGroupsCollapse()
             result = { success: true, isCollapsed: collapseResult.isCollapsed }
@@ -160,6 +267,9 @@ export default defineBackground(() => {
             break
 
           case "getOnlyApplyToNewTabs":
+            result = { enabled: false }
+            break
+
           case "toggleAutoGroup":
             tabGroupState.autoGroupingEnabled = msg.enabled
             await saveState()
@@ -516,8 +626,104 @@ export default defineBackground(() => {
             result = {
               settings: aiService.getSettings(),
               modelStatus: aiService.getModelStatus(),
-              availableModels: aiService.getAvailableModels()
+              availableModels: aiService.getAvailableModels(),
+              customModels: aiService.getCustomModels(),
+              similarityThreshold: aiService.getSimilarityThreshold()
             }
+            break
+
+          case "addCustomAiModel":
+            if (msg.model && typeof msg.model.id === "string") {
+              await aiService.addCustomModel(msg.model)
+              result = {
+                success: true,
+                availableModels: aiService.getAvailableModels(),
+                customModels: aiService.getCustomModels()
+              }
+            } else {
+              result = { success: false, error: "Invalid model specification" }
+            }
+            break
+
+          case "removeCustomAiModel":
+            if (typeof msg.modelId === "string") {
+              await aiService.removeCustomModel(msg.modelId)
+              result = {
+                success: true,
+                availableModels: aiService.getAvailableModels(),
+                customModels: aiService.getCustomModels()
+              }
+            } else {
+              result = { success: false, error: "modelId is required" }
+            }
+            break
+
+          case "setAiSimilarityThreshold":
+            if (typeof msg.threshold === "number") {
+              await aiService.setSimilarityThreshold(msg.threshold)
+              result = { success: true, threshold: aiService.getSimilarityThreshold() }
+            } else {
+              result = { success: false, error: "threshold must be a number" }
+            }
+            break
+
+          case "smartGroupTabs": {
+            const allTabs = await browser.tabs.query({ currentWindow: true })
+            const eligibleTabs = allTabs.filter(
+              tab =>
+                tab.id !== undefined &&
+                !tab.pinned &&
+                tab.url &&
+                !tab.url.startsWith("chrome-extension://") &&
+                !tab.url.startsWith("moz-extension://") &&
+                !tab.url.startsWith("chrome://") &&
+                !tab.url.startsWith("about:")
+            )
+
+            if (eligibleTabs.length === 0) {
+              result = { success: false, error: "No eligible tabs to group" }
+              break
+            }
+
+            const threshold = aiService.getSimilarityThreshold()
+            const { clusterTabsBySemanticSimilarity } = await import("../utils/SemanticGrouping")
+            const clusters = clusterTabsBySemanticSimilarity(
+              eligibleTabs.map(t => ({
+                id: t.id!,
+                url: t.url!,
+                title: t.title,
+                favIconUrl: t.favIconUrl
+              })),
+              threshold
+            )
+
+            let groupedCount = 0
+            for (const cluster of clusters) {
+              if (cluster.tabIds.length >= tabGroupState.minimumTabsForGroup) {
+                try {
+                  const groupId = await browser.tabs.group({
+                    tabIds: cluster.tabIds as [number, ...number[]]
+                  })
+                  if (typeof groupId === "number") {
+                    await browser.tabGroups.update(groupId, {
+                      title: cluster.groupName,
+                      color: cluster.color as Browser.tabGroups.Color
+                    })
+                  }
+                  groupedCount += cluster.tabIds.length
+                } catch (err) {
+                  console.error("[Background] Failed to form cluster group:", err)
+                }
+              }
+            }
+
+            result = { success: true, groupedTabs: groupedCount, clusterCount: clusters.length }
+            break
+          }
+
+          case "saveState":
+            await saveState()
+            result = { success: true }
             break
 
           case "setAiEnabled":
@@ -551,6 +757,59 @@ export default defineBackground(() => {
             await aiService.unloadModel()
             result = { success: true }
             break
+
+          case "setCustomAiConfig":
+            await aiService.setCustomAiConfig({
+              endpoint: msg.endpoint,
+              apiKey: msg.apiKey,
+              modelName: msg.modelName
+            })
+            result = { success: true }
+            break
+
+          case "testAiConnection": {
+            const testResult = await aiService.testConnection({
+              endpoint: msg.endpoint,
+              apiKey: msg.apiKey,
+              modelName: msg.modelName
+            })
+            result = testResult
+            break
+          }
+
+          case "startTabComparison": {
+            const { tabComparisonService } = await import("../services/TabComparisonService")
+            let sourceId = msg.sourceTabId
+            if (!sourceId) {
+              const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true })
+              sourceId = activeTab?.id
+            }
+            if (sourceId) {
+              await tabComparisonService.startComparison(sourceId)
+              result = { success: true, sourceTabId: sourceId }
+            } else {
+              result = { success: false, error: "No active source tab found" }
+            }
+            break
+          }
+
+          case "cancelTabComparison": {
+            const { tabComparisonService } = await import("../services/TabComparisonService")
+            await tabComparisonService.cancelComparison()
+            result = { success: true }
+            break
+          }
+
+          case "getComparisonStatus": {
+            const { tabComparisonService } = await import("../services/TabComparisonService")
+            result = {
+              active: tabComparisonService.isComparisonActive(),
+              sourceTabId: tabComparisonService.getSourceTabId(),
+              comparisonGroupId: tabComparisonService.getComparisonGroupId(),
+              hasComparisonGroup: tabComparisonService.getComparisonGroupId() !== null
+            }
+            break
+          }
 
           case "checkWebGpuSupport": {
             const webGpu = await aiService.checkWebGpuSupport()
@@ -612,6 +871,9 @@ export default defineBackground(() => {
           }
 
           case "suggestGroups": {
+            tabGroupState.autoGroupingEnabled = false
+            await saveState()
+
             if (!aiService.isEnabled()) {
               result = { success: false, error: "AI features are disabled" }
               break
@@ -841,6 +1103,31 @@ export default defineBackground(() => {
             break
           }
 
+          case "openSidePanel": {
+            try {
+              if (typeof chrome !== "undefined" && chrome.sidePanel?.open) {
+                const targetWindowId = msg.windowId || _sender?.tab?.windowId
+                if (targetWindowId) {
+                  await chrome.sidePanel.open({ windowId: targetWindowId })
+                  result = { success: true }
+                } else {
+                  const currentWindow = await browser.windows.getCurrent()
+                  if (currentWindow.id) {
+                    await chrome.sidePanel.open({ windowId: currentWindow.id })
+                    result = { success: true }
+                  } else {
+                    result = { success: false, error: "No window found" }
+                  }
+                }
+              } else {
+                result = { success: false, error: "Side panel API not available" }
+              }
+            } catch (error) {
+              result = { success: false, error: (error as Error).message }
+            }
+            break
+          }
+
           default:
             result = { error: "Unknown action" }
         }
@@ -863,6 +1150,15 @@ export default defineBackground(() => {
       if (changeInfo.url) {
         console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
         await ensureStateLoaded()
+
+        // If openTabNextToCurrent is enabled and the URL is still a newtab URL, don't group into System
+        if (
+          tabGroupState.openTabNextToCurrent &&
+          tabGroupService.isNewTabUrl(changeInfo.url)
+        ) {
+          return
+        }
+
         await tabGroupService.handleTabUpdate(tabId)
       } else if (Object.hasOwn(changeInfo, "pinned") && changeInfo.pinned === false) {
         console.log(`[tabs.onUpdated] Tab ${tabId} was unpinned, applying grouping`)
@@ -888,25 +1184,59 @@ export default defineBackground(() => {
       if (tab.id) {
         tabGroupService.markAsNewTab(tab.id)
       }
-      // When a tab is opened via "Open link in new tab" (has openerTabId),
-      // the browser may initially report a system URL (about:blank, chrome://newtab, etc.)
-      // before the real destination URL arrives via onUpdated. Defer grouping to
-      // avoid bouncing the tab through the System group.
-      if (tab.openerTabId && tab.url && tabGroupService.isNewTabUrl(tab.url)) {
-        console.log(
-          `[tabs.onCreated] Tab ${tab.id} has opener and system URL "${tab.url}", deferring to onUpdated`
-        )
-        return
+
+      await ensureStateLoaded()
+
+      // Position the new tab next to the active tab if openTabNextToCurrent is enabled
+      if (tabGroupState.openTabNextToCurrent && tab.id && tab.windowId !== undefined) {
+        try {
+          const tabsInWindow = await browser.tabs.query({ windowId: tab.windowId })
+          const anchorTab = tab.openerTabId
+            ? tabsInWindow.find(t => t.id === tab.openerTabId)
+            : tabsInWindow.find(t => t.active && t.id !== tab.id)
+          if (anchorTab && anchorTab.index !== undefined) {
+            const targetIndex = anchorTab.index + 1
+            if (tab.index !== targetIndex && tab.index !== targetIndex - 1) {
+              await withTabEditRetry(() => browser.tabs.move(tab.id!, { index: targetIndex }))
+            }
+            // If the anchor tab was in a group, keep the new tab in that group beside it until it navigates
+            if (
+              anchorTab.groupId &&
+              anchorTab.groupId !== -1 &&
+              tab.groupId !== anchorTab.groupId
+            ) {
+              await withTabEditRetry(() =>
+                browser.tabs.group({ tabIds: [tab.id!], groupId: anchorTab.groupId })
+              )
+            }
+          }
+        } catch (err) {
+          console.warn("[tabs.onCreated] Error positioning tab next to current:", err)
+        }
       }
-      if (tab.openerTabId && tab.url === "about:blank") {
+
+      // If openTabNextToCurrent is enabled, or if it has an opener tab, or if deferGroupingUntilSeen is enabled:
+      // any new/empty tab (chrome://newtab, about:blank, empty) should defer grouping to onUpdated
+      // rather than being immediately snatched into System away from the active tab.
+      const isNewTab =
+        !tab.url ||
+        tab.url === "" ||
+        tab.url === "about:blank" ||
+        tabGroupService.isNewTabUrl(tab.url)
+
+      if (
+        isNewTab &&
+        (tabGroupState.openTabNextToCurrent ||
+          tab.openerTabId ||
+          tabGroupState.deferGroupingUntilSeen)
+      ) {
         console.log(
-          `[tabs.onCreated] Tab ${tab.id} is pending navigation (about:blank with opener), deferring to onUpdated`
+          `[tabs.onCreated] Tab ${tab.id} is new/pending ("${tab.url}"), deferring grouping to onUpdated`
         )
         return
       }
 
       if (tab.url && tab.id) {
-        await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tab.id)
       }
     } catch (error) {
@@ -938,12 +1268,12 @@ export default defineBackground(() => {
     try {
       await ensureStateLoaded()
 
-      // Skip tabs already in a group — this move was likely triggered by
-      // our own tabs.group() call. Re-triggering handleTabUpdate here
-      // would race with the in-progress title update and could create
-      // duplicate untitled groups.
       const tab = await browser.tabs.get(tabId)
       if (tab.groupId && tab.groupId !== -1) {
+        // Enforce leader tab pinning for Read Later / "فيما بعد" group
+        if (tabGroupState.lockLaterGroupFirstTab) {
+          await tabGroupService.enforceLaterGroupLeaderTab(tab.groupId)
+        }
         return
       }
 
@@ -962,8 +1292,23 @@ export default defineBackground(() => {
     try {
       await ensureStateLoaded()
 
+      // Handle interactive comparison pairing if active
+      const { tabComparisonService } = await import("../services/TabComparisonService")
+      if (tabComparisonService.isComparisonActive()) {
+        const paired = await tabComparisonService.handleTabActivated(
+          activeInfo.tabId,
+          activeInfo.windowId
+        )
+        if (paired) {
+          return
+        }
+      }
+
       // A tab that was left alone until first view gets grouped now
-      if (tabGroupState.deferGroupingUntilSeen && tabGroupState.autoGroupingEnabled) {
+      if (
+        tabGroupState.deferGroupingUntilSeen &&
+        (tabGroupState.autoGroupingEnabled || tabGroupService.isRecentlyCreated(activeInfo.tabId))
+      ) {
         await tabGroupService.handleTabUpdate(activeInfo.tabId)
       }
 

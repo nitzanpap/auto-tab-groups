@@ -1,134 +1,123 @@
-# Architecture
+# Auto Tab Groups System Architecture (v3.15.5)
 
-## Core Principle: Browser as Single Source of Truth (SSOT)
+## 1. Architectural Foundation & Core Principles
 
-The extension uses a stateless architecture where the browser's tab groups API is authoritative. Service workers can restart at any time, so:
+Auto Tab Groups is a cross-browser extension engineered around the core principle of **Browser as Single Source of Truth (SSOT)**.
+In browser extensions running on Manifest V3 (MV3), service workers are ephemeral and can be terminated by the browser at any time during idle states. Consequently, all critical state management conforms to these architectural axioms:
 
-- Always query browser for current groups
-- No cached domain mappings
-- Simple title-based group matching
-- Stateless operations
+- **Stateless Domain Mappings**: The background service worker queries the browser's live tab and group APIs rather than maintaining unverified in-memory domain-to-group mappings.
+- **Title as Group Identity**: Group identity is matched by exact title (or normalized title after stripping sort index prefixes).
+- **No Empty Groups**: In accordance with browser tab group constraints, groups are created dynamically by moving tabs into them, and are automatically dismantled when their last member tab exits.
+- **Resilient Mutation Execution**: All browser tab editing operations (`tabs.move`, `tabs.group`, `tabs.ungroup`, `tabGroups.update`) are executed through exponential backoff retry wrappers (`withTabEditRetry`) to mitigate transient `Tabs cannot be edited right now` locking errors.
 
-## Tab Grouping Flow
+---
 
-```txt
-Tab URL changes -> Extract domain -> Determine expected title -> Find group by title -> Move if needed
+## 2. System Topology & Directory Clusters
+
+Extracted via **Graft AST Intelligence** (663 Nodes, 1,631 Edges across TypeScript AST):
+
+```mermaid
+graph TD
+    subgraph Entrypoints ["Entrypoints & UI Interfaces"]
+        BG["background.ts (Service Worker)"]
+        Popup["popup/ (Action Interface)"]
+        Sidebar["sidebar/ (Side Panel Interface)"]
+        Modal["rules-modal/ (Rule Editor)"]
+        Graph3D["graph-3d/ (3D Force Graph Visualizer)"]
+    end
+
+    subgraph CoreServices ["Core Services Layer"]
+        TGS["TabGroupService (Group Coordinator)"]
+        State["TabGroupState (Storage & Config Mirror)"]
+        Rules["RulesService (Rule Evaluator & Matcher)"]
+        Sort["TabSortService (Group Sorter)"]
+        Compare["TabComparisonService (Interactive Pairer)"]
+        FirstRun["FirstRunService (Seed & Migration)"]
+    end
+
+    subgraph AiSubsystem ["AI & Intelligence Engine"]
+        Ai["AiService (AI Orchestrator)"]
+        WebLLM["WebLlmProvider (Local WebGPU / In-Browser)"]
+        ExtAI["ExternalAiProvider (OpenAI-compatible / Ollama)"]
+        Semantic["SemanticGrouping (Vector/Cosine Clustering)"]
+        Detector["EntityServiceDetector (Entity/Brand Recognition)"]
+        Parser["AiResponseParser (Fault-Tolerant JSON Extractor)"]
+    end
+
+    subgraph StorageUtils ["Storage & Utilities"]
+        Storage["storage.ts (wxt/storage schema definitions)"]
+        Matcher["UrlPatternMatcher (Glob / Regex Engine)"]
+        Retry["withTabEditRetry (Exponential Backoff)"]
+    end
+
+    BG --> TGS
+    BG --> Ai
+    BG --> Compare
+    BG --> Storage
+    TGS --> State
+    TGS --> Rules
+    TGS --> Detector
+    TGS --> Retry
+    TGS --> Compare
+    Ai --> WebLLM
+    Ai --> ExtAI
+    Ai --> Parser
+    BG --> Semantic
+    Popup --> BG
+    Sidebar --> BG
+    Graph3D --> BG
 ```
 
-### Steps
+---
 
-1. **Extract Domain**: Get domain from tab URL using `extractDomain()`
-2. **Determine Expected Title**: Use `getDomainDisplayName()` or custom rule name
-3. **Find Group by Title**: Query browser groups, match by exact title
-4. **Move or Create**:
-   - If group exists and tab not in it -> Move tab to existing group
-   - If group doesn't exist -> Move tab to new group (browser creates automatically)
-   - If tab already in correct group -> Do nothing
+## 3. Subsystem Breakdown
 
-## No Empty Groups Allowed
+### 3.1 Tab Group Management Service (`services/TabGroupService.ts`)
+- **Single Responsibility**: Coordinates tab movements, group creations, domain evaluations, and auto-grouping lifecycle hooks.
+- **Key Behaviors**:
+  - `handleTabUpdate(tabId)`: Evaluates tab destination against custom rules, domain mappings, or system URL policies.
+  - `moveTabToTargetGroup(...)`: Resolves group existence, handles tab grouping, sets assigned group color, and consolidates co-domain ungrouped tabs.
+  - `restoreSavedColors()`: Restores persisted user group colors across browser restarts.
+  - `enforceLaterGroupLeaderTab(groupId)`: Enforces pinning/leader retention for the Read Later ("فيما بعد") tab group.
+  - `ungroupAllTabs(forceAll)`: Safely dissolves groups while preserving user-protected groups unless explicit force flag is asserted.
 
-Browsers do not allow empty tab groups. This means:
+### 3.2 Tab Comparison Service (`services/TabComparisonService.ts`)
+- **Single Responsibility**: Interactive A/B workflow pairing two tabs into a unified comparison group.
+- **State Machine Flow**:
+  1. Trigger comparison from popup/sidebar or command -> state marked `active`, source tab ID captured.
+  2. Browser badge updated to `CMP` via `browser.action.setBadgeText`.
+  3. User switches to or focuses second tab -> `handleTabActivated(targetTabId, windowId)`.
+  4. Automatically groups both tabs into `"Comparison"` group with color `purple`.
+  5. Badge cleared and comparison session completed.
+  6. Cancellation restores both tabs back to their respective parent group IDs.
 
-- You cannot create an empty group first, then add tabs
-- Groups are created by moving tabs to them
-- The browser automatically creates the group when the first tab is moved
-- Groups are automatically deleted when the last tab is removed
+### 3.3 AI & Semantic Grouping Subsystem (`services/ai/`)
+- **`AiService.ts`**: Central orchestrator managing provider dispatch, similarity threshold settings, custom models registry, and model loading lifecycle.
+- **Provider Multi-Tenancy**:
+  - `WebLlmProvider.ts`: Client-side on-device inference via WebGPU using `@mlc-ai/web-llm` (e.g. Qwen2.5 3B, Llama 3.2 3B). Zero bundle cost until dynamically imported.
+  - `ExternalAiProvider.ts`: Local and remote OpenAI-compatible API bridge (Ollama at `http://localhost:11434/v1`, LM Studio, vLLM, OpenAI, Groq).
+- **`utils/SemanticGrouping.ts`**: Algorithmic clustering based on tokenized term vectors and cosine similarity for tabs sharing conceptual themes without explicit rules.
+- **`utils/EntityServiceDetector.ts`**: Fast pattern matching against common platforms (Google Services, AWS, GitHub, Microsoft) to assign brand colors and titles automatically.
 
-### Creating Groups (Correct Approach)
+### 3.4 3D Tab Visualization Subsystem (`entrypoints/graph-3d.unlisted/`)
+- Visualizes open tabs and their relationships in an interactive 3D force-directed graph built with `3d-force-graph`, `d3-force-3d`, and `three`.
+- **Graph Topology**:
+  - Window & Group Hub Nodes: Connected by group affiliation.
+  - Tab Leaf Nodes: Embedded with domain favicons, title tooltips, and real-time active status rings.
+  - Direct Tab Activation: Clicking a 3D node sends `activateTab` message to focus the physical browser tab and window.
 
-```javascript
-// Move tab to group (browser creates it automatically)
-const groupId = await browser.tabs.group({
-  tabIds: [tabId],
-})
+### 3.5 Side Panel & Chrome Action Routing (`entrypoints/background.ts`)
+- Configures Chrome Side Panel API (`chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`) in MV3.
+- Bridges popup actions, sidebar views, and command shortcuts into a single consolidated message router.
 
-// Set the group title
-await browser.tabGroups.update(groupId, {
-  title: expectedTitle,
-})
-```
+---
 
-## API Methods
+## 4. Architectural Invariants & Safety Guardrails
 
-```javascript
-// Move tab(s) to new or existing group
-browser.tabs.group({
-  tabIds: [tabId1, tabId2, ...],
-  groupId?: existingGroupId  // Optional: specify existing group
-})
-
-// Update group properties
-browser.tabGroups.update(groupId, {
-  title: "Group Name",
-  color: "blue"
-})
-
-// Query existing groups
-browser.tabGroups.query({
-  windowId: windowId
-})
-```
-
-## Benefits
-
-- **Reliability**: No state sync issues, no race conditions, browser is always authoritative
-- **Simplicity**: ~150 lines vs ~1000+ lines, single service instead of many modules
-- **Performance**: No complex state rebuilding, direct browser queries only when needed
-- **Maintainability**: Stateless operations, clear linear logic flow
-
-## Retry Mechanism: Exponential Backoff
-
-Chrome's tab groups API can throw transient errors during tab transitions:
-
-```txt
-Error: Tabs cannot be edited right now (user may be dragging a tab)
-```
-
-### Problem
-
-The `tabs.onActivated` event fires before the browser completes internal tab state updates. Immediate API calls may fail, but succeed milliseconds later.
-
-### Solution
-
-The `updateTabGroupWithRetry` method uses exponential backoff:
-
-```javascript
-async updateTabGroupWithRetry(groupId, updateProperties, maxRetries = 5, initialDelayMs = 25) {
-  let delayMs = initialDelayMs
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      await browser.tabGroups.update(groupId, updateProperties)
-      return true
-    } catch (error) {
-      const isTransientError = error.message.includes("cannot be edited right now")
-
-      if (isTransientError && attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, delayMs))
-        delayMs *= 2 // Exponential: 25 -> 50 -> 100 -> 200 -> 400ms
-        continue
-      }
-      return false
-    }
-  }
-}
-```
-
-### Retry Timeline
-
-| Attempt | Wait Before | Total Elapsed |
-| ------- | ----------- | ------------- |
-| 0       | 0ms         | 0ms           |
-| 1       | 25ms        | 25ms          |
-| 2       | 50ms        | 75ms          |
-| 3       | 100ms       | 175ms         |
-| 4       | 200ms       | 375ms         |
-| 5       | 400ms       | 775ms         |
-
-### Design Rationale
-
-- **Event-driven**: Only retries when actual API call fails (not polling)
-- **Fast success path**: First attempt is immediate (0ms delay)
-- **Adaptive**: Works on both fast and slow machines
-- **Bounded**: Maximum ~775ms total retry window
-- **~95% reliability**: Handles most Chrome transition timing issues
+| Invariant ID | Rule Statement | Enforcement Location | Rationale |
+| :--- | :--- | :--- | :--- |
+| **INV-01** | Pinned tabs are never moved into any group | `TabGroupService.handleTabUpdate` | Preserves user tab bar anchor layout |
+| **INV-02** | System groups are never placed on protected list | `background.ts:ensureStateLoaded` | Prevents extension lockouts and orphaned system tabs |
+| **INV-03** | Browser mutations must use retry backoff | `utils/withTabEditRetry.ts` | Eliminates browser tab transition drag collisions |
+| **INV-04** | Comparison group is protected during active session | `TabGroupService.isInProtectedGroup` | Avoids auto-grouping tearing apart comparison pairs |
+| **INV-05** | External AI requests require strict parameter validation | `AiService.testConnection` / `ExternalAiProvider` | Guards against malformed URLs and credential leaks |

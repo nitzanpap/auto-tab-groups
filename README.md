@@ -9,6 +9,10 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 🦊 **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/auto-tab-groups/)**
 🌐 **[Chrome Web Store](https://chromewebstore.google.com/detail/auto-tab-groups/cmolegdbajakaekbamkdhonkaldgield)**
 🐳 **[Docker Engineering & Operations Guide](docs/DOCKER_GUIDE.md)**
+📐 **[System Architecture](docs/architecture.md)**
+✨ **[Features Specification](docs/features.md)**
+🗺️ **[Development Roadmap](docs/roadmap.md)**
+🌳 **[Graft AST Guide](docs/GRAFT_GUIDE.md)**
 
 ## Example of tab groups in the navigation bar
 
@@ -31,6 +35,10 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 ## 🚀 Features
 
+- ✅ **Interactive Tab Comparison** - Instant A/B tab pairing into a temporary purple comparison group
+- ✅ **3D Knowledge Graph** - WebGL force-directed 3D tab visualizer with domain favicons and direct activation
+- ✅ **Multi-Provider AI** - Local on-device WebLLM, local Ollama/LM Studio servers, and cloud OpenAI-compatible APIs
+- ✅ **Semantic Tab Clustering** - Algorithmic vector similarity clustering across open tabs
 - ✅ **Cross-browser compatibility** - Single codebase for Chrome and Firefox
 - ✅ **Domain-based tab grouping** - Automatically groups tabs by website domain
 - ✅ **Custom rules** - Create named groups that combine multiple domains
@@ -39,7 +47,6 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 - ✅ **Color management** - Persistent group colors across browser sessions
 - ✅ **Collapse/expand controls** - Manage tab group visibility
 - ✅ **Focus Mode** - Auto-collapse inactive groups when switching tabs
-- ✅ **AI-powered features** - On-device AI via WebLLM (privacy-first, no data leaves your browser)
 - ✅ **Configuration options** - Auto-grouping, subdomain handling, etc.
 - ✅ **Side panel support** - Chrome side panel and Firefox sidebar
 - ✅ **Modern UI** - Clean, responsive interface
@@ -132,17 +139,17 @@ No local Node.js or Bun installation needed! Build and export distribution packa
 
 ```powershell
 # Windows PowerShell (One-click build & export)
-.\docker-build.ps1
+.\scripts\docker-build.ps1
 ```
 
 ```bash
 # Linux / macOS / Bash
-./docker-build.sh
+./scripts/docker-build.sh
 ```
 
 Or via direct Docker BuildKit command:
 ```bash
-docker build --target export --output type=local,dest=. .
+docker build -f docker/Dockerfile --target export --output type=local,dest=. .
 ```
 
 For full documentation on container workflows, testing, preview server, and remote Docker contexts, see the **[Docker Guide](docs/DOCKER_GUIDE.md)**.
@@ -436,12 +443,12 @@ This ensures that international users get proper domain grouping regardless of t
 
 ```powershell
 # Windows
-.\docker-build.ps1
+.\scripts\docker-build.ps1
 ```
 
 ```bash
 # Linux / macOS
-./docker-build.sh
+./scripts/docker-build.sh
 ```
 
 #### Using Local Bun (Alternative)

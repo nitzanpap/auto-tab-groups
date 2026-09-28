@@ -1,16 +1,50 @@
+/* ==============================================================================
+   Gemini Dark Theme - Rules Modal
+   ============================================================================== */
+
+:root {
+  --bg-base: #131314;
+  --bg-surface: #1e1f20;
+  --bg-surface-elevated: #282a2c;
+  --bg-surface-hover: #333538;
+  --bg-surface-active: #3c4043;
+
+  --gemini-blue: #8ab4f8;
+  --gemini-purple: #c58af9;
+  --gemini-coral: #f28b82;
+  --gemini-gradient: linear-gradient(135deg, #8ab4f8 0%, #c58af9 50%, #f28b82 100%);
+
+  --primary-color: #8ab4f8;
+  --primary-color-dark: #669df6;
+  --secondary-color: #282a2c;
+  --secondary-color-dark: #333538;
+  --destructive-color: #f28b82;
+
+  --text-primary: #e3e3e3;
+  --text-secondary: #9aa0a6;
+  --text-muted: #80868b;
+  --text-on-accent: #131314;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: #3c4043;
+  --border-focus: rgba(138, 180, 248, 0.5);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  --primary-color: #2a6cfb;
-  --primary-color-dark: #1d4ed8;
-  --secondary-color: #ccc;
-  --secondary-color-dark: #e5e7eb;
 }
 
 body {
-  font-family: "Inter", sans-serif;
-  background: #f3f4f6;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -19,18 +53,22 @@ body {
 }
 
 .modal-container {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
   padding: 24px;
   max-width: 500px;
   width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 h1 {
-  font-size: 1.5rem;
-  color: #111827;
-  margin-bottom: 24px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  background: var(--gemini-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 20px;
   text-align: center;
 }
 
@@ -40,57 +78,40 @@ h1 {
 
 .form-group label {
   display: block;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
 .form-group input[type="text"],
+.form-group input[type="number"],
 .form-group textarea,
 .form-group select {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.2s;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--border-focus);
 }
 
 .form-group textarea {
   resize: vertical;
-  min-height: 100px;
-}
-
-.advanced-group {
-  display: flex;
-  gap: 12px;
-}
-
-.advanced-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.form-group input[type="number"] {
-  width: 100%;
-  padding: 10px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.form-group input[type="number"]:focus {
-  outline: none;
-  border-color: var(--primary-color);
+  min-height: 90px;
+  line-height: 1.4;
 }
 
 .checkbox-group {
@@ -104,11 +125,14 @@ h1 {
   gap: 8px;
   cursor: pointer;
   margin-bottom: 0;
+  color: var(--text-primary);
+  font-size: 13px;
 }
 
 .checkbox-group input[type="checkbox"] {
   width: 18px;
   height: 18px;
+  accent-color: var(--primary-color);
   cursor: pointer;
 }
 
@@ -120,37 +144,43 @@ h1 {
 
 .button {
   flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  text-align: center;
 }
 
 .button.primary {
-  background: var(--primary-color);
-  color: white;
+  background: var(--gemini-gradient);
+  color: var(--text-on-accent);
+  font-weight: 700;
 }
 
 .button.primary:hover {
-  background: var(--primary-color-dark);
+  filter: brightness(1.1);
+  box-shadow: 0 0 16px rgba(138, 180, 248, 0.3);
 }
 
 .button.secondary {
-  background: var(--secondary-color);
-  color: #374151;
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border-color: var(--border-medium);
 }
 
 .button.secondary:hover {
-  background: var(--secondary-color-dark);
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .help-text {
   margin-top: 4px;
   font-size: 11px;
-  color: #6c757d;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .pattern-help {
@@ -164,19 +194,20 @@ h1 {
 }
 
 .pattern-feedback.error {
-  color: #dc3545;
+  color: var(--destructive-color);
 }
 
 .pattern-feedback.success {
-  color: #28a745;
+  color: #81c995;
 }
 
 /* AI Assist Section */
 .ai-assist-section {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   padding: 12px;
-  background: #faf5ff;
+  background: var(--bg-surface-elevated);
+  margin-bottom: 16px;
 }
 
 .ai-assist-container {
@@ -188,64 +219,68 @@ h1 {
 .ai-assist-container textarea {
   flex: 1;
   padding: 10px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: "Inter", sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
   transition: border-color 0.2s;
 }
 
 .ai-assist-container textarea:focus {
   outline: none;
-  border-color: #7c3aed;
+  border-color: var(--gemini-purple);
+  box-shadow: 0 0 0 2px rgba(197, 138, 249, 0.3);
 }
 
 .ai-generate-btn {
-  background: #7c3aed;
-  color: white;
+  background: var(--gemini-purple);
+  color: var(--text-on-accent);
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   min-width: 90px;
   cursor: pointer;
   border: none;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .ai-generate-btn:hover:not(:disabled) {
-  background: #6d28d9;
+  filter: brightness(1.1);
 }
 
 .ai-generate-btn:disabled {
-  background: #d1d5db;
+  background: var(--bg-surface-active);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 .ai-generate-btn.generating {
-  background: #8b5cf6;
+  background: #a78bfa;
   cursor: wait;
 }
 
 .ai-assist-status {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 11px;
   min-height: 18px;
 }
 
 .ai-assist-status.error {
-  color: #dc3545;
+  color: var(--destructive-color);
 }
 
 .ai-assist-status.success {
-  color: #28a745;
+  color: #81c995;
 }
 
 .ai-assist-status.info {
-  color: #6c757d;
+  color: var(--text-muted);
 }
 
 /* Pattern Mode Toggle */
@@ -255,32 +290,34 @@ h1 {
 
 .toggle-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 6px;
 }
 
 .toggle-btn {
   flex: 1;
   padding: 8px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  background: white;
-  font-size: 13px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
+  text-align: center;
 }
 
 .toggle-btn:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
 }
 
 .toggle-btn.active {
   border-color: var(--primary-color);
-  background: #eff6ff;
+  background: rgba(138, 180, 248, 0.15);
   color: var(--primary-color);
+  font-weight: 600;
 }
 
 /* Color Picker */
@@ -292,71 +329,41 @@ h1 {
 }
 
 .color-btn {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .color-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transform: scale(1.15);
 }
 
 .color-btn.active {
-  border-color: #1f2937;
-  box-shadow:
-    0 0 0 2px white,
-    0 0 0 4px #1f2937;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px #ffffff;
 }
 
-/* Chrome tab group colors */
-.color-btn[data-color="blue"] {
-  background-color: #8ab4f8;
-}
-
-.color-btn[data-color="red"] {
-  background-color: #f28b82;
-}
-
-.color-btn[data-color="yellow"] {
-  background-color: #fdd663;
-}
-
-.color-btn[data-color="green"] {
-  background-color: #81c995;
-}
-
-.color-btn[data-color="pink"] {
-  background-color: #ff8bcb;
-}
-
-.color-btn[data-color="purple"] {
-  background-color: #c58af9;
-}
-
-.color-btn[data-color="cyan"] {
-  background-color: #78d9ec;
-}
-
-.color-btn[data-color="orange"] {
-  background-color: #fcad70;
-}
-
-.color-btn[data-color="grey"] {
-  background-color: #dadce0;
-}
+.color-btn[data-color="blue"] { background-color: #8ab4f8; }
+.color-btn[data-color="red"] { background-color: #f28b82; }
+.color-btn[data-color="yellow"] { background-color: #fdd663; }
+.color-btn[data-color="green"] { background-color: #81c995; }
+.color-btn[data-color="pink"] { background-color: #ff8bcb; }
+.color-btn[data-color="purple"] { background-color: #c58af9; }
+.color-btn[data-color="cyan"] { background-color: #78d9ec; }
+.color-btn[data-color="orange"] { background-color: #fcad70; }
+.color-btn[data-color="grey"] { background-color: #9aa0a6; }
 
 /* Conflict Warning */
 .conflict-warning {
   margin-top: 16px;
-  padding: 16px;
-  border: 1px solid #f0ad4e;
-  border-radius: 8px;
-  background-color: #fef9e7;
+  padding: 14px;
+  border: 1px solid rgba(253, 214, 99, 0.3);
+  border-radius: var(--radius-md);
+  background-color: rgba(253, 214, 99, 0.08);
 }
 
 .conflict-warning.hidden {
@@ -365,41 +372,42 @@ h1 {
 
 .conflict-warning h3 {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #8a6d3b;
+  color: #fdd663;
 }
 
 .conflict-subtitle {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: #8a6d3b;
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 .conflict-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
 .conflict-item {
-  padding: 8px 12px;
-  border-left: 3px solid #f0ad4e;
-  background-color: #fff;
-  border-radius: 4px;
+  padding: 8px 10px;
+  border-left: 3px solid #fdd663;
+  background-color: var(--bg-surface-elevated);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   line-height: 1.4;
+  color: var(--text-primary);
 }
 
 .conflict-item .conflict-type {
   display: inline-block;
   padding: 1px 6px;
   border-radius: 3px;
-  background-color: #f0ad4e;
-  color: #fff;
+  background-color: #fdd663;
+  color: #131314;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   margin-right: 6px;
 }
@@ -416,15 +424,15 @@ h1 {
   margin: 0 0 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #5b7dbd;
+  color: var(--gemini-blue);
 }
 
 .conflict-resolutions ul {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 18px;
   font-size: 12px;
   line-height: 1.5;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .conflict-actions {
@@ -433,10 +441,6 @@ h1 {
   justify-content: flex-end;
 }
 
-/* Pattern textarea always renders left-to-right regardless of the UI language.
-   Domains, URLs, regex — these are technical tokens that are authored in
-   English/ASCII and look broken when mirrored into RTL. The rule name and
-   AI description fields stay LTR/RTL-aware since the user may type Hebrew there. */
 [dir="rtl"] #rulePatterns {
   direction: ltr;
   text-align: left;

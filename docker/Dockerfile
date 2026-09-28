@@ -40,7 +40,7 @@ COPY --chown=appuser:appgroup package.json bun.lock ./
 # Using BuildKit cache mount to accelerate repeated builds
 # --ignore-scripts prevents postinstall (wxt prepare) from running before source code is copied
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --frozen-lockfile --ignore-scripts
+    bun install --ignore-scripts
 
 # ==============================================================================
 # Stage 3: Builder - Extension Compilation & Packaging
@@ -70,7 +70,7 @@ WORKDIR /workspace/app
 COPY --chown=appuser:appgroup . .
 
 # Prepare WXT types and generate runtime environment
-RUN bun x wxt prepare
+RUN bun x wxt prepare && chown -R appuser:appgroup /workspace/app
 
 USER 10001:10001
 
@@ -91,48 +91,12 @@ RUN bun x wxt prepare
 RUN mkdir -p /workspace/app/.wxt /workspace/app/.output /workspace/app/node_modules && \
     chown -R appuser:appgroup /workspace/app
 
-USER 10001:10001
-
-EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["curl", "-f", "http://127.0.0.1:3000/"]
-
 # Default to long-running process for interactive IDE or compose attachment
 CMD ["bun", "run", "dev"]
 
 # ==============================================================================
-# Stage 6: Hardened Production Runtime (Artifact Delivery & Web Preview)
-# ==============================================================================
-FROM caddy:2.8-alpine AS production
-
-LABEL description="Hardened static server for Auto Tab Groups preview & distribution"
-
-# Setup unprivileged user
-RUN addgroup -g 10001 -S appgroup && \
-    adduser -u 10001 -S -G appgroup -s /sbin/nologin appuser && \
-    mkdir -p /srv /data /config && \
-    chown -R appuser:appgroup /srv /data /config
-
-WORKDIR /srv
-
-# Copy compiled extension build outputs and zip archives from builder
-COPY --from=builder --chown=appuser:appgroup /workspace/app/.output/ ./output/
-COPY --from=builder --chown=appuser:appgroup /workspace/app/public/ ./public/
-
-# Drop all privileges
-USER 10001:10001
-
-EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["caddy", "status"]
-
-# Serve the build artifacts via internal Caddy file server
-CMD ["caddy", "file-server", "--listen", ":8080", "--root", "/srv/output", "--browse"]
-
-# ==============================================================================
-# Stage 7: Local Artifact Export Target (`docker build --target export --output . .`)
+# Stage 6: Local Artifact Export Target (`docker build --target export --output . .`)
 # ==============================================================================
 FROM scratch AS export
 COPY --from=builder /workspace/app/.output/ .output/
+COPY --from=builder /workspace/app/.wxt/ .wxt/

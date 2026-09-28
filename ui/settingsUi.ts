@@ -8,6 +8,7 @@
  */
 
 import type { CustomRule, UserLocale } from "../types"
+import type { AiProvider } from "../types/ai"
 import type { AiGroupSuggestion } from "../types/ai-messages"
 import { extractDomain } from "../utils/DomainUtils"
 import {
@@ -25,6 +26,8 @@ const ungroupButton = document.getElementById("ungroup") as HTMLButtonElement
 const generateNewColorsButton = document.getElementById("generateNewColors") as HTMLButtonElement
 const collapseAllButton = document.getElementById("collapseAllButton") as HTMLButtonElement
 const expandAllButton = document.getElementById("expandAllButton") as HTMLButtonElement
+const compareTabsButton = document.getElementById("compareTabsButton") as HTMLButtonElement | null
+const lockLaterGroupFirstTabToggle = document.getElementById("lockLaterGroupFirstTabToggle") as HTMLInputElement | null
 const autoGroupToggle = document.getElementById("autoGroupToggle") as HTMLInputElement
 const groupNewTabsToggle = document.getElementById("groupNewTabsToggle") as HTMLInputElement
 const systemGroupToggle = document.getElementById("systemGroupToggle") as HTMLInputElement
@@ -84,18 +87,44 @@ const hideContextMenuToggle = document.getElementById("hideContextMenuToggle") a
 // Language picker
 const languageSelect = document.getElementById("languageSelect") as HTMLSelectElement
 
+// 3D Graph Button
+const openGraph3dButton = document.getElementById("openGraph3dButton") as HTMLButtonElement | null
+
 // AI Elements
 const aiToggle = document.querySelector(".ai-toggle") as HTMLButtonElement
 const aiContent = document.querySelector(".ai-content") as HTMLDivElement
 const aiBadge = document.getElementById("aiBadge") as HTMLSpanElement
 const aiEnabledToggle = document.getElementById("aiEnabledToggle") as HTMLInputElement
 const aiSettings = document.getElementById("aiSettings") as HTMLDivElement
+const aiProviderSelect = document.getElementById("aiProviderSelect") as HTMLSelectElement | null
+const aiModelSelectContainer = document.getElementById("aiModelSelectContainer") as HTMLDivElement | null
+const aiCompatibilitySelect = document.getElementById("aiCompatibilitySelect") as HTMLSelectElement | null
 const aiModelSelect = document.getElementById("aiModelSelect") as HTMLSelectElement
+const aiRemoveModelButton = document.getElementById("aiRemoveModelButton") as HTMLButtonElement | null
+const aiToggleAddCustomBtn = document.getElementById("aiToggleAddCustomBtn") as HTMLButtonElement | null
+const aiAddCustomForm = document.getElementById("aiAddCustomForm") as HTMLDivElement | null
+const customModelIdInput = document.getElementById("customModelIdInput") as HTMLInputElement | null
+const customModelNameInput = document.getElementById("customModelNameInput") as HTMLInputElement | null
+const customModelEndpointInput = document.getElementById("customModelEndpointInput") as HTMLInputElement | null
+const customModelApiKeyInput = document.getElementById("customModelApiKeyInput") as HTMLInputElement | null
+const aiSaveCustomModelBtn = document.getElementById("aiSaveCustomModelBtn") as HTMLButtonElement | null
+const aiCancelCustomModelBtn = document.getElementById("aiCancelCustomModelBtn") as HTMLButtonElement | null
+const similarityThresholdSlider = document.getElementById("similarityThresholdSlider") as HTMLInputElement | null
+const similarityThresholdVal = document.getElementById("similarityThresholdVal") as HTMLSpanElement | null
 const aiStatusBadge = document.getElementById("aiStatusBadge") as HTMLSpanElement
 const aiProgressBar = document.getElementById("aiProgressBar") as HTMLDivElement
 const aiProgressFill = document.getElementById("aiProgressFill") as HTMLDivElement
 const aiLoadButton = document.getElementById("aiLoadButton") as HTMLButtonElement
 const aiWebGpuWarning = document.getElementById("aiWebGpuWarning") as HTMLDivElement
+const aiDownloadNote = document.getElementById("aiDownloadNote") as HTMLDivElement | null
+const aiExternalNote = document.getElementById("aiExternalNote") as HTMLDivElement | null
+const aiCustomModelBox = document.getElementById("aiCustomModelBox") as HTMLDivElement | null
+const aiCustomEndpointSettings = document.getElementById("aiCustomEndpointSettings") as HTMLDivElement | null
+const aiCustomEndpointInput = document.getElementById("aiCustomEndpointInput") as HTMLInputElement | null
+const aiCustomApiKeyInput = document.getElementById("aiCustomApiKeyInput") as HTMLInputElement | null
+const aiCustomModelInput = document.getElementById("aiCustomModelInput") as HTMLInputElement | null
+const aiTestConnectionBtn = document.getElementById("aiTestConnectionBtn") as HTMLButtonElement | null
+const aiConnectionStatus = document.getElementById("aiConnectionStatus") as HTMLSpanElement | null
 
 // AI Suggest Elements
 const aiSuggestButton = document.getElementById("aiSuggestButton") as HTMLButtonElement
@@ -105,6 +134,7 @@ const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer")
 // State
 let aiSectionExpanded = false
 let aiStatusPollingInterval: ReturnType<typeof setInterval> | null = null
+let customModelIds = new Set<string>()
 let sortingSectionExpanded = false
 let customRulesExpanded = false
 let blacklistExpanded = false
@@ -953,6 +983,51 @@ sendMessage<{ enabled?: boolean }>({ action: "getOpenTabNextToCurrent" }).then(r
   openTabNextToCurrentToggle.checked = response?.enabled ?? false
 })
 
+// Initialize lock later group first tab state
+if (lockLaterGroupFirstTabToggle) {
+  import("../utils/storage").then(({ lockLaterGroupFirstTab }) => {
+    lockLaterGroupFirstTab.getValue().then(val => {
+      lockLaterGroupFirstTabToggle.checked = val
+    })
+  })
+
+  lockLaterGroupFirstTabToggle.addEventListener("change", async () => {
+    const { lockLaterGroupFirstTab } = await import("../utils/storage")
+    await lockLaterGroupFirstTab.setValue(lockLaterGroupFirstTabToggle.checked)
+    await sendMessage({ action: "saveState" })
+  })
+}
+
+// Initialize compare tabs button state
+if (compareTabsButton) {
+  sendMessage<{ active?: boolean; hasComparisonGroup?: boolean }>({
+    action: "getComparisonStatus"
+  }).then(res => {
+    if (res?.active || res?.hasComparisonGroup) {
+      compareTabsButton.textContent = "❌ " + t("popupCancelComparison", "Cancel Comparison")
+      compareTabsButton.style.borderColor = "#ef4444"
+      compareTabsButton.style.color = "#ef4444"
+    }
+  })
+
+  compareTabsButton.addEventListener("click", async () => {
+    const status = await sendMessage<{ active?: boolean; hasComparisonGroup?: boolean }>({
+      action: "getComparisonStatus"
+    })
+    if (status?.active || status?.hasComparisonGroup) {
+      await sendMessage({ action: "cancelTabComparison" })
+      compareTabsButton.textContent = "⚖️ " + t("popupCompareTabs", "Compare Tabs")
+      compareTabsButton.style.borderColor = "#8b5cf6"
+      compareTabsButton.style.color = "#8b5cf6"
+    } else {
+      await sendMessage({ action: "startTabComparison" })
+      compareTabsButton.textContent = "❌ " + t("popupCancelComparison", "Cancel Comparison")
+      compareTabsButton.style.borderColor = "#ef4444"
+      compareTabsButton.style.color = "#ef4444"
+    }
+  })
+}
+
 // Initialize sort groups and index state
 sendMessage<{ enabled?: boolean }>({ action: "getSortGroupsAlphabetically" }).then(response => {
   const enabled = response?.enabled ?? false
@@ -1119,6 +1194,51 @@ function toggleAiSection(): void {
   }
 }
 
+function updateAiRemoveButtonVisibility(): void {
+  if (!aiRemoveModelButton) return
+  const isCustom = customModelIds.has(aiModelSelect.value)
+  aiRemoveModelButton.classList.toggle("hidden", !isCustom)
+}
+
+async function updateProviderUi(provider: string): Promise<void> {
+  const isWebLlm = provider === "webllm"
+
+  if (aiModelSelectContainer) {
+    aiModelSelectContainer.classList.toggle("hidden", !isWebLlm)
+  }
+  if (aiCustomModelBox) {
+    aiCustomModelBox.classList.add("hidden")
+  }
+  if (aiCustomEndpointSettings) {
+    aiCustomEndpointSettings.classList.toggle("hidden", isWebLlm)
+  }
+
+  if (isWebLlm) {
+    if (aiDownloadNote) aiDownloadNote.style.display = "block"
+    if (aiExternalNote) aiExternalNote.classList.remove("visible")
+
+    const webGpuResponse = await sendMessage<{
+      webGpu?: { available: boolean; reason: string | null }
+    }>({ action: "checkWebGpuSupport" })
+
+    if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
+      aiWebGpuWarning.classList.add("visible")
+      aiWebGpuWarning.textContent =
+        webGpuResponse.webGpu.reason || t("aiWebGpuUnavailable", "WebGPU is not available")
+      aiLoadButton.disabled = true
+    } else {
+      aiWebGpuWarning.classList.remove("visible")
+      aiLoadButton.disabled = false
+    }
+  } else {
+    // External / Custom API provider does not require WebGPU or local model download
+    aiWebGpuWarning.classList.remove("visible")
+    aiLoadButton.disabled = false
+    if (aiDownloadNote) aiDownloadNote.style.display = "none"
+    if (aiExternalNote) aiExternalNote.classList.add("visible")
+  }
+}
+
 async function initializeAiSection(): Promise<void> {
   try {
     // AI features are Chrome-only for now (WebLLM's tokenizer exceeds Firefox store limits)
@@ -1134,12 +1254,29 @@ async function initializeAiSection(): Promise<void> {
     }
 
     const response = await sendMessage<{
-      settings?: { aiEnabled: boolean; aiModelId: string }
+      settings?: {
+        aiEnabled: boolean
+        aiModelId: string
+        aiProvider?: string
+        aiCustomEndpoint?: string
+        aiCustomApiKey?: string
+        aiCustomModel?: string
+      }
       modelStatus?: { status: string; progress: number; error: string | null }
       availableModels?: Array<{ id: string; displayName: string }>
+      customModels?: Array<{ id: string; displayName?: string }>
+      similarityThreshold?: number
     }>({ action: "getAiState" })
 
-    if (response?.availableModels && aiModelSelect.options.length === 0) {
+    customModelIds.clear()
+    if (response?.customModels) {
+      for (const m of response.customModels) {
+        customModelIds.add(m.id)
+      }
+    }
+
+    if (response?.availableModels) {
+      aiModelSelect.replaceChildren()
       for (const model of response.availableModels) {
         const option = document.createElement("option")
         option.value = model.id
@@ -1148,28 +1285,58 @@ async function initializeAiSection(): Promise<void> {
       }
     }
 
+    const currentProvider = response?.settings?.aiProvider || aiProviderSelect?.value || "webllm"
+
     if (response?.settings) {
       aiEnabledToggle.checked = response.settings.aiEnabled
+      if (aiProviderSelect && response.settings.aiProvider) {
+        aiProviderSelect.value = response.settings.aiProvider
+      }
       aiModelSelect.value = response.settings.aiModelId
       updateAiSettingsVisibility(response.settings.aiEnabled)
       updateAiBadge(response.settings.aiEnabled)
+    }
+
+    // Populate custom endpoint settings directly from response or storage
+    if (aiCustomEndpointInput && response?.settings?.aiCustomEndpoint) {
+      aiCustomEndpointInput.value = response.settings.aiCustomEndpoint
+    }
+    if (aiCustomApiKeyInput && response?.settings?.aiCustomApiKey) {
+      aiCustomApiKeyInput.value = response.settings.aiCustomApiKey
+    }
+    if (aiCustomModelInput && response?.settings?.aiCustomModel) {
+      aiCustomModelInput.value = response.settings.aiCustomModel
+    }
+
+    if (aiCustomEndpointInput || aiCustomApiKeyInput || aiCustomModelInput) {
+      import("../utils/storage").then(
+        ({ aiCustomEndpoint, aiCustomApiKey, aiCustomModel }) => {
+          Promise.all([
+            aiCustomEndpoint.getValue(),
+            aiCustomApiKey.getValue(),
+            aiCustomModel.getValue()
+          ]).then(([endpoint, key, model]) => {
+            if (aiCustomEndpointInput && endpoint) aiCustomEndpointInput.value = endpoint
+            if (aiCustomApiKeyInput && key) aiCustomApiKeyInput.value = key
+            if (aiCustomModelInput && model) aiCustomModelInput.value = model
+          })
+        }
+      )
+    }
+
+    updateAiRemoveButtonVisibility()
+
+    if (response?.similarityThreshold !== undefined && similarityThresholdSlider && similarityThresholdVal) {
+      const pct = Math.round(response.similarityThreshold * 100)
+      similarityThresholdSlider.value = String(pct)
+      similarityThresholdVal.textContent = `${pct}%`
     }
 
     if (response?.modelStatus) {
       updateAiModelStatus(response.modelStatus)
     }
 
-    // Check WebGPU support
-    const webGpuResponse = await sendMessage<{
-      webGpu?: { available: boolean; reason: string | null }
-    }>({ action: "checkWebGpuSupport" })
-
-    if (webGpuResponse?.webGpu && !webGpuResponse.webGpu.available) {
-      aiWebGpuWarning.classList.add("visible")
-      aiWebGpuWarning.textContent =
-        webGpuResponse.webGpu.reason || t("aiWebGpuUnavailable", "WebGPU is not available")
-      aiLoadButton.disabled = true
-    }
+    await updateProviderUi(currentProvider)
   } catch (error) {
     console.error("Error initializing AI section:", error)
   }
@@ -1220,6 +1387,7 @@ function updateAiModelStatus(modelStatus: {
   }
 
   // Update load button
+  aiLoadButton.classList.remove("unload", "cancel")
   if (status === "ready") {
     aiLoadButton.textContent = t("aiUnloadModel", "Unload Model")
     aiLoadButton.classList.add("unload")
@@ -1228,14 +1396,14 @@ function updateAiModelStatus(modelStatus: {
     aiSuggestButton.disabled = false
     stopAiStatusPolling()
   } else if (status === "loading") {
-    aiLoadButton.textContent = t("aiLoadingButton", "Loading...")
-    aiLoadButton.disabled = true
+    aiLoadButton.textContent = t("aiCancelLoad", "Cancel")
+    aiLoadButton.classList.add("cancel")
+    aiLoadButton.disabled = false
     aiModelSelect.disabled = true
     aiSuggestButton.disabled = true
     startAiStatusPolling()
   } else if (status === "error") {
     aiLoadButton.textContent = t("aiRetryLoad", "Retry Load")
-    aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
     aiSuggestButton.disabled = true
@@ -1245,7 +1413,6 @@ function updateAiModelStatus(modelStatus: {
     }
   } else {
     aiLoadButton.textContent = t("aiLoadModel", "Load Model")
-    aiLoadButton.classList.remove("unload")
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
     aiSuggestButton.disabled = true
@@ -1278,6 +1445,14 @@ function stopAiStatusPolling(): void {
 // --- AI Suggestion Handlers ---
 
 async function handleSuggestGroups(): Promise<void> {
+  if (autoGroupToggle) {
+    autoGroupToggle.checked = false
+  }
+  sendMessage({
+    action: "toggleAutoGroup",
+    enabled: false
+  })
+
   aiSuggestButton.disabled = true
   aiSuggestStatus.textContent = t("aiAnalyzing", "Analyzing your tabs...")
   aiSuggestStatus.className = "ai-suggest-status loading"
@@ -1482,6 +1657,15 @@ async function createRuleFromSuggestion(suggestion: AiGroupSuggestion): Promise<
   }
 }
 
+// 3D Graph Event Listener
+openGraph3dButton?.addEventListener("click", async () => {
+  try {
+    await sendMessage({ action: "openGraph3d" })
+  } catch (err) {
+    console.error("Failed to open 3D Graph:", err)
+  }
+})
+
 // AI Event Listeners
 aiToggle?.addEventListener("click", toggleAiSection)
 
@@ -1492,8 +1676,115 @@ aiEnabledToggle?.addEventListener("change", async () => {
   updateAiBadge(enabled)
 })
 
+aiProviderSelect?.addEventListener("change", async () => {
+  if (aiProviderSelect) {
+    await sendMessage({ action: "setAiProvider", provider: aiProviderSelect.value })
+    await initializeAiSection()
+  }
+})
+
 aiModelSelect?.addEventListener("change", async () => {
   await sendMessage({ action: "setAiModelId", modelId: aiModelSelect.value })
+  updateAiRemoveButtonVisibility()
+})
+
+aiRemoveModelButton?.addEventListener("click", async () => {
+  const selectedModelId = aiModelSelect.value
+  if (!selectedModelId || !customModelIds.has(selectedModelId)) return
+
+  const res = await sendMessage<{
+    success: boolean
+    availableModels?: Array<{ id: string; displayName: string }>
+    customModels?: Array<{ id: string }>
+  }>({
+    action: "removeCustomAiModel",
+    modelId: selectedModelId
+  })
+
+  customModelIds.delete(selectedModelId)
+
+  if (res?.availableModels) {
+    aiModelSelect.replaceChildren()
+    for (const m of res.availableModels) {
+      const opt = document.createElement("option")
+      opt.value = m.id
+      opt.textContent = m.displayName
+      aiModelSelect.appendChild(opt)
+    }
+  }
+  updateAiRemoveButtonVisibility()
+})
+
+aiToggleAddCustomBtn?.addEventListener("click", () => {
+  aiAddCustomForm?.classList.toggle("hidden")
+})
+
+aiCancelCustomModelBtn?.addEventListener("click", () => {
+  aiAddCustomForm?.classList.add("hidden")
+})
+
+aiSaveCustomModelBtn?.addEventListener("click", async () => {
+  const modelId = customModelIdInput?.value.trim()
+  const name = customModelNameInput?.value.trim()
+  let endpoint = customModelEndpointInput?.value.trim() || ""
+  const apiKey = customModelApiKeyInput?.value.trim()
+
+  if (!modelId) {
+    if (customModelIdInput) customModelIdInput.focus()
+    return
+  }
+
+  if (endpoint && !/^https?:\/\//i.test(endpoint)) {
+    endpoint = `http://${endpoint}`
+  }
+
+  const res = await sendMessage<{
+    success: boolean
+    availableModels?: Array<{ id: string; displayName: string }>
+    customModels?: Array<{ id: string }>
+  }>({
+    action: "addCustomAiModel",
+    model: {
+      id: modelId,
+      displayName: name || modelId,
+      provider: (aiProviderSelect?.value as any) || "external",
+      endpoint: endpoint || undefined,
+      apiKey: apiKey || undefined
+    }
+  })
+
+  if (res?.success && res.availableModels) {
+    customModelIds.add(modelId)
+    aiModelSelect.replaceChildren()
+    for (const m of res.availableModels) {
+      const opt = document.createElement("option")
+      opt.value = m.id
+      opt.textContent = m.displayName
+      aiModelSelect.appendChild(opt)
+    }
+    aiModelSelect.value = modelId
+    await sendMessage({ action: "setAiModelId", modelId })
+    updateAiRemoveButtonVisibility()
+
+    if (customModelIdInput) customModelIdInput.value = ""
+    if (customModelNameInput) customModelNameInput.value = ""
+    if (customModelEndpointInput) customModelEndpointInput.value = ""
+    if (customModelApiKeyInput) customModelApiKeyInput.value = ""
+    aiAddCustomForm?.classList.add("hidden")
+  }
+})
+
+similarityThresholdSlider?.addEventListener("input", () => {
+  if (similarityThresholdSlider && similarityThresholdVal) {
+    similarityThresholdVal.textContent = `${similarityThresholdSlider.value}%`
+  }
+})
+
+similarityThresholdSlider?.addEventListener("change", async () => {
+  if (similarityThresholdSlider) {
+    const threshold = Number(similarityThresholdSlider.value) / 100
+    await sendMessage({ action: "setAiSimilarityThreshold", threshold })
+  }
 })
 
 aiSuggestButton?.addEventListener("click", handleSuggestGroups)
@@ -1503,12 +1794,71 @@ aiLoadButton?.addEventListener("click", async () => {
     modelStatus?: { status: string; progress: number; error: string | null }
   }>({ action: "getAiModelStatus" })
 
-  if (response?.modelStatus?.status === "ready") {
+  const currentStatus = response?.modelStatus?.status
+
+  if (currentStatus === "ready" || currentStatus === "loading") {
     await sendMessage({ action: "unloadAiModel" })
+    stopAiStatusPolling()
     updateAiModelStatus({ status: "idle", progress: 0, error: null })
   } else {
     await sendMessage({ action: "loadAiModel" })
     updateAiModelStatus({ status: "loading", progress: 0, error: null })
+  }
+})
+
+// Save Custom OpenAI config when fields change (immediate on blur, debounced on input)
+let saveCustomConfigTimeout: any = null
+const saveCustomConfigDebounced = () => {
+  clearTimeout(saveCustomConfigTimeout)
+  saveCustomConfigTimeout = setTimeout(async () => {
+    if (aiCustomEndpointInput && aiCustomApiKeyInput && aiCustomModelInput) {
+      await sendMessage({
+        action: "setCustomAiConfig",
+        endpoint: aiCustomEndpointInput.value,
+        apiKey: aiCustomApiKeyInput.value,
+        modelName: aiCustomModelInput.value
+      })
+    }
+  }, 250)
+}
+
+aiCustomEndpointInput?.addEventListener("input", saveCustomConfigDebounced)
+aiCustomApiKeyInput?.addEventListener("input", saveCustomConfigDebounced)
+aiCustomModelInput?.addEventListener("input", saveCustomConfigDebounced)
+aiCustomEndpointInput?.addEventListener("change", saveCustomConfigDebounced)
+aiCustomApiKeyInput?.addEventListener("change", saveCustomConfigDebounced)
+aiCustomModelInput?.addEventListener("change", saveCustomConfigDebounced)
+
+aiTestConnectionBtn?.addEventListener("click", async () => {
+  if (!aiTestConnectionBtn || !aiConnectionStatus) return
+  aiTestConnectionBtn.disabled = true
+  aiConnectionStatus.textContent = "Testing..."
+  aiConnectionStatus.style.color = "#6b7280"
+
+  try {
+    const res = await sendMessage<{
+      success?: boolean
+      latencyMs?: number
+      error?: string
+    }>({
+      action: "testAiConnection",
+      endpoint: aiCustomEndpointInput?.value,
+      apiKey: aiCustomApiKeyInput?.value,
+      modelName: aiCustomModelInput?.value
+    })
+
+    if (res?.success) {
+      aiConnectionStatus.textContent = `Connected (${res.latencyMs}ms)`
+      aiConnectionStatus.style.color = "#10b981"
+    } else {
+      aiConnectionStatus.textContent = res?.error || "Connection failed"
+      aiConnectionStatus.style.color = "#ef4444"
+    }
+  } catch (err) {
+    aiConnectionStatus.textContent = "Error testing connection"
+    aiConnectionStatus.style.color = "#ef4444"
+  } finally {
+    aiTestConnectionBtn.disabled = false
   }
 })
 

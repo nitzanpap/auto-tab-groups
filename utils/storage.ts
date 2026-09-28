@@ -7,6 +7,7 @@ import { storage } from "wxt/utils/storage"
 import type {
   AiProvider,
   CachedAiSuggestions,
+  CustomAiModel,
   CustomRulesMapping,
   GroupByMode,
   GroupColorMapping,
@@ -81,6 +82,14 @@ export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
 
+export const customAiModels = storage.defineItem<CustomAiModel[]>("local:customAiModels", {
+  fallback: DEFAULT_STATE.customAiModels
+})
+
+export const aiSimilarityThreshold = storage.defineItem<number>("local:aiSimilarityThreshold", {
+  fallback: DEFAULT_STATE.aiSimilarityThreshold
+})
+
 export const openTabNextToCurrent = storage.defineItem<boolean>("local:openTabNextToCurrent", {
   fallback: DEFAULT_STATE.openTabNextToCurrent
 })
@@ -105,6 +114,60 @@ export const hideContextMenu = storage.defineItem<boolean>("local:hideContextMen
 export const userLocale = storage.defineItem<UserLocale>("local:userLocale", {
   fallback: DEFAULT_STATE.userLocale
 })
+
+export const aiCustomEndpoint = storage.defineItem<string>("local:aiCustomEndpoint", {
+  fallback: DEFAULT_STATE.aiCustomEndpoint
+})
+
+export const aiCustomApiKey = storage.defineItem<string>("local:aiCustomApiKey", {
+  fallback: DEFAULT_STATE.aiCustomApiKey
+})
+
+export const aiCustomModel = storage.defineItem<string>("local:aiCustomModel", {
+  fallback: DEFAULT_STATE.aiCustomModel
+})
+
+export const laterGroupName = storage.defineItem<string>("local:laterGroupName", {
+  fallback: DEFAULT_STATE.laterGroupName
+})
+
+export const lockLaterGroupFirstTab = storage.defineItem<boolean>(
+  "local:lockLaterGroupFirstTab",
+  { fallback: DEFAULT_STATE.lockLaterGroupFirstTab }
+)
+
+export const laterGroupLeaderTabId = storage.defineItem<number | null>(
+  "local:laterGroupLeaderTabId",
+  { fallback: DEFAULT_STATE.laterGroupLeaderTabId }
+)
+
+/**
+ * Transient state for interactive tab comparison session
+ */
+export interface ComparisonSessionState {
+  active: boolean
+  sourceTabId: number | null
+  startedAt: number | null
+  targetTabId?: number | null
+  comparisonGroupId?: number | null
+  sourceParentGroupId?: number | null
+  targetParentGroupId?: number | null
+}
+
+export const comparisonSession = storage.defineItem<ComparisonSessionState>(
+  "session:comparisonSession",
+  {
+    fallback: {
+      active: false,
+      sourceTabId: null,
+      startedAt: null,
+      targetTabId: null,
+      comparisonGroupId: null,
+      sourceParentGroupId: null,
+      targetParentGroupId: null
+    }
+  }
+)
 
 /**
  * Cached AI suggestions (survives popup reopens, not a user setting)
@@ -132,6 +195,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabledValue,
     aiProviderValue,
     aiModelIdValue,
+    customAiModelsValue,
+    aiSimilarityThresholdValue,
     openTabNextToCurrentValue,
     sortGroupsAlphabeticallyValue,
     sortGroupsDirectionValue,
@@ -139,7 +204,13 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     hideContextMenuValue,
     userLocaleValue,
     protectedGroupTitlesValue,
-    deferGroupingUntilSeenValue
+    deferGroupingUntilSeenValue,
+    aiCustomEndpointValue,
+    aiCustomApiKeyValue,
+    aiCustomModelValue,
+    laterGroupNameValue,
+    lockLaterGroupFirstTabValue,
+    laterGroupLeaderTabIdValue
   ] = await Promise.all([
     autoGroupingEnabled.getValue(),
     groupNewTabs.getValue(),
@@ -154,6 +225,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled.getValue(),
     aiProvider.getValue(),
     aiModelId.getValue(),
+    customAiModels.getValue(),
+    aiSimilarityThreshold.getValue(),
     openTabNextToCurrent.getValue(),
     sortGroupsAlphabetically.getValue(),
     sortGroupsDirection.getValue(),
@@ -161,7 +234,13 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     hideContextMenu.getValue(),
     userLocale.getValue(),
     protectedGroupTitles.getValue(),
-    deferGroupingUntilSeen.getValue()
+    deferGroupingUntilSeen.getValue(),
+    aiCustomEndpoint.getValue(),
+    aiCustomApiKey.getValue(),
+    aiCustomModel.getValue(),
+    laterGroupName.getValue(),
+    lockLaterGroupFirstTab.getValue(),
+    laterGroupLeaderTabId.getValue()
   ])
 
   return {
@@ -178,6 +257,8 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
     aiModelId: aiModelIdValue,
+    customAiModels: customAiModelsValue,
+    aiSimilarityThreshold: aiSimilarityThresholdValue,
     openTabNextToCurrent: openTabNextToCurrentValue,
     sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
     sortGroupsDirection: sortGroupsDirectionValue,
@@ -185,7 +266,13 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     hideContextMenu: hideContextMenuValue,
     userLocale: userLocaleValue,
     protectedGroupTitles: protectedGroupTitlesValue,
-    deferGroupingUntilSeen: deferGroupingUntilSeenValue
+    deferGroupingUntilSeen: deferGroupingUntilSeenValue,
+    aiCustomEndpoint: aiCustomEndpointValue,
+    aiCustomApiKey: aiCustomApiKeyValue,
+    aiCustomModel: aiCustomModelValue,
+    laterGroupName: laterGroupNameValue,
+    lockLaterGroupFirstTab: lockLaterGroupFirstTabValue,
+    laterGroupLeaderTabId: laterGroupLeaderTabIdValue
   }
 }
 
@@ -234,6 +321,12 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   if (data.aiModelId !== undefined) {
     promises.push(aiModelId.setValue(data.aiModelId))
   }
+  if (data.customAiModels !== undefined) {
+    promises.push(customAiModels.setValue(data.customAiModels))
+  }
+  if (data.aiSimilarityThreshold !== undefined) {
+    promises.push(aiSimilarityThreshold.setValue(data.aiSimilarityThreshold))
+  }
   if (data.openTabNextToCurrent !== undefined) {
     promises.push(openTabNextToCurrent.setValue(data.openTabNextToCurrent))
   }
@@ -257,6 +350,24 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.deferGroupingUntilSeen !== undefined) {
     promises.push(deferGroupingUntilSeen.setValue(data.deferGroupingUntilSeen))
+  }
+  if (data.aiCustomEndpoint !== undefined) {
+    promises.push(aiCustomEndpoint.setValue(data.aiCustomEndpoint))
+  }
+  if (data.aiCustomApiKey !== undefined) {
+    promises.push(aiCustomApiKey.setValue(data.aiCustomApiKey))
+  }
+  if (data.aiCustomModel !== undefined) {
+    promises.push(aiCustomModel.setValue(data.aiCustomModel))
+  }
+  if (data.laterGroupName !== undefined) {
+    promises.push(laterGroupName.setValue(data.laterGroupName))
+  }
+  if (data.lockLaterGroupFirstTab !== undefined) {
+    promises.push(lockLaterGroupFirstTab.setValue(data.lockLaterGroupFirstTab))
+  }
+  if (data.laterGroupLeaderTabId !== undefined) {
+    promises.push(laterGroupLeaderTabId.setValue(data.laterGroupLeaderTabId))
   }
   await Promise.all(promises)
 }

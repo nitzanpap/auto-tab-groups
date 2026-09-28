@@ -32,6 +32,9 @@ class TabGroupState {
   hideContextMenu: boolean
   userLocale: UserLocale
   protectedGroupTitles: string[]
+  laterGroupName: string
+  lockLaterGroupFirstTab: boolean
+  laterGroupLeaderTabId: number | null
 
   constructor() {
     this.autoGroupingEnabled = DEFAULT_STATE.autoGroupingEnabled
@@ -51,6 +54,9 @@ class TabGroupState {
     this.hideContextMenu = DEFAULT_STATE.hideContextMenu
     this.userLocale = DEFAULT_STATE.userLocale
     this.protectedGroupTitles = [...DEFAULT_STATE.protectedGroupTitles]
+    this.laterGroupName = DEFAULT_STATE.laterGroupName
+    this.lockLaterGroupFirstTab = DEFAULT_STATE.lockLaterGroupFirstTab
+    this.laterGroupLeaderTabId = DEFAULT_STATE.laterGroupLeaderTabId
   }
 
   /**
@@ -72,7 +78,15 @@ class TabGroupState {
     this.indexGroupTitles = data.indexGroupTitles ?? this.indexGroupTitles
     this.hideContextMenu = data.hideContextMenu ?? this.hideContextMenu
     this.userLocale = data.userLocale ?? this.userLocale
-    this.protectedGroupTitles = data.protectedGroupTitles ?? this.protectedGroupTitles
+    this.protectedGroupTitles = (data.protectedGroupTitles ?? this.protectedGroupTitles).filter(
+      title => title.toLowerCase() !== "system"
+    )
+    this.laterGroupName = data.laterGroupName ?? this.laterGroupName
+    this.lockLaterGroupFirstTab = data.lockLaterGroupFirstTab ?? this.lockLaterGroupFirstTab
+    this.laterGroupLeaderTabId =
+      data.laterGroupLeaderTabId !== undefined
+        ? data.laterGroupLeaderTabId
+        : this.laterGroupLeaderTabId
 
     this.customRules.clear()
 
@@ -106,10 +120,18 @@ class TabGroupState {
       hideContextMenu: this.hideContextMenu,
       userLocale: this.userLocale,
       protectedGroupTitles: this.protectedGroupTitles,
+      laterGroupName: this.laterGroupName,
+      lockLaterGroupFirstTab: this.lockLaterGroupFirstTab,
+      laterGroupLeaderTabId: this.laterGroupLeaderTabId,
       // AI settings managed by AiService, pass defaults for storage schema
       aiEnabled: DEFAULT_STATE.aiEnabled,
       aiProvider: DEFAULT_STATE.aiProvider,
-      aiModelId: DEFAULT_STATE.aiModelId
+      aiModelId: DEFAULT_STATE.aiModelId,
+      customAiModels: DEFAULT_STATE.customAiModels,
+      aiSimilarityThreshold: DEFAULT_STATE.aiSimilarityThreshold,
+      aiCustomEndpoint: DEFAULT_STATE.aiCustomEndpoint,
+      aiCustomApiKey: DEFAULT_STATE.aiCustomApiKey,
+      aiCustomModel: DEFAULT_STATE.aiCustomModel
     }
   }
 

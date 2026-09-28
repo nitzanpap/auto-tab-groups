@@ -87,7 +87,7 @@ test.afterEach(async () => {
   await closeTestTabs(context)
 })
 
-// TODO: These tests have a Playwright context isolation issue that needs investigation.
+// FIXME:P1 Resolve Playwright browser context isolation issue in minimum tabs test suite @qa #tests
 // The browser context closes unexpectedly between beforeEach and test body.
 // The minimum tabs threshold functionality is partially tested by other test suites.
 test.describe

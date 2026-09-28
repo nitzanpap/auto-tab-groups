@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
  */
 
 import { aiService } from "../services/ai/AiService"
+import { externalAiProvider } from "../services/ai/ExternalAiProvider"
 import { webLlmProvider } from "../services/ai/WebLlmProvider"
 import { aiEnabled, aiModelId, aiProvider } from "../utils/storage"
 import * as WebGpuUtils from "../utils/WebGpuUtils"
@@ -38,6 +39,7 @@ describe("AiService", () => {
     spyGetAvailableModels = vi
       .spyOn(webLlmProvider, "getAvailableModels")
       .mockReturnValue([TEST_MODEL])
+    vi.spyOn(externalAiProvider, "getAvailableModels").mockReturnValue([TEST_MODEL])
     spyGetStatus = vi.spyOn(webLlmProvider, "getStatus").mockReturnValue("idle")
     spyGetProgress = vi.spyOn(webLlmProvider, "getProgress").mockReturnValue(0)
     spyGetError = vi.spyOn(webLlmProvider, "getError").mockReturnValue(null)
@@ -136,7 +138,10 @@ describe("AiService", () => {
       expect(settings).toEqual({
         aiEnabled: true,
         aiProvider: "webllm",
-        aiModelId: "test-model"
+        aiModelId: "test-model",
+        aiCustomEndpoint: "http://localhost:11434/v1",
+        aiCustomApiKey: "",
+        aiCustomModel: "gpt-4o-mini"
       })
     })
   })
@@ -191,18 +196,18 @@ describe("AiService", () => {
     })
   })
 
-  describe("external provider fallback", () => {
-    it("should still delegate to webllm provider when set to external (future placeholder)", () => {
+  describe("external provider delegation", () => {
+    it("should delegate to external provider when set to external", () => {
       aiService.updateFromStorage({ aiProvider: "external" })
       const status = aiService.getModelStatus()
-      // The external provider fallback currently returns webLlmProvider
       expect(status.status).toBe("idle")
     })
 
     it("should delegate loadModel even with external provider", async () => {
       aiService.updateFromStorage({ aiProvider: "external" })
+      const extSpy = vi.spyOn(externalAiProvider, "loadModel").mockResolvedValue(undefined)
       await aiService.loadModel()
-      expect(spyLoadModel).toHaveBeenCalled()
+      expect(extSpy).toHaveBeenCalled()
     })
   })
 

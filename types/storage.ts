@@ -2,7 +2,7 @@
  * Type definitions for browser storage
  */
 
-import type { AiProvider } from "./ai"
+import type { AiProvider, CustomAiModel } from "./ai"
 import type { CustomRule, TabGroupColor } from "./rules"
 
 /**
@@ -66,6 +66,10 @@ export interface StorageSchema {
   aiProvider: AiProvider
   /** Selected AI model ID */
   aiModelId: string
+  /** User configured custom AI models */
+  customAiModels: CustomAiModel[]
+  /** Configurable similarity threshold for merging/grouping similar tabs (0.0 - 1.0) */
+  aiSimilarityThreshold: number
   /** Whether to open new tabs next to the current tab (opt-in, default off) */
   openTabNextToCurrent: boolean
   /**
@@ -89,6 +93,18 @@ export interface StorageSchema {
    * edited from the group's right-click menu.
    */
   protectedGroupTitles: string[]
+  /** Custom OpenAI-compatible endpoint URL */
+  aiCustomEndpoint: string
+  /** Custom OpenAI-compatible API key */
+  aiCustomApiKey: string
+  /** Custom OpenAI-compatible model name */
+  aiCustomModel: string
+  /** Name of the Read Later / "فيما بعد" group */
+  laterGroupName: string
+  /** Whether to lock and pin the first tab in the later group at index 0 */
+  lockLaterGroupFirstTab: boolean
+  /** ID of the leader tab in the later group */
+  laterGroupLeaderTabId: number | null
 }
 
 /**
@@ -108,6 +124,8 @@ export const DEFAULT_STATE: StorageSchema = {
   aiEnabled: false,
   aiProvider: "webllm",
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+  customAiModels: [],
+  aiSimilarityThreshold: 0.6,
   openTabNextToCurrent: false,
   deferGroupingUntilSeen: false,
   sortGroupsAlphabetically: false,
@@ -115,7 +133,13 @@ export const DEFAULT_STATE: StorageSchema = {
   indexGroupTitles: false,
   hideContextMenu: false,
   userLocale: "auto",
-  protectedGroupTitles: []
+  protectedGroupTitles: [],
+  aiCustomEndpoint: "http://localhost:11434/v1",
+  aiCustomApiKey: "",
+  aiCustomModel: "",
+  laterGroupName: "فيما بعد",
+  lockLaterGroupFirstTab: true,
+  laterGroupLeaderTabId: null
 }
 
 /**

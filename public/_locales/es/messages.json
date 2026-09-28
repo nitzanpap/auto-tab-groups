@@ -311,6 +311,10 @@
     "message": "Cargando...",
     "description": "Label shown on the load button while loading."
   },
+  "aiCancelLoad": {
+    "message": "Cancelar",
+    "description": "Button to cancel loading the AI model."
+  },
   "aiRetryLoad": {
     "message": "Reintentar carga",
     "description": "Button shown after an AI model load error."
