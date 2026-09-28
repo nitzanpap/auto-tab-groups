@@ -11,7 +11,8 @@ const mockBrowser = {
     group: vi.fn().mockResolvedValue(1),
     ungroup: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue({}),
-    move: vi.fn().mockResolvedValue({})
+    move: vi.fn().mockResolvedValue({}),
+    discard: vi.fn().mockResolvedValue(undefined)
   },
   tabGroups: {
     query: vi.fn().mockResolvedValue([]),

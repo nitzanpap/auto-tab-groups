@@ -12,6 +12,7 @@ import {
   aiService,
   contextMenuService,
   rulesService,
+  tabDiscardService,
   tabGroupService,
   tabGroupState
 } from "../services"
@@ -91,21 +92,21 @@ export default defineBackground(() => {
     await saveAllStorage(tabGroupState.getStorageData())
   }
 
+  const STARTUP_GRACE_PERIOD_MS = 3000
+
+  // Defer all auto-grouping and background tab event interference for the first 3 seconds after Chrome startup
+  tabGroupService.startStartupGracePeriod(STARTUP_GRACE_PERIOD_MS)
+
   // Always load state when service worker starts - SSOT from browser storage
   ensureStateLoaded()
     .then(async () => {
       try {
         // Initialize context menus
         await contextMenuService.initialize()
-
-        if (tabGroupState.autoGroupingEnabled) {
-          console.log("Auto-grouping is enabled, grouping existing tabs...")
-          await tabGroupService.groupAllTabs()
-        } else {
-          console.log("Auto-grouping is disabled")
-        }
+        // Initialize auto-discard monitor to free memory for tabs inactive > 1 minute
+        tabDiscardService.initialize()
       } catch (error) {
-        console.error("Error during initial auto-grouping:", error)
+        console.error("Error during background initialization:", error)
       }
     })
     .catch(error => {
@@ -165,11 +166,13 @@ export default defineBackground(() => {
 
         switch (msg.action) {
           case "group":
+            tabGroupService.endStartupGracePeriod()
             await tabGroupService.groupAllTabsManually()
             result = { success: true }
             break
 
           case "ungroup":
+            tabGroupService.endStartupGracePeriod()
             await tabGroupService.ungroupAllTabs(true)
             result = { success: true }
             break
@@ -1146,6 +1149,9 @@ export default defineBackground(() => {
   // Tab event listeners
   browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     try {
+      if (tabGroupService.isStartupGracePeriodActive()) {
+        return
+      }
       console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
       if (changeInfo.url) {
         console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
@@ -1180,10 +1186,14 @@ export default defineBackground(() => {
 
   browser.tabs.onCreated.addListener(async tab => {
     try {
-      console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
       if (tab.id) {
         tabGroupService.markAsNewTab(tab.id)
+        tabDiscardService.recordTabActivity(tab.id)
       }
+      if (tabGroupService.isStartupGracePeriodActive()) {
+        return
+      }
+      console.log(`[tabs.onCreated] Tab ${tab.id} created with URL: ${tab.url}`)
 
       await ensureStateLoaded()
 
@@ -1246,6 +1256,7 @@ export default defineBackground(() => {
 
   browser.tabs.onRemoved.addListener(async tabId => {
     try {
+      tabDiscardService.removeTab(tabId)
       console.log(`[tabs.onRemoved] Tab ${tabId} removed`)
       await ensureStateLoaded()
 
@@ -1266,6 +1277,9 @@ export default defineBackground(() => {
 
   browser.tabs.onMoved.addListener(async tabId => {
     try {
+      if (tabGroupService.isStartupGracePeriodActive()) {
+        return
+      }
       await ensureStateLoaded()
 
       const tab = await browser.tabs.get(tabId)
@@ -1294,6 +1308,10 @@ export default defineBackground(() => {
   // Handle tab activation for auto-collapse
   browser.tabs.onActivated.addListener(async activeInfo => {
     try {
+      tabDiscardService.recordTabActivity(activeInfo.tabId)
+      if (tabGroupService.isStartupGracePeriodActive()) {
+        return
+      }
       await ensureStateLoaded()
 
       // Handle interactive comparison pairing if active

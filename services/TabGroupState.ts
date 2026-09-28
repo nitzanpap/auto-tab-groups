@@ -99,8 +99,10 @@ class TabGroupState {
 
   /**
    * Gets the current state for storage (settings only)
+   * Note: AI settings are managed exclusively by AiService and omitted here
+   * to avoid overwriting user credentials with default empty strings.
    */
-  getStorageData(): StorageSchema {
+  getStorageData(): Partial<StorageSchema> {
     return {
       autoGroupingEnabled: this.autoGroupingEnabled,
       groupNewTabs: this.groupNewTabs,
@@ -122,16 +124,7 @@ class TabGroupState {
       protectedGroupTitles: this.protectedGroupTitles,
       laterGroupName: this.laterGroupName,
       lockLaterGroupFirstTab: this.lockLaterGroupFirstTab,
-      laterGroupLeaderTabId: this.laterGroupLeaderTabId,
-      // AI settings managed by AiService, pass defaults for storage schema
-      aiEnabled: DEFAULT_STATE.aiEnabled,
-      aiProvider: DEFAULT_STATE.aiProvider,
-      aiModelId: DEFAULT_STATE.aiModelId,
-      customAiModels: DEFAULT_STATE.customAiModels,
-      aiSimilarityThreshold: DEFAULT_STATE.aiSimilarityThreshold,
-      aiCustomEndpoint: DEFAULT_STATE.aiCustomEndpoint,
-      aiCustomApiKey: DEFAULT_STATE.aiCustomApiKey,
-      aiCustomModel: DEFAULT_STATE.aiCustomModel
+      laterGroupLeaderTabId: this.laterGroupLeaderTabId
     }
   }
 

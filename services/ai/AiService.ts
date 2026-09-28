@@ -67,12 +67,7 @@ class AiService {
       externalAiProvider.setModelName(this.customModel)
     }
     if (settings.aiModelId !== undefined) {
-      const available = this.getActiveProvider().getAvailableModels()
-      const isValid = available.some(m => m.id === settings.aiModelId)
-      this.modelId = isValid ? settings.aiModelId : (available[0]?.id ?? settings.aiModelId)
-      if (!isValid && available.length > 0) {
-        aiModelIdStorage.setValue(this.modelId)
-      }
+      this.modelId = settings.aiModelId
     }
   }
 

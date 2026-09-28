@@ -36,6 +36,46 @@ class TabGroupServiceSimplified {
   private recentlyCreatedTabIds = new Set<number>()
   private processingTabs = new Set<number>()
   private bulkOperationInProgress = false
+  private startupGracePeriod = false
+  private startupTimer: ReturnType<typeof setTimeout> | null = null
+  private updateQueue: Promise<unknown> = Promise.resolve()
+
+  /**
+   * Starts a startup grace period (default 3 seconds) where individual tab grouping
+   * and auto-actions are delayed, allowing the browser to boot and restore tabs cleanly.
+   * After the duration expires, auto-grouping runs once in a controlled batch.
+   */
+  startStartupGracePeriod(durationMs = 3000): void {
+    this.startupGracePeriod = true
+    if (this.startupTimer) {
+      clearTimeout(this.startupTimer)
+    }
+    console.log(`[TabGroupService] Startup grace period active (${durationMs}ms) - deferring auto-grouping`)
+    this.startupTimer = setTimeout(async () => {
+      this.startupGracePeriod = false
+      this.startupTimer = null
+      console.log("[TabGroupService] Startup grace period finished - grouping tabs now")
+      if (tabGroupState.autoGroupingEnabled) {
+        try {
+          await this.groupAllTabs()
+        } catch (err) {
+          console.error("[TabGroupService] Error during delayed startup auto-grouping:", err)
+        }
+      }
+    }, durationMs)
+  }
+
+  isStartupGracePeriodActive(): boolean {
+    return this.startupGracePeriod
+  }
+
+  endStartupGracePeriod(): void {
+    if (this.startupTimer) {
+      clearTimeout(this.startupTimer)
+      this.startupTimer = null
+    }
+    this.startupGracePeriod = false
+  }
 
   markAsNewTab(tabId: number): void {
     this.recentlyCreatedTabIds.add(tabId)
@@ -96,6 +136,11 @@ class TabGroupServiceSimplified {
    * Handles a tab update - moves tab to correct group based on its current URL
    */
   async handleTabUpdate(tabId: number, forceGrouping = false): Promise<boolean> {
+    if (!forceGrouping && this.startupGracePeriod) {
+      console.log(`[TabGroupService] Startup grace period active, skipping tab ${tabId}`)
+      return false
+    }
+
     const isNewTab = this.recentlyCreatedTabIds.has(tabId)
     if (!forceGrouping && !tabGroupState.autoGroupingEnabled && !isNewTab) {
       return false
@@ -110,11 +155,16 @@ class TabGroupServiceSimplified {
 
     this.processingTabs.add(tabId)
     try {
-      const result = await this._doHandleTabUpdate(tabId, forceGrouping)
-      if (result && !this.bulkOperationInProgress) {
-        await tabSortService.applySorting()
+      const run = async () => {
+        const result = await this._doHandleTabUpdate(tabId, forceGrouping)
+        if (result && !this.bulkOperationInProgress) {
+          await tabSortService.applySorting()
+        }
+        return result
       }
-      return result
+      // Serialize tab updates to prevent concurrent race conditions when tabs arrive rapidly
+      const result = await (this.updateQueue = this.updateQueue.then(run, run))
+      return result as boolean
     } finally {
       this.processingTabs.delete(tabId)
     }
@@ -124,7 +174,11 @@ class TabGroupServiceSimplified {
     try {
       console.log(`[TabGroupService] Processing tab ${tabId}`)
 
-      const tab = await browser.tabs.get(tabId)
+      const tab = await browser.tabs.get(tabId).catch(() => null)
+      if (!tab) {
+        this.consumeNewTabFlag(tabId)
+        return false
+      }
       console.log(`[TabGroupService] Tab URL: ${tab.url}`)
 
       const isNewTab = this.recentlyCreatedTabIds.has(tabId)
@@ -1378,7 +1432,8 @@ class TabGroupServiceSimplified {
       if (!browser.tabGroups) return
 
       // Get the window from the original tab ID
-      const targetTab = await browser.tabs.get(activeTabId)
+      const targetTab = await browser.tabs.get(activeTabId).catch(() => null)
+      if (!targetTab) return
       const windowId = targetTab.windowId
 
       // Query for the CURRENT active tab in this window to get fresh state

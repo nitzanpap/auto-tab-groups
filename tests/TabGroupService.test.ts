@@ -1363,4 +1363,50 @@ describe("TabGroupService", () => {
       expect(result2).toBe(true)
     })
   })
+
+  describe("Startup grace period", () => {
+    it("should defer handleTabUpdate while startup grace period is active", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+
+      tabGroupService.startStartupGracePeriod(3000)
+      expect(tabGroupService.isStartupGracePeriodActive()).toBe(true)
+
+      const result = await tabGroupService.handleTabUpdate(1)
+      expect(result).toBe(false)
+      expect(mockBrowser.tabs.group).not.toHaveBeenCalled()
+
+      // When grace period is ended, handleTabUpdate should proceed
+      tabGroupService.endStartupGracePeriod()
+      expect(tabGroupService.isStartupGracePeriodActive()).toBe(false)
+    })
+
+    it("should allow forceGrouping even during startup grace period", async () => {
+      mockBrowser.tabs.get.mockResolvedValue({
+        id: 1,
+        url: "https://example.com",
+        pinned: false,
+        windowId: 1,
+        groupId: -1
+      })
+      mockBrowser.tabGroups.query.mockResolvedValue([])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 1, url: "https://example.com", pinned: false }
+      ])
+      mockBrowser.tabs.group.mockResolvedValue(100)
+      mockBrowser.tabGroups.update.mockResolvedValue({})
+
+      tabGroupService.startStartupGracePeriod(3000)
+      const result = await tabGroupService.handleTabUpdate(1, true)
+      expect(result).toBe(true)
+      expect(mockBrowser.tabs.group).toHaveBeenCalled()
+
+      tabGroupService.endStartupGracePeriod()
+    })
+  })
 })
