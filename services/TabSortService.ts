@@ -172,7 +172,7 @@ class TabSortService {
   /**
    * Moves all ungrouped, non-pinned tabs to the end of the tab strip.
    */
-  private async moveUngroupedTabsToEnd(windowId: number): Promise<void> {
+  async moveUngroupedTabsToEnd(windowId: number): Promise<void> {
     try {
       const allTabs = await browser.tabs.query({ windowId })
       const ungroupedTabs = allTabs.filter(

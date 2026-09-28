@@ -1278,7 +1278,11 @@ export default defineBackground(() => {
       }
 
       console.log(`[tabs.onMoved] Tab ${tabId} moved (ungrouped), re-evaluating`)
-      await tabGroupService.moveTabToGroup(tabId)
+      const handled = await tabGroupService.moveTabToGroup(tabId)
+      if (!handled && tab.windowId) {
+        const { tabSortService } = await import("../services/TabSortService")
+        await tabSortService.moveUngroupedTabsToEnd(tab.windowId)
+      }
     } catch (error) {
       console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
     }

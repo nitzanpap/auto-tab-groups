@@ -1003,7 +1003,11 @@ if (compareTabsButton) {
   sendMessage<{ active?: boolean; hasComparisonGroup?: boolean }>({
     action: "getComparisonStatus"
   }).then(res => {
-    if (res?.active || res?.hasComparisonGroup) {
+    if (res?.active) {
+      compareTabsButton.textContent = "👉 Click target tab to compare (or Cancel ❌)"
+      compareTabsButton.style.borderColor = "#f59e0b"
+      compareTabsButton.style.color = "#f59e0b"
+    } else if (res?.hasComparisonGroup) {
       compareTabsButton.textContent = "❌ " + t("popupCancelComparison", "Cancel Comparison")
       compareTabsButton.style.borderColor = "#ef4444"
       compareTabsButton.style.color = "#ef4444"
@@ -1021,9 +1025,9 @@ if (compareTabsButton) {
       compareTabsButton.style.color = "#8b5cf6"
     } else {
       await sendMessage({ action: "startTabComparison" })
-      compareTabsButton.textContent = "❌ " + t("popupCancelComparison", "Cancel Comparison")
-      compareTabsButton.style.borderColor = "#ef4444"
-      compareTabsButton.style.color = "#ef4444"
+      compareTabsButton.textContent = "👉 Click target tab to compare (or Cancel ❌)"
+      compareTabsButton.style.borderColor = "#f59e0b"
+      compareTabsButton.style.color = "#f59e0b"
     }
   })
 }

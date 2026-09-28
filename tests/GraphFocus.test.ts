@@ -61,7 +61,8 @@ describe("3D Graph Level of Detail & Focus Management", () => {
     const config: VisualizerConfig = {
       showAllTabs: false,
       ambientParticles: true,
-      density: 1.0
+      density: 1.0,
+      layoutMode: "unified"
     }
 
     // Camera close to group

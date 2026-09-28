@@ -30,6 +30,9 @@
       </div>
 
       <div class="hud-actions">
+        <button id="btnToggleMode" class="hud-btn" title="Toggle Layout Mode: Unified Solar vs Group Clusters">
+          <span id="modeBtnIcon" class="btn-icon">🌌</span> <span id="modeBtnLabel">Groups Mode</span>
+        </button>
         <button id="btnSmartGroup" class="hud-btn primary" title="Run AI Semantic Grouping">
           <span class="btn-icon">✨</span> AI Group
         </button>
@@ -105,7 +108,18 @@
 
         <!-- View & Atmosphere Settings -->
         <section class="sidebar-section">
-          <h3 class="section-title">View & Atmosphere</h3>
+          <h3 class="section-title">View & Layout</h3>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Group Clusters Mode</span>
+              <span class="setting-desc">Each group forms its own solar sun</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleClustersMode" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
           <div class="setting-row">
             <div class="setting-info">
               <span class="setting-label">Show All Tabs</span>

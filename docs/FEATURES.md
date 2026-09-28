@@ -6,7 +6,7 @@
 3. [Interactive 3D Tab Knowledge Graph (New in v3.15.5)](#3-interactive-3d-tab-knowledge-graph-new-in-v3155)
 4. [Multi-Provider AI & External LLM Integration (New in v3.15.5)](#4-multi-provider-ai--external-llm-integration-new-in-v3155)
 5. [Semantic Tab Clustering (New in v3.15.5)](#5-semantic-tab-clustering-new-in-v3155)
-6. [Read Later ("فيما بعد") Group Leader Tab Pinning (New in v3.15.5)](#6-read-later-group-leader-tab-pinning-new-in-v3155)
+6. [Read Later Group Leader Tab Pinning (New in v3.15.5)](#6-read-later-group-leader-tab-pinning-new-in-v3155)
 7. [Smart Position: Open Tab Next to Current Tab (New in v3.15.5)](#7-smart-position-open-tab-next-to-current-tab-new-in-v3155)
 8. [Chrome Side Panel MV3 Integration (New in v3.15.5)](#8-chrome-side-panel-mv3-integration-new-in-v3155)
 9. [Protected Groups & Manual Color Persistence](#9-protected-groups--manual-color-persistence)

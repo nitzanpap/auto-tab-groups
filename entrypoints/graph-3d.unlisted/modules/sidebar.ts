@@ -1,5 +1,5 @@
 import { getFaviconUrl } from "./nodes"
-import type { GraphNode, RawGroup, VisualizerConfig } from "./types"
+import type { GraphNode, RawGroup, RawTab, VisualizerConfig } from "./types"
 
 export interface SidebarCallbacks {
   onGroupSelect: (groupId: string) => void
@@ -54,6 +54,11 @@ export class SidebarController {
 
     document.getElementById("btnCloseSidebar")?.addEventListener("click", () => {
       this.close()
+    })
+
+    document.getElementById("toggleClustersMode")?.addEventListener("change", (e: Event) => {
+      const checked = (e.target as HTMLInputElement).checked
+      this.callbacks.onConfigChange({ layoutMode: checked ? "clusters" : "unified" })
     })
 
     document.getElementById("toggleShowAllTabs")?.addEventListener("change", (e: Event) => {

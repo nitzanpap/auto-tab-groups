@@ -95,4 +95,5 @@ export interface VisualizerConfig {
   showAllTabs: boolean
   ambientParticles: boolean
   density: number
+  layoutMode?: "unified" | "clusters"
 }

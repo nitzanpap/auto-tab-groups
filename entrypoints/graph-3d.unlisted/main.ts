@@ -52,7 +52,8 @@ let lastClickedNode: GraphNode | null = null
 const visualizerConfig: VisualizerConfig = {
   showAllTabs: true,
   ambientParticles: true,
-  density: 1.0
+  density: 1.0,
+  layoutMode: "unified"
 }
 
 /**
@@ -177,114 +178,273 @@ async function loadGraphData(): Promise<void> {
       }
     }
 
-    // Sort tabs into structured continuous angular sectors
-    const sortedTabEntries: Array<{
-      tab: RawTab
-      color: string
-      groupIdStr: string
-      rawGroupId?: number
-    }> = []
+    // Check layout mode
+    if (visualizerConfig.layoutMode === "clusters") {
+      // CLUSTERS MODE: Each group is its own large solar sphere, and child tabs radiate from their group sphere
+      for (const group of rawGroups) {
+        const gColor = TAB_GROUP_HEX_COLORS[group.color] || "#6366f1"
+        const groupTabs = tabsByGroup.get(group.id) || []
+        const count = groupTabs.length
+        const radius = Math.min(30, 24 + count * 0.3)
+        const groupNodeId = `group-${group.id}`
 
-    // 1. Grouped tabs by group
-    for (const group of rawGroups) {
-      const gColor = TAB_GROUP_HEX_COLORS[group.color] || "#6366f1"
-      const gTabs = tabsByGroup.get(group.id) || []
-      for (const t of gTabs) {
-        sortedTabEntries.push({
-          tab: t,
+        allNodes.push({
+          id: groupNodeId,
+          type: "group",
+          name: group.title || "Untitled Group",
           color: gColor,
-          groupIdStr: `group-${group.id}`,
-          rawGroupId: group.id
+          radius,
+          tabCount: count,
+          windowId: group.windowId
+        })
+
+        const orbits = calculateOrbitalPositions(count)
+
+        for (let i = 0; i < groupTabs.length; i++) {
+          const tab = groupTabs[i]
+          const pageNodeId = `tab-${tab.id}`
+          const orb = orbits[i] || {
+            radius: 180,
+            angle: 0,
+            tiltX: 0.12,
+            tiltZ: 0.08,
+            relX: 180,
+            relY: 0,
+            relZ: 0,
+            labelDirX: 1,
+            labelDirY: 0,
+            labelDirZ: 0
+          }
+
+          allNodes.push({
+            id: pageNodeId,
+            type: "page",
+            name: tab.title || "Untitled Tab",
+            color: gColor,
+            radius: 9.0,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            tabId: tab.id,
+            windowId: tab.windowId,
+            groupId: groupNodeId,
+            rawGroupId: group.id,
+            orbitalRadius: orb.radius,
+            orbitalAngle: orb.angle,
+            orbitalTiltX: orb.tiltX,
+            orbitalTiltZ: orb.tiltZ,
+            relX: orb.relX,
+            relY: orb.relY,
+            relZ: orb.relZ,
+            labelDirX: orb.labelDirX,
+            labelDirY: orb.labelDirY,
+            labelDirZ: orb.labelDirZ
+          })
+
+          allLinks.push({
+            source: groupNodeId,
+            target: pageNodeId,
+            color: `${gColor}55`,
+            groupId: groupNodeId
+          })
+        }
+      }
+
+      // Ungrouped tabs in clusters mode
+      if (ungroupedTabs.length > 0) {
+        const ungroupedGroupId = "group-ungrouped"
+        const ungrColor = "#64748b"
+        allNodes.push({
+          id: ungroupedGroupId,
+          type: "group",
+          name: "Ungrouped Tabs",
+          color: ungrColor,
+          radius: Math.min(26, 20 + ungroupedTabs.length * 0.3),
+          tabCount: ungroupedTabs.length
+        })
+
+        const orbits = calculateOrbitalPositions(ungroupedTabs.length)
+        for (let i = 0; i < ungroupedTabs.length; i++) {
+          const tab = ungroupedTabs[i]
+          const pageNodeId = `tab-${tab.id}`
+          const orb = orbits[i] || {
+            radius: 180,
+            angle: 0,
+            tiltX: 0.12,
+            tiltZ: 0.08,
+            relX: 180,
+            relY: 0,
+            relZ: 0,
+            labelDirX: 1,
+            labelDirY: 0,
+            labelDirZ: 0
+          }
+
+          allNodes.push({
+            id: pageNodeId,
+            type: "page",
+            name: tab.title || "Untitled Tab",
+            color: ungrColor,
+            radius: 9.0,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            tabId: tab.id,
+            windowId: tab.windowId,
+            groupId: ungroupedGroupId,
+            orbitalRadius: orb.radius,
+            orbitalAngle: orb.angle,
+            orbitalTiltX: orb.tiltX,
+            orbitalTiltZ: orb.tiltZ,
+            relX: orb.relX,
+            relY: orb.relY,
+            relZ: orb.relZ,
+            labelDirX: orb.labelDirX,
+            labelDirY: orb.labelDirY,
+            labelDirZ: orb.labelDirZ
+          })
+
+          allLinks.push({
+            source: ungroupedGroupId,
+            target: pageNodeId,
+            color: `${ungrColor}44`,
+            groupId: ungroupedGroupId
+          })
+        }
+      }
+
+      // Initialize expansive 3D constellation positions for group nodes
+      const groupNodes = allNodes.filter(n => n.type === "group")
+      const groupPositionInputs = groupNodes.map(g => ({
+        id: g.id,
+        tabCount: g.tabCount || 0
+      }))
+      const constellationMap = calculateGroupConstellationPositions(groupPositionInputs)
+
+      groupNodes.forEach(gNode => {
+        const pos = constellationMap.get(gNode.id) || { x: 0, y: 0, z: 0 }
+        gNode.x = pos.x
+        gNode.y = pos.y
+        gNode.z = pos.z
+        gNode.targetX = pos.x
+        gNode.targetY = pos.y
+        gNode.targetZ = pos.z
+      })
+
+      // Chain links connecting group nodes in sequence for a sleek constellation appearance
+      for (let i = 0; i < groupNodes.length - 1; i++) {
+        allLinks.push({
+          source: groupNodes[i].id,
+          target: groupNodes[i + 1].id,
+          color: "rgba(99, 102, 241, 0.22)",
+          groupId: "group-chain",
+          isChainLink: true
         })
       }
-    }
+    } else {
+      // UNIFIED MODE: Exactly ONE large central sphere at (0,0,0) from which all individual tab balls branch out
+      const sortedTabEntries: Array<{
+        tab: RawTab
+        color: string
+        groupIdStr: string
+        rawGroupId?: number
+      }> = []
 
-    // 2. Ungrouped tabs
-    for (const t of ungroupedTabs) {
-      sortedTabEntries.push({
-        tab: t,
-        color: "#94a3b8",
-        groupIdStr: "group-ungrouped",
-        rawGroupId: undefined
-      })
-    }
-
-    const totalCount = sortedTabEntries.length
-    const rootGroupId = "group-root"
-    const rootColor = rawGroups.length === 1 ? (TAB_GROUP_HEX_COLORS[rawGroups[0].color] || "#6366f1") : "#6366f1"
-    const rootTitle = rawGroups.length === 1 ? (rawGroups[0].title || "Tab Space") : "Tab Space"
-
-    // EXACTLY ONE LARGE CENTRAL SPHERE (Sun Core at 0,0,0)
-    allNodes.push({
-      id: rootGroupId,
-      type: "group",
-      name: rootTitle,
-      color: rootColor,
-      radius: 30,
-      tabCount: totalCount,
-      x: 0,
-      y: 0,
-      z: 0,
-      targetX: 0,
-      targetY: 0,
-      targetZ: 0,
-      fx: 0,
-      fy: 0,
-      fz: 0
-    })
-
-    // Calculate deterministic, spacious non-overlapping orbital positions
-    const orbits = calculateOrbitalPositions(totalCount)
-
-    // EXACTLY ONE SMALL BALL PER TAB (Connected directly to the central big sphere)
-    for (let i = 0; i < sortedTabEntries.length; i++) {
-      const entry = sortedTabEntries[i]
-      const tab = entry.tab
-      const pageNodeId = `tab-${tab.id}`
-      const orb = orbits[i] || {
-        radius: 180,
-        angle: 0,
-        tiltX: 0.12,
-        tiltZ: 0.08,
-        relX: 180,
-        relY: 0,
-        relZ: 0,
-        labelDirX: 1,
-        labelDirY: 0,
-        labelDirZ: 0
+      // 1. Grouped tabs by group
+      for (const group of rawGroups) {
+        const gColor = TAB_GROUP_HEX_COLORS[group.color] || "#6366f1"
+        const gTabs = tabsByGroup.get(group.id) || []
+        for (const t of gTabs) {
+          sortedTabEntries.push({
+            tab: t,
+            color: gColor,
+            groupIdStr: `group-${group.id}`,
+            rawGroupId: group.id
+          })
+        }
       }
 
+      // 2. Ungrouped tabs
+      for (const t of ungroupedTabs) {
+        sortedTabEntries.push({
+          tab: t,
+          color: "#94a3b8",
+          groupIdStr: "group-ungrouped",
+          rawGroupId: undefined
+        })
+      }
+
+      const totalCount = sortedTabEntries.length
+      const rootGroupId = "group-root"
+      const rootColor = rawGroups.length === 1 ? (TAB_GROUP_HEX_COLORS[rawGroups[0].color] || "#6366f1") : "#6366f1"
+      const rootTitle = rawGroups.length === 1 ? (rawGroups[0].title || "Tab Space") : "Tab Space"
+
       allNodes.push({
-        id: pageNodeId,
-        type: "page",
-        name: tab.title || "Untitled Tab",
-        color: entry.color,
-        radius: 9.0,
-        url: tab.url,
-        favIconUrl: tab.favIconUrl,
-        tabId: tab.id,
-        windowId: tab.windowId,
-        groupId: entry.groupIdStr,
-        rawGroupId: entry.rawGroupId,
-        orbitalRadius: orb.radius,
-        orbitalAngle: orb.angle,
-        orbitalTiltX: orb.tiltX,
-        orbitalTiltZ: orb.tiltZ,
-        relX: orb.relX,
-        relY: orb.relY,
-        relZ: orb.relZ,
-        labelDirX: orb.labelDirX,
-        labelDirY: orb.labelDirY,
-        labelDirZ: orb.labelDirZ
+        id: rootGroupId,
+        type: "group",
+        name: rootTitle,
+        color: rootColor,
+        radius: 30,
+        tabCount: totalCount,
+        x: 0,
+        y: 0,
+        z: 0,
+        targetX: 0,
+        targetY: 0,
+        targetZ: 0,
+        fx: 0,
+        fy: 0,
+        fz: 0
       })
 
-      // Luminous thread/link connecting directly from central sun to this individual tab
-      allLinks.push({
-        source: rootGroupId,
-        target: pageNodeId,
-        color: `${entry.color}55`,
-        groupId: rootGroupId
-      })
+      const orbits = calculateOrbitalPositions(totalCount)
+
+      for (let i = 0; i < sortedTabEntries.length; i++) {
+        const entry = sortedTabEntries[i]
+        const tab = entry.tab
+        const pageNodeId = `tab-${tab.id}`
+        const orb = orbits[i] || {
+          radius: 180,
+          angle: 0,
+          tiltX: 0.12,
+          tiltZ: 0.08,
+          relX: 180,
+          relY: 0,
+          relZ: 0,
+          labelDirX: 1,
+          labelDirY: 0,
+          labelDirZ: 0
+        }
+
+        allNodes.push({
+          id: pageNodeId,
+          type: "page",
+          name: tab.title || "Untitled Tab",
+          color: entry.color,
+          radius: 9.0,
+          url: tab.url,
+          favIconUrl: tab.favIconUrl,
+          tabId: tab.id,
+          windowId: tab.windowId,
+          groupId: entry.groupIdStr,
+          rawGroupId: entry.rawGroupId,
+          orbitalRadius: orb.radius,
+          orbitalAngle: orb.angle,
+          orbitalTiltX: orb.tiltX,
+          orbitalTiltZ: orb.tiltZ,
+          relX: orb.relX,
+          relY: orb.relY,
+          relZ: orb.relZ,
+          labelDirX: orb.labelDirX,
+          labelDirY: orb.labelDirY,
+          labelDirZ: orb.labelDirZ
+        })
+
+        allLinks.push({
+          source: rootGroupId,
+          target: pageNodeId,
+          color: `${entry.color}55`,
+          groupId: rootGroupId
+        })
+      }
     }
 
     // Update Sidebar groups listing
@@ -304,49 +464,6 @@ async function loadGraphData(): Promise<void> {
 
       // Re-apply orbital force with updated nodes
       graphInstance.d3Force("orbital", createOrbitalForce(allNodes))
-
-      resetCameraOverview(graphInstance, 1000)
-    }
-  } catch (err) {
-    console.error("Failed to load graph data:", err)
-  }
-}
-
-    // Update Sidebar groups listing
-    sidebarController?.updateGroupsList(
-      rawGroupsList,
-      allNodes.filter(n => n.type === "group"),
-      lodManager?.getActiveFocusedGroup() || null
-    )
-
-    if (!graphInstance) {
-      initGraph(container)
-    } else {
-      graphInstance.graphData({
-        nodes: allNodes,
-        links: allLinks
-      })
-
-      // Re-apply custom forces with updated nodes
-      graphInstance.d3Force("orbital", createOrbitalForce(allNodes))
-      graphInstance.d3Force(
-        "groupX",
-        forceX((node: GraphNode) => {
-          return node.type === "group" && node.targetX !== undefined ? node.targetX : 0
-        }).strength((node: GraphNode) => (node.type === "group" ? 0.12 : 0))
-      )
-      graphInstance.d3Force(
-        "groupY",
-        forceY((node: GraphNode) => {
-          return node.type === "group" && node.targetY !== undefined ? node.targetY : 0
-        }).strength((node: GraphNode) => (node.type === "group" ? 0.12 : 0))
-      )
-      graphInstance.d3Force(
-        "groupZ",
-        forceZ((node: GraphNode) => {
-          return node.type === "group" && node.targetZ !== undefined ? node.targetZ : 0
-        }).strength((node: GraphNode) => (node.type === "group" ? 0.12 : 0))
-      )
 
       resetCameraOverview(graphInstance, 1000)
     }
@@ -441,6 +558,9 @@ function initGraph(container: HTMLElement): void {
         rawTabsList,
         null
       )
+      if (graphInstance) {
+        resetCameraOverview(graphInstance, 800)
+      }
     })
 
   graphInstance = fg as ForceGraphInstance
@@ -700,17 +820,40 @@ function initGraph(container: HTMLElement): void {
   }, 350)
 }
 
+function updateModeButtonUI(): void {
+  const modeBtnIcon = document.getElementById("modeBtnIcon")
+  const modeBtnLabel = document.getElementById("modeBtnLabel")
+  const toggleClusters = document.getElementById("toggleClustersMode") as HTMLInputElement | null
+
+  if (visualizerConfig.layoutMode === "clusters") {
+    if (modeBtnIcon) modeBtnIcon.textContent = "☀️"
+    if (modeBtnLabel) modeBtnLabel.textContent = "Unified Mode"
+    if (toggleClusters) toggleClusters.checked = true
+  } else {
+    if (modeBtnIcon) modeBtnIcon.textContent = "🌌"
+    if (modeBtnLabel) modeBtnLabel.textContent = "Groups Mode"
+    if (toggleClusters) toggleClusters.checked = false
+  }
+}
+
 /**
  * Setup HUD toolbar controls and search
  */
 function setupHudControls(): void {
+  // Toggle Layout Mode (Unified Solar vs Group Clusters)
+  document.getElementById("btnToggleMode")?.addEventListener("click", () => {
+    visualizerConfig.layoutMode = visualizerConfig.layoutMode === "unified" ? "clusters" : "unified"
+    updateModeButtonUI()
+    loadGraphData()
+  })
+
   // Reset Camera View
   document.getElementById("btnResetView")?.addEventListener("click", () => {
     lodManager?.setActiveFocusedGroup(null)
     sidebarController?.setSelectedNode(null)
     sidebarController?.updateGroupsList(
       rawGroupsList,
-      allNodes.filter(n => n.type === "group"),
+      rawTabsList,
       null
     )
     if (graphInstance) {
@@ -782,10 +925,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (newConfig.ambientParticles !== undefined && ambientAtmosphere) {
         ambientAtmosphere.setVisible(newConfig.ambientParticles)
       }
+      if (newConfig.layoutMode !== undefined) {
+        updateModeButtonUI()
+        loadGraphData()
+      }
     }
   })
 
   setupHudControls()
+  updateModeButtonUI()
   loadGraphData()
 
   // Browser Tabs runtime sync
