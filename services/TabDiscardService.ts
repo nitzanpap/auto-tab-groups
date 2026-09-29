@@ -15,18 +15,23 @@ export class TabDiscardService {
   private enabled = true
 
   /**
-   * Initializes the tab discard monitor
+   * Initializes the tab discard monitor with a startup delay to avoid
+   * putting pressure on Chrome while restoring tabs.
    */
-  initialize(): void {
+  initialize(initialDelayMs = 30000): void {
     if (this.checkIntervalId) return
 
-    this.checkIntervalId = setInterval(() => {
-      this.checkAndDiscardInactiveTabs().catch(err => {
-        console.error("[TabDiscardService] Error checking inactive tabs:", err)
-      })
-    }, this.CHECK_INTERVAL_MS)
+    setTimeout(() => {
+      if (this.checkIntervalId) return
+      this.checkIntervalId = setInterval(() => {
+        this.checkAndDiscardInactiveTabs().catch(err => {
+          console.error("[TabDiscardService] Error checking inactive tabs:", err)
+        })
+      }, this.CHECK_INTERVAL_MS)
+      console.log("[TabDiscardService] Auto-discard interval started (1 minute threshold)")
+    }, initialDelayMs)
 
-    console.log("[TabDiscardService] Auto-discard initialized (1 minute threshold)")
+    console.log(`[TabDiscardService] Auto-discard initialized (first check in ${initialDelayMs / 1000}s)`)
   }
 
   /**

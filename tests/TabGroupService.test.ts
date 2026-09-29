@@ -865,24 +865,17 @@ describe("TabGroupService", () => {
       it("should skip pinned tabs during bulk grouping", async () => {
         tabGroupState.autoGroupingEnabled = true
         mockBrowser.tabs.query.mockResolvedValue([
-          { id: 1, url: "https://example.com", pinned: true, groupId: -1 },
-          { id: 2, url: "https://example.com", pinned: false, groupId: -1 }
+          { id: 1, url: "https://example.com", pinned: true, groupId: -1, windowId: 1 },
+          { id: 2, url: "https://example.com", pinned: false, groupId: -1, windowId: 1 }
         ])
-        mockBrowser.tabs.get.mockImplementation(async (tabId: number) => {
-          if (tabId === 1) {
-            return { id: 1, url: "https://example.com", pinned: true, windowId: 1, groupId: -1 }
-          }
-          return { id: 2, url: "https://example.com", pinned: false, windowId: 1, groupId: -1 }
-        })
         mockBrowser.tabGroups.query.mockResolvedValue([])
         mockBrowser.tabs.group.mockResolvedValue(100)
         mockBrowser.tabGroups.update.mockResolvedValue({})
 
         await tabGroupService.groupAllTabs()
 
-        // Should have been called for tab 2 but not attempt to group pinned tab 1
-        // Tab 1 is pinned so handleTabUpdate returns false early
-        expect(mockBrowser.tabs.get).toHaveBeenCalledWith(2)
+        // Tab 1 is pinned so only tab 2 should be in the group call
+        expect(mockBrowser.tabs.group).toHaveBeenCalledWith({ tabIds: [2] })
       })
     })
   })
@@ -1407,6 +1400,23 @@ describe("TabGroupService", () => {
       expect(mockBrowser.tabs.group).toHaveBeenCalled()
 
       tabGroupService.endStartupGracePeriod()
+    })
+
+    it("should schedule debounced grouping during tab burst", async () => {
+      vi.useFakeTimers()
+      const groupAllSpy = vi.spyOn(tabGroupService, "groupAllTabs").mockResolvedValue(true)
+      tabGroupState.autoGroupingEnabled = true
+
+      tabGroupService.scheduleDebouncedGrouping(500)
+      tabGroupService.scheduleDebouncedGrouping(500)
+      tabGroupService.scheduleDebouncedGrouping(500)
+
+      expect(groupAllSpy).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(550)
+      expect(groupAllSpy).toHaveBeenCalledTimes(1)
+
+      vi.useRealTimers()
     })
   })
 })

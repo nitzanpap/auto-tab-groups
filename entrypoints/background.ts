@@ -57,24 +57,21 @@ export default defineBackground(() => {
           console.log("Auto-grouping enabled:", tabGroupState.autoGroupingEnabled)
           console.log("Custom rules count:", tabGroupState.customRules.size)
 
-          // Sanitize protected groups to ensure System is never protected
-          if (
-            tabGroupState.protectedGroupTitles.some(
-              t => t.toLowerCase() === "system"
-            )
-          ) {
-            tabGroupState.protectedGroupTitles = tabGroupState.protectedGroupTitles.filter(
-              t => t.toLowerCase() !== "system"
-            )
-            await saveState()
-          }
+      // Sanitize protected groups to ensure System is never protected
+      if (
+        tabGroupState.protectedGroupTitles.some(
+          t => t.toLowerCase() === "system"
+        )
+      ) {
+        tabGroupState.protectedGroupTitles = tabGroupState.protectedGroupTitles.filter(
+          t => t.toLowerCase() !== "system"
+        )
+        await saveState()
+      }
 
-          // Restore saved colors for existing groups
-          await tabGroupService.restoreSavedColors()
-
-          // Initialize comparison service state
-          const { tabComparisonService } = await import("../services/TabComparisonService")
-          await tabComparisonService.initialize()
+      // Initialize comparison service state
+      const { tabComparisonService } = await import("../services/TabComparisonService")
+      await tabComparisonService.initialize()
         } catch (error) {
           stateLoadPromise = null
           console.error("Error loading state from storage:", error)
@@ -92,9 +89,9 @@ export default defineBackground(() => {
     await saveAllStorage(tabGroupState.getStorageData())
   }
 
-  const STARTUP_GRACE_PERIOD_MS = 3000
+  const STARTUP_GRACE_PERIOD_MS = 10000
 
-  // Defer all auto-grouping and background tab event interference for the first 3 seconds after Chrome startup
+  // Defer all auto-grouping and background tab event interference for 10 seconds after Chrome startup
   tabGroupService.startStartupGracePeriod(STARTUP_GRACE_PERIOD_MS)
 
   // Always load state when service worker starts - SSOT from browser storage
@@ -1149,11 +1146,23 @@ export default defineBackground(() => {
   // Tab event listeners
   browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     try {
-      if (tabGroupService.isStartupGracePeriodActive()) {
+      if (tabGroupService.isStartupGracePeriodActive() || tabGroupService.isBulkOperationInProgress()) {
         return
       }
-      console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
+
+      // Ignore loading states completely to prevent interfering with tab reloads/restores
+      if (changeInfo.status === "loading") {
+        return
+      }
+
+      // Only evaluate if tab URL actually changed on a complete navigation
       if (changeInfo.url) {
+        // If other tabs in the window are still loading, do not interfere
+        const allTabs = await browser.tabs.query({ currentWindow: true })
+        if (allTabs.some(t => t.status === "loading")) {
+          return
+        }
+
         console.log(`[tabs.onUpdated] URL changed to: ${changeInfo.url}`)
         await ensureStateLoaded()
 
@@ -1246,9 +1255,14 @@ export default defineBackground(() => {
         return
       }
 
-      if (tab.url && tab.id) {
-        await tabGroupService.handleTabUpdate(tab.id)
+      // If tab was restored already inside an existing group, leave it alone
+      if (tab.groupId && tab.groupId !== -1) {
+        return
       }
+
+      // Do not auto-group on tab creation during startup or bulk reload
+      // Users can group cleanly via the "Group Tabs" button or shortcut
+      console.log(`[tabs.onCreated] Tab ${tab.id} registered`)
     } catch (error) {
       console.error(`[tabs.onCreated] Error handling tab creation:`, error)
     }
@@ -1257,6 +1271,9 @@ export default defineBackground(() => {
   browser.tabs.onRemoved.addListener(async tabId => {
     try {
       tabDiscardService.removeTab(tabId)
+      if (tabGroupService.isStartupGracePeriodActive() || tabGroupService.isBulkOperationInProgress()) {
+        return
+      }
       console.log(`[tabs.onRemoved] Tab ${tabId} removed`)
       await ensureStateLoaded()
 
@@ -1277,12 +1294,14 @@ export default defineBackground(() => {
 
   browser.tabs.onMoved.addListener(async tabId => {
     try {
-      if (tabGroupService.isStartupGracePeriodActive()) {
+      if (tabGroupService.isStartupGracePeriodActive() || tabGroupService.isBulkOperationInProgress()) {
         return
       }
       await ensureStateLoaded()
 
-      const tab = await browser.tabs.get(tabId)
+      const tab = await browser.tabs.get(tabId).catch(() => null)
+      if (!tab) return
+
       if (tab.groupId && tab.groupId !== -1) {
         // Enforce leader tab pinning for Read Later / "فيما بعد" group
         if (tabGroupState.lockLaterGroupFirstTab) {
@@ -1292,11 +1311,7 @@ export default defineBackground(() => {
       }
 
       console.log(`[tabs.onMoved] Tab ${tabId} moved (ungrouped), re-evaluating`)
-      const handled = await tabGroupService.moveTabToGroup(tabId)
-      if (!handled && tab.windowId) {
-        const { tabSortService } = await import("../services/TabSortService")
-        await tabSortService.moveUngroupedTabsToEnd(tab.windowId)
-      }
+      await tabGroupService.moveTabToGroup(tabId)
     } catch (error) {
       console.error(`[tabs.onMoved] Error handling tab ${tabId} move:`, error)
     }

@@ -170,20 +170,20 @@ class TabSortService {
   }
 
   /**
-   * Moves all ungrouped, non-pinned tabs to the end of the tab strip.
+   * Moves all ungrouped, non-pinned tabs to the end of the tab strip in one atomic call.
    */
   async moveUngroupedTabsToEnd(windowId: number): Promise<void> {
     try {
       const allTabs = await browser.tabs.query({ windowId })
-      const ungroupedTabs = allTabs.filter(
-        tab => !tab.pinned && (!tab.groupId || tab.groupId === -1)
-      )
+      const ungroupedTabIds = allTabs
+        .filter(tab => !tab.pinned && (!tab.groupId || tab.groupId === -1))
+        .map(tab => tab.id!)
+        .filter(Boolean)
 
-      for (const tab of ungroupedTabs) {
-        if (tab.id !== undefined) {
-          await withTabEditRetry(() => browser.tabs.move(tab.id!, { index: -1 }))
-          await new Promise(resolve => setTimeout(resolve, 10))
-        }
+      if (ungroupedTabIds.length > 0) {
+        await withTabEditRetry(() =>
+          browser.tabs.move(ungroupedTabIds as [number, ...number[]], { index: -1 })
+        )
       }
     } catch (error) {
       console.error("[TabSortService] Error moving ungrouped tabs:", error)

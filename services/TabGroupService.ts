@@ -38,35 +38,34 @@ class TabGroupServiceSimplified {
   private bulkOperationInProgress = false
   private startupGracePeriod = false
   private startupTimer: ReturnType<typeof setTimeout> | null = null
+  private burstDebounceTimer: ReturnType<typeof setTimeout> | null = null
   private updateQueue: Promise<unknown> = Promise.resolve()
+  private readonly BURST_DEBOUNCE_MS = 1500
 
   /**
    * Starts a startup grace period (default 3 seconds) where individual tab grouping
    * and auto-actions are delayed, allowing the browser to boot and restore tabs cleanly.
    * After the duration expires, auto-grouping runs once in a controlled batch.
    */
-  startStartupGracePeriod(durationMs = 3000): void {
+  startStartupGracePeriod(durationMs = 10000): void {
     this.startupGracePeriod = true
     if (this.startupTimer) {
       clearTimeout(this.startupTimer)
     }
-    console.log(`[TabGroupService] Startup grace period active (${durationMs}ms) - deferring auto-grouping`)
-    this.startupTimer = setTimeout(async () => {
+    console.log(`[TabGroupService] Startup quiet period active (${durationMs}ms) - extension is completely dormant`)
+    this.startupTimer = setTimeout(() => {
       this.startupGracePeriod = false
       this.startupTimer = null
-      console.log("[TabGroupService] Startup grace period finished - grouping tabs now")
-      if (tabGroupState.autoGroupingEnabled) {
-        try {
-          await this.groupAllTabs()
-        } catch (err) {
-          console.error("[TabGroupService] Error during delayed startup auto-grouping:", err)
-        }
-      }
+      console.log("[TabGroupService] Startup quiet period finished")
     }, durationMs)
   }
 
   isStartupGracePeriodActive(): boolean {
     return this.startupGracePeriod
+  }
+
+  isBulkOperationInProgress(): boolean {
+    return this.bulkOperationInProgress
   }
 
   endStartupGracePeriod(): void {
@@ -75,6 +74,36 @@ class TabGroupServiceSimplified {
       this.startupTimer = null
     }
     this.startupGracePeriod = false
+  }
+
+  /**
+   * Schedules a coordinated bulk grouping pass ONLY after all tabs have finished loading
+   * and tab activity has completely settled.
+   */
+  scheduleDebouncedGrouping(delayMs = 2000): void {
+    if (this.burstDebounceTimer) {
+      clearTimeout(this.burstDebounceTimer)
+    }
+    this.burstDebounceTimer = setTimeout(async () => {
+      this.burstDebounceTimer = null
+      if (!tabGroupState.autoGroupingEnabled) return
+
+      try {
+        const tabs = await browser.tabs.query({ currentWindow: true })
+        // If any tab is still actively loading, wait further until it finishes
+        const anyLoading = tabs.some(t => t.status === "loading")
+        if (anyLoading) {
+          console.log("[TabGroupService] Tabs are still loading, deferring grouping until complete...")
+          this.scheduleDebouncedGrouping(1500)
+          return
+        }
+
+        console.log("[TabGroupService] All tabs finished loading and settled. Executing atomic grouping...")
+        await this.groupAllTabs()
+      } catch (err) {
+        console.error("[TabGroupService] Error in debounced grouping:", err)
+      }
+    }, delayMs)
   }
 
   markAsNewTab(tabId: number): void {
@@ -892,13 +921,13 @@ class TabGroupServiceSimplified {
       if (!browser.tabGroups) return null
 
       const groups = await browser.tabGroups.query({ windowId })
+      const targetClean = stripIndexPrefix(title || "").trim().toLowerCase()
+      if (!targetClean) return null
+
       return (
         groups.find(group => {
-          if (group.title === title) return true
-          if (tabGroupState.indexGroupTitles) {
-            return stripIndexPrefix(group.title || "") === title
-          }
-          return false
+          const groupClean = stripIndexPrefix(group.title || "").trim().toLowerCase()
+          return groupClean === targetClean
         }) || null
       )
     } catch (error) {
@@ -914,89 +943,168 @@ class TabGroupServiceSimplified {
     if (!tabGroupState.autoGroupingEnabled) {
       return false
     }
-
-    this.bulkOperationInProgress = true
-    try {
-      console.log(`[TabGroupService] Starting bulk grouping`)
-
-      const tabs = await browser.tabs.query({ currentWindow: true })
-
-      for (const tab of tabs) {
-        if (tab.id) {
-          // Skip extension pages but process all other tabs including empty URLs
-          if (tab.url?.startsWith("chrome-extension://")) {
-            continue
-          }
-
-          // Handle tabs with empty/undefined URLs as potential new tabs
-          if (!tab.url || tab.url === "") {
-            if (tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled) {
-              await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
-            }
-            continue
-          }
-
-          await this.handleTabUpdate(tab.id)
-          await new Promise(resolve => setTimeout(resolve, 10))
-        }
-      }
-
-      console.log(`[TabGroupService] Bulk grouping completed`)
-      await tabSortService.applySorting()
-      return true
-    } catch (error) {
-      console.error(`[TabGroupService] Error during bulk grouping:`, error)
-      return false
-    } finally {
-      this.bulkOperationInProgress = false
-    }
+    return this._batchGroupTabs(false)
   }
 
   /**
    * Manually groups all tabs (ignores auto-group setting but respects groupNewTabs)
    */
   async groupAllTabsManually(): Promise<boolean> {
+    return this._batchGroupTabs(true)
+  }
+
+  /**
+   * High-performance batch grouping: groups all eligible tabs in the window
+   * in coordinated bulk API calls instead of 20+ sequential round-trips.
+   */
+  private async _batchGroupTabs(forceGrouping: boolean): Promise<boolean> {
+    if (!browser.tabGroups) return false
+
     this.bulkOperationInProgress = true
     try {
-      console.log(`[TabGroupService] Starting manual bulk grouping`)
-
+      console.log(`[TabGroupService] Starting fast batch grouping (force=${forceGrouping})`)
       const tabs = await browser.tabs.query({ currentWindow: true })
+      if (!tabs || tabs.length === 0) return false
+
+      const windowId = tabs[0].windowId ?? (await browser.windows.getCurrent()).id
+      if (windowId === undefined) return false
+
+      // Target title -> { tabs: Tab[], customRule: CustomRule | null, color?: TabGroupColor }
+      const groupBuckets = new Map<
+        string,
+        { tabs: Browser.tabs.Tab[]; customRule: MatchedRule | CustomRule | null; defaultColor?: TabGroupColor }
+      >()
 
       for (const tab of tabs) {
-        if (tab.id) {
-          // Skip extension pages but process all other tabs including empty URLs
-          if (tab.url?.startsWith("chrome-extension://")) {
-            continue
-          }
+        if (!tab.id) continue
+        if (tab.pinned) continue
+        if (tab.url?.startsWith("chrome-extension://") || tab.url?.startsWith("moz-extension://")) {
+          continue
+        }
 
-          // Handle tabs with empty/undefined URLs as potential new tabs
-          if (!tab.url || tab.url === "") {
-            if (tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled) {
-              await this.moveTabToTargetGroup(tab.id, tab, "System", null, "grey")
-            }
-            continue
-          }
+        // Check if tab is in a protected group
+        if (!this.isRecentlyCreated(tab.id) && (await this.isInProtectedGroup(tab))) {
+          continue
+        }
 
-          // For system URLs, respect the groupNewTabs setting
-          const domain = extractDomain(tab.url, false)
-          if (
-            domain === "system" &&
-            !(tabGroupState.groupNewTabs && tabGroupState.systemGroupEnabled)
-          ) {
-            console.log(`[TabGroupService] Skipping system tab ${tab.id} - groupNewTabs disabled`)
-            continue
-          }
+        // Check blacklist rules
+        const blacklisted = await rulesService.findBlacklistMatch(tab.url || "", tab.title)
+        if (blacklisted) continue
 
-          await this.handleTabUpdate(tab.id, true)
-          await new Promise(resolve => setTimeout(resolve, 10))
+        // System URL / empty URL handling
+        const isSystem = !tab.url || tab.url === "" || extractDomain(tab.url, false) === "system"
+        if (isSystem) {
+          if (tabGroupState.systemGroupEnabled && (forceGrouping || tabGroupState.groupNewTabs)) {
+            const bucket = groupBuckets.get("System") ?? { tabs: [], customRule: null, defaultColor: "grey" }
+            bucket.tabs.push(tab)
+            groupBuckets.set("System", bucket)
+          }
+          continue
+        }
+
+        // Matching custom rules or domain
+        const customRule = await rulesService.findMatchingRule(tab.url || "", tab.title)
+        let expectedTitle: string | null = null
+
+        if (tabGroupState.groupByMode === "rules-only") {
+          const effectiveRule = customRule ?? (await rulesService.findCatchAllRule(tab.url || "", tab.title))
+          if (effectiveRule) {
+            expectedTitle = effectiveRule.effectiveGroupName || effectiveRule.name
+          }
+        } else {
+          if (customRule) {
+            expectedTitle = customRule.effectiveGroupName || customRule.name
+          } else {
+            const includeSubDomain = tabGroupState.groupByMode === "subdomain"
+            const domain = extractDomain(tab.url || "", includeSubDomain)
+            expectedTitle = getDomainDisplayName(domain || "")
+          }
+        }
+
+        if (expectedTitle) {
+          const bucket = groupBuckets.get(expectedTitle) ?? { tabs: [], customRule }
+          bucket.tabs.push(tab)
+          groupBuckets.set(expectedTitle, bucket)
         }
       }
 
-      console.log(`[TabGroupService] Manual bulk grouping completed`)
+      // Query existing groups once
+      const existingGroups = await browser.tabGroups.query({ windowId })
+
+      // Process each bucket atomically
+      for (const [title, bucket] of groupBuckets) {
+        const minimumTabs = this.getEffectiveMinimumTabs(bucket.customRule)
+        if (bucket.tabs.length < minimumTabs) {
+          console.log(`[TabGroupService] Bucket "${title}" has ${bucket.tabs.length} tabs, minimum is ${minimumTabs}, skipping`)
+          continue
+        }
+
+        const cleanTarget = stripIndexPrefix(title).trim().toLowerCase()
+        const existingGroup = existingGroups.find(
+          g => stripIndexPrefix(g.title || "").trim().toLowerCase() === cleanTarget
+        )
+
+        const allTabIdsInBucket = bucket.tabs.map(t => t.id!).filter(Boolean)
+
+        if (existingGroup) {
+          // Add only tabs that are not already in this group
+          const tabsToMove = bucket.tabs
+            .filter(t => t.groupId !== existingGroup.id)
+            .map(t => t.id!)
+            .filter(Boolean)
+
+          if (tabsToMove.length > 0) {
+            console.log(`[TabGroupService] Batch moving ${tabsToMove.length} tabs to existing group "${title}"`)
+            await withTabEditRetry(() =>
+              browser.tabs.group({
+                tabIds: tabsToMove as [number, ...number[]],
+                groupId: existingGroup.id
+              })
+            )
+          }
+        } else {
+          // Create new group for all matching tabs in ONE single call
+          console.log(`[TabGroupService] Batch creating group "${title}" with ${allTabIdsInBucket.length} tabs`)
+          const newGroupId = await withTabEditRetry(() =>
+            browser.tabs.group({
+              tabIds: allTabIdsInBucket as [number, ...number[]]
+            })
+          )
+
+          const updateOptions: Browser.tabGroups.UpdateProperties = { title }
+          if (bucket.customRule?.color) {
+            updateOptions.color = bucket.customRule.color as Browser.tabGroups.Color
+          } else if (bucket.defaultColor) {
+            updateOptions.color = bucket.defaultColor as Browser.tabGroups.Color
+          } else {
+            const savedColor = await getGroupColor(title)
+            if (savedColor) {
+              updateOptions.color = savedColor as Browser.tabGroups.Color
+            } else {
+              const detected = detectEntityAndColor(bucket.tabs[0].url || "", bucket.tabs[0].title)
+              updateOptions.color = (detected?.color || getRandomTabGroupColor()) as Browser.tabGroups.Color
+            }
+          }
+
+          await withTabEditRetry(() => browser.tabGroups.update(newGroupId, updateOptions))
+          if (updateOptions.color) {
+            await updateGroupColor(title, updateOptions.color)
+          }
+        }
+
+        for (const tabId of allTabIdsInBucket) {
+          this.consumeNewTabFlag(tabId)
+        }
+      }
+
+      console.log(`[TabGroupService] Fast batch grouping completed successfully`)
       await tabSortService.applySorting()
+      if (tabGroupState.autoCollapseEnabled) {
+        await this.collapseAllGroups()
+      }
       return true
     } catch (error) {
-      console.error(`[TabGroupService] Error during manual bulk grouping:`, error)
+      console.error(`[TabGroupService] Error during fast batch grouping:`, error)
       return false
     } finally {
       this.bulkOperationInProgress = false
@@ -1053,8 +1161,9 @@ class TabGroupServiceSimplified {
 
       let customRule: CustomRule | null = null
       const customRules = tabGroupState.getCustomRulesObject()
+      const cleanGroupTitle = stripIndexPrefix(group.title || "").trim()
       for (const rule of Object.values(customRules)) {
-        if (rule.enabled && rule.name === group.title) {
+        if (rule.enabled && rule.name === cleanGroupTitle) {
           customRule = rule
           break
         }
