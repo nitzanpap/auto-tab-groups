@@ -134,47 +134,36 @@ class TabSortService {
         }
       }
 
-      // Only move groups if the order actually changed
-      if (sorted.length > 1 && !isAlreadySorted(groups, sorted)) {
-        // Find groups that are out of position and only move those.
-        // We move out-of-place groups to index -1 in desired order.
-        // To maintain correctness, we move ALL groups from the first
-        // mismatch onward — moving only individual groups could leave
-        // gaps or wrong relative order.
-        const firstMismatch = groups.findIndex((group, i) => group.id !== sorted[i].id)
-
-        if (firstMismatch >= 0) {
-          for (let i = firstMismatch; i < sorted.length; i++) {
-            await withTabEditRetry(() => tabGroups.move(sorted[i].id, { index: -1 }))
-            await new Promise(resolve => setTimeout(resolve, 10))
-          }
-        }
-      }
-
-      await this.moveUngroupedTabsToEnd(currentWindow.id)
-    } catch (error) {
-      console.error("[TabSortService] Error sorting groups:", error)
-    }
-  }
-
-  /**
-   * Moves all ungrouped, non-pinned tabs to the end of the tab strip.
-   */
-  private async moveUngroupedTabsToEnd(windowId: number): Promise<void> {
-    try {
-      const allTabs = await browser.tabs.query({ windowId })
-      const ungroupedTabs = allTabs.filter(
-        tab => !tab.pinned && (!tab.groupId || tab.groupId === -1)
+      // Groups go to the front, in desired order. Ungrouped tabs are never moved:
+      // they keep their order and end up after every group. Moving a single to
+      // the end instead made Firefox join it to the group sitting last in the strip.
+      const lastGroupedIndex = Math.max(
+        -1,
+        ...allTabs.filter(tab => tab.groupId && tab.groupId !== -1).map(tab => tab.index ?? 0)
+      )
+      const singleBeforeGroup = allTabs.some(
+        tab =>
+          !tab.pinned && (!tab.groupId || tab.groupId === -1) && (tab.index ?? 0) < lastGroupedIndex
       )
 
-      for (const tab of ungroupedTabs) {
-        if (tab.id !== undefined) {
-          await withTabEditRetry(() => browser.tabs.move(tab.id!, { index: -1 }))
+      if (sorted.length > 0 && (!isAlreadySorted(groups, sorted) || singleBeforeGroup)) {
+        // index is a tab position, so each group goes after every tab of the groups placed before it.
+        // Placing it inside an earlier group's range makes Firefox split that group.
+        const groupSizes = new Map<number, number>()
+        for (const tab of allTabs) {
+          if (tab.groupId && tab.groupId !== -1) {
+            groupSizes.set(tab.groupId, (groupSizes.get(tab.groupId) ?? 0) + 1)
+          }
+        }
+        let targetIndex = allTabs.filter(tab => tab.pinned).length
+        for (const group of sorted) {
+          await withTabEditRetry(() => tabGroups.move(group.id, { index: targetIndex }))
+          targetIndex += groupSizes.get(group.id) ?? 1
           await new Promise(resolve => setTimeout(resolve, 10))
         }
       }
     } catch (error) {
-      console.error("[TabSortService] Error moving ungrouped tabs:", error)
+      console.error("[TabSortService] Error sorting groups:", error)
     }
   }
 

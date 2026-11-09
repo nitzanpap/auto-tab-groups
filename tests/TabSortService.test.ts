@@ -59,9 +59,9 @@ describe("TabSortService", () => {
 
       // Should move in alphabetical order: Amazon, Docs, GitHub
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(3)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: 1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: 2 })
     })
 
     it("should be case-insensitive when sorting", async () => {
@@ -74,8 +74,8 @@ describe("TabSortService", () => {
       await tabSortService.sortGroups()
 
       // Apple before zebra (case-insensitive)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: 1 })
     })
 
     it("should sort by stripped title when groups already have index prefixes", async () => {
@@ -88,8 +88,8 @@ describe("TabSortService", () => {
       await tabSortService.sortGroups()
 
       // Should sort by stripped title: Amazon before GitHub
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: 1 })
     })
 
     it("should not move when there is only one group", async () => {
@@ -108,7 +108,7 @@ describe("TabSortService", () => {
       expect(mockBrowser.tabGroups.move).not.toHaveBeenCalled()
     })
 
-    it("should move ungrouped non-pinned tabs to the end after sorting groups", async () => {
+    it("should never move ungrouped tabs when sorting groups", async () => {
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 1, title: "A Group", windowId: 1 },
         { id: 2, title: "B Group", windowId: 1 }
@@ -117,17 +117,13 @@ describe("TabSortService", () => {
         { id: 10, groupId: 1, pinned: false },
         { id: 11, groupId: -1, pinned: false },
         { id: 12, groupId: 2, pinned: false },
-        { id: 13, groupId: -1, pinned: false },
-        { id: 14, groupId: -1, pinned: true } // pinned — should NOT be moved
+        { id: 13, groupId: -1, pinned: false }
       ])
 
       await tabSortService.sortGroups()
 
-      // After group moves, ungrouped non-pinned tabs (11, 13) should be moved to end
-      expect(mockBrowser.tabs.move).toHaveBeenCalledWith(11, { index: -1 })
-      expect(mockBrowser.tabs.move).toHaveBeenCalledWith(13, { index: -1 })
-      // Pinned tab should NOT be moved
-      expect(mockBrowser.tabs.move).not.toHaveBeenCalledWith(14, { index: -1 })
+      // A single tab must keep its index: moving it can drop it into a neighbouring group
+      expect(mockBrowser.tabs.move).not.toHaveBeenCalled()
     })
 
     it("should not move ungrouped tabs that are pinned", async () => {
@@ -157,8 +153,8 @@ describe("TabSortService", () => {
       // Empty string sorts before "Alpha", so order should be [1, 2]
       // Current is [2, 1] — needs to move both from mismatch at index 0
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: 1 })
     })
 
     it("should skip moves when groups are already in correct order", async () => {
@@ -175,10 +171,10 @@ describe("TabSortService", () => {
       expect(mockBrowser.tabGroups.move).not.toHaveBeenCalled()
     })
 
-    it("should only move groups from the first mismatch onward", async () => {
-      // Current: Amazon(2), GitHub(1), Docs(3)
-      // Desired: Amazon(2), Docs(3), GitHub(1)
-      // First mismatch at index 1: only move Docs and GitHub
+    it("should move every group to the front in desired order when one is out of place", async () => {
+      // Current: Amazon, GitHub, Docs. Desired: Amazon, Docs, GitHub.
+      // Every group goes to the front: moving only the tail would leave
+      // a group after a single tab, and a single must stay where it is.
       mockBrowser.tabGroups.query.mockResolvedValue([
         { id: 2, title: "Amazon", windowId: 1 },
         { id: 1, title: "GitHub", windowId: 1 },
@@ -188,9 +184,58 @@ describe("TabSortService", () => {
 
       await tabSortService.sortGroups()
 
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(3)
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: 1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: 2 })
+    })
+
+    it("should place each group after every tab of the groups before it", async () => {
+      // B (2 tabs) is first in the strip, A (3 tabs) second; desired order is A, B.
+      // Sending B to index 1 would land it inside A's range and split A in Firefox.
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 2, title: "B Group", windowId: 1 },
+        { id: 1, title: "A Group", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 20, groupId: 2, pinned: false, index: 0 },
+        { id: 21, groupId: 2, pinned: false, index: 1 },
+        { id: 10, groupId: 1, pinned: false, index: 2 },
+        { id: 11, groupId: 1, pinned: false, index: 3 },
+        { id: 12, groupId: 1, pinned: false, index: 4 },
+        { id: 30, groupId: -1, pinned: false, index: 5 }
+      ])
+
+      await tabSortService.sortGroups()
+
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 3, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: 3 })
+    })
+
+    it("should move groups to the front after pinned tabs", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([
+        { id: 1, title: "B Group", windowId: 1 },
+        { id: 2, title: "A Group", windowId: 1 }
+      ])
+      mockBrowser.tabs.query.mockResolvedValue([{ id: 9, pinned: true, groupId: -1, index: 0 }])
+
+      await tabSortService.sortGroups()
+
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: 2 })
+    })
+
+    it("should move groups ahead of a single tab that sits before them", async () => {
+      mockBrowser.tabGroups.query.mockResolvedValue([{ id: 1, title: "A Group", windowId: 1 }])
+      mockBrowser.tabs.query.mockResolvedValue([
+        { id: 10, groupId: -1, pinned: false, index: 0 },
+        { id: 11, groupId: 1, pinned: false, index: 1 }
+      ])
+
+      await tabSortService.sortGroups()
+
+      expect(mockBrowser.tabGroups.move).toHaveBeenCalledWith(1, { index: 0 })
     })
 
     it("should handle errors gracefully without throwing", async () => {
@@ -214,9 +259,9 @@ describe("TabSortService", () => {
 
       // Z-A order: GitHub(2), Docs(3), Amazon(1)
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(3)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 3, { index: 1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(3, 1, { index: 2 })
     })
 
     it("should apply index prefixes in Z-A order when indexing is enabled", async () => {
@@ -260,8 +305,8 @@ describe("TabSortService", () => {
       await tabSortService.sortGroups()
 
       // A-Z: Amazon(2), GitHub(1)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 2, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 1, { index: 1 })
     })
 
     it("should flip A-Z to Z-A when tab-strip order differs from tabGroups.query order", async () => {
@@ -285,8 +330,8 @@ describe("TabSortService", () => {
       // Visual order is [Google(2), Youtube(1)], desired Z-A is [Youtube(1), Google(2)] —
       // every position differs, so both groups get moved.
       expect(mockBrowser.tabGroups.move).toHaveBeenCalledTimes(2)
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: -1 })
-      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: -1 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(1, 1, { index: 0 })
+      expect(mockBrowser.tabGroups.move).toHaveBeenNthCalledWith(2, 2, { index: 1 })
     })
   })
 
