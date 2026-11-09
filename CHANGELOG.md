@@ -11,6 +11,15 @@ for those.
 
 ## [Unreleased]
 
+## [3.15.5]
+
+### Fixed
+
+- A tab could blink in and out of its group indefinitely when another extension or
+  browser feature kept moving it out, because the extension put it back every time.
+  A tab is now put back at most 3 times a minute, then left where it was moved
+  until things settle ([#110], refs [#109]).
+
 ## [3.15.4]
 
 ### Fixed
@@ -235,7 +244,8 @@ for those.
 - Tab groups for internationalized domains showed punycode — `Xn--mnchen-3ya`
   instead of `München` ([#75], closes [#74]).
 
-[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.3...HEAD
+[unreleased]: https://github.com/nitzanpap/auto-tab-groups/compare/v3.15.5...HEAD
+[3.15.5]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.5
 [3.15.4]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.4
 [3.15.3]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.3
 [3.15.2]: https://github.com/nitzanpap/auto-tab-groups/releases/tag/v3.15.2
@@ -285,3 +295,5 @@ for those.
 [#98]: https://github.com/nitzanpap/auto-tab-groups/issues/98
 [#103]: https://github.com/nitzanpap/auto-tab-groups/pull/103
 [#104]: https://github.com/nitzanpap/auto-tab-groups/pull/104
+[#109]: https://github.com/nitzanpap/auto-tab-groups/issues/109
+[#110]: https://github.com/nitzanpap/auto-tab-groups/pull/110

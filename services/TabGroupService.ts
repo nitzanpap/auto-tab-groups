@@ -30,9 +30,15 @@ interface CollapseState {
   isCollapsed: boolean
 }
 
+/** Put a moved-out tab back at most this many times per window (#109) */
+const MAX_REFILES = 3
+const REFILE_WINDOW_MS = 60_000
+
 class TabGroupServiceSimplified {
   private recentlyCreatedTabIds = new Set<number>()
   private processingTabs = new Set<number>()
+  // ponytail: entries for closed tabs linger until the service worker restarts; tiny
+  private refileTimes = new Map<number, number[]>()
   private bulkOperationInProgress = false
 
   markAsNewTab(tabId: number): void {
@@ -1050,7 +1056,25 @@ class TabGroupServiceSimplified {
    * Moves a tab to the correct group
    */
   async moveTabToGroup(tabId: number): Promise<boolean> {
-    return await this.handleTabUpdate(tabId)
+    // Something else (another extension, a browser feature) can keep pulling
+    // the same tab out. Putting it back every time makes it blink in and out
+    // of the group forever (#109), so after a few tries we let it be, and pick
+    // it up again once it has been left alone for a minute.
+    const now = Date.now()
+    const recent = (this.refileTimes.get(tabId) ?? []).filter(t => now - t < REFILE_WINDOW_MS)
+
+    if (recent.length >= MAX_REFILES) {
+      // Every pull-out while we hold off keeps the minute running
+      this.refileTimes.set(tabId, [...recent, now])
+      console.warn(`[TabGroupService] Tab ${tabId} keeps being moved out of its group, leaving it`)
+      return false
+    }
+
+    const refiled = await this.handleTabUpdate(tabId)
+    if (refiled) {
+      this.refileTimes.set(tabId, [...recent, now])
+    }
+    return refiled
   }
 
   /**
