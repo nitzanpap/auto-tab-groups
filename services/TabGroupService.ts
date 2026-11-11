@@ -9,6 +9,7 @@ import { getRandomTabGroupColor } from "../utils/Constants"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
 import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/storage"
 import { withTabEditRetry } from "../utils/withTabEditRetry"
+import { isInActiveWorkspace, queryGroupsInWorkspace } from "../utils/ZenWorkspaces"
 import { type MatchedRule, rulesService } from "./RulesService"
 import { tabGroupState } from "./TabGroupState"
 import { stripIndexPrefix, tabSortService } from "./TabSortService"
@@ -137,6 +138,14 @@ class TabGroupServiceSimplified {
           )
           return false
         }
+      }
+
+      // A tab in a Zen workspace the user isn't looking at gets grouped once
+      // its workspace is active again; grouping it now would use the wrong
+      // workspace's groups.
+      if (!(await isInActiveWorkspace(tab))) {
+        console.log(`[TabGroupService] Tab ${tabId} is in another workspace, skipping`)
+        return false
       }
 
       // Skip pinned tabs
@@ -797,7 +806,7 @@ class TabGroupServiceSimplified {
     try {
       if (!browser.tabGroups) return null
 
-      const groups = await browser.tabGroups.query({ windowId })
+      const groups = await queryGroupsInWorkspace(windowId)
       return (
         groups.find(group => {
           if (group.title === title) return true
@@ -1008,7 +1017,7 @@ class TabGroupServiceSimplified {
     try {
       if (!browser.tabGroups) return
 
-      const groups = await browser.tabGroups.query({ windowId: browser.windows.WINDOW_ID_CURRENT })
+      const groups = await queryGroupsInWorkspace(browser.windows.WINDOW_ID_CURRENT)
       console.log(`[TabGroupService] Checking ${groups.length} groups against threshold`)
 
       for (const group of groups) {
@@ -1378,7 +1387,7 @@ class TabGroupServiceSimplified {
         return
       }
 
-      const groups = await browser.tabGroups.query({ windowId })
+      const groups = await queryGroupsInWorkspace(windowId)
 
       for (const group of groups) {
         if (group.id !== activeGroupId && !group.collapsed) {
